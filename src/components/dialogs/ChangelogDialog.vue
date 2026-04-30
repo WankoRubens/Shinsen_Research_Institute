@@ -3,10 +3,11 @@
     v-model="visible"
     :fullscreen="isMobile"
     :width="isMobile ? '100%' : '560px'"
-    :show-close="true"
+    :show-close="isMobile"
     align-center
     class="changelog-dialog"
     append-to-body
+    :close-on-click-modal="true"
   >
     <template #header>
       <div class="flex items-center gap-3 pr-8">
@@ -63,8 +64,11 @@
       </div>
     </div>
 
-    <template #footer>
-      <el-button type="primary" size="default" @click="visible = false" class="!w-full sm:!w-auto sm:!ml-auto">
+    <!-- Mobile only: fullscreen mode hides the mask, so we keep an explicit
+         button. PC users close via mask click (close-on-click-modal default
+         is true) — no footer button needed. -->
+    <template v-if="isMobile" #footer>
+      <el-button type="primary" size="default" @click="visible = false" class="!w-full">
         知道了
       </el-button>
     </template>
@@ -105,15 +109,61 @@ onUnmounted(() => mq.removeEventListener('change', updateMobile))
   padding-right: 4px;
 }
 @media (max-width: 767px) {
+  /* Hand height-bounding off to the dialog flex chain in the global block
+     below — wrapper becomes naturally-sized so .el-dialog__body scrolls. */
   .changelog-body {
     max-height: none;
+    padding-right: 0;
   }
-}
-:deep(.changelog-dialog .el-dialog__header) {
-  margin-right: 0;
-  padding-right: 16px;
 }
 .changelog-version + .changelog-version {
   margin-top: 4px;
+}
+</style>
+
+<!-- Non-scoped: el-dialog with append-to-body teleports the .changelog-dialog
+     box outside this component's DOM, so scoped :deep() cannot reach it
+     (Vue scoped requires a [data-v-XXX] ancestor; the teleport boundary
+     breaks the chain). The unique class name keeps these rules effectively
+     local. Same pattern used in BingxueSection.vue. -->
+<style>
+.changelog-dialog .el-dialog__header {
+  margin-right: 0;
+  padding-right: 16px;
+}
+@media (max-width: 767px) {
+  /* Lock dialog to viewport, stack header/body/footer as flex column so the
+     body becomes the scroll container — the 知道了 button stays pinned at
+     the bottom of the screen instead of being pushed off by long content.
+     Also shrinks Element Plus's default ~20px paddings so changelog entries
+     use the actual viewport width.
+     CRITICAL override: Element Plus's own `is-fullscreen` rule sets
+     `overflow: auto` on .el-dialog itself, making the WHOLE dialog scroll.
+     We need `overflow: hidden` so only the body scrolls. */
+  .changelog-dialog.is-fullscreen {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+  }
+  .changelog-dialog.is-fullscreen .el-dialog__header,
+  .changelog-dialog.is-fullscreen .el-dialog__footer {
+    flex-shrink: 0;
+  }
+  .changelog-dialog.is-fullscreen .el-dialog__body {
+    flex: 1 1 0;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .changelog-dialog.is-fullscreen .el-dialog__header {
+    padding: 12px 12px 8px;
+  }
+  .changelog-dialog.is-fullscreen .el-dialog__body {
+    padding: 0 12px 8px;
+  }
+  .changelog-dialog.is-fullscreen .el-dialog__footer {
+    padding: 8px 12px 12px;
+  }
 }
 </style>

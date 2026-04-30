@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    :show-close="true"
+    :show-close="isMobile"
     width="80%"
     :fullscreen="isMobile"
     align-center
@@ -43,7 +43,7 @@
       </div>
     </template>
 
-    <div v-loading="isLoading" class="flex flex-col gap-3 min-h-[420px]">
+    <div v-loading="isLoading" class="flex flex-col gap-3 h-full min-h-0">
       <!-- Empty banners state -->
       <div
         v-if="banners.length === 0"
@@ -104,7 +104,7 @@
         <!-- Tabs: picker / log+stats merged -->
         <el-tabs v-model="activeTab" class="gacha-tabs flex-1">
           <el-tab-pane label="快速登錄" name="picker">
-            <div class="flex flex-col h-[60vh] md:h-[58vh] gap-2">
+            <div class="flex flex-col h-full gap-2">
               <!-- Top: chronological history strip — horizontal scroll, half-
                    size cards. Newest first, day-transition cards show a small
                    date badge so the user can scan break points. -->
@@ -140,7 +140,7 @@
             </div>
           </el-tab-pane>
           <el-tab-pane :label="`紀錄與統計 (${currentDraws.length})`" name="log">
-            <div class="flex flex-col h-[60vh] md:h-[58vh]">
+            <div class="flex flex-col h-full">
               <!-- Stats summary at top -->
               <div v-if="currentDraws.length > 0" class="flex flex-col gap-2 mb-3">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -224,7 +224,7 @@
             >完成</el-button>
           </div>
         </div>
-        <div class="flex-1 h-[65vh] md:h-[60vh] border border-gray-200 rounded p-2">
+        <div class="flex-1 min-h-0 md:border md:border-gray-200 md:rounded md:p-2">
           <GachaPoolEditor
             :heroes="heroes"
             v-model="poolDraftCht"
@@ -511,10 +511,78 @@ const onShare = async (): Promise<void> => {
 </script>
 
 <style scoped>
+/* el-tabs by default has natural height. To make tab-pane content fill the
+   remaining body height, the whole tabs chain must be flex-column with the
+   pane fed `height: 100%`. Without this, the pane just collapses and the
+   inner `h-full` content resolves to 0. */
+.gacha-tabs {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 .gacha-tabs :deep(.el-tabs__content) {
+  flex: 1 1 0;
+  min-height: 0;
   padding-top: 4px;
+}
+.gacha-tabs :deep(.el-tab-pane) {
+  height: 100%;
 }
 .gacha-tabs :deep(.el-tabs__nav-wrap)::after {
   height: 1px;
+}
+</style>
+
+<!-- Non-scoped: el-dialog with append-to-body teleports the .gacha-dialog
+     box outside this component's DOM, so scoped :deep() cannot reach it
+     (Vue scoped requires a [data-v-XXX] ancestor; teleport breaks the
+     chain). Unique class name keeps these effectively local. -->
+<style>
+/* Cap dialog height and let the body scroll when content (Top 10 open,
+   long pool editor, etc.) exceeds the viewport.
+   CRITICAL override: Element Plus's `is-fullscreen` rule sets
+   `overflow: auto` on .el-dialog, making the WHOLE dialog scroll.
+   Forcing `overflow: hidden` makes the body become the scroll container. */
+.gacha-dialog {
+  /* DEFINITE height (not max-height) — `flex: 1 1 0` on the body needs a
+     resolved parent height to actually expand. With max-height the dialog
+     auto-sizes to content and the inner h-full chain collapses. */
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.gacha-dialog.is-fullscreen {
+  height: 100vh;
+}
+/* Element Plus reserves margin-right on the header for the close button even
+   when :show-close="false". Without this, desktop (close button hidden) gets
+   a phantom right gap in the title row. */
+.gacha-dialog .el-dialog__header {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+.gacha-dialog .el-dialog__body {
+  flex: 1 1 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+/* Mobile fullscreen: shrink Element Plus's default padding (~20px around
+   everything + extra header-bottom + footer-top) so the pool grid and log
+   strip use the actual viewport width. Desktop keeps roomy defaults. */
+@media (max-width: 767px) {
+  .gacha-dialog.is-fullscreen {
+    padding: 0;
+  }
+  .gacha-dialog.is-fullscreen .el-dialog__header {
+    padding: 12px 12px 8px;
+  }
+  .gacha-dialog.is-fullscreen .el-dialog__headerbtn {
+    top: 4px;
+    right: 4px;
+  }
+  .gacha-dialog.is-fullscreen .el-dialog__body {
+    padding: 0 8px 8px;
+  }
 }
 </style>
