@@ -18,7 +18,7 @@
             ★ {{ group.markedCount }}
           </div>
         </div>
-        <div class="grid grid-cols-6 gap-1.5 lg:grid-cols-10">
+        <div class="grid grid-cols-5 gap-1.5 lg:grid-cols-10">
           <DrawCard
             v-for="d in group.draws"
             :key="d.id"
@@ -42,7 +42,7 @@
       <div
         :class="horizontal
           ? 'flex flex-row gap-1 overflow-x-auto pb-1'
-          : 'grid grid-cols-6 gap-1.5 lg:grid-cols-10'"
+          : 'grid grid-cols-5 gap-1.5 lg:grid-cols-10'"
       >
         <div
           v-for="(item, i) in flatItems"

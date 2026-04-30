@@ -36,7 +36,7 @@
         </div>
         <div
           v-else
-          class="grid grid-cols-6 gap-1 lg:grid-cols-10"
+          class="grid grid-cols-5 gap-1 lg:grid-cols-10"
         >
           <button
             v-for="hero in filteredHeroes"
