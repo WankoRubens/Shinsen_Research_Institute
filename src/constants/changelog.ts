@@ -33,6 +33,14 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.3.0',
+    date: '2026-04-30',
+    entries: [
+      { tag: 'feat', text: '抽卡紀錄：登入後從右上使用者選單 →「抽卡紀錄」開啟。可建立多個自訂池、設定池內 S 級武將、即時登錄每抽，自動算保底；標記某武將為稀有後，本池內所有同名武將會一起亮起並重置保底計數' },
+      { tag: 'feat', text: '抽卡紀錄分享：分享按鈕產生唯讀連結，對方開啟可看到完整時間軸、Top 10 與保底統計，無需登入' },
+    ],
+  },
+  {
     version: '0.2.1',
     date: '2026-04-27',
     entries: [

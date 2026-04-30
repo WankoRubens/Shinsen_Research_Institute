@@ -5,13 +5,8 @@
 //
 // Same PostgREST-via-fetch pattern as share.ts.
 
-import { SUPABASE_URL, SUPABASE_KEY, fetchWithTimeout, isSupabaseConfigured } from './supabase'
-import { getSession, getValidAccessToken } from './auth'
-
-const restHeaders = (userToken: string): HeadersInit => ({
-  apikey: SUPABASE_KEY!,
-  Authorization: `Bearer ${userToken}`,
-})
+import { SUPABASE_URL, fetchWithTimeout, isSupabaseConfigured, restHeaders } from './supabase'
+import { requireAuth } from './auth'
 
 export const isProfilesEnabled = isSupabaseConfigured
 
@@ -23,15 +18,6 @@ export interface Profile {
   is_default: boolean
   created_at: string
   updated_at: string
-}
-
-const requireAuth = async (): Promise<{ userId: string; token: string }> => {
-  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('profiles backend not configured')
-  const session = getSession()
-  if (!session) throw new Error('not signed in')
-  const token = await getValidAccessToken()
-  if (!token) throw new Error('session expired')
-  return { userId: session.user.id, token }
 }
 
 export const listMyProfiles = async (): Promise<Profile[]> => {

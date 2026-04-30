@@ -2,7 +2,7 @@
 // share encodes, but behind a slug so the visible URL stays compact.
 // Uses Supabase PostgREST directly via fetch — no client SDK dependency.
 
-import { SUPABASE_URL, SUPABASE_KEY, fetchWithTimeout, isSupabaseConfigured } from './supabase'
+import { SUPABASE_URL, SUPABASE_KEY, fetchWithTimeout, isSupabaseConfigured, restHeaders } from './supabase'
 import { getSession, getValidAccessToken } from './auth'
 
 const SLUG_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -19,16 +19,6 @@ const generateSlug = (len: number): string => {
 // Slugs we generate match this shape; widened on collision but never wider
 // than 14 chars. Used to reject malformed input before a wasted round-trip.
 const SLUG_PATTERN = /^[A-Za-z0-9]{12,14}$/
-
-// Build PostgREST headers. With a user JWT, PostgREST evaluates RLS as that
-// user (authenticated role). Without one, it evaluates as anon.
-const restHeaders = (userToken: string | null): HeadersInit => {
-  const key = SUPABASE_KEY!
-  return {
-    apikey: key,
-    Authorization: `Bearer ${userToken ?? key}`,
-  }
-}
 
 export const isShareEnabled = isSupabaseConfigured
 

@@ -19,3 +19,13 @@ export const fetchWithTimeout = async (url: string, init: RequestInit = {}): Pro
 }
 
 export const isSupabaseConfigured = (): boolean => Boolean(SUPABASE_URL && SUPABASE_KEY)
+
+// PostgREST auth headers. Pass null/undefined to call as anon (unauthenticated
+// reads via RLS public policies). Pass a JWT to call as the authenticated user.
+export const restHeaders = (userToken: string | null): HeadersInit => {
+  const key = SUPABASE_KEY!
+  return {
+    apikey: key,
+    Authorization: `Bearer ${userToken ?? key}`,
+  }
+}

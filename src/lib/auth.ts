@@ -255,6 +255,17 @@ export const getValidAccessToken = async (): Promise<string | null> => {
   return session.access_token
 }
 
+// Throw-on-failure auth gate for backend modules that always require a logged-in
+// user (profiles, gachaLog). Returns the user id + a refreshed access token.
+export const requireAuth = async (): Promise<{ userId: string; token: string }> => {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('supabase backend not configured')
+  const session = getSession()
+  if (!session) throw new Error('not signed in')
+  const token = await getValidAccessToken()
+  if (!token) throw new Error('session expired')
+  return { userId: session.user.id, token }
+}
+
 // PATCH the current user's display_name into auth.users.user_metadata.
 // Updates the local session immediately so reactive UIs reflect the change
 // without waiting for the next JWT refresh.

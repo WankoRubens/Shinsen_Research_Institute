@@ -1,5 +1,6 @@
 <template>
-  <el-container class="w-full bg-slate-50" style="height: 100dvh">
+  <GachaSpectatorView v-if="gachaSpectatorBlob" :blob="gachaSpectatorBlob" />
+  <el-container v-else class="w-full bg-slate-50" style="height: 100dvh">
     <el-header class="app-header bg-white border-b border-gray-200 flex items-center justify-between px-0 md:px-4 sticky top-0 z-50">
       <div class="flex items-center gap-1 md:gap-4">
         <!-- Mobile Menu Button -->
@@ -106,6 +107,9 @@
                 </el-dropdown-item>
                 <el-dropdown-item command="my-profiles">
                   <el-icon class="mr-1"><User /></el-icon> 管理角色配置
+                </el-dropdown-item>
+                <el-dropdown-item command="gacha-log">
+                  <el-icon class="mr-1"><Coin /></el-icon> 抽卡紀錄
                 </el-dropdown-item>
 
                 <!-- Sharing -->
@@ -643,6 +647,9 @@
     <!-- My Profiles Dialog -->
     <MyProfilesDialog v-model="myProfilesDialogVisible" />
 
+    <!-- Gacha Log Dialog -->
+    <GachaLogDialog v-model="gachaLogDialogVisible" />
+
     <!-- Auth Dialog -->
     <el-dialog v-model="authDialogVisible" title="登入帳號" width="340px" align-center>
       <div class="flex flex-col gap-3 pb-1">
@@ -723,7 +730,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Flag, Share, Delete, Edit, Close, Check, Menu, User, ArrowDown, Star, StarFilled, Bell } from '@element-plus/icons-vue'
+import { Flag, Share, Delete, Edit, Close, Check, Menu, User, ArrowDown, Star, StarFilled, Bell, Coin } from '@element-plus/icons-vue'
 import LineupSlot from '../components/LineupSlot.vue'
 import SkillDescription from '../components/SkillDescription.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
@@ -731,6 +738,8 @@ import SkillLibrary from '../components/SkillLibrary.vue'
 import MobileSlotDetail from '../components/MobileSlotDetail.vue'
 import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
 import MyProfilesDialog from '../components/dialogs/MyProfilesDialog.vue'
+import GachaLogDialog from '../components/dialogs/GachaLogDialog.vue'
+import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 import { LATEST_VERSION } from '../constants/changelog'
 
 import { useData, Hero, Skill, Trait } from '../composables/useData'
@@ -744,6 +753,7 @@ import {
   listMyShares, renameMyShare, pinMyShare, deleteMyShare, type MyShare,
 } from '../lib/share'
 import { handleAuthCallback, type OAuthProvider } from '../lib/auth'
+import type { SpectatorBlob } from '../lib/gachaLog'
 import { useAuth } from '../composables/useAuth'
 import { useActiveProfile } from '../composables/useActiveProfile'
 import { listMyProfiles } from '../lib/profiles'
@@ -1251,6 +1261,10 @@ const onSignIn = (provider: OAuthProvider) => {
 }
 
 const myProfilesDialogVisible = ref(false)
+const gachaLogDialogVisible = ref(false)
+// Set by initFromHash when an incoming share is a v3 gacha-log snapshot.
+// Non-null switches the whole UI to spectator mode (no edit affordances).
+const gachaSpectatorBlob = ref<SpectatorBlob | null>(null)
 const { applyProfile, clearActiveProfile, activeProfileName } = useActiveProfile()
 
 // Auto-apply the user's default profile after initFromHash settles. Skips
@@ -1285,6 +1299,8 @@ const onUserMenu = async (cmd: string) => {
     openMySharesDialog()
   } else if (cmd === 'my-profiles') {
     myProfilesDialogVisible.value = true
+  } else if (cmd === 'gacha-log') {
+    gachaLogDialogVisible.value = true
   } else if (cmd === 'changelog') {
     openChangelogDialog()
   }
@@ -1307,6 +1323,7 @@ const editingDraft = ref('')
 watch(sessionExpiredCount, () => {
   myProfilesDialogVisible.value = false
   mySharesDialogVisible.value = false
+  gachaLogDialogVisible.value = false
   renameDialogVisible.value = false
   clearActiveProfile()
   ElMessage.warning('登入已過期，請重新登入以同步雲端資料')
@@ -1472,6 +1489,14 @@ const initFromHash = async (): Promise<boolean> => {
       } else {
         const json = decodeURIComponent(escape(atob(rawHash)))
         data = JSON.parse(json) as ShareableData
+      }
+      // v3 = gacha-log snapshot — render spectator UI instead of restoring
+      // into the lineup builder. Anything that v3 doesn't carry (lineups,
+      // inventory) stays untouched, so the URL is purely a viewer experience.
+      const maybeBlob = data as Partial<SpectatorBlob>
+      if (maybeBlob?.v === 3 && maybeBlob?.kind === 'gacha_log') {
+        gachaSpectatorBlob.value = maybeBlob as SpectatorBlob
+        return true
       }
       restoreFromBlob(data)
       ElMessage.success('已載入分享的配置')
