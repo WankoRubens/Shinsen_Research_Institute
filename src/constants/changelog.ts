@@ -33,6 +33,15 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.3.1',
+    date: '2026-05-03',
+    entries: [
+      { tag: 'feat', text: '隊伍數量從 5 隊擴充到 10 隊；現有隊伍與分享連結皆相容，多出的 6–10 隊預設為空白' },
+      { tag: 'ui', text: 'Footer 連結文字改為「建議或回報」，除翻譯問題外也歡迎提出功能建議' },
+      { tag: 'data', text: '修正以下武將名稱、屬性或兵學：立花誾千代（名稱修正、新增兵學）、本多正信（屬性）、柿崎景家／鈴木佐大夫／加藤嘉明／真田昌幸／阿松／安宅冬康／伊達輝宗（新增兵學）' },
+    ],
+  },
+  {
     version: '0.3.0',
     date: '2026-04-30',
     entries: [
