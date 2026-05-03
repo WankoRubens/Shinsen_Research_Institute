@@ -1850,25 +1850,7 @@ heroes:
         - 天時
         - 不惑
         - 明鏡
-  阿江:
-    _replaces: お江  # drops the kana-named crawled hero
-    name: 阿江
-    portrait: https://duk.tw/ZYcxET.png
-    rarity: 5
-    cost: 6
-    faction: 德川
-    clan: 德川家
-    gender: 女
-    stats:
-      lea: 155.5
-      val: 65.5
-      int: 171
-      pol: 149.5
-      cha: 156
-      spd: 72
-    unique_skill: 風姿綽約
-    teachable_skill: 攻其不備
-    assembly_skill: ''
+  お江:
     traits:
     - name: 花枝招展
       description: 自身受到普通攻擊時，有45%機率（受魅力影響）回復自身兵力（治療率68%，受智略影響），最多觸發3次
@@ -1882,26 +1864,7 @@ heroes:
     - name: 智慧II
       description: 智略提高2.5%
       active: true
-    _action: add
-  阿初:
-    _replaces: お初  # drops the kana-named crawled hero
-    name: 阿初
-    portrait: https://duk.tw/OjJGSa.png
-    rarity: 5
-    cost: 6
-    faction: 豐臣
-    clan: 豐臣家
-    gender: 女
-    stats:
-      lea: 145
-      val: 63
-      int: 173
-      pol: 158
-      cha: 153.5
-      spd: 69
-    unique_skill: 同氣連枝
-    teachable_skill: 攻其不備
-    assembly_skill: ''
+  お初:
     traits:
     - name: 手足之愛
       description: 戰鬥中，每回合首次治療其他武將時，有100%機率使自身統率增加其主屬性的12%，持續1回合
@@ -1915,7 +1878,6 @@ heroes:
     - name: 智慧II
       description: 智略提高2.5%
       active: true
-    _action: add
   本多正信:
     _action: modify
     stats:
