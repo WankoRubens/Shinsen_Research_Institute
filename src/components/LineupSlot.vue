@@ -543,7 +543,7 @@ const props = defineProps({
   skill1: Object as PropType<Skill | null>,
   skill2: Object as PropType<Skill | null>,
   stats: Object as PropType<any>,
-  equipTraits: Array as PropType<Trait[]>,
+  equipTraits: Array as PropType<(Trait | null)[]>,
   breakthrough: { type: Number, default: 0 },
   bingxue: { type: Object as PropType<BingxueActive>, default: () => ({ direction: null, major: null, minors: [] }) },
   focusedSkillSlot: Number as PropType<number | null>,

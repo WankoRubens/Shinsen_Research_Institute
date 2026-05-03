@@ -1245,7 +1245,7 @@ watch(changelogDialogVisible, (now, prev) => {
 
 // --- Auth ---
 const {
-  user, isLoggedIn, displayName, needsDisplayName,
+  isLoggedIn, displayName, needsDisplayName,
   signIn, signOut, updateDisplayName, refreshFromStorage,
   sessionExpiredCount,
 } = useAuth()

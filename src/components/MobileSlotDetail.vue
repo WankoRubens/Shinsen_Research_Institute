@@ -77,7 +77,7 @@ const props = defineProps({
   roleName: String,
   hero: Object as PropType<Hero | null>,
   stats: { type: Object as PropType<any>, required: true },
-  equipTraits: Array as PropType<Trait[]>
+  equipTraits: Array as PropType<(Trait | null)[]>
 })
 
 const emit = defineEmits(['update:hero', 'open-stats', 'open-equip']) // traits update logic is internal to hero object for now, or we can emit update
