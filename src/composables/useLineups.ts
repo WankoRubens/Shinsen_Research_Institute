@@ -60,7 +60,7 @@ const emptyRole = (): RoleData => ({
   bingxue: emptyBingxue(),
 })
 
-const lineups = reactive<Lineup[]>(Array.from({ length: 5 }, (_, i) => ({
+const lineups = reactive<Lineup[]>(Array.from({ length: 10 }, (_, i) => ({
   name: `隊伍 ${i + 1}`,
   main: emptyRole(),
   vice1: emptyRole(),

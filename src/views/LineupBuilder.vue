@@ -154,7 +154,7 @@
       <!-- View 1: Lineup Builder (Default) -->
       <div v-if="!isEditingInventory" class="flex flex-col md:flex-row h-full">
         <!-- Left Sidebar: Team List (Desktop) -->
-        <div class="hidden md:flex w-20 bg-gray-900 flex-col items-center py-4 gap-4 flex-shrink-0 z-50">
+        <div class="hidden md:flex w-20 bg-gray-900 flex-col items-center py-4 gap-4 flex-shrink-0 z-50 overflow-y-auto">
           <div 
             v-for="(team, idx) in lineups" 
             :key="idx"
@@ -188,7 +188,7 @@
           :with-header="false"
           class="bg-gray-900"
         >
-          <div class="h-full bg-gray-900 p-4 flex flex-col gap-4">
+          <div class="h-full bg-gray-900 p-4 flex flex-col gap-4 overflow-y-auto">
              <div class="text-white font-bold text-lg border-b border-gray-700 pb-2 mb-2">隊伍列表</div>
              <div 
                 v-for="(team, idx) in lineups" 
@@ -1158,7 +1158,7 @@ const restoreFromBlob = (data: ShareableData) => {
 
   if (data.lineups && Array.isArray(data.lineups)) {
     data.lineups.forEach((l, i) => {
-      if (i >= 5) return
+      if (i >= lineups.length) return
       const target = lineups[i]
       if (l.name) target.name = l.name
       const restore = (prefix: string, role: RoleData) => {
