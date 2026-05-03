@@ -43,5 +43,8 @@ data/*
 .pytest_cache/
 ai-doc/
 
+# Supabase CLI local state (per-machine: project ref, pooler URL, version pins)
+supabase/.temp/
+
 # Secrets
 .env

@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
+    "supabase": "^2.98.0",
     "typescript": "^5.2.2",
     "vite": "^8.0.10",
     "vite-plugin-singlefile": "^2.0.0",
