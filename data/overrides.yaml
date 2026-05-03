@@ -1916,3 +1916,12 @@ heroes:
       description: 智略提高2.5%
       active: true
     _action: add
+  本多正信:
+    _action: modify
+    stats:
+      val: 43
+      int: 192
+      lea: 83
+      spd: 86
+      pol: 207
+      cha: 204
