@@ -83,7 +83,7 @@ skills:
         max: 0.16
       extra_trigger_count: 1
     _action: add
-    unique_hero: 立花闇千代
+    unique_hero: 立花誾千代
     is_unique: true
   惠風和雨:
     name: 惠風和雨
@@ -104,7 +104,7 @@ skills:
         max: 0.2
       target_count: 2
     _action: add
-    source_hero: 立花闇千代
+    source_hero: 立花誾千代
   電光石火:
     name: 電光石火
     type: 主動
@@ -1219,9 +1219,9 @@ heroes:
     - name: 猛攻II
       description: 我軍全體造成兵刃傷害增加1.8%
       active: true
-  立花闇千代:
+  立花誾千代:
     _action: add
-    name: 立花闇千代
+    name: 立花誾千代
     rarity: 5
     cost: 7
     faction: 群雄
