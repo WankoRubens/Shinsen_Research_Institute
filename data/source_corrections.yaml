@@ -1,0 +1,57 @@
+# Known errors in upstream sources, applied BEFORE merging.
+#
+# This file fixes the source data so downstream matching/joining sees the
+# corrected version. It runs at a different layer from `overrides.yaml`:
+#
+#   source_corrections.yaml — pre-merge: fix what an upstream got wrong
+#                              (game8 has stale name, cfg lists wrong owner)
+#                              affects join keys + downstream lookups
+#
+#   overrides.yaml          — post-merge: project decisions about final
+#                              output (event-only skills, manual fine-tuning,
+#                              add/modify/delete final entries)
+#
+# Each entry MUST cite evidence so a future maintainer can re-verify when
+# the upstream might have fixed itself. Include `noted` (date, ISO) and
+# `verified_by` (who confirmed: `user`, `cfg_diff_auto`, etc.).
+
+# ---------------------------------------------------------------------------
+# game8.jp source corrections
+# ---------------------------------------------------------------------------
+game8_skill_renames:
+  豊後の戦陣:
+    rename_to: 豊後の戦神
+    cht: 豐後戰神
+    reason: |
+      game8 stale name. Both cfg.hero[10057].born_skill ("豊後の戦神") and
+      JP-server gameplay confirm 戦神 (war god), not 戦陣 (battle formation).
+      Likely a renaming the JP wiki hasn't synced.
+    noted: 2026-05-07
+    verified_by: user
+
+  薙ぎ払い:
+    rename_to: 斬り
+    cht: 斬斷
+    reason: |
+      game8 lists the effect description ("薙ぎ払い" = "sweeping strike")
+      as the skill name. The actual canonical name is 斬り (cut/slash).
+      cfg has cfg.hero[12001 小早川秀秋].born_skill = 挥砍 (zh-hans),
+      multi_lang ja = 斬り, zh-hant = 斬斷.
+    noted: 2026-05-07
+    verified_by: user
+
+# When game8 mis-classifies a teachable as a hero's unique skill, or vice
+# versa. Removing from `unique` and adding to `teachable` are independent
+# operations — set whichever apply.
+game8_skill_reattributions:
+  百戦錬磨:
+    set_is_unique: false
+    set_is_teachable: true
+    remove_from_hero_unique: 太田資正
+    add_to_hero_teachable: 太田資正
+    reason: |
+      game8 mis-classifies 百戦錬磨 as 太田資正's unique. Actually a
+      teachable shared skill that 太田 has access to. cfg confirms:
+      太田資正's true unique born_skill is 三楽犬 (cfg id=20053).
+    noted: 2026-05-07
+    verified_by: user
