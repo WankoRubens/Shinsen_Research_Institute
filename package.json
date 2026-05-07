@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "refresh": "uv run script/refresh_sources.py",
+    "refresh:cfg": "uv run script/refresh_sources.py --skip-crawl",
     "data": "uv run script/build_frontend_data.py && uv run script/check_build.py && uv run script/check_coverage.py",
     "dev": "npm run data && vite",
     "build": "npm run data && vite build",

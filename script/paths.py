@@ -11,6 +11,23 @@ BUILD_DIR = Path(".build")
 CRAWL_CACHE_DIR = DATA_DIR / ".crawl_cache"
 LLM_CACHE_DIR = DATA_DIR / ".llm_cache"
 
+# New layout (refactor): game8 outputs collected under data/game8/, cfg under
+# data/cfg/, prototype merge artifacts under data/prototype/. Old *_CRAWLED
+# constants below remain as the canonical paths for one migration cycle.
+GAME8_DIR = DATA_DIR / "game8"
+CFG_DIR = DATA_DIR / "cfg"
+CFG_HISTORY_DIR = DATA_DIR / ".cfg_history"
+PROTOTYPE_DIR = DATA_DIR / "prototype"
+
+CFG_CURRENT_JSON = CFG_DIR / "cfg_current.json"
+CFG_LAST_DIFF_SUMMARY = CFG_DIR / "last_diff_summary.txt"
+CFG_DIFF_REPORT = BUILD_DIR / "cfg_diff_report.md"
+
+# Manual files for the three-layer override system.
+CFG_ALIASES_PATH = DATA_DIR / "cfg_aliases.yaml"
+SOURCE_CORRECTIONS_PATH = DATA_DIR / "source_corrections.yaml"
+KEY_NORMALIZATION_PATH = DATA_DIR / "key_normalization.yaml"
+
 # Crawl outputs
 HEROES_CRAWLED = DATA_DIR / "heroes_crawled.yaml"
 SKILLS_CRAWLED = DATA_DIR / "skills_crawled.yaml"
