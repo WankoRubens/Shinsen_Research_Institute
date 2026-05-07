@@ -55,10 +55,10 @@ function rebuildDataShortcut(): PluginOption {
 function injectProdCsp(): PluginOption {
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://esm.sh",
+    "script-src 'self' 'unsafe-inline' https://esm.sh https://static.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline' https://unpkg.com",
     "img-src 'self' data: https:",
-    "connect-src 'self' https://esm.sh https://*.supabase.co",
+    "connect-src 'self' https://esm.sh https://*.supabase.co https://cloudflareinsights.com",
     "font-src 'self' data:",
     "object-src 'none'",
     "base-uri 'self'",
