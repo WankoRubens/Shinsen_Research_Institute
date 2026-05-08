@@ -28,9 +28,6 @@ CFG_ALIASES_PATH = DATA_DIR / "cfg_aliases.yaml"
 SOURCE_CORRECTIONS_PATH = DATA_DIR / "source_corrections.yaml"
 KEY_NORMALIZATION_PATH = DATA_DIR / "key_normalization.yaml"
 
-# llm_fill outputs (Phase 4) — generated, regenerable from cfg + LLM cache
-TIPS_ZH_HANT_FILLED = PROTOTYPE_DIR / "tips_zh_hant_filled.yaml"
-
 # Crawl outputs
 HEROES_CRAWLED = DATA_DIR / "heroes_crawled.yaml"
 SKILLS_CRAWLED = DATA_DIR / "skills_crawled.yaml"
