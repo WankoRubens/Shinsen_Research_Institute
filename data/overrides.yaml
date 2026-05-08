@@ -1050,6 +1050,7 @@ heroes:
         - 天時
   立花誾千代:
     _action: add
+    _replaces: 立花闇千代
     gender: 女
     portrait: https://i.imgur.com/uHjLFYR.png
     detail_url: ''

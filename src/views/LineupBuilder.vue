@@ -1140,8 +1140,10 @@ const { heroes, skills } = useData()
 // Restore in-memory state from a ShareableData blob (used by share links AND
 // by sign-in recovery). Lookups try JP first (v2), CHT second (v1 / legacy).
 const restoreFromBlob = (data: ShareableData) => {
-  const findHeroByKey = (key: string) => heroes.value.find(h => h.name_jp === key || h.name === key)
-  const findSkillByKey = (key: string) => skills.value.find(s => s.name_jp === key || s.name === key)
+  const findHeroByKey = (key: string) =>
+    heroes.value.find(h => h.name_jp === key || h.name === key || h.aliases?.includes(key))
+  const findSkillByKey = (key: string) =>
+    skills.value.find(s => s.name_jp === key || s.name === key || s.aliases?.includes(key))
   // Drop empty strings — legacy Supabase rows from before the pipeline
   // emitted `name_jp = null` for override-added skills may contain `""` keys
   // that find nothing and would otherwise survive via the `?? k` fallback.

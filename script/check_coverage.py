@@ -94,17 +94,26 @@ def check() -> list[str]:
     for k in missing_heroes:
         errors.append(f"Hero '{k}' is in heroes_crawled.yaml but missing from heroes_translated.yaml")
 
-    # ---- Sanity: override `_replaces` / replace-key points at something real --
-    # Flags typos in overrides so users notice when a JP name doesn't match any crawled key.
+    # ---- Sanity: replace/delete keys must point at something real -----------
+    # Flags typos so users notice when a JP key doesn't match any crawled entry.
+    # `_replaces` on `_action: add` is intentionally NOT checked: it now
+    # doubles as a runtime alias (e.g. typo migrations like 立花闇千代→立花誾千代),
+    # and the historical name need not exist in any upstream YAML.
     for name, expected_set, scope in (
         ("skill", crawled_skills, "skills"),
         ("hero", crawled_hero_names, "heroes"),
     ):
-        for jp_key in _override_handled_keys(overrides.get(scope, {})):
-            if jp_key not in expected_set:
+        section = overrides.get(scope, {}) or {}
+        if not isinstance(section, dict):
+            continue
+        for key, entry in section.items():
+            if not isinstance(entry, dict):
+                continue
+            action = entry.get("_action", "modify")
+            if action in ("delete", "replace") and key not in expected_set:
                 errors.append(
-                    f"Override on {name} '{jp_key}' references a JP name not present in {scope}_crawled.yaml "
-                    f"(typo? or crawl hasn't picked up this entry yet)"
+                    f"Override on {name} '{key}' (_action={action}) references a JP name not present "
+                    f"in {scope}_crawled.yaml (typo? or crawl hasn't picked up this entry yet)"
                 )
 
     return errors

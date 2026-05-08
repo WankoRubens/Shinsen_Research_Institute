@@ -85,6 +85,9 @@ export interface Skill {
   // null for override-added skills not yet on game8.jp — distinguishes "no JP
   // key" from "JP key not loaded yet" so the CHT⇄JP fallback can fire correctly
   name_jp?: string | null;
+  // Historical names this skill replaced (e.g. fixed typos). Profile/inventory
+  // lookups treat these as alternate keys so saved references still resolve.
+  aliases?: string[];
   type: string;
   tags: string[];
   rarity: string;
@@ -150,6 +153,7 @@ export type HeroBingxue = Record<BingxueDirection, { major: string[]; minor: str
 export interface Hero {
   name: string
   name_jp?: string | null
+  aliases?: string[]
   faction: string
   clan?: string
   cost: number

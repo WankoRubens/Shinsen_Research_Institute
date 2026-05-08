@@ -19,10 +19,16 @@ export function useActiveProfile() {
   // override-added entities with name_jp = null). Legacy Supabase rows from
   // before the pipeline emitted null may contain `""` keys — those naturally
   // miss both clauses and get filtered out by the `.filter(Boolean)` below.
+  // `aliases` covers historical names (e.g. typo corrections) so old saved
+  // references migrate to the canonical name on first apply.
   const findHero = (key: string): Hero | undefined =>
-    heroes.value.find(h => h.name_jp === key || h.name === key)
+    heroes.value.find(h =>
+      h.name_jp === key || h.name === key || h.aliases?.includes(key)
+    )
   const findSkill = (key: string): Skill | undefined =>
-    skills.value.find(s => s.name_jp === key || s.name === key)
+    skills.value.find(s =>
+      s.name_jp === key || s.name === key || s.aliases?.includes(key)
+    )
 
   // Replaces the current inventory with the profile's contents AND marks it
   // active. Unknown JP keys (renamed/removed heroes) are silently dropped —

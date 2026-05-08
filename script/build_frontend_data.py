@@ -306,6 +306,13 @@ def deep_merge(base: dict, override: dict) -> dict:
     return result
 
 
+def _normalize_replaces(replaces) -> list[str]:
+    """`_replaces` may be a single str (legacy) or a list. Always return a
+    deduplicated list preserving order."""
+    if not replaces:
+        return []
+    items = [replaces] if isinstance(replaces, str) else list(replaces)
+    return list(dict.fromkeys(items))
 
 
 
@@ -373,7 +380,12 @@ def apply_skill_overrides(
             continue
         if action == "replace":
             _drop(key)
+            aliases = _normalize_replaces(ov.get("_replaces"))
+            for old in aliases:
+                _drop(old)
             clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+            if aliases:
+                clean["aliases"] = aliases
             _fill_cfg(clean, key)
             skills.append(_skill_stub_defaults(clean))
             continue
@@ -381,9 +393,12 @@ def apply_skill_overrides(
             # Only honor explicit _replaces. Duplicate-name detection is
             # check_build.py's job — silently dropping a same-named existing
             # entry here would mask typos.
-            if ov.get("_replaces"):
-                _drop(ov["_replaces"])
+            aliases = _normalize_replaces(ov.get("_replaces"))
+            for old in aliases:
+                _drop(old)
             clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+            if aliases:
+                clean["aliases"] = aliases
             _fill_cfg(clean, key)
             skills.append(_skill_stub_defaults(clean))
             continue
@@ -456,14 +471,22 @@ def apply_hero_overrides(
             continue
         if action == "replace":
             _drop(key)
+            aliases = _normalize_replaces(ov.get("_replaces"))
+            for old in aliases:
+                _drop(old)
             clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+            if aliases:
+                clean["aliases"] = aliases
             _fill_cfg(clean, key)
             heroes.append(_hero_stub_defaults(clean, key))
             continue
         if action == "add":
-            if ov.get("_replaces"):
-                _drop(ov["_replaces"])
+            aliases = _normalize_replaces(ov.get("_replaces"))
+            for old in aliases:
+                _drop(old)
             clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+            if aliases:
+                clean["aliases"] = aliases
             _fill_cfg(clean, key)
             heroes.append(_hero_stub_defaults(clean, key))
             continue
