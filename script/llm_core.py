@@ -134,6 +134,99 @@ Output ONLY valid YAML. No markdown fences. No explanation."""
 
 
 # ---------------------------------------------------------------------------
+# Phase 4 — narrow prompt for tips_zh_hant polish (post-OpenCC)
+# ---------------------------------------------------------------------------
+#
+# Input: a CHT string that's already been run through OpenCC s2tw. Most chars
+# are already correct; this pass cleans up the residual term mismatches OpenCC
+# can't catch (CHT-region vocabulary that's character-correct but term-wrong).
+#
+# Cache strategy: this system prompt is sized to comfortably exceed the Haiku
+# 4096-token cache floor when used together with COMMON_RULES, so all 25
+# polish calls share a single cache write.
+
+TIPS_ZH_HANT_POLISH_PROMPT = """\
+You polish a Traditional Chinese (zh-hant) game-skill tip for the game
+《信長之野望：真戰》. The input has already been character-converted from
+zh-hans via OpenCC s2tw, so most characters are correct. Your job is to
+clean up the residual term-level mismatches that character conversion alone
+can't fix, while preserving every numeric placeholder and HTML tag exactly.
+
+### Term conventions (apply to ALL output)
+
+Force these substitutions even if OpenCC missed them:
+  知略 → 智略
+  計略 → 謀略
+  計略傷害 → 謀略傷害
+  類型 (keep as 類型, not 型別)
+  受X影响 → 受X影響
+
+### Canonical status names
+
+When the text references a status effect, use ONLY these canonical names
+(replace any synonym):
+""" + CANONICAL_STATUSES + """
+
+Common synonym → canonical mappings:
+  震懾/震撼 → 威壓
+  恐慌/驚慌 → 混亂
+  攪亂 → 混亂
+  嘲諷/挑撥 → 挑釁
+  繳械 → 封擊
+  計窮 → 無策
+  潰逃 → 潰走
+  消沈 → 消沉
+  回避 → 閃避
+  回生 → 休養
+  心攻 → 攻心
+  奇策 → 奇謀
+
+### Skill type — exactly one of: 被動, 主動, 指揮, 突擊, 兵種, 陣法
+Never append 戰法 (no "被動戰法").
+
+### Damage type — exactly: 兵刃傷害, 謀略傷害, 真實傷害
+
+### What MUST be preserved exactly
+
+- All numeric placeholders: {1}, {2}, {1%}, {2%}, etc. — never rename, reorder,
+  add, or drop them. The build later maps them to {var:name} using the
+  variable list from game8.
+- All HTML/font tags: <font color='#xxxxxx'>...</font>, <br>, etc.
+- All percentage signs `%`, parentheses `（）`, full-width punctuation.
+
+### Output format
+
+Output ONLY the polished CHT text. No commentary. No markdown fences.
+No "Here is the polished text:" preamble. The first character of your
+response is the first character of the output.
+
+If the input is already perfect, output it unchanged.
+"""
+
+
+# ---------------------------------------------------------------------------
+# OpenCC helper (Phase 4)
+# ---------------------------------------------------------------------------
+
+_opencc_s2tw = None
+
+
+def opencc_s2tw(text: str) -> str:
+    """zh-hans → zh-hant via OpenCC s2tw config.
+
+    Lazy-loads the converter (the OpenCC dict load is the most expensive
+    part). Empty/None input returns ''.
+    """
+    if not text:
+        return ""
+    global _opencc_s2tw
+    if _opencc_s2tw is None:
+        from opencc import OpenCC  # local import — keeps module load cheap
+        _opencc_s2tw = OpenCC("s2tw")
+    return _opencc_s2tw.convert(text)
+
+
+# ---------------------------------------------------------------------------
 # OpenRouter client (raw httpx + per-block cache_control)
 # ---------------------------------------------------------------------------
 
