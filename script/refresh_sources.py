@@ -123,6 +123,14 @@ def main() -> int:
         if rc != 0:
             return rc
 
+    # --- 4. rebuild prototype layer ---------------------------------------
+    # Runs after either crawl or cfg refresh, since both change the merge
+    # inputs. Keeps data/prototype/*_proto.yaml in sync without a separate
+    # manual step.
+    rc = _run("merge_sources", [uv, "run", "script/merge_sources.py"])
+    if rc != 0:
+        return rc
+
     print("\n[refresh_sources] all steps complete")
     return 0
 

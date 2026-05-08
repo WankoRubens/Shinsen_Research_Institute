@@ -57,7 +57,6 @@ skills:
     name: 疾風迅雷
     type: 指揮
     rarity: S
-    target: 敵軍群體
     activation_rate: 1.0
     description: 戰鬥中，有 {var:trigger_chance}{scale:武勇}機率對敵方群體 ({var:target_count}人)
       分別造成兵刃傷害 (傷害率 {var:damage_rate})，有 {var:status_chance}{scale:武勇}機率使其進入持續{var:status_duration}回合的{status:麻痺}狀態。若目標處於{status:麻痺}狀態，恢復我軍單體兵力
@@ -89,7 +88,6 @@ skills:
     name: 惠風和雨
     type: 指揮
     rarity: S
-    target: 我方群體
     activation_rate: 1.0
     description: 戰鬥中，偶數回合，有{var:trigger_rate_even}機率治療我軍群體（{var:target_count}人）（治療率{var:heal_rate}，受{scale:智略}影響）；若自身為女性武將，則奇數回合也有{var:trigger_rate_odd}機率（受{scale:魅力}影響）治療我軍群體（{var:target_count}人）（治療率{var:heal_rate}，受{scale:智略}影響）。
     vars:
@@ -109,7 +107,6 @@ skills:
     name: 電光石火
     type: 主動
     rarity: S
-    target: 敵軍群體
     activation_rate: 0.4
     description: 對敵軍群體（{var:target_count}人）造成兵刃傷害(傷害率{var:dmg})，隨後使隨機友軍單體統率增加{var:stat_inc}點並{status:援護}自身，持續{var:duration}回合
     vars:
@@ -174,8 +171,8 @@ skills:
     _action: add
     unique_hero: 加藤嘉明
     is_unique: true
-  表裏比興:
-    name: 表裏比興
+  表裡比興:
+    name: 表裡比興
     type: 主動
     rarity: S
     target: 敵軍單體
@@ -224,7 +221,6 @@ skills:
     name: 松柏之操
     type: 指揮
     rarity: S
-    target: 我方單體
     activation_rate: 1.0
     description: 使我軍大將除自帶戰法外的主動戰法發動機率增加{var:active_prob_inc}{scale:int}，每次獲得自身或友軍戰法的功能性狀態增益時，有{var:trigger_chance}{scale:int}幾率使自軍副將受到的傷害降低{var:dmg_red}{scale:int}，持續{var:duration}回合，最多疊加{var:max_stack}次
     vars:
@@ -246,7 +242,6 @@ skills:
     name: 奇策縱橫
     type: 主動
     rarity: S
-    target: 敵軍全體
     activation_rate: 0.3
     description: 準備{var:prep_turns}回合，對敵軍全體造成謀略傷害（傷害率{var:dmg_rate}，受{scale:智略}影響）
     vars:
@@ -260,7 +255,6 @@ skills:
     name: 一舟軒
     type: 主動
     rarity: S
-    target: 友軍群體
     activation_rate: 0.4
     description: 恢復友軍群體（{var:target_num}人）兵力（恢復率{var:heal_rate}{scale:智略}），並有{var:prob}{scale:智略}機率使其獲得{var:stacks}次鐵壁，持續{var:duration}回合
     vars:
@@ -280,7 +274,6 @@ skills:
     name: 金城湯池
     type: 主動
     rarity: S
-    target: 敵軍群體
     activation_rate: 0.4
     description: '{status:牽制}敵軍群體（{var:target_count}人），並使自身受到戰法傷害降低{var:dmg_reduce}%{scale:智略}，持續{var:duration}回合，下個回合行動前恢復自身兵力（恢復率{var:heal_rate}%{scale:智略}）'
     vars:
@@ -321,10 +314,8 @@ skills:
     name: 同盟姻親
     type: 主動
     rarity: S
-    target: 自軍與異性友軍單體
     activation_rate: 40%
     description: 使自身與異性友軍單體受到傷害降低{var:damage_reduction}（{scale:智略}）， 並分擔{var:damage_share}其受到的傷害，持續{var:duration}回合。
-    brief_description: 降低傷害並分擔傷害
     tags:
     - 增益
     - 提升屬性
@@ -362,10 +353,8 @@ skills:
     name: 離心背道
     type: 主動
     rarity: S
-    target: 敵軍大將
     activation_rate: 35%
     description: 準備{var:prep_turns}回合，對敵方大將造成{var:damage_rate}兵刃傷害， 並使其造成的傷害降低{var:damage_debuff}，持續{var:debuff_duration}回合。
-    brief_description: 準備兵刃傷害並降低敵傷害
     tags:
     - 兵刃傷害
     - 單體傷害
@@ -403,11 +392,9 @@ skills:
     name: 疑兵盜城
     type: 主動
     rarity: S
-    target: 敵軍群體（2-3人）
     activation_rate: 35%
     description: 使自身智略增加{var:intelligence_buff}點（{scale:智略}），持續{var:buff_duration}回合，
       並使敵軍群體（2-3人）下次受到謀略傷害時，額外受到謀略傷害{var:extra_damage_rate}（{scale:智略}），持續{var:debuff_duration}回合。
-    brief_description: 增加智略並增加敵謀略傷害
     tags:
     - 謀略傷害
     - 群體傷害
@@ -454,11 +441,9 @@ skills:
     name: 乘虛而入
     type: 突擊
     rarity: S
-    target: 攻擊目標
     activation_rate: 35%
     description: 普通攻擊之後，降低攻擊目標武勇與智略{var:stat_debuff}點，持續{var:debuff_duration}回合。 此外，若目標已處於{status:挑釁}或{status:牽制}狀態，則使自身獲得{var:dodge_rate}{status:閃避}狀態，
       否則使攻擊目標進入{status:挑釁}及{status:牽制}狀態，持續{var:debuff_duration}回合。
-    brief_description: 降低屬性或施加控制狀態
     tags:
     - 控制
     - 降低屬性
@@ -512,10 +497,8 @@ skills:
     name: 大器之蘊
     type: 指揮
     rarity: A
-    target: 自軍群體（2人）
     activation_rate: 100%
     description: 第{var:start_turn}回合起，每回合恢復我軍群體（{var:target_count}人）兵力{var:heal_rate}（{scale:智略}）。
-    brief_description: 定期恢復友軍兵力
     tags:
     - 治療
     - 增益
@@ -547,10 +530,8 @@ skills:
     name: 立身之志
     type: 主動
     rarity: S
-    target: 敵軍全體
     activation_rate: 40%
     description: 使敵軍全體進入{status:挑釁}狀態，並使自身統率提高{var:leadership_buff}，持續{var:buff_duration}回合。
-    brief_description: 施加挑釁並提升自身統率
     tags:
     - 控制
     - 施加狀態
@@ -585,11 +566,9 @@ skills:
     name: 專橫專斷
     type: 主動
     rarity: S
-    target: 自身與敵軍單體
     activation_rate: 40%
     description: 使自身下次主動戰法造成兵刃傷害提高{var:damage_buff_base}，該戰法每次發動，使傷害提高效果增加{var:damage_buff_increment}，
       每第{var:debuff_trigger_count}次發動時，使敵軍單體進入{status:無策}狀態，持續1回合。
-    brief_description: 累積傷害加成並定期施加無策
     tags:
     - 兵刃傷害
     - 增益
@@ -645,7 +624,6 @@ skills:
     target: 敵軍單體
     activation_rate: 35%
     description: 對敵軍單體造成{var:damage_rate}謀略傷害， 並對其施加{status:封擊}效果，持續{var:debuff_duration}回合。
-    brief_description: 謀略傷害並施加封擊
     tags:
     - 謀略傷害
     - 單體傷害
@@ -677,11 +655,9 @@ skills:
     name: 破天轟鳴
     type: 主動
     rarity: A
-    target: 敵軍群體（2人）
     activation_rate: 35%
     description: 準備{var:prep_turns}回合，對敵軍群體（{var:target_count}人）施加{status:火傷}效果{var:fire_damage_rate}（{scale:智略}），
       並降低統率{var:leadership_debuff}點，持續{var:debuff_duration}回合。
-    brief_description: 準備火傷並降低統率
     tags:
     - 謀略傷害
     - 群體傷害
@@ -725,12 +701,10 @@ skills:
     name: 斬雷神
     type: 被動
     rarity: S
-    target: 自身
     activation_rate: 100%
     description: 戰鬥中，每回合獲得1層蓄勢，若蓄勢層數大於等於{var:stack_threshold}且自身未處於{status:威壓}狀態時，
       消耗全部蓄勢層數，獲得{var:crit_rate_at_threshold}{status:會心}狀態及{var:valor_buff_at_threshold}點武勇，持續{var:buff_duration}回合，
       若蓄勢層數大於{var:extra_stack_threshold}時，則額外獲得{var:extra_crit_rate}{status:會心}狀態及{var:extra_valor_buff}點武勇。
-    brief_description: 蓄勢觸發會心與武勇加成
     tags:
     - 增益
     - 施加狀態
@@ -801,11 +775,9 @@ skills:
     name: 南蠻東渡
     type: 主動
     rarity: A
-    target: 自軍群體（2-3人）
     activation_rate: 50%
     description: 準備{var:prep_turns}回合後，恢復我軍群體（2-{var:target_count}人）兵力{var:heal_rate}（{scale:智略}）。
       恢復南蠻好尚或南蠻信奉的友軍時，恢復率增加至{var:enhanced_heal_rate}。
-    brief_description: 準備恢復並對南蠻人加強效果
     tags:
     - 治療
     - 增益
@@ -848,10 +820,8 @@ skills:
     name: 疑心暗鬼
     type: 被動
     rarity: S
-    target: 自身
     activation_rate: 100%
     description: 使自身的自帶準備主動戰法發動率增加{var:prep_strategy_rate}（{scale:智略}）， 自帶準備主動戰法開始準備時，自身增加{var:intelligence_buff}點智略（{scale:智略}），持續{var:buff_duration}回合。
-    brief_description: 增強準備戰法並增加智略
     tags:
     - 增益
     - 提升屬性
@@ -894,11 +864,9 @@ skills:
     name: 直言極諫
     type: 主動
     rarity: S
-    target: 自軍群體（2人）
     activation_rate: 30%
     description: 使我軍群體（2人）受到傷害降低{var:damage_reduction}（{scale:智略}），持續{var:reduction_duration}回合，最多疊加{var:max_stacks}次。
       首回合行動前，使本戰法受到的發動率增加效果將翻倍並持續{var:multiplier_duration}回合。
-    brief_description: 降低傷害並增強首回合發動率
     tags:
     - 增益
     - 提升屬性
@@ -942,12 +910,10 @@ skills:
     name: 合盟之陣
     type: 陣法
     rarity: S
-    target: 自軍大將與副將
     activation_rate: 100%
     description: 我軍3人所屬勢力均不同，且我軍大將自帶戰法為主動或突擊時生效。 戰鬥中，使我軍大將自帶戰法發動率增加{var:strategy_rate_buff}。
       每回合行動前，使兵力較高的副將造成的傷害提高{var:higher_hp_damage_buff}，受到的傷害降低{var:higher_hp_damage_reduction}；
       兵力較低的副將造成傷害提高{var:lower_hp_damage_buff}，受到的傷害降低{var:lower_hp_damage_reduction}。
-    brief_description: 陣型增強大將與副將能力
     tags:
     - 增益
     - 提升屬性
@@ -1005,198 +971,12 @@ skills:
             value: $lower_hp_damage_reduction
     is_event_skill: true
     _action: add
-  風姿綽約:
-    _replaces: 風姿綽約  # JP and CHT names identical — drops untranslated crawled entry
-    name: 風姿綽約
-    type: 指揮
-    rarity: S
-    target: 自軍群體（2人）
-    activation_rate: --
-    raw_text: 戰鬥中，使友軍群體（2人）武勇提升2%->4%（受智略影響），該效果每回合額外疊加1層，最多疊加4層。疊滿後，每回合有32.5%->65%機率（受智略影響）對敵軍單體施加混亂、封擊、無策、疲弊狀態中的一種（不會重複施加），每個狀態持續1回合。
-    description: 戰鬥中，使自軍群體（2人）武勇提升{var:valor_buff}（{scale:智略}），該效果每回合額外疊加1層，最多疊加{var:stack_cap}層。疊滿後，每回合有{var:proc_rate}機率對敵軍單體施加{status:混亂}、{status:封擊}、{status:無策}、{status:疲弊}狀態中的一種（不會重複施加），每個狀態持續{var:status_duration}回合。
-    brief_description: 友軍武勇疊加提升，滿層後機率施加負面狀態
-    tags:
-    - 增益
-    - 提升屬性
-    - 施加狀態
-    - 指揮效果
-    - 智略系
-    - 大將技
-    vars:
-      valor_buff:
-        base: 0.02
-        max: 0.04
-        type: percentage
-        scale: 智略
-      stack_cap: 4
-      stack_per_turn: 1
-      proc_rate:
-        base: 0.325
-        max: 0.65
-        scale: 智略
-      status_duration: 1
-    battle:
-      type: 指揮
-      trigger: always
-      do:
-      - trigger: battleStart
-        to: allyMultiple
-        count: 2
-        do:
-        - type: addStack
-          stack_name: valor_buff_stack
-          max: $stack_cap
-          per_turn: $stack_per_turn
-      - trigger: turnStart
-        when: valor_buff_stack == $stack_cap
-        to: enemySingle
-        do:
-        - type: roll
-          chance: $proc_rate
-          on_success:
-          - type: applyStatus
-            status: 混亂|封擊|無策|疲弊
-            duration: $status_duration
-      bonus:
-        commander:
-          description: 友軍群體（2人）武勇每層提升$valor_buff（受智略影響）
-          do:
-          - type: buff
-            stat: 武勇
-            value: $valor_buff
-            scale: 智略
-            per_stack: valor_buff_stack
-    unique_hero: 阿江
-    is_unique: true
-    _action: add
-  攻其不備:
-    _replaces: 攻其不備  # JP and CHT names identical — drops untranslated crawled entry
-    name: 攻其不備
-    type: 主動
-    rarity: S
-    target: 敵軍複數（2人）
-    activation_rate: 40%
-    raw_text: 對統率最低的敵軍單體造成兵刃傷害（傷害率84%->168%），對智略最低的敵軍單體造成謀略傷害（傷害率84%->168%，受智略影響）
-    description: 對統率最低的敵軍單體造成{var:dmg_rate}兵刃傷害，對智略最低的敵軍單體造成{var:dmg_rate}謀略傷害（{scale:智略}）。
-    brief_description: 雙重傷害針對最低屬性敵軍
-    tags:
-    - 兵刃傷害
-    - 謀略傷害
-    - 複數傷害
-    - 主動發動
-    vars:
-      dmg_rate:
-        base: 0.84
-        max: 1.68
-    battle:
-      type: 主動
-      trigger: beforeAction
-      rate: 0.4
-      do:
-      - to: enemySingle
-        select: lowest_stat
-        stat: 統率
-        do:
-        - type: damage
-          damage_type: 兵刃傷害
-          value: $dmg_rate
-      - to: enemySingle
-        select: lowest_stat
-        stat: 智略
-        do:
-        - type: damage
-          damage_type: 謀略傷害
-          value: $dmg_rate
-          scale: 智略
-    source_hero: 阿江
-    _action: add
-  同氣連枝:
-    _replaces: 同気連枝  # drops the kana-description crawled entry
-    name: 同氣連枝
-    type: 指揮
-    rarity: S
-    target: 自軍群體
-    activation_rate: 100%
-    description: 戰鬥中，使友軍群體發動普通攻擊後獲得{var:main_stat_buff}點主屬性（{scale:智略}），最多疊加{var:stack_limit}層。
-      每回合行動前，有{var:trigger_rate}（{scale:智略}）機率選擇敵軍群體（2-3人）， 選定目標每次造成傷害時，自身有{var:heal_proc_rate}機率根據所造成的傷害量的{var:heal_rate}（{scale:智略}），
-      為受到傷害的目標恢復兵力，持續{var:heal_duration}回合。
-    brief_description: 友軍增益且復仇治療敵軍
-    tags:
-    - 增益
-    - 治療
-    - 減益
-    - 指揮效果
-    raw_text: 戰鬥中，使友軍群體發動普通攻擊後獲得2.5->5點主屬性（受智略影響），最多疊加5層。每回合行動前，有24%->48%（受智略影響）機率選擇敵軍群體（2-3人），選定目標每次造成傷害時，自身有80%的機率根據所造成的傷害量的14%->28%（受智略影響），為受到傷害的目標恢復兵力，持續1回合。
-    vars:
-      main_stat_buff:
-        base: 2.5
-        max: 5
-        type: flat
-        scale: 智略
-      stack_limit: 5
-      trigger_rate:
-        base: 0.24
-        max: 0.48
-        scale: 智略
-      heal_rate:
-        base: 0.14
-        max: 0.28
-        scale: 智略
-      heal_proc_rate: 0.8
-      heal_duration: 1
-    battle:
-      type: 指揮
-      trigger: always
-      do:
-      - trigger: afterAction
-        when: action_type == "normal_attack"
-        to: allyAll
-        do:
-        - type: buff
-          stat: main_stat
-          value: $main_stat_buff
-          scale: 智略
-          max_stacks: $stack_limit
-      - trigger: turnStart
-        to: self
-        do:
-        - type: roll
-          chance: $trigger_rate
-          scale: 智略
-          on_success:
-          - to: enemyMultiple
-            count_range:
-            - 2
-            - 3
-            do:
-            - type: conditional
-              condition: on_damage_dealt
-              do:
-              - type: roll
-                chance: $heal_proc_rate
-                on_success:
-                - to: self
-                  do:
-                  - type: heal
-                    value: damage_dealt
-                    rate: $heal_rate
-                    scale: 智略
-                    duration: $heal_duration
-    unique_hero: 阿初
-    is_unique: true
-    _action: add
 heroes:
   柿崎景家:
     _action: add
-    name: 柿崎景家
-    rarity: 5
-    cost: 7
-    faction: 上杉
-    clan: 上杉
     gender: 男
     portrait: https://i.imgur.com/VYehA8W.png
     detail_url: ''
-    unique_skill: 越後二天
     teachable_skill: 勇猛無前
     assembly_skill: 先銳突擊
     stats:
@@ -1270,15 +1050,9 @@ heroes:
         - 天時
   立花誾千代:
     _action: add
-    name: 立花誾千代
-    rarity: 5
-    cost: 7
-    faction: 群雄
-    clan: 大友
     gender: 女
     portrait: https://i.imgur.com/uHjLFYR.png
     detail_url: ''
-    unique_skill: 疾風迅雷
     teachable_skill: 惠風和雨
     assembly_skill: 姬武者同心
     stats:
@@ -1354,15 +1128,9 @@ heroes:
         - 不惑
   鈴木佐大夫:
     _action: add
-    name: 鈴木佐大夫
-    rarity: 5
-    cost: 6
-    faction: 群雄
-    clan: 鈴木
     gender: 男
     portrait: https://i.imgur.com/R8jV3D5.png
     detail_url: ''
-    unique_skill: 彈嵐雨霰
     teachable_skill: 電光石火
     assembly_skill: 調遣民夫・優
     stats:
@@ -1439,15 +1207,9 @@ heroes:
         - 天時
   加藤嘉明:
     _action: add
-    name: 加藤嘉明
-    rarity: 5
-    cost: 3
-    faction: 豐臣
-    clan: 豐臣
     gender: 男
     portrait: https://i.imgur.com/HJ1HKTU.png
     detail_url: ''
-    unique_skill: 剛毅木訥
     teachable_skill: 電光石火
     assembly_skill: 擴張石產・優
     stats:
@@ -1521,15 +1283,9 @@ heroes:
         - 明鏡
   真田昌幸:
     _action: add
-    name: 真田昌幸
-    rarity: 5
-    cost: 7
-    faction: 武田
-    clan: 真田
     gender: 男
     portrait: https://i.imgur.com/Bc0WPgD.png
     detail_url: ''
-    unique_skill: 表裏比興
     teachable_skill: 瞬息萬變
     assembly_skill: 六文錢之誓
     stats:
@@ -1605,15 +1361,9 @@ heroes:
         - 天時
   阿松:
     _action: add
-    name: 阿松
-    rarity: 5
-    cost: 6
-    faction: 織田
-    clan: 織田
     gender: 女
     portrait: https://i.imgur.com/D1WjMi8.png
     detail_url: ''
-    unique_skill: 松柏之操
     teachable_skill: 奇策縱橫
     assembly_skill: 姬武者同心
     stats:
@@ -1687,15 +1437,9 @@ heroes:
         - 明鏡
   安宅冬康:
     _action: add
-    name: 安宅冬康
-    rarity: 5
-    cost: 5
-    faction: 群雄
-    clan: 三好
     gender: 男
     portrait: https://i.imgur.com/rBxWcTp.png
     detail_url: ''
-    unique_skill: 一舟軒
     teachable_skill: 金城湯池
     assembly_skill: 調遣民夫優
     stats:
@@ -1769,15 +1513,9 @@ heroes:
         - 内助
   伊達輝宗:
     _action: add
-    name: 伊達輝宗
-    rarity: 5
-    cost: 5
-    faction: 群雄
-    clan: 伊達
     gender: 男
     portrait: https://i.imgur.com/k5t29MK.png
     detail_url: ''
-    unique_skill: 樽俎折衝
     teachable_skill: 金城湯池
     assembly_skill: 擴張石產優
     stats:

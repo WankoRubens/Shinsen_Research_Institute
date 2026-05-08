@@ -7,8 +7,8 @@ Output:
   data/.cfg_history/cfg-<version>.json.gz
                               — prior versions, gzipped; last 10 retained
 
-If the fetched bytes equal the current file (byte-identical), skip archive and
-re-write. Pass --force to ignore identity and re-fetch.
+If the fetched bytes equal the current file (byte-identical), skip both the
+archive step and the re-write. Pass --force to ignore identity and proceed.
 """
 
 from __future__ import annotations

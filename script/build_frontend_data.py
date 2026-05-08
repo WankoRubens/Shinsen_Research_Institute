@@ -15,27 +15,232 @@ Usage:
 """
 
 import json
+import os
 import re
 import yaml
 from pathlib import Path
 
 from llm_core import load_overrides
 from paths import (
+    BUILD_DIR,
+    CFG_CURRENT_JSON,
     HEROES_CRAWLED, HEROES_TRANSLATED,
     SKILLS_CANONICAL, TRAITS_CANONICAL, BINGXUE_CANONICAL,
     STATUSES_YAML,
     HEROES_JSON, SKILLS_JSON, STATUSES_JSON, BINGXUE_JSON,
     BINGXUE_JP_TO_CHT_DIR,
+    PROTOTYPE_DIR,
 )
 
-# LLM skill name corrections (wrong CHT → correct CHT)
+# When CFG_AUTHORITATIVE=1 (default), cfg.json wins over LLM output for
+# names and top-level metadata (skill names, target, brief_description,
+# type, hero clan/faction/cost/rarity/unique_skill). Description text
+# still comes from the LLM in Phase 3 — Phase 4 will swap in cfg-derived
+# descriptions. Set CFG_AUTHORITATIVE=0 to roll back to legacy behavior.
+CFG_AUTHORITATIVE = os.environ.get("CFG_AUTHORITATIVE", "1") == "1"
+
+# cfg.skill_kind is zh-hans; the build emits zh-hant `type`.
+# Key set must stay in sync with the SKILL_KINDS / TRAIT_KINDS / BINGXUE_KINDS /
+# ASSEMBLY_KINDS constants in merge_sources.py — when cfg adds a new skill_kind,
+# update both files.
+ZH_HANS_TO_HANT_TYPE = {
+    "主动": "主動", "被动": "被動", "指挥": "指揮", "突击": "突擊",
+    "战前": "戰前", "阵法": "陣法", "兵种": "兵種",
+    "特性": "特性", "天赋": "天賦", "评定众": "評定眾",
+}
+
+CFG_HERO_DRIFT_PATH = BUILD_DIR / "cfg_hero_drift.yaml"
+CFG_OVERRIDE_CONFLICTS_PATH = BUILD_DIR / "cfg_override_conflicts.yaml"
+
+
+def _load_cfg_lookups() -> tuple[dict, dict]:
+    """Single cfg.json read → (skill_by_hant, hero_by_hant).
+
+    Both lookups are zh-hant-keyed projections of cfg.json, used so
+    override-added entries (which bypass the prototype path) can still
+    resolve cfg fields by their CHT key. This re-parses cfg.json because
+    `data/prototype/*_proto.yaml` is game8-bounded — entries that exist
+    only on the cfg side (e.g. heroes/skills not yet on game8.jp) never
+    reach the prototype layer, so the lookup must come from cfg directly.
+    """
+    if not CFG_CURRENT_JSON.exists():
+        return {}, {}
+    cfg = json.loads(CFG_CURRENT_JSON.read_text("utf-8"))
+    ml = cfg.get("multi_lang", [])
+    by_hans = {e["zh-hans"]: e for e in ml if e.get("zh-hans")}
+    skill_by_name = {s["name"]: s for s in cfg.get("skill", []) if s.get("name")}
+    hero_by_name = {h["name"]: h for h in cfg.get("hero", []) if h.get("name")}
+
+    def hant_of(hans):
+        return (by_hans.get(hans) or {}).get("zh-hant") if hans else None
+
+    skill_out: dict = {}
+    hero_out: dict = {}
+    for entry in ml:
+        hant = entry.get("zh-hant")
+        if not hant:
+            continue
+        ml_id = entry.get("id")
+        ja = entry.get("ja")
+
+        cfg_skill = skill_by_name.get(ml_id)
+        if cfg_skill:
+            skill_out[hant] = {
+                "id": cfg_skill.get("id"),
+                "name_ja": ja,
+                "skill_kind": cfg_skill.get("skill_kind"),
+                "short_tips_zh_hant": hant_of(cfg_skill.get("short_tips")),
+                "target_tips_zh_hant": hant_of(cfg_skill.get("target_tips")),
+            }
+
+        cfg_hero = hero_by_name.get(ml_id)
+        if cfg_hero:
+            hero_out[hant] = {
+                "id": cfg_hero.get("id"),
+                "name_ja": ja,
+                "camp_zh_hant": hant_of(cfg_hero.get("camp")),
+                "family_zh_hant": hant_of(cfg_hero.get("family")),
+                "cost": cfg_hero.get("cost"),
+                "star": cfg_hero.get("star"),
+                "born_skill_zh_hant": hant_of(cfg_hero.get("born_skill")),
+            }
+
+    return skill_out, hero_out
+
+
+def _cfg_fields_for_skill_override(key: str, lookup: dict) -> dict:
+    """Override-shaped projection of the cfg skill block keyed by zh-hant."""
+    block = lookup.get(key)
+    if not block:
+        return {}
+    out: dict = {}
+    if block.get("short_tips_zh_hant"):
+        out["brief_description"] = block["short_tips_zh_hant"]
+    if block.get("target_tips_zh_hant"):
+        out["target"] = block["target_tips_zh_hant"]
+    kind_hans = block.get("skill_kind")
+    if kind_hans in ZH_HANS_TO_HANT_TYPE:
+        out["type"] = ZH_HANS_TO_HANT_TYPE[kind_hans]
+    if block.get("id") is not None:
+        out["cfg_id"] = block["id"]
+    if block.get("name_ja"):
+        out["name_jp"] = block["name_ja"]
+    return out
+
+
+def _cfg_fields_for_hero_override(key: str, lookup: dict) -> dict:
+    block = lookup.get(key)
+    if not block:
+        return {}
+    out: dict = {}
+    if block.get("camp_zh_hant"):
+        out["faction"] = block["camp_zh_hant"]
+    if block.get("family_zh_hant"):
+        out["clan"] = block["family_zh_hant"]
+    if block.get("cost") is not None:
+        out["cost"] = block["cost"]
+    if block.get("star") is not None:
+        out["rarity"] = block["star"]
+    if block.get("born_skill_zh_hant"):
+        out["unique_skill"] = block["born_skill_zh_hant"]
+    if block.get("id") is not None:
+        out["cfg_id"] = block["id"]
+    if block.get("name_ja"):
+        out["name_jp"] = block["name_ja"]
+    return out
+
+
+def _classify_add_overrides(
+    overrides_section: dict,
+    cfg_lookup: dict,
+    g8_jp_keys: set,
+) -> dict:
+    """Bucket `_action: add` overrides by data-source coverage.
+
+    Lifecycle of an override-added entry (TW server runs ahead of JP, so
+    new heroes/skills land in override first via OCR → override.py):
+
+      pre_launch  — neither cfg nor game8 know about it yet; override is
+                    the only source.
+      cfg_only    — cfg has identity + zh-hant metadata, game8 doesn't yet;
+                    override fields cfg covers can be trimmed.
+      cfg_and_g8  — both upstream sources have it; the entire override
+                    entry can usually be deleted (or downgraded to modify
+                    if a specific field still needs project-specific tweaks).
+    """
+    out = {"pre_launch": [], "cfg_only": [], "cfg_and_g8": []}
+    for key, ov in (overrides_section or {}).items():
+        if not isinstance(ov, dict) or ov.get("_action") != "add":
+            continue
+        cfg_block = cfg_lookup.get(key)
+        if not cfg_block:
+            out["pre_launch"].append(key)
+            continue
+        ja = cfg_block.get("name_ja")
+        if ja and ja in g8_jp_keys:
+            out["cfg_and_g8"].append(key)
+        else:
+            out["cfg_only"].append(key)
+    return out
+
+
+def _print_coverage_hint(scope: str, cls: dict) -> None:
+    total = sum(len(v) for v in cls.values())
+    if not total:
+        return
+    print(f"[info] override-added {scope} lifecycle ({total} entries):")
+    bucket_msg = [
+        ("cfg_and_g8", "in cfg + in game8 → override entry likely removable"),
+        ("cfg_only",   "in cfg only       → cfg-covered fields can be trimmed"),
+        ("pre_launch", "pre-launch        → override is the only source"),
+    ]
+    for k, msg in bucket_msg:
+        items = cls[k]
+        if not items:
+            continue
+        sample = ", ".join(items[:5])
+        more = f" (+ {len(items) - 5} more)" if len(items) > 5 else ""
+        print(f"  {len(items):>3}  {msg}: {sample}{more}")
+
+
+def _detect_override_cfg_conflicts(overrides_dict: dict, cfg_fields_fn) -> list[dict]:
+    """Detect conflicts where the override AND cfg both define a field with
+    differing values. Read-only — does NOT mutate the override dict.
+
+    The cfg-fill itself happens in `apply_skill_overrides` / `apply_hero_overrides`
+    on the per-entry `clean` dict (not on the user's YAML data), so override
+    structure stays a clean snapshot of user intent.
+
+    Conflicts are reported, never auto-resolved: the warning often means the
+    override predates the official cfg release and may now be redundant.
+    """
+    conflicts: list[dict] = []
+    for key, ov in (overrides_dict or {}).items():
+        if not isinstance(ov, dict):
+            continue
+        if ov.get("_action") == "delete":
+            continue
+        cfg_fields = cfg_fields_fn(key)
+        if not cfg_fields:
+            continue
+        for field, cfg_val in cfg_fields.items():
+            ov_val = ov.get(field)
+            if ov_val is not None and ov_val != cfg_val:
+                conflicts.append({
+                    "key": key,
+                    "field": field,
+                    "override": ov_val,
+                    "cfg": cfg_val,
+                })
+    return conflicts
+
+# LLM skill name corrections (wrong CHT → correct CHT). Active only when
+# CFG_AUTHORITATIVE=0 (rollback path); cfg.json supplies these names directly
+# in the default cfg-on path. Phase 5 retires these alongside the flag.
 SKILL_NAME_FIXES = {
-    "盤石耽々": "盤石耽耽",
     "血戰奮鬥": "浴血奮戰",
     "所向無敵": "所向披靡",
     "歸還的凱歌": "振旅凱歌",
-    "文武兩道": "文武雙全",
-    "破陣": "陣型崩毀",
 }
 
 # LLM alias → spec canonical name
@@ -50,6 +255,44 @@ STATUS_ALIASES = {
 }
 
 
+def _load_prototype(name: str) -> dict:
+    """Load data/prototype/{name}_proto.yaml. Empty dict if missing."""
+    path = PROTOTYPE_DIR / f"{name}_proto.yaml"
+    if not path.exists():
+        return {}
+    return yaml.safe_load(path.read_text("utf-8")) or {}
+
+
+def _index_proto_skills_by_jp(proto: dict) -> dict:
+    """Return {jp_key: proto_entry} keyed on BOTH the effective and the
+    pre-rename JP name. Lets canonical lookups (which use the original
+    game8 key) find a renamed prototype entry without a separate map.
+    """
+    out = {}
+    for eff_jp, p in proto.items():
+        out[eff_jp] = p
+        sc = p.get("source_correction_applied") or {}
+        renamed_from = sc.get("renamed_from")
+        if renamed_from:
+            out[renamed_from] = p
+    return out
+
+
+def _build_skill_name_map(skills_data: dict, proto_by_jp: dict) -> dict:
+    """JP key (orig and corrected) → CHT name. Used to translate hero
+    unique_skill / teachable_skill text refs."""
+    name_map = {
+        jp_key: entry.get("text", {}).get("name", jp_key)
+        for jp_key, entry in skills_data.items()
+    }
+    if CFG_AUTHORITATIVE:
+        for eff_jp, p in proto_by_jp.items():
+            cfg_name = (p.get("cfg") or {}).get("name_zh_hant")
+            if cfg_name:
+                name_map[eff_jp] = cfg_name
+    return name_map
+
+
 def deep_merge(base: dict, override: dict) -> dict:
     """Recursively merge override into base. Override values win."""
     result = base.copy()
@@ -61,6 +304,8 @@ def deep_merge(base: dict, override: dict) -> dict:
         else:
             result[k] = v
     return result
+
+
 
 
 
@@ -86,7 +331,9 @@ def _skill_stub_defaults(clean: dict) -> dict:
     return clean
 
 
-def apply_skill_overrides(skills: list[dict], overrides: dict) -> list[dict]:
+def apply_skill_overrides(
+    skills: list[dict], overrides: dict, cfg_fields_fn=None,
+) -> list[dict]:
     """Apply skill overrides.
 
     Supported actions:
@@ -96,6 +343,10 @@ def apply_skill_overrides(skills: list[dict], overrides: dict) -> list[dict]:
       - `replace`: drop existing skill matched by dict key (must be JP name),
         then append the entry. The symmetric "delete-then-add" form.
       - `delete`: remove existing skill matched by dict key.
+
+    `cfg_fields_fn(key)` (optional) returns a dict of fields to fill via
+    setdefault on `_action: add` clean entries. Override values still win;
+    cfg only fills missing fields.
     """
     skill_index = {s["name"]: i for i, s in enumerate(skills)}
     skill_index_jp = {s.get("name_jp"): i for i, s in enumerate(skills) if s.get("name_jp")}
@@ -109,6 +360,12 @@ def apply_skill_overrides(skills: list[dict], overrides: dict) -> list[dict]:
         if idx is not None and skills[idx] is not None:
             skills[idx] = None
 
+    def _fill_cfg(clean: dict, key: str) -> None:
+        if not cfg_fields_fn:
+            return
+        for field, cfg_val in (cfg_fields_fn(key) or {}).items():
+            clean.setdefault(field, cfg_val)
+
     for key, ov in overrides.items():
         action = ov.get("_action", "modify")
         if action == "delete":
@@ -117,6 +374,7 @@ def apply_skill_overrides(skills: list[dict], overrides: dict) -> list[dict]:
         if action == "replace":
             _drop(key)
             clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+            _fill_cfg(clean, key)
             skills.append(_skill_stub_defaults(clean))
             continue
         if action == "add":
@@ -126,6 +384,7 @@ def apply_skill_overrides(skills: list[dict], overrides: dict) -> list[dict]:
             if ov.get("_replaces"):
                 _drop(ov["_replaces"])
             clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+            _fill_cfg(clean, key)
             skills.append(_skill_stub_defaults(clean))
             continue
         # modify: deep merge into existing skill
@@ -155,7 +414,9 @@ def _hero_stub_defaults(clean: dict, key: str) -> dict:
     return clean
 
 
-def apply_hero_overrides(heroes: list[dict], overrides: dict) -> list[dict]:
+def apply_hero_overrides(
+    heroes: list[dict], overrides: dict, cfg_fields_fn=None,
+) -> list[dict]:
     """Apply hero overrides.
 
     Supported actions:
@@ -165,6 +426,10 @@ def apply_hero_overrides(heroes: list[dict], overrides: dict) -> list[dict]:
       - `replace`: drop existing hero matched by dict key (must be JP name)
         then append the new entry. Symmetric delete-then-add.
       - `delete`: remove existing hero matched by dict key.
+
+    `cfg_fields_fn(key)` (optional) returns a dict of fields to fill via
+    setdefault on `_action: add` clean entries. Override values still win;
+    cfg only fills missing fields.
     """
     hero_index = {h["name"]: i for i, h in enumerate(heroes)}
     hero_index_jp = {h.get("name_jp"): i for i, h in enumerate(heroes) if h.get("name_jp")}
@@ -178,6 +443,12 @@ def apply_hero_overrides(heroes: list[dict], overrides: dict) -> list[dict]:
         if idx is not None and heroes[idx] is not None:
             heroes[idx] = None
 
+    def _fill_cfg(clean: dict, key: str) -> None:
+        if not cfg_fields_fn:
+            return
+        for field, cfg_val in (cfg_fields_fn(key) or {}).items():
+            clean.setdefault(field, cfg_val)
+
     for key, ov in overrides.items():
         action = ov.get("_action", "modify")
         if action == "delete":
@@ -186,12 +457,14 @@ def apply_hero_overrides(heroes: list[dict], overrides: dict) -> list[dict]:
         if action == "replace":
             _drop(key)
             clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+            _fill_cfg(clean, key)
             heroes.append(_hero_stub_defaults(clean, key))
             continue
         if action == "add":
             if ov.get("_replaces"):
                 _drop(ov["_replaces"])
             clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+            _fill_cfg(clean, key)
             heroes.append(_hero_stub_defaults(clean, key))
             continue
         # modify
@@ -369,26 +642,62 @@ def _flatten_trait(jp_name: str, tr: dict) -> dict:
     return result
 
 
-def build_heroes(heroes_raw: list[dict], traits_data: dict, skill_name_map: dict, heroes_translated: dict) -> list[dict]:
+def build_heroes(
+    heroes_raw: list[dict],
+    traits_data: dict,
+    skill_name_map: dict,
+    heroes_translated: dict,
+    proto_heroes: dict | None = None,
+    drift_log: list | None = None,
+) -> list[dict]:
     """traits_data: JP name → trait entry (canonical or legacy shape).
     skill_name_map: JP name → CHT name for skill reference translation.
-    heroes_translated: JP name → {name, faction, clan} CHT mapping."""
+    heroes_translated: JP name → {name, faction, clan} CHT mapping.
+    proto_heroes: JP name → prototype entry (for CFG_AUTHORITATIVE path).
+    drift_log: optional sink for game8/cfg cost+rarity disagreements.
+    """
+    proto_heroes = proto_heroes or {}
     out = []
     for h in heroes_raw:
+        jp = h["name"]
         traits = []
         for t in h.get("traits") or []:
             jp_name = t["name"]
             tr = traits_data.get(jp_name, {})
             traits.append(_flatten_trait(jp_name, tr))
 
-        ht = heroes_translated.get(h["name"], {})
-        out.append({
-            "name": ht.get("name", h["name"]),
-            "name_jp": h["name"],
-            "rarity": int(h.get("rarity", 0)),
-            "cost": int(h.get("cost", 0)),
-            "faction": ht.get("faction", h.get("faction", "")),
-            "clan": ht.get("clan", h.get("clan", "")),
+        ht = heroes_translated.get(jp, {})
+        cfg = (proto_heroes.get(jp) or {}).get("cfg") or {}
+
+        name = ht.get("name", jp)
+        faction = ht.get("faction", h.get("faction", ""))
+        clan = ht.get("clan", h.get("clan", ""))
+        cost = int(h.get("cost", 0))
+        rarity = int(h.get("rarity", 0))
+
+        if CFG_AUTHORITATIVE and cfg:
+            if cfg.get("name_zh_hant"):
+                name = cfg["name_zh_hant"]
+            if cfg.get("camp_zh_hant"):
+                faction = cfg["camp_zh_hant"]
+            if cfg.get("family_zh_hant"):
+                clan = cfg["family_zh_hant"]
+            if cfg.get("cost") is not None and cfg["cost"] != cost:
+                if drift_log is not None:
+                    drift_log.append({"hero": jp, "field": "cost", "game8": cost, "cfg": cfg["cost"]})
+                cost = cfg["cost"]
+            if cfg.get("star") is not None and cfg["star"] != rarity:
+                if drift_log is not None:
+                    drift_log.append({"hero": jp, "field": "rarity", "game8": rarity, "cfg": cfg["star"]})
+                rarity = cfg["star"]
+
+        entry = {
+            "name": name,
+            "name_jp": jp,
+            "rarity": rarity,
+            "cost": cost,
+            "faction": faction,
+            "clan": clan,
             "gender": h.get("gender", ""),
             "portrait": h.get("portrait", ""),
             "detail_url": h.get("detail_url", ""),
@@ -398,7 +707,10 @@ def build_heroes(heroes_raw: list[dict], traits_data: dict, skill_name_map: dict
             "stats": h.get("stats", {}),
             "traits": traits,
             "bingxue": h.get("bingxue"),  # JP-direction-keyed; re-keyed to CHT in main()
-        })
+        }
+        if CFG_AUTHORITATIVE and cfg.get("id") is not None:
+            entry["cfg_id"] = cfg["id"]
+        out.append(entry)
     return out
 
 
@@ -432,9 +744,12 @@ def _extract_commander_desc(tr: dict, battle: dict) -> str:
     return ""
 
 
-def build_skills(skills_data: dict) -> list[dict]:
+def build_skills(skills_data: dict, proto_by_jp: dict | None = None) -> list[dict]:
     """Build frontend skill list from canonical data dict.
-    Each entry has raw/vars/text/battle sub-keys."""
+    Each entry has raw/vars/text/battle sub-keys.
+    proto_by_jp: optional {jp_key: proto_entry} keyed on both eff and orig
+    JP. When CFG_AUTHORITATIVE, cfg fields override LLM names + metadata."""
+    proto_by_jp = proto_by_jp or {}
     out = []
 
     for key, entry in skills_data.items():
@@ -442,6 +757,7 @@ def build_skills(skills_data: dict) -> list[dict]:
         tr = entry.get("text", {})
         bt = entry.get("battle", {})
         vars_dict = entry.get("vars", {})
+        cfg = (proto_by_jp.get(key) or {}).get("cfg") or {}
 
         tr_desc = (tr.get("description") or "").strip()
         raw_desc = tr_desc or cr.get("description", "")
@@ -450,15 +766,30 @@ def build_skills(skills_data: dict) -> list[dict]:
             commander_description = _extract_commander_desc(tr, bt)
 
         name_cht = tr.get("name") or key
+        skill_type = cr.get("type", tr.get("type", ""))
+        target = cr.get("target", tr.get("target", ""))
+        brief = tr.get("brief_description", "")
+
+        if CFG_AUTHORITATIVE and cfg:
+            if cfg.get("name_zh_hant"):
+                name_cht = cfg["name_zh_hant"]
+            if cfg.get("target_tips_zh_hant"):
+                target = cfg["target_tips_zh_hant"]
+            if cfg.get("short_tips_zh_hant"):
+                brief = cfg["short_tips_zh_hant"]
+            kind_hans = cfg.get("skill_kind")
+            if kind_hans and kind_hans in ZH_HANS_TO_HANT_TYPE:
+                skill_type = ZH_HANS_TO_HANT_TYPE[kind_hans]
+
         is_unique = bool(cr.get("is_unique"))
         source_hero = cr.get("source_hero", "")
 
-        out.append({
+        out_entry = {
             "name": name_cht,
             "name_jp": key,
-            "type": cr.get("type", tr.get("type", "")),
+            "type": skill_type,
             "rarity": cr.get("rarity", tr.get("rarity", "")),
-            "target": cr.get("target", tr.get("target", "")),
+            "target": target,
             "activation_rate": cr.get("activation_rate", tr.get("activation_rate", "")),
             "description": description,
             "commander_description": commander_description,
@@ -470,8 +801,11 @@ def build_skills(skills_data: dict) -> list[dict]:
             "is_fixed": is_unique and not cr.get("is_teachable"),
             "icon": "",
             "tags": tr.get("tags", []),
-            "brief_description": tr.get("brief_description", ""),
-        })
+            "brief_description": brief,
+        }
+        if CFG_AUTHORITATIVE and cfg.get("id") is not None:
+            out_entry["cfg_id"] = cfg["id"]
+        out.append(out_entry)
 
     return out
 
@@ -487,22 +821,65 @@ def main():
 
     skills_data = yaml.safe_load(SKILLS_CANONICAL.read_text("utf-8")) or {}
     traits_data = yaml.safe_load(TRAITS_CANONICAL.read_text("utf-8")) or {}
-    skill_name_map = {
-        jp_key: entry.get("text", {}).get("name", jp_key)
-        for jp_key, entry in skills_data.items()
-    }
 
-    heroes = build_heroes(heroes_raw, traits_data, skill_name_map, heroes_translated)
-    skills = build_skills(skills_data)
+    # Phase 3: when CFG_AUTHORITATIVE=1, prototype's `cfg` block overrides
+    # LLM names + metadata. Loaded unconditionally so the off-path is also
+    # exercised (and so future flips don't surprise).
+    proto_skills = _load_prototype("skills")
+    proto_skills_by_jp = _index_proto_skills_by_jp(proto_skills)
+    proto_heroes = _load_prototype("heroes")
 
-    # Apply overrides (highest priority)
+    skill_name_map = _build_skill_name_map(skills_data, proto_skills_by_jp)
+    drift_log: list = []
+
+    heroes = build_heroes(
+        heroes_raw, traits_data, skill_name_map, heroes_translated,
+        proto_heroes=proto_heroes, drift_log=drift_log,
+    )
+    skills = build_skills(skills_data, proto_by_jp=proto_skills_by_jp)
+
+    # Apply overrides (highest priority).
+    # When CFG_AUTHORITATIVE, fill missing fields on `_action: add` entries
+    # from cfg, and surface override↔cfg disagreements for review. Override
+    # values still win — cfg only fills via setdefault.
     overrides = load_overrides()
+    override_conflicts: list[dict] = []
+    skill_classification: dict = {"pre_launch": [], "cfg_only": [], "cfg_and_g8": []}
+    hero_classification: dict = {"pre_launch": [], "cfg_only": [], "cfg_and_g8": []}
+    skill_cfg_fn = None
+    hero_cfg_fn = None
+    if CFG_AUTHORITATIVE:
+        cfg_skill_lookup, cfg_hero_lookup = _load_cfg_lookups()
+
+        g8_skill_jp_keys = set(proto_skills_by_jp)
+        g8_hero_jp_keys = {h.get("name") for h in heroes_raw if h.get("name")}
+        skill_classification = _classify_add_overrides(
+            overrides.get("skills", {}), cfg_skill_lookup, g8_skill_jp_keys,
+        )
+        hero_classification = _classify_add_overrides(
+            overrides.get("heroes", {}), cfg_hero_lookup, g8_hero_jp_keys,
+        )
+
+        skill_cfg_fn = lambda k: _cfg_fields_for_skill_override(k, cfg_skill_lookup)
+        hero_cfg_fn = lambda k: _cfg_fields_for_hero_override(k, cfg_hero_lookup)
+
+        skill_conflicts = _detect_override_cfg_conflicts(
+            overrides.get("skills", {}), skill_cfg_fn,
+        )
+        hero_conflicts = _detect_override_cfg_conflicts(
+            overrides.get("heroes", {}), hero_cfg_fn,
+        )
+        override_conflicts = (
+            [{"scope": "skill", **c} for c in skill_conflicts]
+            + [{"scope": "hero", **c} for c in hero_conflicts]
+        )
+
     override_count = 0
     if overrides.get("skills"):
-        skills = apply_skill_overrides(skills, overrides["skills"])
+        skills = apply_skill_overrides(skills, overrides["skills"], skill_cfg_fn)
         override_count += len(overrides["skills"])
     if overrides.get("heroes"):
-        heroes = apply_hero_overrides(heroes, overrides["heroes"])
+        heroes = apply_hero_overrides(heroes, overrides["heroes"], hero_cfg_fn)
         override_count += len(overrides["heroes"])
 
     # Enrich override-added hero traits with affinity from canonical traits.yaml.
@@ -572,6 +949,36 @@ def main():
     print(f"[info] {traits_with_translation} traits translated to CHT")
     if override_count:
         print(f"[info] {override_count} overrides applied")
+    if CFG_AUTHORITATIVE:
+        print(f"[info] CFG_AUTHORITATIVE=1 (cfg.json wins for names + metadata)")
+        _print_coverage_hint("heroes", hero_classification)
+        _print_coverage_hint("skills", skill_classification)
+        if drift_log:
+            CFG_HERO_DRIFT_PATH.write_text(
+                yaml.safe_dump(drift_log, allow_unicode=True, sort_keys=False),
+                "utf-8",
+            )
+            print(f"[info] {len(drift_log)} hero cost/rarity drifts → {CFG_HERO_DRIFT_PATH}")
+        elif CFG_HERO_DRIFT_PATH.exists():
+            CFG_HERO_DRIFT_PATH.unlink()
+        if override_conflicts:
+            CFG_OVERRIDE_CONFLICTS_PATH.write_text(
+                yaml.safe_dump(override_conflicts, allow_unicode=True, sort_keys=False),
+                "utf-8",
+            )
+            print(
+                f"[warn] {len(override_conflicts)} override fields differ from cfg "
+                f"→ {CFG_OVERRIDE_CONFLICTS_PATH}"
+            )
+            print(f"       (review whether the override is now redundant — cfg may have caught up)")
+        elif CFG_OVERRIDE_CONFLICTS_PATH.exists():
+            CFG_OVERRIDE_CONFLICTS_PATH.unlink()
+    else:
+        # Stale cfg-mode artifacts from a previous =1 run shouldn't linger
+        # in =0 mode — they no longer reflect the build that just ran.
+        for p in (CFG_HERO_DRIFT_PATH, CFG_OVERRIDE_CONFLICTS_PATH):
+            if p.exists():
+                p.unlink()
 
 
 if __name__ == "__main__":

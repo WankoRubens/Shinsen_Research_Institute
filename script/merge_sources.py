@@ -170,7 +170,7 @@ class Resolver:
         ml = cfg.get("multi_lang", [])
         self.ml_by_ja = {e["ja"]: e for e in ml if "ja" in e}
         self.ml_by_hans = {e["zh-hans"]: e for e in ml if "zh-hans" in e}
-        self.ml_by_hant = {e["zh-hant"]: e for e in ml if "zh-hant" in e}
+        self.ml_by_id = {e["id"]: e for e in ml if "id" in e}
 
         skill_list = cfg.get("skill", [])
         self.cfg_skill_by_name = {s["name"]: s for s in skill_list if s.get("name")}
@@ -274,19 +274,6 @@ class Resolver:
 # ---------------------------------------------------------------------------
 
 
-def _ml_for_skill(resolver: Resolver, cfg_skill: dict, ml: list[dict]) -> dict:
-    """Return a dict with zh-hans / zh-hant / ja for a cfg.skill's name."""
-    if not cfg_skill:
-        return {}
-    by_id = {e.get("id"): e for e in ml}
-    entry = by_id.get(cfg_skill.get("name")) or {}
-    return {
-        "zh_hans": entry.get("zh-hans"),
-        "zh_hant": entry.get("zh-hant"),
-        "ja": entry.get("ja"),
-    }
-
-
 def _translate_short(text: str | None, ml_index: dict) -> str | None:
     """Best-effort zh-hans → zh-hant for short cfg fields (target_tips, etc.).
 
@@ -299,15 +286,13 @@ def _translate_short(text: str | None, ml_index: dict) -> str | None:
     return e.get("zh-hant") if e else None
 
 
-def _cfg_block_for_skill(resolver: Resolver, cfg_skill: dict, kind: str) -> dict:
+def _cfg_block_for_skill(resolver: Resolver, cfg_skill: dict) -> dict:
     """Build the `cfg` section of a prototype entry for a skill-like item."""
     if not cfg_skill:
         return {}
-    ml = resolver.cfg.get("multi_lang", [])
-    by_id = {e.get("id"): e for e in ml}
     by_hans = resolver.ml_by_hans
 
-    name_entry = by_id.get(cfg_skill.get("name")) or {}
+    name_entry = resolver.ml_by_id.get(cfg_skill.get("name")) or {}
     short_tips_hans = cfg_skill.get("short_tips")
     target_tips_hans = cfg_skill.get("target_tips")
     tips_hans = cfg_skill.get("tips")
@@ -338,11 +323,11 @@ def _cfg_block_for_hero(resolver: Resolver, cfg_hero: dict) -> dict:
     if not cfg_hero:
         return {}
     by_hans = resolver.ml_by_hans
-    by_id = {e.get("id"): e for e in resolver.cfg.get("multi_lang", [])}
-    name_entry = by_id.get(cfg_hero.get("name")) or {}
+    name_entry = resolver.ml_by_id.get(cfg_hero.get("name")) or {}
 
     family_entry = by_hans.get(cfg_hero.get("family")) or {}
     camp_entry = by_hans.get(cfg_hero.get("camp")) or {}
+    born_skill_entry = by_hans.get(cfg_hero.get("born_skill")) or {}
     return {
         "id": cfg_hero.get("id"),
         "name_zh_hans": cfg_hero.get("name"),
@@ -355,6 +340,7 @@ def _cfg_block_for_hero(resolver: Resolver, cfg_hero: dict) -> dict:
         "cost": cfg_hero.get("cost"),
         "star": cfg_hero.get("star"),
         "born_skill_zh_hans": cfg_hero.get("born_skill"),
+        "born_skill_zh_hant": born_skill_entry.get("zh-hant"),
         "icon": cfg_hero.get("icon"),
         "family_icon": cfg_hero.get("family_icon"),
         "camp_icon": cfg_hero.get("camp_icon"),
@@ -396,7 +382,7 @@ def merge_skills(
                 "multi_lang_id": match.multi_lang_id,
             },
             "game8": entry,
-            "cfg": _cfg_block_for_skill(resolver, match.cfg_entry, "skill"),
+            "cfg": _cfg_block_for_skill(resolver, match.cfg_entry),
         }
 
         # Carry corrections forward into the prototype so downstream stages
@@ -543,7 +529,7 @@ def merge_traits(
                 "key_normalized_from": jp_key if effective_key != jp_key else None,
             },
             "game8": entry,
-            "cfg": _cfg_block_for_skill(resolver, match.cfg_entry, "trait"),
+            "cfg": _cfg_block_for_skill(resolver, match.cfg_entry),
         }
         out[effective_key] = proto
 
@@ -592,7 +578,7 @@ def merge_bingxue(
                 "multi_lang_id": match.multi_lang_id,
             },
             "game8": entry,
-            "cfg": _cfg_block_for_skill(resolver, match.cfg_entry, "bingxue"),
+            "cfg": _cfg_block_for_skill(resolver, match.cfg_entry),
         }
 
     stats.by_kind["bingxue"] = {
@@ -649,7 +635,7 @@ def merge_assembly(
                     (s.get("name") or "")[-1] if (s.get("name") or "") else "", 0,
                 ),
             )
-            cfg_block = _cfg_block_for_skill(resolver, primary, "assembly")
+            cfg_block = _cfg_block_for_skill(resolver, primary)
             cfg_block["tiers"] = {
                 tier: {
                     "id": s.get("id"),
