@@ -8,10 +8,10 @@
   >
     <div class="flex flex-col gap-3">
       <el-tabs v-model="tab" class="proposal-tabs">
-        <el-tab-pane label="我的提案" name="mine">
+        <el-tab-pane label="我的精選" name="mine">
           <div v-if="loadingMine" class="text-center text-xs text-ink-mute py-4">載入中…</div>
           <div v-else-if="myProposals.length === 0" class="text-center text-xs text-ink-mute py-4">
-            尚未建立任何提案。
+            尚未儲存任何精選隊伍。
           </div>
           <div v-else class="flex flex-col gap-1 max-h-60 overflow-y-auto">
             <button
@@ -36,7 +36,7 @@
         <el-tab-pane label="公開列表" name="public">
           <div v-if="loadingPublic" class="text-center text-xs text-ink-mute py-4">載入中…</div>
           <div v-else-if="publicProposals.length === 0" class="text-center text-xs text-ink-mute py-4">
-            目前還沒有任何公開提案。
+            目前還沒有任何公開精選隊伍。
           </div>
           <div v-else class="flex flex-col gap-1 max-h-60 overflow-y-auto">
             <button
@@ -84,19 +84,28 @@
       </div>
 
       <div
-        v-if="conflictPreview.length > 0"
-        class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+        v-if="conflictPreview.heroes.length > 0 || conflictPreview.skills.length > 0"
+        class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 leading-snug"
       >
         <p class="font-bold mb-1">與其它隊伍重複</p>
-        <p class="leading-snug">
-          {{ conflictPreview.length }} 名武將會與當前隊組其它隊伍重複：
-          <span class="font-mono">{{ conflictPreview.map(c => c.heroName).join('、') }}</span>
+        <p v-if="conflictPreview.heroes.length > 0">
+          武將：<span class="font-mono">{{ conflictPreview.heroes.map(c => c.name).join('、') }}</span>
+        </p>
+        <p v-if="conflictPreview.skills.length > 0">
+          戰法：<span class="font-mono">{{ conflictPreview.skills.map(c => c.name).join('、') }}</span>
         </p>
       </div>
 
+      <!-- Two button modes:
+           * No conflict — single primary; label reflects `target`.
+           * With conflict — split into 留空匯入 / 從原隊移除. The 'overwrite'
+             argument here is the *resolution* dimension (touch the origin
+             teams' rows). The `target` dimension (append vs overwrite the
+             current team) is independent and still controls *where* the
+             imported team lands. -->
       <div class="flex justify-end gap-2 pt-1 border-t border-parchment-dim">
         <el-button @click="onCancel">取消</el-button>
-        <template v-if="conflictPreview.length === 0">
+        <template v-if="!hasAnyConflict">
           <el-button
             type="primary"
             :disabled="!selectedProposal || !canConfirm"
@@ -186,30 +195,49 @@ const selectedProposal = computed<Proposal | null>(() => {
   return list.find(p => p.id === selectedId.value) ?? null
 })
 
-// Hero names already in OTHER teams — these are the collision pool. When
-// target is 'overwrite', the current team is excluded since it's about to
-// be replaced wholesale.
-const collisionPool = computed<Set<string>>(() => {
-  const names = new Set<string>()
+// Hero AND skill names already in OTHER teams — the collision pool that
+// the picked proposal is checked against. When target is 'overwrite' the
+// current team is excluded (it's about to be replaced wholesale).
+const collisionPool = computed<{ heroes: Set<string>; skills: Set<string> }>(() => {
+  const heroes = new Set<string>()
+  const skills = new Set<string>()
   props.lineups.forEach((team, idx) => {
     if (target.value === 'overwrite' && idx === props.currentTeamIndex) return
-    if (team.main.hero) names.add(team.main.hero.name)
-    if (team.vice1.hero) names.add(team.vice1.hero.name)
-    if (team.vice2.hero) names.add(team.vice2.hero.name)
+    for (const role of ['main', 'vice1', 'vice2'] as const) {
+      const r = team[role]
+      if (r.hero) heroes.add(r.hero.name)
+      if (r.skill1) skills.add(r.skill1.name)
+      if (r.skill2) skills.add(r.skill2.name)
+    }
   })
-  return names
+  return { heroes, skills }
 })
 
-const conflictPreview = computed<{ role: 'main' | 'vice1' | 'vice2'; heroName: string }[]>(() => {
+interface ConflictItem { role: 'main' | 'vice1' | 'vice2'; slot?: 'skill1' | 'skill2'; name: string }
+
+const conflictPreview = computed<{ heroes: ConflictItem[]; skills: ConflictItem[] }>(() => {
   const p = selectedProposal.value
-  if (!p) return []
-  const out: { role: 'main' | 'vice1' | 'vice2'; heroName: string }[] = []
+  if (!p) return { heroes: [], skills: [] }
+  const heroes: ConflictItem[] = []
+  const skills: ConflictItem[] = []
   for (const role of ['main', 'vice1', 'vice2'] as const) {
-    const h = p.team[role]?.hero
-    if (h && collisionPool.value.has(h.name)) out.push({ role, heroName: h.name })
+    const r = p.team[role]
+    if (r?.hero && collisionPool.value.heroes.has(r.hero.name)) {
+      heroes.push({ role, name: r.hero.name })
+    }
+    if (r?.skill1 && collisionPool.value.skills.has(r.skill1.name)) {
+      skills.push({ role, slot: 'skill1', name: r.skill1.name })
+    }
+    if (r?.skill2 && collisionPool.value.skills.has(r.skill2.name)) {
+      skills.push({ role, slot: 'skill2', name: r.skill2.name })
+    }
   }
-  return out
+  return { heroes, skills }
 })
+
+const hasAnyConflict = computed(() =>
+  conflictPreview.value.heroes.length > 0 || conflictPreview.value.skills.length > 0,
+)
 
 // True only when the chosen target is actually executable. Append + full
 // group is the only blocked combination today (radio is also disabled but

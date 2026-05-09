@@ -2,13 +2,13 @@
   <el-dialog
     :model-value="modelValue"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
-    title="另存為提案"
+    title="另存為精選隊伍"
     width="380px"
     align-center
   >
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1">
-        <label class="text-xs text-ink-mute">提案名稱</label>
+        <label class="text-xs text-ink-mute">隊伍名稱</label>
         <el-input
           v-model="name"
           maxlength="50"
@@ -37,7 +37,7 @@
         <div class="flex flex-col gap-0.5">
           <span class="text-sm">公開分享</span>
           <span class="text-[11px] text-ink-mute leading-snug">
-            開啟後將出現在「配將提案」公開列表
+            開啟後將出現在「精選隊伍」公開列表
           </span>
         </div>
         <el-switch v-model="isPublic" />
@@ -49,7 +49,7 @@
       <div class="flex justify-end gap-2 pt-1">
         <el-button @click="onCancel">取消</el-button>
         <el-button type="primary" :disabled="!nameValid" :loading="submitting" @click="onSubmit">
-          建立提案
+          儲存
         </el-button>
       </div>
     </div>

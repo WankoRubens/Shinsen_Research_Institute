@@ -57,7 +57,7 @@
       </button>
       <button class="action-row" @click="$emit('save-as-proposal')">
         <el-icon :size="14"><Document /></el-icon>
-        <span>另存為提案</span>
+        <span>另存為精選隊伍</span>
       </button>
       <button class="action-row" @click="$emit('add-to-group')">
         <el-icon :size="14"><Plus /></el-icon>

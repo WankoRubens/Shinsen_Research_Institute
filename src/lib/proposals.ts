@@ -1,4 +1,7 @@
-// Supabase REST client for the 配將提案 (proposal) feature.
+// Supabase REST client for the 精選隊伍 (single-team snapshot) feature.
+// Code/DB names retain "proposal(s)" for backwards compatibility; the CHT
+// surface label was renamed away from "配將提案" because that term is
+// reserved for a future group-level (multi-team) suggestion feature.
 //
 // Mirrors the no-SDK pattern from share.ts / profiles.ts: PostgREST direct
 // calls, JWT for authenticated writes, anon for public reads.

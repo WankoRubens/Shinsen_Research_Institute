@@ -29,7 +29,7 @@
             以「<span class="font-bold">{{ displayName || '我' }}</span> · <span class="font-bold">{{ groupName }}</span>」公開分享
           </span>
           <span class="text-[11px] text-ink-mute leading-snug">
-            僅 <span class="font-bold">分享當前隊伍</span> 適用；勾選後會同時建立公開「配將提案」
+            僅 <span class="font-bold">分享當前隊伍</span> 適用；勾選後會同時加入公開「精選隊伍」庫
           </span>
         </div>
         <el-switch v-model="asPublic" class="flex-shrink-0 mt-0.5" />

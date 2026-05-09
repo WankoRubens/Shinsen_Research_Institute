@@ -3,9 +3,12 @@
 // Two modes:
 //   - 編組 (Group): a set of up to 5 teams sharing a hero/skill uniqueness
 //     constraint — mirrors what the user actually owns in the live game.
-//   - 配將提案 (Proposal): a single team frozen as a snapshot, optionally
-//     made public for community sharing/voting/import. No uniqueness
-//     constraint vs. anything else (theory-craft).
+//   - 精選隊伍 (FeaturedTeam — kept as `Proposal` in code/DB for backwards
+//     compatibility): a single team frozen as a snapshot, optionally made
+//     public for community sharing/voting/import. No uniqueness constraint
+//     vs. anything else (theory-craft). The CHT label was originally
+//     "配將提案" but that name is reserved for a future group-level
+//     theory-craft suggestion feature.
 //
 // `Lineup` (= Team) lives in useLineups; we only re-export the alias here so
 // upstream consumers can read intent without ambient cross-imports.
@@ -48,7 +51,9 @@ export const MAX_TEAMS_PER_GROUP = 10
 export type ImportConflictResolution = 'cancel' | 'overwrite' | 'leave-empty'
 
 /**
- * A 配將提案 is a snapshot of a single team. Snapshots are intentionally
+ * A 精選隊伍 (rendered as "FeaturedTeam" in CHT UI labels; type stays
+ * `Proposal` for backwards compat with the DB column name) is a snapshot
+ * of a single team. Snapshots are intentionally
  * data-redundant (we copy hero/skill names, not just ids) so a future
  * pipeline rename of a hero/skill doesn't retroactively mutate the proposal.
  *

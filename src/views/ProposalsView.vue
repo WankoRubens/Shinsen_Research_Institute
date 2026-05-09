@@ -1,8 +1,8 @@
 <template>
   <PageStub
-    title="配將提案"
+    title="精選隊伍"
     subtitle="社群分享 / 理論最強配將"
-    description="此頁面將呈現公開分享的單隊提案，可篩選、收藏、匯入到自己的編組。"
+    description="此頁面將呈現公開分享的精選隊伍，可篩選、收藏、匯入到自己的編組。"
   />
 </template>
 

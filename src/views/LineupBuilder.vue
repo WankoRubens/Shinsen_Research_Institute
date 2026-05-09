@@ -610,9 +610,9 @@ const onShareDialogSubmit = async (payload: ShareEventPayload) => {
         isPublic: true,
         authorName: displayName.value || null,
       })
-      ElMessage.success('已同時發佈至公開「配將提案」')
+      ElMessage.success('已同時加入公開「精選隊伍」庫')
     } catch (e) {
-      ElMessage.error(`公開提案發佈失敗：${(e as Error).message}`)
+      ElMessage.error(`公開精選隊伍發佈失敗：${(e as Error).message}`)
     }
   }
 }
@@ -755,7 +755,7 @@ const onSaveAsProposal = () => {
   // createProposal RLS gates on auth — short-circuit to the auth dialog so
   // anon users see the reason instead of a generic 401.
   if (!isLoggedIn.value) {
-    ElMessage.info('請先登入才能建立提案')
+    ElMessage.info('請先登入才能儲存精選隊伍')
     authDialogVisible.value = true
     return
   }
@@ -772,7 +772,7 @@ const onSubmitProposal = async (payload: { name: string; description: string; is
       authorName: displayName.value || null,
     })
     createProposalDialogVisible.value = false
-    ElMessage.success('提案已建立')
+    ElMessage.success('精選隊伍已儲存')
   } catch (e) {
     ElMessage.error(`建立失敗：${(e as Error).message}`)
   } finally {
@@ -806,32 +806,55 @@ const onImportProposal = (payload: {
   // proposal object cached in useProposals.myProposals / publicProposals.
   const team: Lineup = JSON.parse(JSON.stringify(proposal.team))
 
-  // Collision pool excludes the current team when overwriting (it's about
-  // to be replaced, so its heroes don't count as collisions).
-  const collisionPool = new Set<string>()
+  // Collision pool: hero AND skill names already in OTHER teams. When
+  // overwriting the current team, skip it (it's about to be replaced).
+  const heroPool = new Set<string>()
+  const skillPool = new Set<string>()
   lineups.forEach((l, i) => {
     if (target === 'overwrite' && i === currentTeamIndex.value) return
-    if (l.main.hero) collisionPool.add(l.main.hero.name)
-    if (l.vice1.hero) collisionPool.add(l.vice1.hero.name)
-    if (l.vice2.hero) collisionPool.add(l.vice2.hero.name)
+    for (const role of ['main', 'vice1', 'vice2'] as const) {
+      const r = l[role]
+      if (r.hero) heroPool.add(r.hero.name)
+      if (r.skill1) skillPool.add(r.skill1.name)
+      if (r.skill2) skillPool.add(r.skill2.name)
+    }
   })
 
   if (resolution === 'leave-empty') {
+    // Drop the colliding piece (hero whole role; skill just that slot) so
+    // the imported team lands without stomping originals. Hero clear
+    // implicitly drops the role's skills too — skill checks below are then
+    // skipped via `continue` against the now-stale local `r`.
     for (const role of ['main', 'vice1', 'vice2'] as const) {
-      const h = team[role]?.hero
-      if (h && collisionPool.has(h.name)) team[role] = makeEmptyRole()
+      const r = team[role]
+      if (r?.hero && heroPool.has(r.hero.name)) {
+        team[role] = makeEmptyRole()
+        continue  // load-bearing: r is stale after the assignment above
+      }
+      if (r?.skill1 && skillPool.has(r.skill1.name)) r.skill1 = null
+      if (r?.skill2 && skillPool.has(r.skill2.name)) r.skill2 = null
     }
   } else if (resolution === 'overwrite') {
+    // Mirror image: clear the same piece on the originating team(s) so the
+    // imported team lands intact.
     const incomingHeroes = new Set<string>()
+    const incomingSkills = new Set<string>()
     for (const role of ['main', 'vice1', 'vice2'] as const) {
-      const h = team[role]?.hero
-      if (h) incomingHeroes.add(h.name)
+      const r = team[role]
+      if (r?.hero) incomingHeroes.add(r.hero.name)
+      if (r?.skill1) incomingSkills.add(r.skill1.name)
+      if (r?.skill2) incomingSkills.add(r.skill2.name)
     }
     lineups.forEach((l, i) => {
       if (target === 'overwrite' && i === currentTeamIndex.value) return
       for (const role of ['main', 'vice1', 'vice2'] as const) {
-        const h = l[role]?.hero
-        if (h && incomingHeroes.has(h.name)) l[role] = makeEmptyRole()
+        const r = l[role]
+        if (r.hero && incomingHeroes.has(r.hero.name)) {
+          l[role] = makeEmptyRole()
+          continue  // see leave-empty branch — r is stale after this
+        }
+        if (r.skill1 && incomingSkills.has(r.skill1.name)) r.skill1 = null
+        if (r.skill2 && incomingSkills.has(r.skill2.name)) r.skill2 = null
       }
     })
   }

@@ -121,7 +121,7 @@ type NavItem = {
 const primaryNav: readonly NavItem[] = [
   { name: 'lineup', to: { name: 'lineup' }, icon: Grid, label: '配將模擬', badge: '工作台' },
   { name: 'groups', to: { name: 'groups' }, icon: Flag, label: '我的編組' },
-  { name: 'proposals', to: { name: 'proposals' }, icon: Document, label: '配將提案' },
+  { name: 'proposals', to: { name: 'proposals' }, icon: Document, label: '精選隊伍' },
   { name: 'gachaLog', to: { name: 'gachaLog' }, icon: Document, label: '抽卡紀錄' },
 ]
 
