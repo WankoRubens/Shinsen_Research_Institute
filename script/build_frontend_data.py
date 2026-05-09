@@ -21,6 +21,7 @@ import yaml
 from pathlib import Path
 
 from llm_core import load_overrides
+from merge_sources import opencc_s2tw
 from paths import (
     BUILD_DIR,
     CFG_CURRENT_JSON,
@@ -52,6 +53,18 @@ ZH_HANS_TO_HANT_TYPE = {
 CFG_HERO_DRIFT_PATH = BUILD_DIR / "cfg_hero_drift.yaml"
 CFG_OVERRIDE_CONFLICTS_PATH = BUILD_DIR / "cfg_override_conflicts.yaml"
 
+# cfg.tips / short_tips / target_tips wrap highlighted spans in
+# <font color='...'>...</font>. The frontend renders text content (not HTML),
+# so tags surface as literal characters in brief descriptions. Strip at the
+# cfg-read boundary; mirrors the same helper in merge_sources.py.
+_FONT_TAG_RE = re.compile(r"</?font[^>]*>", re.IGNORECASE)
+
+
+def _strip_font_tags(text):
+    if not text:
+        return text
+    return _FONT_TAG_RE.sub("", text)
+
 
 def _load_cfg_lookups() -> tuple[dict, dict]:
     """Single cfg.json read → (skill_by_hant, hero_by_hant).
@@ -72,7 +85,10 @@ def _load_cfg_lookups() -> tuple[dict, dict]:
     hero_by_name = {h["name"]: h for h in cfg.get("hero", []) if h.get("name")}
 
     def hant_of(hans):
-        return (by_hans.get(hans) or {}).get("zh-hant") if hans else None
+        if not hans:
+            return None
+        e = by_hans.get(hans) or {}
+        return e.get("zh-hant") or opencc_s2tw(hans)
 
     skill_out: dict = {}
     hero_out: dict = {}
@@ -89,8 +105,8 @@ def _load_cfg_lookups() -> tuple[dict, dict]:
                 "id": cfg_skill.get("id"),
                 "name_ja": ja,
                 "skill_kind": cfg_skill.get("skill_kind"),
-                "short_tips_zh_hant": hant_of(cfg_skill.get("short_tips")),
-                "target_tips_zh_hant": hant_of(cfg_skill.get("target_tips")),
+                "short_tips_zh_hant": _strip_font_tags(hant_of(cfg_skill.get("short_tips"))),
+                "target_tips_zh_hant": _strip_font_tags(hant_of(cfg_skill.get("target_tips"))),
             }
 
         cfg_hero = hero_by_name.get(ml_id)

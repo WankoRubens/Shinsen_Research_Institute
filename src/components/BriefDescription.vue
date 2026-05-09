@@ -29,10 +29,11 @@ import { useTemplateParser } from '../composables/useTemplateParser'
 
 const props = defineProps({
   text: { type: String, default: '' },
-  isMaxLevel: { type: Boolean, default: false }
+  isMaxLevel: { type: Boolean, default: false },
+  vars: { type: Object, default: () => ({}) }
 })
 
 const { parseText } = useTemplateParser()
 
-const parsedText = computed(() => parseText(props.text, props.isMaxLevel))
+const parsedText = computed(() => parseText(props.text, props.isMaxLevel, props.vars))
 </script>

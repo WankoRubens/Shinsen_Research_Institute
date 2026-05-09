@@ -19,6 +19,7 @@ Outputs:
 from __future__ import annotations
 
 import json
+import re
 import sys
 import unicodedata
 from collections import Counter
@@ -274,16 +275,55 @@ class Resolver:
 # ---------------------------------------------------------------------------
 
 
-def _translate_short(text: str | None, ml_index: dict) -> str | None:
+_FONT_TAG_RE = re.compile(r"</?font[^>]*>", re.IGNORECASE)
+
+
+def _strip_font_tags(text: str | None) -> str | None:
+    """cfg.tips / short_tips / target_tips wrap highlighted spans in
+    <font color='...'>...</font>. The frontend renders text content, not
+    HTML, so the tags would surface as literal characters. Strip them at
+    the cfg-read boundary so prototype yaml stays clean."""
+    if not text:
+        return text
+    return _FONT_TAG_RE.sub("", text)
+
+
+_opencc_converter = None
+
+
+def opencc_s2tw(text: str | None) -> str | None:
+    """Deterministic zh-hans → zh-hant character conversion (Taiwan variant).
+
+    Used as a fallback for cfg short_tips/target_tips fields whose zh-hans
+    text has no zh-hant entry in cfg.multi_lang (~15% of cfg skills as of
+    Phase 3). cfg's `tips` field is intentionally NOT routed through this
+    fallback — placeholder mapping happens upstream and that work belongs
+    to a future Phase 4 if it ever lands.
+    """
+    if not text:
+        return text
+    global _opencc_converter
+    if _opencc_converter is None:
+        from opencc import OpenCC
+        _opencc_converter = OpenCC("s2tw")
+    return _opencc_converter.convert(text)
+
+
+def _translate_short(text: str | None, ml_index: dict, opencc_fallback: bool = False) -> str | None:
     """Best-effort zh-hans → zh-hant for short cfg fields (target_tips, etc.).
 
     `ml_index` is a dict zh-hans → multi_lang_entry. Returns the zh-hant if
-    found, else None.
+    found in multi_lang. When `opencc_fallback=True` and the lookup misses,
+    falls back to character-level OpenCC conversion.
     """
     if not text:
         return None
     e = ml_index.get(text)
-    return e.get("zh-hant") if e else None
+    if e and e.get("zh-hant"):
+        return _strip_font_tags(e["zh-hant"])
+    if opencc_fallback:
+        return _strip_font_tags(opencc_s2tw(text))
+    return None
 
 
 def _cfg_block_for_skill(resolver: Resolver, cfg_skill: dict) -> dict:
@@ -308,11 +348,11 @@ def _cfg_block_for_skill(resolver: Resolver, cfg_skill: dict) -> dict:
         "effect_type_list": cfg_skill.get("effect_type_list") or [],
         "arm_limit": cfg_skill.get("arm_limit") or [],
         "icon": cfg_skill.get("icon"),
-        "short_tips_zh_hans": short_tips_hans,
-        "short_tips_zh_hant": _translate_short(short_tips_hans, by_hans),
-        "target_tips_zh_hans": target_tips_hans,
-        "target_tips_zh_hant": _translate_short(target_tips_hans, by_hans),
-        "tips_zh_hans": tips_hans,
+        "short_tips_zh_hans": _strip_font_tags(short_tips_hans),
+        "short_tips_zh_hant": _translate_short(short_tips_hans, by_hans, opencc_fallback=True),
+        "target_tips_zh_hans": _strip_font_tags(target_tips_hans),
+        "target_tips_zh_hant": _translate_short(target_tips_hans, by_hans, opencc_fallback=True),
+        "tips_zh_hans": _strip_font_tags(tips_hans),
         "tips_zh_hant": _translate_short(tips_hans, by_hans),
     }
     block["has_official_tips_hant"] = block["tips_zh_hant"] is not None

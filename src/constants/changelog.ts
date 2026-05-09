@@ -33,6 +33,15 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.3.2',
+    date: '2026-05-09',
+    entries: [
+      { tag: 'data', text: '置換資料來源以對齊中文戰法／武將名稱與部分屬性（兵種、勢力、家族、Cost、稀有度）' },
+      { tag: 'fix', text: '改名後的舊分享連結仍可透過別名自動配對到對應的戰法／武將' },
+      { tag: 'ui', text: '左側隊伍欄不再可橫向捲動' },
+    ],
+  },
+  {
     version: '0.3.1',
     date: '2026-05-03',
     entries: [

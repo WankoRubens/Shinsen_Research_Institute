@@ -154,7 +154,7 @@
       <!-- View 1: Lineup Builder (Default) -->
       <div v-if="!isEditingInventory" class="flex flex-col md:flex-row h-full">
         <!-- Left Sidebar: Team List (Desktop) -->
-        <div class="hidden md:flex w-20 bg-gray-900 flex-col items-center py-4 gap-4 flex-shrink-0 z-50 overflow-y-auto">
+        <div class="hidden md:flex w-20 bg-gray-900 flex-col items-center py-4 gap-4 flex-shrink-0 z-50 overflow-y-auto overflow-x-hidden">
           <div 
             v-for="(team, idx) in lineups" 
             :key="idx"

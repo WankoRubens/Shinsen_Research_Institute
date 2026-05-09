@@ -104,7 +104,7 @@
                     :title="'傳授: ' + teachersBySkill.get(skill.name)!.join('、')"
                   >傳授: {{ teachersBySkill.get(skill.name)!.join('、') }}</span>
                 </div>
-                <BriefDescription v-if="skill.brief_description" :text="skill.brief_description" class="text-[10px] md:text-xs mt-0.5 md:mt-1" />
+                <BriefDescription v-if="skill.brief_description" :text="skill.brief_description" :vars="skill.vars" class="text-[10px] md:text-xs mt-0.5 md:mt-1" />
                 <div v-else class="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1 truncate">{{ skill.description || '暫無描述' }}</div>
                 <!-- Tags in non-hover state -->
                 <div v-if="skill.tags?.length" class="flex flex-wrap gap-0.5 md:gap-1 mt-0.5 md:mt-1">

@@ -262,7 +262,7 @@
                 </div>
               </div>
               <!-- Brief Description in larger font -->
-              <BriefDescription v-if="uniqueSkillData?.brief_description" :text="uniqueSkillData.brief_description" class="text-[7px] md:text-sm italic" />
+              <BriefDescription v-if="uniqueSkillData?.brief_description" :text="uniqueSkillData.brief_description" :vars="uniqueSkillData.vars" class="text-[7px] md:text-sm italic" />
             </div>
           </div>
         </template>
@@ -343,7 +343,7 @@
                 </div>
               </div>
               <!-- Brief Description in larger font -->
-              <BriefDescription v-if="skill1?.brief_description" :text="skill1.brief_description" class="text-[7px] md:text-sm italic" />
+              <BriefDescription v-if="skill1?.brief_description" :text="skill1.brief_description" :vars="skill1.vars" class="text-[7px] md:text-sm italic" />
             </div>
             <el-button v-if="skill1" link type="danger" size="small" class="!p-0 !h-auto" @click.stop="$emit('update:skill1', null)">
                 <el-icon :size="10"><Close /></el-icon>
@@ -424,7 +424,7 @@
                 </div>
               </div>
               <!-- Brief Description in larger font -->
-              <BriefDescription v-if="skill2?.brief_description" :text="skill2.brief_description" class="text-[7px] md:text-sm italic" />
+              <BriefDescription v-if="skill2?.brief_description" :text="skill2.brief_description" :vars="skill2.vars" class="text-[7px] md:text-sm italic" />
             </div>
              <el-button v-if="skill2" link type="danger" size="small" class="!p-0 !h-auto" @click.stop="$emit('update:skill2', null)">
                 <el-icon :size="10"><Close /></el-icon>
