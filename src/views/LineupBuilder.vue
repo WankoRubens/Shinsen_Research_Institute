@@ -141,7 +141,9 @@
       :loading-public="loadingPublicProposals"
       :my-proposals="myProposals"
       :public-proposals="publicProposals"
-      :used-hero-names="allUsedHeroNames"
+      :lineups="lineups"
+      :current-team-index="currentTeamIndex"
+      :max-teams="MAX_TEAMS_PER_GROUP"
       @tab-change="onImportProposalTabChange"
       @import="onImportProposal"
     />
@@ -165,7 +167,7 @@ import RenameDialog from '../components/dialogs/RenameDialog.vue'
 import ShareDialog from '../components/dialogs/ShareDialog.vue'
 import MySharesDialog from '../components/dialogs/MySharesDialog.vue'
 import CreateProposalDialog from '../components/dialogs/CreateProposalDialog.vue'
-import ImportProposalDialog from '../components/dialogs/ImportProposalDialog.vue'
+import ImportProposalDialog, { type ImportTarget } from '../components/dialogs/ImportProposalDialog.vue'
 import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
 import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
 import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
@@ -779,13 +781,10 @@ const onSubmitProposal = async (payload: { name: string; description: string; is
 }
 
 const onAddToGroup = () => {
-  if (currentGroup.value.teams.length >= MAX_TEAMS_PER_GROUP) {
-    ElMessage.info(`當前隊組已滿（${MAX_TEAMS_PER_GROUP} 隊）`)
-    return
-  }
+  // Group-full is no longer a hard block — overwrite-current-team is always
+  // available as an alternative target. The dialog renders its radio
+  // accordingly.
   importProposalDialogVisible.value = true
-  // Lazy-load on open. The "我的" tab is the default; public list lazy-loads
-  // when the user switches tabs (handled by onImportProposalTabChange).
   refreshMyProposals()
 }
 
@@ -795,19 +794,32 @@ const onImportProposalTabChange = (tab: 'mine' | 'public') => {
   }
 }
 
-const onImportProposal = (payload: { proposal: Proposal; resolution: ImportConflictResolution }) => {
-  const { proposal, resolution } = payload
+const onImportProposal = (payload: {
+  proposal: Proposal
+  resolution: ImportConflictResolution
+  target: ImportTarget
+}) => {
+  const { proposal, resolution, target } = payload
 
   // Deep-clone so the proposal's frozen team blob never aliases into our
   // reactive state — subsequent mutations would otherwise leak back to the
   // proposal object cached in useProposals.myProposals / publicProposals.
   const team: Lineup = JSON.parse(JSON.stringify(proposal.team))
 
+  // Collision pool excludes the current team when overwriting (it's about
+  // to be replaced, so its heroes don't count as collisions).
+  const collisionPool = new Set<string>()
+  lineups.forEach((l, i) => {
+    if (target === 'overwrite' && i === currentTeamIndex.value) return
+    if (l.main.hero) collisionPool.add(l.main.hero.name)
+    if (l.vice1.hero) collisionPool.add(l.vice1.hero.name)
+    if (l.vice2.hero) collisionPool.add(l.vice2.hero.name)
+  })
+
   if (resolution === 'leave-empty') {
-    const used = allUsedHeroNames.value
     for (const role of ['main', 'vice1', 'vice2'] as const) {
       const h = team[role]?.hero
-      if (h && used.has(h.name)) team[role] = makeEmptyRole()
+      if (h && collisionPool.has(h.name)) team[role] = makeEmptyRole()
     }
   } else if (resolution === 'overwrite') {
     const incomingHeroes = new Set<string>()
@@ -815,7 +827,8 @@ const onImportProposal = (payload: { proposal: Proposal; resolution: ImportConfl
       const h = team[role]?.hero
       if (h) incomingHeroes.add(h.name)
     }
-    lineups.forEach(l => {
+    lineups.forEach((l, i) => {
+      if (target === 'overwrite' && i === currentTeamIndex.value) return
       for (const role of ['main', 'vice1', 'vice2'] as const) {
         const h = l[role]?.hero
         if (h && incomingHeroes.has(h.name)) l[role] = makeEmptyRole()
@@ -823,12 +836,25 @@ const onImportProposal = (payload: { proposal: Proposal; resolution: ImportConfl
     })
   }
 
-  if (!addTeamFromSnapshot(team)) {
-    ElMessage.error('當前隊組已滿，無法加入')
-    return
+  if (target === 'append') {
+    if (!addTeamFromSnapshot(team)) {
+      ElMessage.error('當前隊組已滿，無法加入')
+      return
+    }
+  } else {
+    // Overwrite in place — preserve the existing team's name (the user's
+    // mental label) and replace the three role payloads. Mutating fields
+    // individually keeps the same proxy identity that LineupSlot is bound to.
+    const dest = currentLineup.value
+    dest.main = team.main
+    dest.vice1 = team.vice1
+    dest.vice2 = team.vice2
   }
+
   importProposalDialogVisible.value = false
-  ElMessage.success(`已將「${proposal.name}」加入當前隊組`)
+  ElMessage.success(
+    `已將「${proposal.name}」${target === 'overwrite' ? '覆寫至' : '加入'}當前隊組`,
+  )
 }
 
 // Set by initFromHash when an incoming share is a v3 gacha-log snapshot.
