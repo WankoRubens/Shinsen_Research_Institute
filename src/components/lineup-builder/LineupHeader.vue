@@ -161,3 +161,64 @@ defineEmits<{
   (e: 'user-menu', cmd: UserMenuCmd): void
 }>()
 </script>
+
+<style scoped>
+.user-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  color: #4338ca;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  line-height: 1;
+  box-sizing: border-box;
+}
+.user-pill:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+}
+.user-pill:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .user-pill {
+    padding: 0 6px;
+    gap: 2px;
+  }
+}
+.user-pill-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px #ffffff;
+  pointer-events: none;
+}
+.help-btn {
+  position: relative;
+}
+.help-btn-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px #ffffff;
+  pointer-events: none;
+}
+</style>

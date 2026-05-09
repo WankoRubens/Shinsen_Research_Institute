@@ -91,18 +91,34 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Star, StarFilled, Edit, Delete, Check, Close } from '@element-plus/icons-vue'
 import type { MyShare } from '../../lib/share'
+import { relativeTime } from '../../lib/time'
 
-defineProps<{
+const props = defineProps<{
   modelValue: boolean
   loading: boolean
   shares: MyShare[]
-  sortedShares: MyShare[]
   editingSlug: string | null
   editingDraft: string
-  relativeTime: (iso: string) => string
 }>()
+
+// Tiebreaker uses updated_at to match the "更新" column shown in the table —
+// otherwise a renamed/pinned row visibly updates its time without moving.
+const sortedShares = computed(() => {
+  return [...props.shares].sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+    const aName = a.display_name?.trim() ?? ''
+    const bName = b.display_name?.trim() ?? ''
+    if (!!aName !== !!bName) return aName ? -1 : 1
+    if (aName && bName) {
+      const cmp = aName.localeCompare(bName, 'zh-Hant')
+      if (cmp !== 0) return cmp
+    }
+    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+  })
+})
 defineEmits<{
   (e: 'update:modelValue', v: boolean): void
   (e: 'update:editingDraft', v: string): void
@@ -114,3 +130,30 @@ defineEmits<{
   (e: 'remove', share: MyShare): void
 }>()
 </script>
+
+<style scoped>
+.pin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.pin-btn:hover {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.pin-btn-on,
+.pin-btn-on:hover {
+  color: #f59e0b;
+}
+.pin-btn-on:hover {
+  background: #fef3c7;
+}
+</style>

@@ -8,11 +8,11 @@
     class="rounded-t-xl overflow-hidden"
   >
     <MobileSlotDetail
-      v-if="role"
+      v-if="role && roleData"
       :role-name="role === 'main' ? '大將' : '副將'"
-      :hero="role ? roleData.hero : null"
-      :stats="role ? roleData.stats : undefined"
-      :equip-traits="role ? roleData.equipTraits : []"
+      :hero="roleData.hero"
+      :stats="roleData.stats"
+      :equip-traits="roleData.equipTraits"
       @update:hero="(h: Hero | null) => $emit('update:hero', h)"
       @open-equip="(idx: number) => $emit('open-equip', idx)"
     />
@@ -27,7 +27,7 @@ import type { RoleData } from '../../composables/useLineups'
 defineProps<{
   modelValue: boolean
   role: 'main' | 'vice1' | 'vice2' | null
-  roleData: RoleData
+  roleData: RoleData | null
 }>()
 defineEmits<{
   (e: 'update:modelValue', v: boolean): void

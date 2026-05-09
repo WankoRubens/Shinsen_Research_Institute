@@ -189,7 +189,7 @@
                 <MobileSlotDetailDrawer
                   v-model="mobileDetailVisible"
                   :role="currentDetailRole"
-                  :role-data="currentDetailRole ? currentLineup[currentDetailRole] : currentLineup.main"
+                  :role-data="currentDetailRole ? currentLineup[currentDetailRole] : null"
                   @update:hero="(h) => { if (currentDetailRole) currentLineup[currentDetailRole].hero = h }"
                   @open-equip="(idx) => { if (currentDetailRole) openEquipDialog(currentDetailRole, idx) }"
                 />
@@ -222,10 +222,8 @@
       v-model="mySharesDialogVisible"
       :loading="mySharesLoading"
       :shares="myShares"
-      :sorted-shares="sortedMyShares"
       :editing-slug="editingSlug"
       v-model:editing-draft="editingDraft"
-      :relative-time="relativeTime"
       @toggle-pin="togglePinShare"
       @start-edit="startEditShareName"
       @save-name="saveShareName"
@@ -281,7 +279,9 @@ import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
 import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
 import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
 import InventoryEditor from '../components/lineup-builder/InventoryEditor.vue'
-import LineupHeader from '../components/lineup-builder/LineupHeader.vue'
+import LineupHeader, { type UserMenuCmd } from '../components/lineup-builder/LineupHeader.vue'
+import type { ResetTarget } from '../components/dialogs/ResetDialog.vue'
+import type { ShareScope } from '../components/dialogs/ShareDialog.vue'
 import TeamSidebarStrip from '../components/lineup-builder/TeamSidebarStrip.vue'
 import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 import { LATEST_VERSION } from '../constants/changelog'
@@ -566,7 +566,7 @@ const openResetDialog = () => {
   resetDialogVisible.value = true
 }
 
-const clearLineup = (type: 'all' | 'current' | 'inventory') => {
+const clearLineup = (type: ResetTarget) => {
   if (type === 'current') {
     clearLineupData('current')
     ElMessage.info('當前隊伍已重置')
@@ -632,7 +632,7 @@ const serializeLineup = (l: typeof lineups[number]): ShareableLineup => ({
 // in. Reset on every dialog open so it doesn't carry over between actions.
 const shareNameInput = ref('')
 
-const shareLineup = async (type: 'all' | 'current' | 'inventory') => {
+const shareLineup = async (type: ShareScope) => {
   const data: ShareableData = { v: 2 }
   if (type === 'inventory' || type === 'all') {
     data.inv_h = ownedHeroes.value.map(n => heroToJp(n) ?? n)
@@ -833,7 +833,7 @@ const tryAutoLoadDefaultProfile = async (): Promise<void> => {
   }
 }
 
-const onUserMenu = async (cmd: string) => {
+const onUserMenu = async (cmd: UserMenuCmd) => {
   if (cmd === 'signout') {
     await signOut()
     clearActiveProfile()
@@ -935,21 +935,6 @@ const togglePinShare = async (s: MyShare) => {
 }
 
 // Sort: pinned first, then named (alphabetical), then unnamed (most recent first).
-// Tiebreaker uses updated_at to match the "更新" column shown in the table —
-// otherwise a renamed/pinned row visibly updates its time without moving.
-const sortedMyShares = computed(() => {
-  return [...myShares.value].sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-    const aName = a.display_name?.trim() ?? ''
-    const bName = b.display_name?.trim() ?? ''
-    if (!!aName !== !!bName) return aName ? -1 : 1
-    if (aName && bName) {
-      const cmp = aName.localeCompare(bName, 'zh-Hant')
-      if (cmp !== 0) return cmp
-    }
-    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-  })
-})
 
 const copyShareUrl = (slug: string) => {
   const url = `${window.location.origin}${window.location.pathname}#s/${slug}`
@@ -958,16 +943,6 @@ const copyShareUrl = (slug: string) => {
   }).catch(() => {
     ElMessage.error('複製失敗')
   })
-}
-
-// "5 分鐘前" / "2 天前" relative-time, no Intl dependency.
-const relativeTime = (iso: string): string => {
-  const sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
-  if (sec < 60) return '剛剛'
-  if (sec < 3600) return `${Math.floor(sec / 60)} 分鐘前`
-  if (sec < 86400) return `${Math.floor(sec / 3600)} 小時前`
-  if (sec < 86400 * 30) return `${Math.floor(sec / 86400)} 天前`
-  return new Date(iso).toLocaleDateString('zh-Hant')
 }
 
 const openRenameDialog = () => {
@@ -1176,141 +1151,4 @@ html.el-popup-parent--hidden {
   animation: lineup-shake 0.4s ease-in-out;
 }
 
-/* OAuth provider buttons — branded styling per provider guidelines */
-.oauth-btn {
-  width: 100%;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 0 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  border: 1px solid transparent;
-}
-.oauth-btn:focus-visible {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-}
-.oauth-btn-google {
-  background: #ffffff;
-  color: #1f1f1f;
-  border-color: #dadce0;
-}
-.oauth-btn-google:hover {
-  background: #f8f9fa;
-  border-color: #c4c6c9;
-  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
-}
-.oauth-btn-google:active {
-  background: #f1f3f4;
-}
-.oauth-btn-github {
-  background: #24292f;
-  color: #ffffff;
-  border-color: #24292f;
-}
-.oauth-btn-github:hover {
-  background: #32383f;
-  border-color: #32383f;
-}
-.oauth-btn-github:active {
-  background: #1c2128;
-}
-
-/* Logged-in pill — visually distinct from the plain "登入" text button.
-   Height matches el-button default (32px) so it lines up with 重置 etc.
-   Mobile shrinks to icon-only so it fits the cramped header. */
-.user-pill {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 10px;
-  margin-left: 4px;
-  border-radius: 999px;
-  background: #eef2ff;        /* indigo-50 */
-  border: 1px solid #c7d2fe;  /* indigo-200 */
-  color: #4338ca;             /* indigo-700 */
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-  line-height: 1;
-  box-sizing: border-box;
-}
-.user-pill:hover {
-  background: #e0e7ff;        /* indigo-100 */
-  border-color: #a5b4fc;      /* indigo-300 */
-}
-.user-pill:focus-visible {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-}
-@media (max-width: 767px) {
-  .user-pill {
-    padding: 0 6px;
-    gap: 2px;
-  }
-}
-/* Unread-changelog badge on the user pill — same vocabulary as .help-btn-dot
-   so logged-in users still get a visual nudge that there's a new version. */
-.user-pill-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #ef4444;        /* red-500 */
-  box-shadow: 0 0 0 2px #ffffff;
-  pointer-events: none;
-}
-
-/* Pin star button in 我的分享 table — subtle when off, gold when on */
-.pin-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: transparent;
-  border: none;
-  color: #cbd5e1;             /* slate-300 */
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.pin-btn:hover {
-  background: #f1f5f9;        /* slate-100 */
-  color: #94a3b8;             /* slate-400 */
-}
-.pin-btn-on,
-.pin-btn-on:hover {
-  color: #f59e0b;             /* amber-500 */
-}
-.pin-btn-on:hover {
-  background: #fef3c7;        /* amber-100 */
-}
-
-/* Help icon — hosts the unread-changelog dot in the upper-right corner */
-.help-btn {
-  position: relative;
-}
-.help-btn-dot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #ef4444;          /* red-500 */
-  box-shadow: 0 0 0 2px #ffffff;
-  pointer-events: none;
-}
 </style>

@@ -47,3 +47,50 @@ defineEmits<{
   (e: 'sign-in', provider: OAuthProvider): void
 }>()
 </script>
+
+<style scoped>
+.oauth-btn {
+  width: 100%;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  border: 1px solid transparent;
+}
+.oauth-btn:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+.oauth-btn-google {
+  background: #ffffff;
+  color: #1f1f1f;
+  border-color: #dadce0;
+}
+.oauth-btn-google:hover {
+  background: #f8f9fa;
+  border-color: #c4c6c9;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+}
+.oauth-btn-google:active {
+  background: #f1f3f4;
+}
+.oauth-btn-github {
+  background: #24292f;
+  color: #ffffff;
+  border-color: #24292f;
+}
+.oauth-btn-github:hover {
+  background: #32383f;
+  border-color: #32383f;
+}
+.oauth-btn-github:active {
+  background: #1c2128;
+}
+</style>
