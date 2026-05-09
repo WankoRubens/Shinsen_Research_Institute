@@ -125,6 +125,24 @@
     <GachaLogDialog v-model="gachaLogDialogVisible" />
 
     <AuthDialog v-model="authDialogVisible" @sign-in="onSignIn" />
+
+    <CreateProposalDialog
+      v-model="createProposalDialogVisible"
+      :is-logged-in="isLoggedIn"
+      :submitting="proposalSubmitting"
+      @submit="onSubmitProposal"
+    />
+
+    <ImportProposalDialog
+      v-model="importProposalDialogVisible"
+      :loading-mine="loadingMyProposals"
+      :loading-public="loadingPublicProposals"
+      :my-proposals="myProposals"
+      :public-proposals="publicProposals"
+      :used-hero-names="allUsedHeroNames"
+      @tab-change="onImportProposalTabChange"
+      @import="onImportProposal"
+    />
   </el-container>
 
   <SkillDragPreview :skill="draggingSkill" :pos="dragPos" />
@@ -144,6 +162,8 @@ import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
 import RenameDialog from '../components/dialogs/RenameDialog.vue'
 import ShareDialog from '../components/dialogs/ShareDialog.vue'
 import MySharesDialog from '../components/dialogs/MySharesDialog.vue'
+import CreateProposalDialog from '../components/dialogs/CreateProposalDialog.vue'
+import ImportProposalDialog from '../components/dialogs/ImportProposalDialog.vue'
 import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
 import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
 import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
@@ -169,6 +189,8 @@ import type { SpectatorBlob } from '../lib/gachaLog'
 import { useAuth } from '../composables/useAuth'
 import { useActiveProfile } from '../composables/useActiveProfile'
 import { useDialogs } from '../composables/useDialogs'
+import { useProposals } from '../composables/useProposals'
+import type { Proposal, ImportConflictResolution } from '../types/group'
 import { useChangelog } from '../composables/useChangelog'
 import { listMyProfiles } from '../lib/profiles'
 import { consumeInitialHash } from '../lib/initial-hash'
@@ -184,10 +206,22 @@ const {
   clearLineup: clearLineupData,
   swapRoles,
   addTeam,
+  addTeamFromSnapshot,
   ensureTeamCount,
+  emptyRole: makeEmptyRole,
 } = useLineups()
 
 const { currentGroup, replaceGroups } = useGroups()
+
+const {
+  myProposals,
+  publicProposals,
+  loadingMine: loadingMyProposals,
+  loadingPublic: loadingPublicProposals,
+  refreshMine: refreshMyProposals,
+  refreshPublic: refreshPublicProposals,
+  createFromLineup: createProposalFromLineup,
+} = useProposals()
 
 const {
   ownedHeroes,
@@ -213,6 +247,8 @@ const gachaLogDialogVisible = dialogs.useDialog('gacha-log')
 const mySharesDialogVisible = dialogs.useDialog('my-shares')
 const mobileDetailVisible = dialogs.useDialog('mobile-slot-detail')
 const mobileSidebarVisible = dialogs.useDialog('mobile-team-drawer')
+const createProposalDialogVisible = dialogs.useDialog('create-proposal')
+const importProposalDialogVisible = dialogs.useDialog('import-proposal')
 
 // Equip Traits Logic (Shared / Mobile)
 const currentEquipRole = ref<Role | null>(null)
@@ -680,15 +716,93 @@ const onSignIn = (provider: OAuthProvider) => {
   signIn(provider)  // full-page redirect — nothing after this runs
 }
 
-// TeamListPanel action stubs — Phase 3f / 6 will replace these.
+// TeamListPanel actions
 const onAddTeam = () => {
   if (!addTeam()) ElMessage.info(`當前隊組已滿（${MAX_TEAMS_PER_GROUP} 隊）`)
 }
+
+const proposalSubmitting = ref(false)
+
 const onSaveAsProposal = () => {
-  ElMessage.info('「另存為提案」功能將在 Phase 3f 後啟用')
+  // createProposal RLS gates on auth — short-circuit to the auth dialog so
+  // anon users see the reason instead of a generic 401.
+  if (!isLoggedIn.value) {
+    ElMessage.info('請先登入才能建立提案')
+    authDialogVisible.value = true
+    return
+  }
+  createProposalDialogVisible.value = true
 }
+
+const onSubmitProposal = async (payload: { name: string; description: string; isPublic: boolean }) => {
+  proposalSubmitting.value = true
+  try {
+    await createProposalFromLineup(currentLineup.value, {
+      name: payload.name,
+      description: payload.description,
+      isPublic: payload.isPublic,
+      authorName: displayName.value || null,
+    })
+    createProposalDialogVisible.value = false
+    ElMessage.success('提案已建立')
+  } catch (e) {
+    ElMessage.error(`建立失敗：${(e as Error).message}`)
+  } finally {
+    proposalSubmitting.value = false
+  }
+}
+
 const onAddToGroup = () => {
-  ElMessage.info('「加入編組」功能將在 Phase 6 後啟用')
+  if (currentGroup.value.teams.length >= MAX_TEAMS_PER_GROUP) {
+    ElMessage.info(`當前隊組已滿（${MAX_TEAMS_PER_GROUP} 隊）`)
+    return
+  }
+  importProposalDialogVisible.value = true
+  // Lazy-load on open. The "我的" tab is the default; public list lazy-loads
+  // when the user switches tabs (handled by onImportProposalTabChange).
+  refreshMyProposals()
+}
+
+const onImportProposalTabChange = (tab: 'mine' | 'public') => {
+  if (tab === 'public' && publicProposals.value.length === 0) {
+    refreshPublicProposals()
+  }
+}
+
+const onImportProposal = (payload: { proposal: Proposal; resolution: ImportConflictResolution }) => {
+  const { proposal, resolution } = payload
+
+  // Deep-clone so the proposal's frozen team blob never aliases into our
+  // reactive state — subsequent mutations would otherwise leak back to the
+  // proposal object cached in useProposals.myProposals / publicProposals.
+  const team: Lineup = JSON.parse(JSON.stringify(proposal.team))
+
+  if (resolution === 'leave-empty') {
+    const used = allUsedHeroNames.value
+    for (const role of ['main', 'vice1', 'vice2'] as const) {
+      const h = team[role]?.hero
+      if (h && used.has(h.name)) team[role] = makeEmptyRole()
+    }
+  } else if (resolution === 'overwrite') {
+    const incomingHeroes = new Set<string>()
+    for (const role of ['main', 'vice1', 'vice2'] as const) {
+      const h = team[role]?.hero
+      if (h) incomingHeroes.add(h.name)
+    }
+    lineups.forEach(l => {
+      for (const role of ['main', 'vice1', 'vice2'] as const) {
+        const h = l[role]?.hero
+        if (h && incomingHeroes.has(h.name)) l[role] = makeEmptyRole()
+      }
+    })
+  }
+
+  if (!addTeamFromSnapshot(team)) {
+    ElMessage.error('當前隊組已滿，無法加入')
+    return
+  }
+  importProposalDialogVisible.value = false
+  ElMessage.success(`已將「${proposal.name}」加入當前隊組`)
 }
 
 // Set by initFromHash when an incoming share is a v3 gacha-log snapshot.

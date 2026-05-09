@@ -127,6 +127,18 @@ const ensureTeamCount = (target: number) => {
   }
 }
 
+// Append a pre-built Lineup (e.g. from a proposal import) and switch to it.
+// Caller must pass a fully-formed deep clone — the snapshot becomes part of
+// the active group's reactive state.
+const addTeamFromSnapshot = (team: Lineup): boolean => {
+  if (currentGroup.value.teams.length >= MAX_TEAMS_PER_GROUP) return false
+  currentGroup.value.teams.push(team)
+  const last = currentGroup.value.teams[currentGroup.value.teams.length - 1]
+  lineups.push(last)
+  currentTeamIndex.value = lineups.length - 1
+  return true
+}
+
 // Getters
 const currentLineup = computed(() => lineups[currentTeamIndex.value])
 
@@ -208,6 +220,7 @@ export function useLineups() {
     clearLineup,
     swapRoles,
     addTeam,
+    addTeamFromSnapshot,
     ensureTeamCount,
   }
 }

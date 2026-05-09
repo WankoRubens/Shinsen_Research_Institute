@@ -17,6 +17,8 @@ export type OverlayName =
   | 'equip-trait'
   | 'mobile-slot-detail'
   | 'mobile-team-drawer'
+  | 'create-proposal'
+  | 'import-proposal'
 
 const active = ref<OverlayName | null>(null)
 

@@ -33,6 +33,21 @@ export interface Group {
 export const MAX_TEAMS_PER_GROUP = 10
 
 /**
+ * How to resolve hero/skill collisions when importing a proposal team into
+ * a group that already uses the same hero/skill in another team.
+ *
+ * - 'cancel': abort the import.
+ * - 'overwrite': remove the colliding hero/skill from its existing team in
+ *   the group, then place the imported team intact.
+ * - 'leave-empty': place the imported team but null out any role whose hero
+ *   collides; the existing team keeps its hero.
+ *
+ * Surface in `ImportProposalDialog`. Phase 6 reuses this in the proposals
+ * page when "加入編組" is initiated from outside the LineupBuilder.
+ */
+export type ImportConflictResolution = 'cancel' | 'overwrite' | 'leave-empty'
+
+/**
  * A 配將提案 is a snapshot of a single team. Snapshots are intentionally
  * data-redundant (we copy hero/skill names, not just ids) so a future
  * pipeline rename of a hero/skill doesn't retroactively mutate the proposal.
