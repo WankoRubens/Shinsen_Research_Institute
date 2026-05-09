@@ -34,7 +34,6 @@
         <el-icon :size="18"><Menu /></el-icon>
       </button>
       <router-view />
-      <AppFooter />
     </main>
   </div>
 </template>
@@ -45,7 +44,6 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Menu } from '@element-plus/icons-vue'
 import AppSidebar from '../components/layout/AppSidebar.vue'
-import AppFooter from '../components/lineup-builder/AppFooter.vue'
 import LineupHeader, { type UserMenuCmd } from '../components/lineup-builder/LineupHeader.vue'
 import { useLineups } from '../composables/useLineups'
 import { useInventory } from '../composables/useInventory'

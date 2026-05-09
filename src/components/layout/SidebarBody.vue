@@ -58,6 +58,20 @@
         <el-icon :size="14"><Fold v-if="!collapsed" /><Expand v-else /></el-icon>
         <span v-if="!collapsed">收合</span>
       </button>
+
+      <div
+        v-if="!collapsed"
+        class="px-3 pt-3 mt-2 border-t border-parchment-dim text-[10px] text-ink-mute leading-relaxed space-y-0.5"
+      >
+        <div class="break-all">聯絡：yt.neko.vision@gmail.com</div>
+        <div>Discord：neko.vision</div>
+        <a
+          href="https://forms.gle/mnMAqAzP595ygCrJ9"
+          target="_blank"
+          rel="noopener"
+          class="inline-block text-amber-700 hover:underline"
+        >建議或回報</a>
+      </div>
     </div>
   </div>
 </template>
