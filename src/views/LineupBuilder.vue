@@ -157,7 +157,8 @@ import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 import { useData, Hero, Skill, Trait } from '../composables/useData'
 
 import { MOCK_EQUIP_TRAITS, ShareableData, ShareableLineup, ShareableBingxue } from '../constants/gameData'
-import { useLineups, type RoleData, type BingxueActive } from '../composables/useLineups'
+import { useLineups, makeTeam, type RoleData, type BingxueActive, type Lineup } from '../composables/useLineups'
+import { useGroups, MAX_TEAMS_PER_GROUP } from '../composables/useGroups'
 import { useInventory } from '../composables/useInventory'
 import {
   createShare, loadShare, isShareEnabled,
@@ -185,6 +186,8 @@ const {
   addTeam,
   ensureTeamCount,
 } = useLineups()
+
+const { currentGroup, replaceGroups } = useGroups()
 
 const {
   ownedHeroes,
@@ -497,6 +500,8 @@ const shareNameInput = ref('')
 watch(shareDialogVisible, (now) => { if (now) shareNameInput.value = '' })
 
 const shareLineup = async (type: ShareScope) => {
+  // Default to v2 (flat single-team / inventory). The 'all' branch below
+  // upgrades to v3 to carry the group envelope.
   const data: ShareableData = { v: 2 }
   if (type === 'inventory' || type === 'all') {
     data.inv_h = ownedHeroes.value.map(n => heroToJp(n) ?? n)
@@ -506,7 +511,13 @@ const shareLineup = async (type: ShareScope) => {
     data.lineups = [serializeLineup(currentLineup.value)]
   }
   if (type === 'all') {
-    data.lineups = lineups.map(serializeLineup)
+    // v3 envelope keeps the group name with the teams. Single-group only
+    // until multi-group UI ships in Phase 3e/6; the schema scales.
+    data.v = 3
+    data.groups = [{
+      name: currentGroup.value.name,
+      teams: lineups.map(serializeLineup),
+    }]
   }
 
   const origin = `${window.location.origin}${window.location.pathname}`
@@ -565,41 +576,60 @@ const restoreFromBlob = (data: ShareableData) => {
     showOwnedOnly.value = true
   }
 
-  if (data.lineups && Array.isArray(data.lineups)) {
-    // Grow the in-memory team list to fit the incoming blob (capped at MAX_TEAMS
-    // by ensureTeamCount). Without this, restoring a 5-team share into a fresh
-    // 1-team session would silently drop teams 2-5.
+  // Per-role hydrate — used by both v2 (in-place mutate active group's teams)
+  // and v3 (build fresh teams to push through replaceGroups).
+  const restoreRole = (prefix: string, role: RoleData, l: ShareableLineup) => {
+    const safeL = l as any
+    const hName = safeL[prefix]
+    if (hName) role.hero = findHeroByKey(hName) || null
+    const s1Name = safeL[prefix + '_s1']
+    if (s1Name) role.skill1 = findSkillByKey(s1Name) || null
+    const s2Name = safeL[prefix + '_s2']
+    if (s2Name) role.skill2 = findSkillByKey(s2Name) || null
+    if (safeL[prefix + '_st']) role.stats = safeL[prefix + '_st']
+    if (safeL[prefix + '_eq']) {
+      role.equipTraits = safeL[prefix + '_eq'].map((t: any) => t ? { name: t.n, rank: t.r, description: t.d, active: true } : null)
+    }
+    const bt = safeL[prefix + '_bt']
+    if (typeof bt === 'number') role.breakthrough = Math.max(0, Math.min(5, bt))
+    const bx = safeL[prefix + '_bx']
+    if (bx && bx.d) {
+      role.bingxue = {
+        direction: bx.d,
+        major: bx.m ?? null,
+        minors: Array.isArray(bx.n) ? bx.n.map((mi: any) => ({ name: mi.n, level: mi.l })) : [],
+      }
+    }
+  }
+
+  const hydrateTeam = (target: Lineup, l: ShareableLineup) => {
+    if (l.name) target.name = l.name
+    restoreRole('m', target.main, l)
+    restoreRole('v1', target.vice1, l)
+    restoreRole('v2', target.vice2, l)
+  }
+
+  // v3 — wipe-and-replace via the groups envelope. Used by share-all links
+  // and by post-OAuth recovery snapshots.
+  if (data.groups && Array.isArray(data.groups) && data.groups.length > 0) {
+    const incoming = data.groups.map((g) => {
+      const teams = (g.teams || []).slice(0, MAX_TEAMS_PER_GROUP).map((l, i) => {
+        const team = makeTeam(i)
+        hydrateTeam(team, l)
+        return team
+      })
+      // Guarantee at least one team per group so the UI never renders an
+      // empty lineups array.
+      if (teams.length === 0) teams.push(makeTeam(0))
+      return { name: g.name || '預設', teams }
+    })
+    replaceGroups(incoming)
+  } else if (data.lineups && Array.isArray(data.lineups)) {
+    // v2 legacy — populate the active group's teams in place.
     ensureTeamCount(data.lineups.length)
     data.lineups.forEach((l, i) => {
       if (i >= lineups.length) return
-      const target = lineups[i]
-      if (l.name) target.name = l.name
-      const restore = (prefix: string, role: RoleData) => {
-        const safeL = l as any
-        const hName = safeL[prefix]
-        if (hName) role.hero = findHeroByKey(hName) || null
-        const s1Name = safeL[prefix + '_s1']
-        if (s1Name) role.skill1 = findSkillByKey(s1Name) || null
-        const s2Name = safeL[prefix + '_s2']
-        if (s2Name) role.skill2 = findSkillByKey(s2Name) || null
-        if (safeL[prefix + '_st']) role.stats = safeL[prefix + '_st']
-        if (safeL[prefix + '_eq']) {
-          role.equipTraits = safeL[prefix + '_eq'].map((t: any) => t ? { name: t.n, rank: t.r, description: t.d, active: true } : null)
-        }
-        const bt = safeL[prefix + '_bt']
-        if (typeof bt === 'number') role.breakthrough = Math.max(0, Math.min(5, bt))
-        const bx = safeL[prefix + '_bx']
-        if (bx && bx.d) {
-          role.bingxue = {
-            direction: bx.d,
-            major: bx.m ?? null,
-            minors: Array.isArray(bx.n) ? bx.n.map((mi: any) => ({ name: mi.n, level: mi.l })) : [],
-          }
-        }
-      }
-      restore('m', target.main)
-      restore('v1', target.vice1)
-      restore('v2', target.vice2)
+      hydrateTeam(lineups[i], l)
     })
   }
 }
@@ -611,8 +641,11 @@ const RECOVERY_KEY = 'nobunaga.auth.recovery'
 const RECOVERY_TTL_MS = 5 * 60 * 1000
 
 const snapshotForRecovery = () => {
-  const blob: ShareableData = { v: 2 }
-  blob.lineups = lineups.map(serializeLineup)
+  const blob: ShareableData = { v: 3 }
+  blob.groups = [{
+    name: currentGroup.value.name,
+    teams: lineups.map(serializeLineup),
+  }]
   blob.inv_h = ownedHeroes.value.map(n => heroToJp(n) ?? n)
   blob.inv_s = ownedSkills.value.map(n => skillToJp(n) ?? n)
   localStorage.setItem(RECOVERY_KEY, JSON.stringify({ blob, ts: Date.now() }))
@@ -649,7 +682,7 @@ const onSignIn = (provider: OAuthProvider) => {
 
 // TeamListPanel action stubs — Phase 3f / 6 will replace these.
 const onAddTeam = () => {
-  if (!addTeam()) ElMessage.info('當前隊組已滿（10 隊）')
+  if (!addTeam()) ElMessage.info(`當前隊組已滿（${MAX_TEAMS_PER_GROUP} 隊）`)
 }
 const onSaveAsProposal = () => {
   ElMessage.info('「另存為提案」功能將在 Phase 3f 後啟用')

@@ -1,5 +1,6 @@
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import { Hero, Skill, Trait, BingxueDirection } from './useData'
+import { useGroups, MAX_TEAMS_PER_GROUP } from './useGroups'
 
 // Active 兵學 selection for a hero. A hero activates ONE direction at a time,
 // picks 1 of 3 majors (1 pt), plus minors from 6 available using a 5-point budget.
@@ -50,7 +51,7 @@ const emptyBingxue = (): BingxueActive => ({
   minors: [],
 })
 
-const emptyRole = (): RoleData => ({
+export const emptyRole = (): RoleData => ({
   hero: null,
   skill1: null,
   skill2: null,
@@ -60,31 +61,69 @@ const emptyRole = (): RoleData => ({
   bingxue: emptyBingxue(),
 })
 
-export const MAX_TEAMS = 10
-
-const makeTeam = (idx: number): Lineup => ({
+export const makeTeam = (idx: number): Lineup => ({
   name: `隊伍 ${idx + 1}`,
   main: emptyRole(),
   vice1: emptyRole(),
   vice2: emptyRole(),
 })
 
-const lineups = reactive<Lineup[]>([makeTeam(0)])
+const { currentGroup } = useGroups()
+
+// Phase 3d: groups owns teams; useLineups exposes a stable `lineups` mirror
+// of the active group's teams. `splice` keeps the same array proxy across
+// group switches so consumers that captured `lineups` once at module-load
+// time keep seeing live data. Items pushed in are the same proxies as
+// `currentGroup.value.teams[i]` (Vue 3 reactive is idempotent — pushing an
+// already-proxied object reuses its proxy), so mutations propagate either
+// direction.
+const lineups = reactive<Lineup[]>([])
 
 const currentTeamIndex = ref(0)
 
+// Self-bootstrapping: also seeds the active group with one default team if
+// it's empty (cold start, or user removed the last team). Folding the seed
+// in here removes the seed-then-watch ordering trap an external seed block
+// would create.
+const syncLineupsFromGroup = () => {
+  if (currentGroup.value.teams.length === 0) {
+    currentGroup.value.teams.push(makeTeam(0))
+  }
+  lineups.splice(0, lineups.length, ...currentGroup.value.teams)
+  if (currentTeamIndex.value >= lineups.length) {
+    currentTeamIndex.value = Math.max(0, lineups.length - 1)
+  }
+}
+
+// Watch the computed group reference (not just the index) so wholesale
+// replacements via useGroups().replaceGroups() — which the v3 share restore
+// uses — also resync the mirror, even if currentGroupIndex stays at 0.
+watch(currentGroup, syncLineupsFromGroup, { immediate: true })
+
+// addTeam / ensureTeamCount mutate the source (currentGroup.teams) AND
+// manually mirror the new entries into `lineups`. The watcher does NOT fire
+// on in-place pushes — it only fires when `currentGroup`'s identity changes
+// (group switch or replaceGroups). Without the manual mirror these helpers
+// would silently grow the source while leaving `lineups` short, until the
+// next group-identity change resynced it.
 const addTeam = (): boolean => {
-  if (lineups.length >= MAX_TEAMS) return false
-  lineups.push(makeTeam(lineups.length))
+  if (currentGroup.value.teams.length >= MAX_TEAMS_PER_GROUP) return false
+  currentGroup.value.teams.push(makeTeam(currentGroup.value.teams.length))
+  // Pull the just-pushed item back from the source array so the value
+  // mirrored into `lineups` is the same proxy as currentGroup.teams[i].
+  const last = currentGroup.value.teams[currentGroup.value.teams.length - 1]
+  lineups.push(last)
   currentTeamIndex.value = lineups.length - 1
   return true
 }
 
-// Grow lineups up to `target` slots so a share blob with N teams can restore
-// fully. Caller is responsible for not exceeding MAX_TEAMS.
+// Grow the active group up to `target` slots so a share blob with N teams can
+// restore fully. Caller is responsible for not exceeding MAX_TEAMS_PER_GROUP.
 const ensureTeamCount = (target: number) => {
-  while (lineups.length < target && lineups.length < MAX_TEAMS) {
-    lineups.push(makeTeam(lineups.length))
+  while (currentGroup.value.teams.length < target && currentGroup.value.teams.length < MAX_TEAMS_PER_GROUP) {
+    currentGroup.value.teams.push(makeTeam(currentGroup.value.teams.length))
+    const last = currentGroup.value.teams[currentGroup.value.teams.length - 1]
+    lineups.push(last)
   }
 }
 

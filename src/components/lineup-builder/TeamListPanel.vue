@@ -4,9 +4,10 @@
       <h2 class="text-sm font-bold tracking-wide">配將模擬</h2>
     </header>
 
-    <!-- Group selector — stub until Phase 3d wires useGroups. -->
+    <!-- Group selector — name now reads live from useGroups. Dropdown
+         interaction (switch / rename / add) lands in Phase 3e. -->
     <div class="px-4 py-2 text-xs text-ink-mute border-b border-parchment-dim flex items-center justify-between">
-      <span>當前隊組 · <span class="font-bold text-ink">預設</span></span>
+      <span>當前隊組 · <span class="font-bold text-ink">{{ currentGroup.name }}</span></span>
       <el-icon class="opacity-40"><ArrowDown /></el-icon>
     </div>
 
@@ -39,7 +40,7 @@
       </button>
 
       <button
-        v-if="lineups.length < MAX_TEAMS"
+        v-if="lineups.length < MAX_TEAMS_PER_GROUP"
         type="button"
         class="w-full px-4 py-2 mt-1 text-left text-xs text-ink-mute hover:text-ink hover:bg-parchment-soft/60 transition-colors flex items-center gap-1"
         @click="$emit('add-team')"
@@ -68,12 +69,15 @@
 
 <script setup lang="ts">
 import { ArrowDown, Share, Document, Plus } from '@element-plus/icons-vue'
-import { MAX_TEAMS, type Lineup } from '../../composables/useLineups'
+import type { Lineup } from '../../composables/useLineups'
+import { useGroups, MAX_TEAMS_PER_GROUP } from '../../composables/useGroups'
 
 defineProps<{
   lineups: Lineup[]
   currentTeamIndex: number
 }>()
+
+const { currentGroup } = useGroups()
 
 defineEmits<{
   (e: 'select', idx: number): void
@@ -88,8 +92,8 @@ const teamCost = (team: Lineup): number =>
   + (team.vice1.hero?.cost ?? 0)
   + (team.vice2.hero?.cost ?? 0)
 
-// Phase 3d will compare against the last persisted snapshot to detect dirt.
-// Until then, render no dot — matches the IMPLEMENTATION.md plan.
+// Stub — needs a per-team baseline snapshot to diff against. Lands with
+// the proposal-save / share-blob persistence work in a later phase.
 const hasUnsavedChanges = (_idx: number): boolean => false
 </script>
 

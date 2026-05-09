@@ -45,10 +45,19 @@ export interface ShareableLineup {
   v2?: string; v2_s1?: string; v2_s2?: string; v2_st?: any; v2_eq?: any[]; v2_bt?: number; v2_bx?: ShareableBingxue
 }
 
+// v3 envelope — wraps teams under a named group so multi-group payloads can
+// round-trip. v2 (`lineups: ShareableLineup[]`) stays as the legacy read path
+// and folds into the active group on restore.
+export interface ShareableGroup {
+  name: string
+  teams: ShareableLineup[]
+}
+
 export interface ShareableData {
-  v?: number  // format version. Absent = v1 (CHT names). 2 = JP names (rename-resilient).
+  v?: number  // 1 = CHT names, 2 = JP names (rename-resilient), 3 = JP names + groups envelope.
   inv_h?: string[]
   inv_s?: string[]
-  inventory?: string[] // legacy support
-  lineups?: ShareableLineup[]
+  inventory?: string[] // legacy v1 support
+  lineups?: ShareableLineup[]  // v1/v2 — flat (single-group) team list
+  groups?: ShareableGroup[]    // v3 — named-group envelope
 }
