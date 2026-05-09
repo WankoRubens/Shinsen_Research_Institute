@@ -38,164 +38,56 @@
           @select="(idx: number) => { currentTeamIndex = idx; mobileSidebarVisible = false }"
         />
 
-                <!-- Center: Lineup Builder Area -->
-                <div class="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
-                  <div
-                    class="flex-none md:flex-1 overflow-y-auto p-0.5 md:p-6 bg-slate-50"
-                    @click.self="clearSkillFocus"
-                  >
-                     <!-- Mobile: Compact Grid | Desktop: Grid -->
-                     <div
-                       class="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-0.5 md:gap-4 pb-0 md:pb-0 h-auto"
-                       :class="{ 'lineup-shake': lineupShakeActive }"
-                       @click.self="clearSkillFocus"
-                       @animationend="lineupShakeActive = false"
-                     >
-                        <div class="w-full md:min-w-0 md:h-full">
-                          <LineupSlot
-                            title="大將"
-                            role="main"
-                            v-model:hero="currentLineup.main.hero"
-                            v-model:skill1="currentLineup.main.skill1"
-                            v-model:skill2="currentLineup.main.skill2"
-                            v-model:stats="currentLineup.main.stats"
-                            v-model:equipTraits="currentLineup.main.equipTraits"
-                            v-model:breakthrough="currentLineup.main.breakthrough"
-                            v-model:bingxue="currentLineup.main.bingxue"
-                            :focused-skill-slot="currentSelectingSkillRole === 'main' ? currentSelectingSkillSlot : null"
-                            :is-swap-source="swapModeRole === 'main'"
-                            :swap-mode-active="swapModeRole !== null"
-                            :is-drag-target="dragSourceRole !== null && dragSourceRole !== 'main'"
-                            :skill-dragging="isSkillDragging"
-                            :conflicting-skill-names="conflictingSkillNames"
-                            @open-hero-select="openHeroSelect('main')"
-                            @open-skill-select="(slotIdx) => handleSkillSlotClick('main', slotIdx)"
-                            @skill-drop="(slotIdx, skill) => handleSkillDrop('main', slotIdx, skill)"
-                            @skill-drag-start="handleSkillDragStarted"
-                            @skill-drag-end="handleSkillDragEnded"
-                            @skill-slot-drop="(srcRole, srcSlot, tgtSlot) => handleSkillSlotDrop('main', srcRole, srcSlot, tgtSlot)"
-                            @open-detail="openMobileDetail('main')"
-                            @swap-click="handleSwapAction('main')"
-                            @hero-drag-start="() => dragSourceRole = 'main'"
-                            @hero-drag-end="() => dragSourceRole = null"
-                            @hero-drop="() => handleHeroDrop('main')"
-                          />
-                        </div>
-                        <div class="w-full md:min-w-0 md:h-full">
-                          <LineupSlot
-                            title="副將"
-                            role="vice1"
-                            v-model:hero="currentLineup.vice1.hero"
-                            v-model:skill1="currentLineup.vice1.skill1"
-                            v-model:skill2="currentLineup.vice1.skill2"
-                            v-model:stats="currentLineup.vice1.stats"
-                            v-model:equipTraits="currentLineup.vice1.equipTraits"
-                            v-model:breakthrough="currentLineup.vice1.breakthrough"
-                            v-model:bingxue="currentLineup.vice1.bingxue"
-                            :focused-skill-slot="currentSelectingSkillRole === 'vice1' ? currentSelectingSkillSlot : null"
-                            :is-swap-source="swapModeRole === 'vice1'"
-                            :swap-mode-active="swapModeRole !== null"
-                            :is-drag-target="dragSourceRole !== null && dragSourceRole !== 'vice1'"
-                            :skill-dragging="isSkillDragging"
-                            :conflicting-skill-names="conflictingSkillNames"
-                            @open-hero-select="openHeroSelect('vice1')"
-                            @open-skill-select="(slotIdx) => handleSkillSlotClick('vice1', slotIdx)"
-                            @skill-drop="(slotIdx, skill) => handleSkillDrop('vice1', slotIdx, skill)"
-                            @skill-drag-start="handleSkillDragStarted"
-                            @skill-drag-end="handleSkillDragEnded"
-                            @skill-slot-drop="(srcRole, srcSlot, tgtSlot) => handleSkillSlotDrop('vice1', srcRole, srcSlot, tgtSlot)"
-                            @open-detail="openMobileDetail('vice1')"
-                            @swap-click="handleSwapAction('vice1')"
-                            @hero-drag-start="() => dragSourceRole = 'vice1'"
-                            @hero-drag-end="() => dragSourceRole = null"
-                            @hero-drop="() => handleHeroDrop('vice1')"
-                          />
-                        </div>
-                        <div class="w-full md:min-w-0 md:h-full">
-                          <LineupSlot
-                            title="副將"
-                            role="vice2"
-                            v-model:hero="currentLineup.vice2.hero"
-                            v-model:skill1="currentLineup.vice2.skill1"
-                            v-model:skill2="currentLineup.vice2.skill2"
-                            v-model:stats="currentLineup.vice2.stats"
-                            v-model:equipTraits="currentLineup.vice2.equipTraits"
-                            v-model:breakthrough="currentLineup.vice2.breakthrough"
-                            v-model:bingxue="currentLineup.vice2.bingxue"
-                            :focused-skill-slot="currentSelectingSkillRole === 'vice2' ? currentSelectingSkillSlot : null"
-                            :is-swap-source="swapModeRole === 'vice2'"
-                            :swap-mode-active="swapModeRole !== null"
-                            :is-drag-target="dragSourceRole !== null && dragSourceRole !== 'vice2'"
-                            :skill-dragging="isSkillDragging"
-                            :conflicting-skill-names="conflictingSkillNames"
-                            @open-hero-select="openHeroSelect('vice2')"
-                            @open-skill-select="(slotIdx) => handleSkillSlotClick('vice2', slotIdx)"
-                            @skill-drop="(slotIdx, skill) => handleSkillDrop('vice2', slotIdx, skill)"
-                            @skill-drag-start="handleSkillDragStarted"
-                            @skill-drag-end="handleSkillDragEnded"
-                            @skill-slot-drop="(srcRole, srcSlot, tgtSlot) => handleSkillSlotDrop('vice2', srcRole, srcSlot, tgtSlot)"
-                            @open-detail="openMobileDetail('vice2')"
-                            @swap-click="handleSwapAction('vice2')"
-                            @hero-drag-start="() => dragSourceRole = 'vice2'"
-                            @hero-drag-end="() => dragSourceRole = null"
-                            @hero-drop="() => handleHeroDrop('vice2')"
-                          />
-                        </div>
-                     </div>
-                  </div>
-        
-                                      <!-- Right: Library (Select Mode) - On mobile this is below the lineups -->
-        
-                                      <div class="flex-1 md:flex-none md:h-full w-full md:w-[45%] bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col shadow-xl z-40 min-h-0">
-        
-                                        <el-tabs v-model="activeTab" class="library-tabs flex-1 flex flex-col px-0 pt-0 md:px-4 md:pt-2" stretch>                                <el-tab-pane label="武將庫" name="heroes" class="h-full flex flex-col overflow-hidden">
-                                   <HeroLibrary 
-                                     mode="select" 
-                                     :used-heroes="allUsedHeroNames" 
-                                     :owned-heroes="ownedHeroes"
-                                     :filter-owned="showOwnedOnly"
-                                     @update:filterOwned="val => showOwnedOnly = val"
-                                     @select="selectHeroFromLibrary" 
-                                   />
-                                </el-tab-pane>
-                                <el-tab-pane label="戰法庫" name="skills" class="h-full flex flex-col overflow-hidden">
-                                   <SkillLibrary
-                                     mode="select"
-                                     :used-skills="allUsedSkillNames"
-                                     :owned-skills="ownedSkills"
-                                     :filter-owned="showOwnedOnly"
-                                     @update:filterOwned="val => showOwnedOnly = val"
-                                     @select="selectSkillFromDialog"
-                                     @skill-drag-start="handleSkillDragStarted"
-                                     @skill-drag-end="handleSkillDragEnded"
-                                   /> 
-                                </el-tab-pane>          
-                     </el-tabs>
-                  </div>
-                </div>
-              </div>
-        
-              <InventoryEditor
-                v-else
-                v-model:active-tab="inventoryActiveTab"
-                :owned-heroes="tempOwnedHeroes"
-                :owned-skills="tempOwnedSkills"
-                @update:ownedHeroes="val => tempOwnedHeroes = val"
-                @update:ownedSkills="val => tempOwnedSkills = val"
-              />
-        
-            </el-main>
-        
-                <MobileSlotDetailDrawer
-                  v-model="mobileDetailVisible"
-                  :role="currentDetailRole"
-                  :role-data="currentDetailRole ? currentLineup[currentDetailRole] : null"
-                  @update:hero="(h) => { if (currentDetailRole) currentLineup[currentDetailRole].hero = h }"
-                  @open-equip="(idx) => { if (currentDetailRole) openEquipDialog(currentDetailRole, idx) }"
-                />
-        
-            
-        
+        <LineupWorkspace
+          v-model:active-tab="activeTab"
+          v-model:show-owned-only="showOwnedOnly"
+          v-model:lineup-shake-active="lineupShakeActive"
+          :current-lineup="currentLineup"
+          :owned-heroes="ownedHeroes"
+          :owned-skills="ownedSkills"
+          :all-used-hero-names="allUsedHeroNames"
+          :all-used-skill-names="allUsedSkillNames"
+          :current-selecting-skill-role="currentSelectingSkillRole"
+          :current-selecting-skill-slot="currentSelectingSkillSlot"
+          :swap-mode-role="swapModeRole"
+          :drag-source-role="dragSourceRole"
+          :is-skill-dragging="isSkillDragging"
+          :conflicting-skill-names="conflictingSkillNames"
+          @clear-skill-focus="clearSkillFocus"
+          @open-hero-select="openHeroSelect"
+          @open-skill-select="handleSkillSlotClick"
+          @skill-drop="handleSkillDrop"
+          @skill-drag-start="handleSkillDragStarted"
+          @skill-drag-end="handleSkillDragEnded"
+          @skill-slot-drop="handleSkillSlotDrop"
+          @open-detail="openMobileDetail"
+          @swap-click="handleSwapAction"
+          @hero-drag-start="(role) => dragSourceRole = role"
+          @hero-drag-end="() => dragSourceRole = null"
+          @hero-drop="handleHeroDrop"
+          @select-hero-from-library="selectHeroFromLibrary"
+          @select-skill-from-library="selectSkillFromDialog"
+        />
+      </div>
+
+      <InventoryEditor
+        v-else
+        v-model:active-tab="inventoryActiveTab"
+        :owned-heroes="tempOwnedHeroes"
+        :owned-skills="tempOwnedSkills"
+        @update:ownedHeroes="val => tempOwnedHeroes = val"
+        @update:ownedSkills="val => tempOwnedSkills = val"
+      />
+    </el-main>
+
+    <MobileSlotDetailDrawer
+      v-model="mobileDetailVisible"
+      :role="currentDetailRole"
+      :role-data="currentDetailRole ? currentLineup[currentDetailRole] : null"
+      @update:hero="(h) => { if (currentDetailRole) currentLineup[currentDetailRole].hero = h }"
+      @open-equip="(idx) => { if (currentDetailRole) openEquipDialog(currentDetailRole, idx) }"
+    />
+
     <EquipTraitDialog
       v-model="equipDialogVisible"
       :options="MOCK_EQUIP_TRAITS"
@@ -261,9 +153,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import LineupSlot from '../components/LineupSlot.vue'
-import HeroLibrary from '../components/HeroLibrary.vue'
-import SkillLibrary from '../components/SkillLibrary.vue'
 import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
 import MyProfilesDialog from '../components/dialogs/MyProfilesDialog.vue'
 import GachaLogDialog from '../components/dialogs/GachaLogDialog.vue'
@@ -280,6 +169,7 @@ import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
 import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
 import InventoryEditor from '../components/lineup-builder/InventoryEditor.vue'
 import LineupHeader, { type UserMenuCmd } from '../components/lineup-builder/LineupHeader.vue'
+import LineupWorkspace, { type Role } from '../components/lineup-builder/LineupWorkspace.vue'
 import type { ResetTarget } from '../components/dialogs/ResetDialog.vue'
 import type { ShareScope } from '../components/dialogs/ShareDialog.vue'
 import TeamSidebarStrip from '../components/lineup-builder/TeamSidebarStrip.vue'
@@ -287,6 +177,7 @@ import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 import { LATEST_VERSION } from '../constants/changelog'
 
 import { useData, Hero, Skill, Trait } from '../composables/useData'
+
 import { MOCK_EQUIP_TRAITS, ShareableData, ShareableLineup, ShareableBingxue } from '../constants/gameData'
 import { useLineups, type RoleData, type BingxueActive } from '../composables/useLineups'
 import { useTroopLevels } from '../composables/useTroopLevels'
@@ -357,13 +248,12 @@ const handleEquipSelect = (trait: Trait | null) => {
   }
 }
 
-const activeTab = ref('heroes')
+const activeTab = ref<'heroes' | 'skills'>('heroes')
 const skillSelectDialogVisible = ref(false)
 
 const inventoryActiveTab = ref('heroes')
 
 // Interaction State
-type Role = 'main' | 'vice1' | 'vice2'
 const currentSelectingHeroRole = ref<Role | null>(null)
 const currentSelectingSkillRole = ref<Role | null>(null)
 const currentSelectingSkillSlot = ref<number | null>(null)
