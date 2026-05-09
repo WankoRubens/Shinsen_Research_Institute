@@ -1,28 +1,8 @@
 <template>
   <GachaSpectatorView v-if="gachaSpectatorBlob" :blob="gachaSpectatorBlob" />
-  <el-container v-else direction="vertical" class="w-full bg-slate-50" style="height: 100dvh">
-    <LineupHeader
-      v-model:team-name="currentTeamName"
-      :total-cost="totalCost"
-      :troop-levels="troopLevels"
-      :is-editing-inventory="isEditingInventory"
-      :is-logged-in="isLoggedIn"
-      :has-unseen-changelog="hasUnseenChangelog"
-      :display-name="displayName"
-      :active-profile-name="activeProfileName"
-      @open-mobile-sidebar="mobileSidebarVisible = true"
-      @start-editing-inventory="startEditingInventory"
-      @cancel-editing-inventory="cancelEditingInventory"
-      @save-inventory="saveInventory"
-      @open-share="openShareDialog"
-      @open-reset="openResetDialog"
-      @open-changelog="openChangelogDialog"
-      @open-auth="authDialogVisible = true"
-      @user-menu="onUserMenu"
-    />
-
+  <el-container v-else direction="vertical" class="w-full bg-slate-50 h-full">
     <el-main class="app-main p-0 overflow-hidden">
-      
+
       <!-- View 1: Lineup Builder (Default) -->
       <div v-if="!isEditingInventory" class="flex flex-col md:flex-row h-full">
         <TeamSidebarStrip
@@ -141,9 +121,6 @@
     <GachaLogDialog v-model="gachaLogDialogVisible" />
 
     <AuthDialog v-model="authDialogVisible" @sign-in="onSignIn" />
-
-    <AppFooter />
-
   </el-container>
 
   <SkillDragPreview :skill="draggingSkill" :pos="dragPos" />
@@ -163,24 +140,20 @@ import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
 import RenameDialog from '../components/dialogs/RenameDialog.vue'
 import ShareDialog from '../components/dialogs/ShareDialog.vue'
 import MySharesDialog from '../components/dialogs/MySharesDialog.vue'
-import AppFooter from '../components/lineup-builder/AppFooter.vue'
 import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
 import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
 import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
 import InventoryEditor from '../components/lineup-builder/InventoryEditor.vue'
-import LineupHeader, { type UserMenuCmd } from '../components/lineup-builder/LineupHeader.vue'
 import LineupWorkspace, { type Role } from '../components/lineup-builder/LineupWorkspace.vue'
 import type { ResetTarget } from '../components/dialogs/ResetDialog.vue'
 import type { ShareScope } from '../components/dialogs/ShareDialog.vue'
 import TeamSidebarStrip from '../components/lineup-builder/TeamSidebarStrip.vue'
 import GachaSpectatorView from '../components/GachaSpectatorView.vue'
-import { LATEST_VERSION } from '../constants/changelog'
 
 import { useData, Hero, Skill, Trait } from '../composables/useData'
 
 import { MOCK_EQUIP_TRAITS, ShareableData, ShareableLineup, ShareableBingxue } from '../constants/gameData'
 import { useLineups, type RoleData, type BingxueActive } from '../composables/useLineups'
-import { useTroopLevels } from '../composables/useTroopLevels'
 import { useInventory } from '../composables/useInventory'
 import {
   createShare, loadShare, isShareEnabled,
@@ -190,24 +163,22 @@ import { handleAuthCallback, type OAuthProvider } from '../lib/auth'
 import type { SpectatorBlob } from '../lib/gachaLog'
 import { useAuth } from '../composables/useAuth'
 import { useActiveProfile } from '../composables/useActiveProfile'
+import { useDialogs } from '../composables/useDialogs'
+import { useChangelog } from '../composables/useChangelog'
 import { listMyProfiles } from '../lib/profiles'
 import { consumeInitialHash } from '../lib/initial-hash'
 
 const router = useRouter()
 
-const { 
-  lineups, 
-  currentTeamIndex, 
-  currentLineup, 
-  currentTeamName, 
-  allUsedHeroNames, 
-  allUsedSkillNames, 
-  totalCost,
+const {
+  lineups,
+  currentTeamIndex,
+  currentLineup,
+  allUsedHeroNames,
+  allUsedSkillNames,
   clearLineup: clearLineupData,
-  swapRoles
+  swapRoles,
 } = useLineups()
-
-const troopLevels = useTroopLevels(currentLineup)
 
 const {
   ownedHeroes,
@@ -216,14 +187,25 @@ const {
   isEditingInventory,
   tempOwnedHeroes,
   tempOwnedSkills,
-  startEditingInventory,
-  saveInventory,
-  cancelEditingInventory,
-  clearInventory
+  clearInventory,
 } = useInventory()
 
+const dialogs = useDialogs()
+const { hasUnseen: hasUnseenChangelog, changelogDialogVisible } = useChangelog()
+
+const equipDialogVisible = dialogs.useDialog('equip-trait')
+const skillSelectDialogVisible = dialogs.useDialog('skill-select')
+const resetDialogVisible = dialogs.useDialog('reset')
+const shareDialogVisible = dialogs.useDialog('share')
+const authDialogVisible = dialogs.useDialog('auth')
+const renameDialogVisible = dialogs.useDialog('rename')
+const myProfilesDialogVisible = dialogs.useDialog('my-profiles')
+const gachaLogDialogVisible = dialogs.useDialog('gacha-log')
+const mySharesDialogVisible = dialogs.useDialog('my-shares')
+const mobileDetailVisible = dialogs.useDialog('mobile-slot-detail')
+const mobileSidebarVisible = dialogs.useDialog('mobile-team-drawer')
+
 // Equip Traits Logic (Shared / Mobile)
-const equipDialogVisible = ref(false)
 const currentEquipRole = ref<Role | null>(null)
 const currentEquipSlotIdx = ref<number | null>(null)
 
@@ -249,7 +231,6 @@ const handleEquipSelect = (trait: Trait | null) => {
 }
 
 const activeTab = ref<'heroes' | 'skills'>('heroes')
-const skillSelectDialogVisible = ref(false)
 
 const inventoryActiveTab = ref('heroes')
 
@@ -282,11 +263,7 @@ const handleSkillDragEnded = () => {
 }
 
 // Mobile Detail State
-const mobileDetailVisible = ref(false)
 const currentDetailRole = ref<Role | null>(null)
-
-// UI State
-const mobileSidebarVisible = ref(false)
 
 // Actions
 const handleSwapAction = (role: Role) => {
@@ -451,11 +428,6 @@ const conflictingSkillNames = computed(() => {
   return out
 })
 
-const resetDialogVisible = ref(false)
-const openResetDialog = () => {
-  resetDialogVisible.value = true
-}
-
 const clearLineup = (type: ResetTarget) => {
   if (type === 'current') {
     clearLineupData('current')
@@ -471,12 +443,6 @@ const clearLineup = (type: ResetTarget) => {
     ElMessage.info('庫存已清空')
   }
   resetDialogVisible.value = false
-}
-
-const shareDialogVisible = ref(false)
-const openShareDialog = () => {
-  shareNameInput.value = ''
-  shareDialogVisible.value = true
 }
 
 const serializeBx = (bx?: BingxueActive): ShareableBingxue | undefined =>
@@ -519,8 +485,10 @@ const serializeLineup = (l: typeof lineups[number]): ShareableLineup => ({
 })
 
 // Optional name for the next share — entered in the share dialog when logged
-// in. Reset on every dialog open so it doesn't carry over between actions.
+// in. Reset whenever the share dialog opens so it doesn't carry over between
+// actions.
 const shareNameInput = ref('')
+watch(shareDialogVisible, (now) => { if (now) shareNameInput.value = '' })
 
 const shareLineup = async (type: ShareScope) => {
   const data: ShareableData = { v: 2 }
@@ -654,38 +622,12 @@ const consumeRecovery = (): boolean => {
   }
 }
 
-// --- Changelog ---
-// Single localStorage key stores the last version the user dismissed the
-// changelog for. Mismatch with LATEST_VERSION → auto-open + show red dot.
-// First-time users (no stored value) also see the dialog once.
-const CHANGELOG_SEEN_KEY = 'nobunaga.changelog.lastSeen'
-const changelogDialogVisible = ref(false)
-const hasUnseenChangelog = ref(false)
-
-const checkUnseenChangelog = () => {
-  hasUnseenChangelog.value = localStorage.getItem(CHANGELOG_SEEN_KEY) !== LATEST_VERSION
-}
-
-const openChangelogDialog = () => {
-  changelogDialogVisible.value = true
-}
-
-// Persist seen state when the user dismisses the dialog (any close path).
-watch(changelogDialogVisible, (now, prev) => {
-  if (prev && !now) {
-    localStorage.setItem(CHANGELOG_SEEN_KEY, LATEST_VERSION)
-    hasUnseenChangelog.value = false
-  }
-})
-
 // --- Auth ---
 const {
   isLoggedIn, displayName, needsDisplayName,
-  signIn, signOut, updateDisplayName, refreshFromStorage,
+  signIn, updateDisplayName, refreshFromStorage,
   sessionExpiredCount,
 } = useAuth()
-const authDialogVisible = ref(false)
-const renameDialogVisible = ref(false)
 const renameInput = ref('')
 const renameSaving = ref(false)
 
@@ -695,12 +637,10 @@ const onSignIn = (provider: OAuthProvider) => {
   signIn(provider)  // full-page redirect — nothing after this runs
 }
 
-const myProfilesDialogVisible = ref(false)
-const gachaLogDialogVisible = ref(false)
 // Set by initFromHash when an incoming share is a v3 gacha-log snapshot.
 // Non-null switches the whole UI to spectator mode (no edit affordances).
 const gachaSpectatorBlob = ref<SpectatorBlob | null>(null)
-const { applyProfile, clearActiveProfile, activeProfileName } = useActiveProfile()
+const { applyProfile, clearActiveProfile } = useActiveProfile()
 
 // Auto-apply the user's default profile after initFromHash settles. Skips
 // when (a) the user isn't logged in, (b) inventory was already filled by a
@@ -723,49 +663,17 @@ const tryAutoLoadDefaultProfile = async (): Promise<void> => {
   }
 }
 
-const onUserMenu = async (cmd: UserMenuCmd) => {
-  if (cmd === 'signout') {
-    await signOut()
-    clearActiveProfile()
-    ElMessage.success('已登出')
-  } else if (cmd === 'rename') {
-    openRenameDialog()
-  } else if (cmd === 'my-shares') {
-    openMySharesDialog()
-  } else if (cmd === 'my-profiles') {
-    myProfilesDialogVisible.value = true
-  } else if (cmd === 'gacha-log') {
-    gachaLogDialogVisible.value = true
-  } else if (cmd === 'changelog') {
-    openChangelogDialog()
-  }
-}
-
 // --- My Shares ---
-const mySharesDialogVisible = ref(false)
 const mySharesLoading = ref(false)
 const myShares = ref<MyShare[]>([])
 // Inline rename: track which row (slug) is editing + the draft value.
 const editingSlug = ref<string | null>(null)
 const editingDraft = ref('')
 
-// React to involuntary session expiration (refresh token revoked). The user
-// did NOT click "sign out" — their token genuinely died (revoked elsewhere,
-// password changed, refresh window exceeded). Quietly transition the UI:
-// close auth-only dialogs, drop the active profile name, and show a single
-// warning toast. The lineup/inventory data is left intact so the user
-// doesn't lose work — they can keep building offline or share anonymously.
-watch(sessionExpiredCount, () => {
-  myProfilesDialogVisible.value = false
-  mySharesDialogVisible.value = false
-  gachaLogDialogVisible.value = false
-  renameDialogVisible.value = false
-  clearActiveProfile()
-  ElMessage.warning('登入已過期，請重新登入以同步雲端資料')
-})
-
-const openMySharesDialog = async () => {
-  mySharesDialogVisible.value = true
+// Lazy-load shares whenever the my-shares overlay opens. Trigger comes from
+// AppLayout's user-menu via dialogs.open('my-shares').
+watch(mySharesDialogVisible, async (now) => {
+  if (!now) return
   mySharesLoading.value = true
   try {
     myShares.value = await listMyShares()
@@ -774,7 +682,25 @@ const openMySharesDialog = async () => {
   } finally {
     mySharesLoading.value = false
   }
-}
+})
+
+// Prefill rename input from the current display name when the rename overlay
+// opens. Same trigger pattern: AppLayout opens the overlay, we react to it.
+watch(renameDialogVisible, (now) => {
+  if (now) renameInput.value = displayName.value
+})
+
+// React to involuntary session expiration (refresh token revoked). The user
+// did NOT click "sign out" — their token genuinely died (revoked elsewhere,
+// password changed, refresh window exceeded). Quietly transition the UI:
+// close any open overlay, drop the active profile name, and show a single
+// warning toast. The lineup/inventory data is left intact so the user
+// doesn't lose work — they can keep building offline or share anonymously.
+watch(sessionExpiredCount, () => {
+  dialogs.close()
+  clearActiveProfile()
+  ElMessage.warning('登入已過期，請重新登入以同步雲端資料')
+})
 
 const startEditShareName = (s: MyShare) => {
   editingSlug.value = s.slug
@@ -835,11 +761,6 @@ const copyShareUrl = (slug: string) => {
   })
 }
 
-const openRenameDialog = () => {
-  renameInput.value = displayName.value
-  renameDialogVisible.value = true
-}
-
 const submitRename = async () => {
   const name = renameInput.value.trim()
   if (!name) {
@@ -876,11 +797,9 @@ const initFromHash = async (): Promise<boolean> => {
       refreshFromStorage()
       const recovered = consumeRecovery()
       ElMessage.success(recovered ? '登入成功，已還原配置' : '登入成功')
-      // First-time prompt: ask new users to pick a display name.
-      if (needsDisplayName.value) {
-        renameInput.value = displayName.value  // prefill with email prefix
-        renameDialogVisible.value = true
-      }
+      // First-time prompt: ask new users to pick a display name. The watch
+      // on renameDialogVisible takes care of prefilling renameInput.
+      if (needsDisplayName.value) dialogs.open('rename')
       router.replace('/')
       return true
     }
@@ -921,7 +840,6 @@ const initFromHash = async (): Promise<boolean> => {
 }
 
 onMounted(async () => {
-  checkUnseenChangelog()
   const consumedHash = await initFromHash()
   // Fire-and-forget: the auto-load sequencing only depends on initFromHash
   // (share/recovery should win if present). No reason to block the changelog
@@ -932,7 +850,7 @@ onMounted(async () => {
   // attention. Triggers for both first-time visitors and returning users on
   // a release day (LATEST_VERSION mismatch).
   if (hasUnseenChangelog.value && !consumedHash) {
-    changelogDialogVisible.value = true
+    dialogs.open('changelog')
   }
 })
 </script>
