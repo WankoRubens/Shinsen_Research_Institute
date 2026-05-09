@@ -1,184 +1,35 @@
 <template>
   <GachaSpectatorView v-if="gachaSpectatorBlob" :blob="gachaSpectatorBlob" />
-  <el-container v-else class="w-full bg-slate-50" style="height: 100dvh">
-    <el-header class="app-header bg-white border-b border-gray-200 flex items-center justify-between px-0 md:px-4 sticky top-0 z-50">
-      <div class="flex items-center gap-1 md:gap-4">
-        <!-- Mobile Menu Button -->
-        <el-button class="md:hidden !px-1 !mr-0" text @click="mobileSidebarVisible = true">
-          <el-icon :size="20"><Menu /></el-icon>
-        </el-button>
-
-        <div class="flex items-center gap-2">
-          <el-icon :size="24" class="text-indigo-600 hidden md:block"><Flag /></el-icon>
-          <!-- Editable Team Name / Inventory Title -->
-          <div v-if="!isEditingInventory" class="flex items-center gap-2">
-             <el-input 
-               v-model="currentTeamName" 
-               placeholder="輸入隊伍名稱" 
-               class="w-32 sm:w-48 font-bold"
-               size="default"
-             >
-               <template #suffix>
-                 <el-icon class="el-input__icon"><Edit /></el-icon>
-               </template>
-             </el-input>
-          </div>
-          <div v-else class="font-bold text-gray-800 text-lg">
-            庫存編輯模式
-          </div>
-        </div>
-        
-        <!-- Cost Display -->
-        <div v-if="!isEditingInventory" class="text-xs font-bold bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200 flex items-center hidden sm:flex">
-           <span class="text-gray-500 mr-1">Cost:</span>
-           <span :class="{'text-red-500': totalCost > 20, 'text-gray-800': totalCost <= 20}" class="text-sm">{{ totalCost }}/20</span>
-        </div>
-        <!-- Troop Level Chips -->
-        <div v-if="!isEditingInventory" class="text-xs font-bold bg-gray-100 px-2 py-1 rounded-full border border-gray-200 items-center gap-1 hidden sm:flex">
-           <span class="text-gray-500 mr-0.5">兵:</span>
-           <span
-             v-for="tt in TROOP_TYPES"
-             :key="tt"
-             class="px-1 rounded text-[10px]"
-             :class="troopLevels[tt] > 0 ? 'text-amber-700 bg-amber-50' : 'text-gray-400'"
-           >{{ TROOP_LABELS[tt] }}{{ troopLevels[tt] }}</span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-1 md:gap-0 pr-1 md:pr-0">
-        <template v-if="!isEditingInventory">
-          <el-button type="info" round plain @click="startEditingInventory" class="hidden sm:inline-flex">
-            <el-icon class="mr-1"><Edit /></el-icon> 編輯庫存
-          </el-button>
-          <el-button type="info" circle plain @click="startEditingInventory" class="sm:hidden">
-            <el-icon><Edit /></el-icon>
-          </el-button>
-
-          <el-button type="primary" round plain @click="openShareDialog" class="hidden sm:inline-flex">
-            <el-icon class="mr-1"><Share /></el-icon> 分享
-          </el-button>
-          <el-button type="primary" circle plain @click="openShareDialog" class="sm:hidden">
-            <el-icon><Share /></el-icon>
-          </el-button>
-
-          <el-button type="danger" round plain @click="openResetDialog" class="hidden sm:inline-flex">
-            <el-icon class="mr-1"><Delete /></el-icon> 重置
-          </el-button>
-           <el-button type="danger" circle plain @click="openResetDialog" class="sm:hidden">
-            <el-icon><Delete /></el-icon>
-          </el-button>
-
-          <!-- Auth: login button when logged out, user pill when logged in.
-               Logged-out: standalone bell so anonymous users can still see updates.
-               Logged-in:  bell collapses into the user dropdown to save space. -->
-          <template v-if="!isLoggedIn">
-            <el-button text class="help-btn !px-2" :title="'更新紀錄'" @click="openChangelogDialog">
-              <el-icon><Bell /></el-icon>
-              <span v-if="hasUnseenChangelog" class="help-btn-dot" />
-            </el-button>
-            <el-button text @click="authDialogVisible = true" class="hidden sm:inline-flex !ml-1">
-              <el-icon class="mr-1"><User /></el-icon> 登入
-            </el-button>
-            <el-button text @click="authDialogVisible = true" class="sm:hidden !px-2">
-              <el-icon><User /></el-icon>
-            </el-button>
-          </template>
-          <el-dropdown v-else trigger="click" @command="onUserMenu" placement="bottom-end">
-            <button class="user-pill">
-              <el-icon><User /></el-icon>
-              <span class="hidden sm:inline truncate max-w-[120px]">{{ displayName }}</span>
-              <span v-if="hasUnseenChangelog" class="user-pill-badge" />
-              <el-icon class="opacity-70"><ArrowDown /></el-icon>
-            </button>
-            <template #dropdown>
-              <el-dropdown-menu class="min-w-[220px]">
-                <!-- Profile section: single-line "角色: <name>" header (read-only)
-                     followed by the manage entry. No divider between them so
-                     the header reads as a label for the action below. Wrap in
-                     a flex+items-baseline so the label and value sit on the
-                     same baseline despite different font sizes. -->
-                <el-dropdown-item disabled class="!cursor-default !opacity-100">
-                  <div class="flex items-baseline gap-1 min-w-0">
-                    <span class="text-xs text-gray-500 flex-shrink-0">角色：</span>
-                    <span class="text-sm font-bold text-emerald-700 truncate">
-                      {{ activeProfileName ?? '預設' }}
-                    </span>
-                  </div>
-                </el-dropdown-item>
-                <el-dropdown-item command="my-profiles">
-                  <el-icon class="mr-1"><User /></el-icon> 管理角色配置
-                </el-dropdown-item>
-                <el-dropdown-item command="gacha-log">
-                  <el-icon class="mr-1"><Coin /></el-icon> 抽卡紀錄
-                </el-dropdown-item>
-
-                <!-- Sharing -->
-                <el-dropdown-item command="my-shares" divided>
-                  <el-icon class="mr-1"><Share /></el-icon> 我的分享
-                </el-dropdown-item>
-
-                <!-- Notifications -->
-                <el-dropdown-item command="changelog" divided>
-                  <el-icon class="mr-1"><Bell /></el-icon>
-                  <span>更新紀錄</span>
-                  <span
-                    v-if="hasUnseenChangelog"
-                    class="ml-auto pl-2 text-[10px] font-bold text-emerald-600"
-                  >NEW</span>
-                </el-dropdown-item>
-
-                <!-- Account section at bottom -->
-                <el-dropdown-item command="rename" divided>
-                  <el-icon class="mr-1"><Edit /></el-icon> 編輯名稱
-                </el-dropdown-item>
-                <el-dropdown-item command="signout">
-                  <el-icon class="mr-1"><Close /></el-icon> 登出
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </template>
-        <template v-else>
-          <el-button round @click="cancelEditingInventory">
-            <el-icon class="mr-1"><Close /></el-icon> <span class="hidden sm:inline">不儲存離開</span>
-          </el-button>
-          <el-button type="success" round @click="saveInventory">
-            <el-icon class="mr-1"><Check /></el-icon> <span class="hidden sm:inline">儲存庫存</span>
-          </el-button>
-        </template>
-      </div>
-    </el-header>
+  <el-container v-else direction="vertical" class="w-full bg-slate-50" style="height: 100dvh">
+    <LineupHeader
+      v-model:team-name="currentTeamName"
+      :total-cost="totalCost"
+      :troop-levels="troopLevels"
+      :is-editing-inventory="isEditingInventory"
+      :is-logged-in="isLoggedIn"
+      :has-unseen-changelog="hasUnseenChangelog"
+      :display-name="displayName"
+      :active-profile-name="activeProfileName"
+      @open-mobile-sidebar="mobileSidebarVisible = true"
+      @start-editing-inventory="startEditingInventory"
+      @cancel-editing-inventory="cancelEditingInventory"
+      @save-inventory="saveInventory"
+      @open-share="openShareDialog"
+      @open-reset="openResetDialog"
+      @open-changelog="openChangelogDialog"
+      @open-auth="authDialogVisible = true"
+      @user-menu="onUserMenu"
+    />
 
     <el-main class="app-main p-0 overflow-hidden">
       
       <!-- View 1: Lineup Builder (Default) -->
       <div v-if="!isEditingInventory" class="flex flex-col md:flex-row h-full">
-        <!-- Left Sidebar: Team List (Desktop) -->
-        <div class="hidden md:flex w-20 bg-gray-900 flex-col items-center py-4 gap-4 flex-shrink-0 z-50 overflow-y-auto overflow-x-hidden">
-          <div 
-            v-for="(team, idx) in lineups" 
-            :key="idx"
-            class="w-12 h-12 rounded-full border-2 cursor-pointer flex items-center justify-center text-white font-bold transition-all relative group"
-            :class="currentTeamIndex === idx ? 'border-indigo-500 bg-gray-800' : 'border-gray-600 hover:border-gray-400 bg-gray-800'"
-            @click="currentTeamIndex = idx"
-          >
-            <img 
-              v-if="team.main.hero" 
-              :src="team.main.hero.portrait" 
-              class="w-full h-full rounded-full object-cover opacity-80"
-            />
-            <span v-else>{{ idx + 1 }}</span>
-            
-            <div class="absolute left-full ml-2 bg-gray-900 text-white text-xs px-3 py-2 rounded w-max opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl border border-gray-700">
-              <div class="font-bold border-b border-gray-700 pb-1 mb-1 text-indigo-300">{{ team.name }}</div>
-              <div class="space-y-0.5 text-gray-300">
-                <div>大將: {{ team.main.hero?.name || '-' }}</div>
-                <div>副將: {{ team.vice1.hero?.name || '-' }}</div>
-                <div>副將: {{ team.vice2.hero?.name || '-' }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TeamSidebarStrip
+          :lineups="lineups"
+          :current-team-index="currentTeamIndex"
+          @select="(idx: number) => currentTeamIndex = idx"
+        />
 
         <MobileTeamDrawer
           v-model="mobileSidebarVisible"
@@ -412,7 +263,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Flag, Share, Delete, Edit, Close, Check, Menu, User, ArrowDown, Bell, Coin } from '@element-plus/icons-vue'
 import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
@@ -431,6 +281,8 @@ import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
 import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
 import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
 import InventoryEditor from '../components/lineup-builder/InventoryEditor.vue'
+import LineupHeader from '../components/lineup-builder/LineupHeader.vue'
+import TeamSidebarStrip from '../components/lineup-builder/TeamSidebarStrip.vue'
 import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 import { LATEST_VERSION } from '../constants/changelog'
 
@@ -438,7 +290,6 @@ import { useData, Hero, Skill, Trait } from '../composables/useData'
 import { MOCK_EQUIP_TRAITS, ShareableData, ShareableLineup, ShareableBingxue } from '../constants/gameData'
 import { useLineups, type RoleData, type BingxueActive } from '../composables/useLineups'
 import { useTroopLevels } from '../composables/useTroopLevels'
-import { TROOP_TYPES, TROOP_LABELS } from '../constants/traits'
 import { useInventory } from '../composables/useInventory'
 import {
   createShare, loadShare, isShareEnabled,
