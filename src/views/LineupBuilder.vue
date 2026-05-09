@@ -182,6 +182,8 @@ const {
   allUsedSkillNames,
   clearLineup: clearLineupData,
   swapRoles,
+  addTeam,
+  ensureTeamCount,
 } = useLineups()
 
 const {
@@ -564,6 +566,10 @@ const restoreFromBlob = (data: ShareableData) => {
   }
 
   if (data.lineups && Array.isArray(data.lineups)) {
+    // Grow the in-memory team list to fit the incoming blob (capped at MAX_TEAMS
+    // by ensureTeamCount). Without this, restoring a 5-team share into a fresh
+    // 1-team session would silently drop teams 2-5.
+    ensureTeamCount(data.lineups.length)
     data.lineups.forEach((l, i) => {
       if (i >= lineups.length) return
       const target = lineups[i]
@@ -643,12 +649,7 @@ const onSignIn = (provider: OAuthProvider) => {
 
 // TeamListPanel action stubs — Phase 3f / 6 will replace these.
 const onAddTeam = () => {
-  const empty = lineups.findIndex(l => !l.main.hero && !l.vice1.hero && !l.vice2.hero)
-  if (empty < 0) {
-    ElMessage.info('當前隊組已滿（10 隊）')
-    return
-  }
-  currentTeamIndex.value = empty
+  if (!addTeam()) ElMessage.info('當前隊組已滿（10 隊）')
 }
 const onSaveAsProposal = () => {
   ElMessage.info('「另存為提案」功能將在 Phase 3f 後啟用')

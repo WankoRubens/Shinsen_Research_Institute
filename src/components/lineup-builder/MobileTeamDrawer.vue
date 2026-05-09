@@ -12,9 +12,9 @@
         <h2 class="text-sm font-bold tracking-wide">配將模擬</h2>
       </header>
       <div class="px-4 py-2 text-xs text-ink-mute border-b border-parchment-dim">
-        當前隊組 · <span class="font-bold text-ink">本陣</span>
+        當前隊組 · <span class="font-bold text-ink">預設</span>
       </div>
-      <div class="flex-1 overflow-y-auto py-1">
+      <div class="flex-1 min-h-0 overflow-y-auto py-1">
         <button
           v-for="(team, idx) in lineups"
           :key="idx"

@@ -6,11 +6,11 @@
 
     <!-- Group selector — stub until Phase 3d wires useGroups. -->
     <div class="px-4 py-2 text-xs text-ink-mute border-b border-parchment-dim flex items-center justify-between">
-      <span>當前隊組 · <span class="font-bold text-ink">本陣</span></span>
+      <span>當前隊組 · <span class="font-bold text-ink">預設</span></span>
       <el-icon class="opacity-40"><ArrowDown /></el-icon>
     </div>
 
-    <div class="flex-1 overflow-y-auto py-1">
+    <div class="flex-1 min-h-0 overflow-y-auto py-1">
       <button
         v-for="(team, idx) in lineups"
         :key="idx"
@@ -39,6 +39,7 @@
       </button>
 
       <button
+        v-if="lineups.length < MAX_TEAMS"
         type="button"
         class="w-full px-4 py-2 mt-1 text-left text-xs text-ink-mute hover:text-ink hover:bg-parchment-soft/60 transition-colors flex items-center gap-1"
         @click="$emit('add-team')"
@@ -67,7 +68,7 @@
 
 <script setup lang="ts">
 import { ArrowDown, Share, Document, Plus } from '@element-plus/icons-vue'
-import type { Lineup } from '../../composables/useLineups'
+import { MAX_TEAMS, type Lineup } from '../../composables/useLineups'
 
 defineProps<{
   lineups: Lineup[]

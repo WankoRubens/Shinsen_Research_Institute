@@ -60,14 +60,33 @@ const emptyRole = (): RoleData => ({
   bingxue: emptyBingxue(),
 })
 
-const lineups = reactive<Lineup[]>(Array.from({ length: 10 }, (_, i) => ({
-  name: `隊伍 ${i + 1}`,
+export const MAX_TEAMS = 10
+
+const makeTeam = (idx: number): Lineup => ({
+  name: `隊伍 ${idx + 1}`,
   main: emptyRole(),
   vice1: emptyRole(),
-  vice2: emptyRole()
-})))
+  vice2: emptyRole(),
+})
+
+const lineups = reactive<Lineup[]>([makeTeam(0)])
 
 const currentTeamIndex = ref(0)
+
+const addTeam = (): boolean => {
+  if (lineups.length >= MAX_TEAMS) return false
+  lineups.push(makeTeam(lineups.length))
+  currentTeamIndex.value = lineups.length - 1
+  return true
+}
+
+// Grow lineups up to `target` slots so a share blob with N teams can restore
+// fully. Caller is responsible for not exceeding MAX_TEAMS.
+const ensureTeamCount = (target: number) => {
+  while (lineups.length < target && lineups.length < MAX_TEAMS) {
+    lineups.push(makeTeam(lineups.length))
+  }
+}
 
 // Getters
 const currentLineup = computed(() => lineups[currentTeamIndex.value])
@@ -148,6 +167,8 @@ export function useLineups() {
     totalCost,
     emptyRole,
     clearLineup,
-    swapRoles
+    swapRoles,
+    addTeam,
+    ensureTeamCount,
   }
 }
