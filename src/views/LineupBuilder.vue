@@ -89,7 +89,9 @@
       v-model="shareDialogVisible"
       v-model:name="shareNameInput"
       :is-logged-in="isLoggedIn"
-      @share="shareLineup"
+      :display-name="displayName"
+      :group-name="currentGroup.name"
+      @share="onShareDialogSubmit"
     />
 
     <ResetDialog v-model="resetDialogVisible" @confirm="clearLineup" />
@@ -170,7 +172,7 @@ import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetai
 import InventoryEditor from '../components/lineup-builder/InventoryEditor.vue'
 import LineupWorkspace, { type Role } from '../components/lineup-builder/LineupWorkspace.vue'
 import type { ResetTarget } from '../components/dialogs/ResetDialog.vue'
-import type { ShareScope } from '../components/dialogs/ShareDialog.vue'
+import type { ShareScope, ShareEventPayload } from '../components/dialogs/ShareDialog.vue'
 import TeamListPanel from '../components/lineup-builder/TeamListPanel.vue'
 import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 
@@ -587,6 +589,30 @@ const shareLineup = async (type: ShareScope) => {
   }).catch(() => {
     ElMessage.error('複製失敗，請手動複製網址')
   })
+}
+
+// ShareDialog emits {scope, asPublic}. Honour asPublic only for 'current'
+// scope (matching the dialog's helper text). Both paths run sequentially so
+// the user always gets the share URL even if proposal publish fails.
+const onShareDialogSubmit = async (payload: ShareEventPayload) => {
+  const { scope, asPublic } = payload
+  // Capture before shareLineup() resets shareNameInput.
+  const proposalName = shareNameInput.value.trim()
+    || `${currentGroup.value.name} · ${currentLineup.value.name}`
+  await shareLineup(scope)
+  if (scope === 'current' && asPublic && isLoggedIn.value) {
+    try {
+      await createProposalFromLineup(currentLineup.value, {
+        name: proposalName,
+        description: '',
+        isPublic: true,
+        authorName: displayName.value || null,
+      })
+      ElMessage.success('已同時發佈至公開「配將提案」')
+    } catch (e) {
+      ElMessage.error(`公開提案發佈失敗：${(e as Error).message}`)
+    }
+  }
 }
 
 const { heroes, skills } = useData()
