@@ -180,41 +180,12 @@
           </div>
         </div>
 
-        <!-- Mobile Sidebar Drawer -->
-        <el-drawer
+        <MobileTeamDrawer
           v-model="mobileSidebarVisible"
-          direction="ltr"
-          size="280px"
-          :with-header="false"
-          class="bg-gray-900"
-        >
-          <div class="h-full bg-gray-900 p-4 flex flex-col gap-4 overflow-y-auto">
-             <div class="text-white font-bold text-lg border-b border-gray-700 pb-2 mb-2">隊伍列表</div>
-             <div 
-                v-for="(team, idx) in lineups" 
-                :key="idx"
-                class="flex items-center gap-3 p-2 rounded cursor-pointer transition-colors"
-                :class="currentTeamIndex === idx ? 'bg-gray-800 border border-indigo-500' : 'hover:bg-gray-800 border border-transparent'"
-                @click="{ currentTeamIndex = idx; mobileSidebarVisible = false; }"
-              >
-                <div class="w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-white font-bold bg-gray-700 overflow-hidden">
-                   <img 
-                    v-if="team.main.hero" 
-                    :src="team.main.hero.portrait" 
-                    class="w-full h-full object-cover"
-                  />
-                  <span v-else>{{ idx + 1 }}</span>
-                </div>
-                <div class="flex-1">
-                   <div class="text-indigo-300 font-bold text-sm">{{ team.name }}</div>
-                   <div class="text-gray-400 text-xs truncate">
-                     {{ team.main.hero?.name || '無大將' }} / {{ team.vice1.hero?.name || '-' }} / {{ team.vice2.hero?.name || '-' }}
-                   </div>
-                </div>
-                <el-icon v-if="currentTeamIndex === idx" class="text-indigo-500"><Check /></el-icon>
-             </div>
-          </div>
-        </el-drawer>
+          :lineups="lineups"
+          :current-team-index="currentTeamIndex"
+          @select="(idx: number) => { currentTeamIndex = idx; mobileSidebarVisible = false }"
+        />
 
                 <!-- Center: Lineup Builder Area -->
                 <div class="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
@@ -353,67 +324,24 @@
                 </div>
               </div>
         
-              <!-- View 2: Inventory Editor (Full Screen Mode) -->
-              <div v-else class="h-full bg-white flex flex-col">
-                <div class="w-full md:container md:mx-auto h-full flex flex-col p-0 md:p-4">
-                  <el-tabs v-model="inventoryActiveTab" class="inventory-tabs flex-1 flex flex-col" type="border-card">
-                    <el-tab-pane label="武將庫存" name="heroes" class="h-full flex flex-col overflow-hidden">
-                       <HeroLibrary
-                         mode="manage"
-                         :used-heroes="[]"
-                         :owned-heroes="tempOwnedHeroes"
-                         @update:ownedHeroes="val => tempOwnedHeroes = val"
-                       />
-                    </el-tab-pane>
-                    <el-tab-pane label="戰法庫存" name="skills" class="h-full flex flex-col overflow-hidden">
-                       <SkillLibrary
-                         mode="manage"
-                         :used-skills="[]"
-                         :owned-skills="tempOwnedSkills"
-                         @update:ownedSkills="val => tempOwnedSkills = val"
-                       />
-                    </el-tab-pane>
-                  </el-tabs>
-                </div>
-              </div>
+              <InventoryEditor
+                v-else
+                v-model:active-tab="inventoryActiveTab"
+                :owned-heroes="tempOwnedHeroes"
+                :owned-skills="tempOwnedSkills"
+                @update:ownedHeroes="val => tempOwnedHeroes = val"
+                @update:ownedSkills="val => tempOwnedSkills = val"
+              />
         
             </el-main>
         
-                <!-- Mobile Detail Drawer -->
-        
-                <el-drawer
-        
+                <MobileSlotDetailDrawer
                   v-model="mobileDetailVisible"
-        
-                  direction="btt"
-        
-                  size="60%"
-        
-                  :with-header="false"
-        
-                  class="rounded-t-xl overflow-hidden"
-        
-                >
-        
-                  <MobileSlotDetail 
-        
-                    v-if="currentDetailRole"
-        
-                    :role-name="currentDetailRole === 'main' ? '大將' : '副將'"
-        
-                    :hero="currentLineup[currentDetailRole].hero"
-        
-                    :stats="currentLineup[currentDetailRole].stats"
-        
-                    :equip-traits="currentLineup[currentDetailRole].equipTraits"
-        
-                    @update:hero="(h) => currentLineup[currentDetailRole!].hero = h"
-        
-                    @open-equip="(idx) => openEquipDialog(currentDetailRole!, idx)"
-        
-                  />
-        
-                </el-drawer>
+                  :role="currentDetailRole"
+                  :role-data="currentDetailRole ? currentLineup[currentDetailRole] : currentLineup.main"
+                  @update:hero="(h) => { if (currentDetailRole) currentLineup[currentDetailRole].hero = h }"
+                  @open-equip="(idx) => { if (currentDetailRole) openEquipDialog(currentDetailRole, idx) }"
+                />
         
             
         
@@ -488,7 +416,6 @@ import { Flag, Share, Delete, Edit, Close, Check, Menu, User, ArrowDown, Bell, C
 import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
-import MobileSlotDetail from '../components/MobileSlotDetail.vue'
 import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
 import MyProfilesDialog from '../components/dialogs/MyProfilesDialog.vue'
 import GachaLogDialog from '../components/dialogs/GachaLogDialog.vue'
@@ -501,6 +428,9 @@ import ShareDialog from '../components/dialogs/ShareDialog.vue'
 import MySharesDialog from '../components/dialogs/MySharesDialog.vue'
 import AppFooter from '../components/lineup-builder/AppFooter.vue'
 import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
+import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
+import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
+import InventoryEditor from '../components/lineup-builder/InventoryEditor.vue'
 import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 import { LATEST_VERSION } from '../constants/changelog'
 
