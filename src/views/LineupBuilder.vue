@@ -417,229 +417,50 @@
         
             
         
-                <!-- Equip Trait Dialog (Mobile) -->
-        
-                <el-dialog v-model="equipDialogVisible" title="選擇裝備特性" width="300px" align-center append-to-body>
-        
-                  <div class="grid grid-cols-2 gap-2">
-        
-                    <div 
-        
-                       v-for="opt in MOCK_EQUIP_TRAITS" 
-        
-                       :key="opt.name"
-        
-                       class="p-2 border rounded cursor-pointer hover:bg-gray-50 text-center text-xs"
-        
-                       @click="handleEquipSelect(opt)"
-        
-                    >
-        
-                      <div class="font-bold text-gray-700">{{ opt.name }}</div>
-        
-                      <div class="text-[10px] text-gray-500">{{ opt.description }}</div>
-        
-                    </div>
-        
-                     <div 
-        
-                       class="p-2 border rounded cursor-pointer hover:bg-red-50 text-center text-xs text-red-500 border-red-100"
-        
-                       @click="handleEquipSelect(null)"
-        
-                    >
-        
-                      移除
-        
-                    </div>
-        
-                  </div>
-        
-                </el-dialog>
-        
-            
-        
-                <!-- Dialogs -->    <el-dialog 
-      v-model="skillSelectDialogVisible" 
-      title="選擇戰法" 
-      width="90%" 
-      class="max-w-md skill-select-dialog"
-      align-center
-    >
-      <div class="h-[60vh]">
-        <SkillLibrary :mode="'select'" :used-skills="allUsedSkillNames" :owned-skills="ownedSkills" @select="selectSkillFromDialog" />
-      </div>
-    </el-dialog>
+    <EquipTraitDialog
+      v-model="equipDialogVisible"
+      :options="MOCK_EQUIP_TRAITS"
+      @select="handleEquipSelect"
+    />
 
-    <!-- Share Dialog -->
-    <el-dialog v-model="shareDialogVisible" title="分享配置" width="340px" align-center>
-      <div class="flex flex-col gap-3">
-        <!-- Logged-in users can name shares for the 我的分享 list -->
-        <div v-if="isLoggedIn" class="flex flex-col gap-1">
-          <el-input
-            v-model="shareNameInput"
-            maxlength="50"
-            placeholder="名稱（可選）"
-            clearable
-          />
-          <p class="text-[11px] text-gray-400 leading-snug">
-            此名稱僅顯示於「我的分享」列表，不會出現在分享連結或對方畫面
-          </p>
-        </div>
+    <SkillSelectDialog
+      v-model="skillSelectDialogVisible"
+      :used-skills="allUsedSkillNames"
+      :owned-skills="ownedSkills"
+      @select="selectSkillFromDialog"
+    />
 
-        <el-button type="primary" plain size="large" @click="shareLineup('all')" class="w-full !m-0">
-          <div class="flex flex-col items-center">
-            <span class="font-bold">分享全部</span>
-            <span class="text-xs opacity-80">所有隊伍 + 庫存 (備份用)</span>
-          </div>
-        </el-button>
-        <el-button type="success" plain size="large" @click="shareLineup('current')" class="w-full !m-0">
-           <div class="flex flex-col items-center">
-            <span class="font-bold">分享當前隊伍</span>
-            <span class="text-xs opacity-80">僅分享目前編輯的隊伍 1 隊</span>
-          </div>
-        </el-button>
-         <el-button type="warning" plain size="large" @click="shareLineup('inventory')" class="w-full !m-0">
-           <div class="flex flex-col items-center">
-            <span class="font-bold">僅分享庫存</span>
-            <span class="text-xs opacity-80">請教他人配將用</span>
-          </div>
-        </el-button>
-      </div>
-    </el-dialog>
+    <ShareDialog
+      v-model="shareDialogVisible"
+      v-model:name="shareNameInput"
+      :is-logged-in="isLoggedIn"
+      @share="shareLineup"
+    />
 
-    <!-- Reset Dialog -->
-    <el-dialog v-model="resetDialogVisible" title="重置選項" width="320px" align-center>
-      <div class="flex flex-col gap-3">
-        <el-button type="danger" plain size="large" @click="clearLineup('current')" class="w-full !m-0">
-          <div class="flex flex-col items-center">
-            <span class="font-bold">重置當前隊伍</span>
-            <span class="text-xs opacity-80">僅清空目前顯示的隊伍</span>
-          </div>
-        </el-button>
-        <el-button type="warning" plain size="large" @click="clearLineup('inventory')" class="w-full !m-0">
-           <div class="flex flex-col items-center">
-            <span class="font-bold">清空庫存</span>
-            <span class="text-xs opacity-80">移除所有已標記的擁有武將</span>
-          </div>
-        </el-button>
-         <el-button type="danger" size="large" @click="clearLineup('all')" class="w-full !m-0">
-           <div class="flex flex-col items-center">
-            <span class="font-bold">全部重置</span>
-            <span class="text-xs opacity-80">清空所有隊伍與庫存 (慎用)</span>
-          </div>
-        </el-button>
-      </div>
-    </el-dialog>
+    <ResetDialog v-model="resetDialogVisible" @confirm="clearLineup" />
 
-    <!-- My Shares Dialog -->
-    <el-dialog v-model="mySharesDialogVisible" title="我的分享" width="640px" align-center>
-      <div v-loading="mySharesLoading" class="min-h-[120px]">
-        <p v-if="!mySharesLoading && myShares.length === 0" class="text-center text-gray-400 py-8 text-sm">
-          還沒有任何已建立的分享。<br>
-          登入狀態下用右上角「分享」建立的連結會自動顯示在這裡。
-        </p>
-        <el-table v-else-if="myShares.length > 0" :data="sortedMyShares" size="default" style="width: 100%">
-          <el-table-column label="" width="44" align="center">
-            <template #default="{ row }">
-              <button
-                @click="togglePinShare(row)"
-                :title="row.pinned ? '取消釘選' : '釘選到頂端'"
-                class="pin-btn"
-                :class="{ 'pin-btn-on': row.pinned }"
-              >
-                <el-icon><component :is="row.pinned ? StarFilled : Star" /></el-icon>
-              </button>
-            </template>
-          </el-table-column>
-          <el-table-column label="名稱" min-width="180">
-            <template #default="{ row }">
-              <div v-if="editingSlug === row.slug" class="flex items-center gap-1">
-                <el-input
-                  v-model="editingDraft"
-                  size="small"
-                  maxlength="50"
-                  placeholder="輸入名稱"
-                  @keyup.enter="saveShareName(row)"
-                  @keyup.esc="cancelEditShareName"
-                  autofocus
-                />
-                <el-button size="small" type="primary" :icon="Check" @click="saveShareName(row)" />
-                <el-button size="small" :icon="Close" @click="cancelEditShareName" />
-              </div>
-              <div v-else class="flex items-center gap-2 group">
-                <span :class="row.display_name ? 'text-gray-800' : 'text-gray-400 italic'">
-                  {{ row.display_name || '未命名' }}
-                </span>
-                <el-button
-                  text
-                  size="small"
-                  :icon="Edit"
-                  class="opacity-0 group-hover:opacity-100"
-                  @click="startEditShareName(row)"
-                />
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="連結" width="160">
-            <template #default="{ row }">
-              <button
-                @click="copyShareUrl(row.slug)"
-                class="text-xs text-indigo-600 hover:text-indigo-800 hover:underline font-mono"
-                title="點擊複製分享連結"
-              >
-                #s/{{ row.slug }}
-              </button>
-            </template>
-          </el-table-column>
-          <el-table-column label="更新" width="100">
-            <template #default="{ row }">
-              <span class="text-xs text-gray-500">{{ relativeTime(row.updated_at) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="" width="60" align="center">
-            <template #default="{ row }">
-              <el-popconfirm
-                title="確定刪除這個分享？刪除後連結會立刻失效。"
-                confirm-button-text="刪除"
-                cancel-button-text="取消"
-                confirm-button-type="danger"
-                @confirm="removeMyShare(row)"
-              >
-                <template #reference>
-                  <el-button text size="small" type="danger" :icon="Delete" />
-                </template>
-              </el-popconfirm>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-    </el-dialog>
+    <MySharesDialog
+      v-model="mySharesDialogVisible"
+      :loading="mySharesLoading"
+      :shares="myShares"
+      :sorted-shares="sortedMyShares"
+      :editing-slug="editingSlug"
+      v-model:editing-draft="editingDraft"
+      :relative-time="relativeTime"
+      @toggle-pin="togglePinShare"
+      @start-edit="startEditShareName"
+      @save-name="saveShareName"
+      @cancel-edit="cancelEditShareName"
+      @copy-url="copyShareUrl"
+      @remove="removeMyShare"
+    />
 
-    <!-- Rename Dialog (first-time prompt + dropdown action) -->
-    <el-dialog v-model="renameDialogVisible" title="設定顯示名稱" width="340px" align-center>
-      <div class="flex flex-col gap-3 pb-1">
-        <p class="text-xs text-gray-500 -mt-1 mb-1">
-          目前無實際功能，只是修改電腦版能看到的自訂名稱，未來考慮選擇性的與分享綁定。
-        </p>
-        <el-input
-          v-model="renameInput"
-          maxlength="30"
-          show-word-limit
-          placeholder="例：張三"
-          @keyup.enter="submitRename"
-          autofocus
-        />
-        <el-button
-          type="primary"
-          :loading="renameSaving"
-          @click="submitRename"
-          class="w-full !m-0"
-        >
-          確定
-        </el-button>
-      </div>
-    </el-dialog>
+    <RenameDialog
+      v-model="renameDialogVisible"
+      v-model:name="renameInput"
+      :saving="renameSaving"
+      @submit="submitRename"
+    />
 
     <!-- Changelog Dialog -->
     <ChangelogDialog v-model="changelogDialogVisible" />
@@ -650,95 +471,36 @@
     <!-- Gacha Log Dialog -->
     <GachaLogDialog v-model="gachaLogDialogVisible" />
 
-    <!-- Auth Dialog -->
-    <el-dialog v-model="authDialogVisible" title="登入帳號" width="340px" align-center>
-      <div class="flex flex-col gap-3 pb-1">
-        <p class="text-xs text-gray-500 text-center -mt-1 mb-1 leading-relaxed">
-          選擇方式登入，將帳號與你建立的分享連結綁定
-        </p>
-        <!-- Google button: light theme per Google branding guidelines -->
-        <button
-          @click="onSignIn('google')"
-          class="oauth-btn oauth-btn-google"
-        >
-          <svg class="w-[18px] h-[18px] flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
-            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
-            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
-            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
-          </svg>
-          <span>使用 Google 帳號繼續</span>
-        </button>
+    <AuthDialog v-model="authDialogVisible" @sign-in="onSignIn" />
 
-        <!-- GitHub button: dark theme matching GitHub's brand -->
-        <button
-          @click="onSignIn('github')"
-          class="oauth-btn oauth-btn-github"
-        >
-          <svg class="w-[18px] h-[18px] flex-shrink-0 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
-          </svg>
-          <span>使用 GitHub 帳號繼續</span>
-        </button>
-
-        <p class="text-xs text-gray-400 text-center mt-3 leading-relaxed">
-          登入是選用的；不登入也能完整使用所有功能
-        </p>
-      </div>
-    </el-dialog>
-
-    <el-footer class="bg-white border-t border-gray-200 flex items-center justify-center text-xs text-gray-400 h-8 gap-2">
-      <span>聯絡作者: yt.neko.vision@gmail.com</span>
-      <span class="opacity-50">|</span>
-      <span>Discord: neko.vision</span>
-      <span class="opacity-50">|</span>
-      <a href="https://forms.gle/mnMAqAzP595ygCrJ9" target="_blank" class="text-blue-400 hover:text-blue-500">建議或回報</a>
-    </el-footer>
+    <AppFooter />
 
   </el-container>
 
-  <!-- Skill drag preview -->
-  <Teleport to="body">
-    <div v-if="draggingSkill"
-      class="fixed z-[9999] pointer-events-none select-none"
-      :style="{ left: dragPos.x + 16 + 'px', top: dragPos.y - 8 + 'px' }"
-    >
-      <div class="bg-white rounded-xl shadow-2xl border-2 border-indigo-400 p-3 w-64 max-h-72 overflow-hidden">
-        <div class="flex items-center gap-2 mb-2">
-          <img :src="draggingSkill.icon" class="w-10 h-10 rounded-lg bg-gray-100 object-cover flex-shrink-0" />
-          <div class="min-w-0">
-            <div class="font-bold text-sm text-gray-800 truncate">{{ draggingSkill.name }}</div>
-            <div class="flex items-center gap-1 mt-0.5">
-              <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{{ draggingSkill.type }}</span>
-              <span v-if="draggingSkill.rarity === 'S'" class="text-xs font-bold text-yellow-600">S</span>
-              <span v-if="draggingSkill.activation_rate" class="text-[10px] text-gray-400">{{ draggingSkill.activation_rate }}</span>
-            </div>
-          </div>
-        </div>
-        <SkillDescription
-          :description="draggingSkill.description"
-          :commander-description="draggingSkill.commander_description"
-          :is-max-level="true"
-          :vars="draggingSkill.vars"
-        />
-      </div>
-    </div>
-  </Teleport>
+  <SkillDragPreview :skill="draggingSkill" :pos="dragPos" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Flag, Share, Delete, Edit, Close, Check, Menu, User, ArrowDown, Star, StarFilled, Bell, Coin } from '@element-plus/icons-vue'
+import { Flag, Share, Delete, Edit, Close, Check, Menu, User, ArrowDown, Bell, Coin } from '@element-plus/icons-vue'
 import LineupSlot from '../components/LineupSlot.vue'
-import SkillDescription from '../components/SkillDescription.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
 import MobileSlotDetail from '../components/MobileSlotDetail.vue'
 import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
 import MyProfilesDialog from '../components/dialogs/MyProfilesDialog.vue'
 import GachaLogDialog from '../components/dialogs/GachaLogDialog.vue'
+import EquipTraitDialog from '../components/dialogs/EquipTraitDialog.vue'
+import ResetDialog from '../components/dialogs/ResetDialog.vue'
+import AuthDialog from '../components/dialogs/AuthDialog.vue'
+import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
+import RenameDialog from '../components/dialogs/RenameDialog.vue'
+import ShareDialog from '../components/dialogs/ShareDialog.vue'
+import MySharesDialog from '../components/dialogs/MySharesDialog.vue'
+import AppFooter from '../components/lineup-builder/AppFooter.vue'
+import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
 import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 import { LATEST_VERSION } from '../constants/changelog'
 
