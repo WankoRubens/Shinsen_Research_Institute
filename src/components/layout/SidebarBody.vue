@@ -41,8 +41,30 @@
       />
     </div>
 
-    <!-- Footer: settings + collapse -->
+    <!-- Footer: contact panel above, settings/collapse below -->
     <div class="border-t border-parchment-dim pt-2 mt-2">
+      <div v-if="!collapsed" class="px-1 mb-2 flex items-center gap-1">
+        <el-tooltip content="yt.neko.vision@gmail.com" placement="top" :show-after="200">
+          <a href="mailto:yt.neko.vision@gmail.com" class="footer-icon" aria-label="Email">
+            <el-icon :size="13"><Message /></el-icon>
+          </a>
+        </el-tooltip>
+        <el-tooltip content="Discord：neko.vision（點擊複製）" placement="top" :show-after="200">
+          <button type="button" class="footer-icon" @click="copyDiscord" aria-label="Discord">
+            <el-icon :size="13"><ChatDotRound /></el-icon>
+          </button>
+        </el-tooltip>
+        <a
+          href="https://forms.gle/mnMAqAzP595ygCrJ9"
+          target="_blank"
+          rel="noopener"
+          class="footer-link"
+        >
+          <el-icon :size="12"><EditPen /></el-icon>
+          <span>建議/回報</span>
+        </a>
+      </div>
+
       <SidebarLink
         :to="{ name: 'settings' }"
         :icon="Setting"
@@ -58,20 +80,6 @@
         <el-icon :size="14"><Fold v-if="!collapsed" /><Expand v-else /></el-icon>
         <span v-if="!collapsed">收合</span>
       </button>
-
-      <div
-        v-if="!collapsed"
-        class="px-3 pt-3 mt-2 border-t border-parchment-dim text-[10px] text-ink-mute leading-relaxed space-y-0.5"
-      >
-        <div class="break-all">聯絡：yt.neko.vision@gmail.com</div>
-        <div>Discord：neko.vision</div>
-        <a
-          href="https://forms.gle/mnMAqAzP595ygCrJ9"
-          target="_blank"
-          rel="noopener"
-          class="inline-block text-amber-700 hover:underline"
-        >建議或回報</a>
-      </div>
     </div>
   </div>
 </template>
@@ -79,7 +87,11 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
-import { Grid, Flag, Document, Aim, Reading, Setting, Fold, Expand } from '@element-plus/icons-vue'
+import {
+  Grid, Flag, Document, Aim, Reading, Setting, Fold, Expand,
+  Message, ChatDotRound, EditPen,
+} from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import SidebarLink from './SidebarLink.vue'
 import SidebarSection from './SidebarSection.vue'
 
@@ -88,6 +100,15 @@ defineEmits<{
   (e: 'nav'): void
   (e: 'toggle-collapse'): void
 }>()
+
+const copyDiscord = async () => {
+  try {
+    await navigator.clipboard.writeText('neko.vision')
+    ElMessage.success('已複製 Discord：neko.vision')
+  } catch {
+    ElMessage.warning('無法存取剪貼簿，請手動複製：neko.vision')
+  }
+}
 
 type NavItem = {
   name: string
@@ -109,3 +130,40 @@ const soonNav: readonly NavItem[] = [
   { name: 'heroPedia', to: { name: 'comingSoon', params: { topic: 'hero-pedia' } }, icon: Reading, label: '武將圖鑑' },
 ]
 </script>
+
+<style scoped>
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #94A3B8;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.footer-link:hover {
+  color: #B45309;
+  background: #F5F0E1;
+}
+
+.footer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: #94A3B8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.footer-icon:hover {
+  color: #B45309;
+  background: #F5F0E1;
+}
+</style>
