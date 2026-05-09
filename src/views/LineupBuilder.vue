@@ -1,6 +1,6 @@
 <template>
   <GachaSpectatorView v-if="gachaSpectatorBlob" :blob="gachaSpectatorBlob" />
-  <el-container v-else direction="vertical" class="w-full bg-slate-50 h-full">
+  <el-container v-else direction="vertical" class="w-full bg-slate-50 flex-1 min-h-0">
     <el-main class="app-main p-0 overflow-hidden">
 
       <!-- View 1: Lineup Builder (Default) -->
@@ -900,7 +900,8 @@ html.el-popup-parent--hidden {
   height: var(--el-header-height);
 }
 .app-main {
-  height: calc(100dvh - var(--el-header-height) - 32px);
+  flex: 1;
+  min-height: 0;
 }
 @media (max-width: 767px) {
   .app-header {
