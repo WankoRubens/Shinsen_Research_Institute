@@ -54,5 +54,8 @@ ai-doc/
 # Supabase CLI local state (per-machine: project ref, pooler URL, version pins)
 supabase/.temp/
 
-# Secrets
+# Secrets — catch all env variants (.env, .env.dev, .env.local, …) but
+# keep .env.example checked in as documentation of expected vars.
 .env
+.env.*
+!.env.example
