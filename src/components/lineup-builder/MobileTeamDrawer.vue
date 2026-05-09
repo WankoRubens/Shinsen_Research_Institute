@@ -5,39 +5,41 @@
     direction="ltr"
     size="280px"
     :with-header="false"
-    class="bg-gray-900"
+    class="!bg-parchment"
   >
-    <div class="h-full bg-gray-900 p-4 flex flex-col gap-4 overflow-y-auto">
-      <div class="text-white font-bold text-lg border-b border-gray-700 pb-2 mb-2">隊伍列表</div>
-      <div
-        v-for="(team, idx) in lineups"
-        :key="idx"
-        class="flex items-center gap-3 p-2 rounded cursor-pointer transition-colors"
-        :class="currentTeamIndex === idx ? 'bg-gray-800 border border-indigo-500' : 'hover:bg-gray-800 border border-transparent'"
-        @click="$emit('select', idx)"
-      >
-        <div class="w-10 h-10 rounded-full border-2 border-gray-600 flex items-center justify-center text-white font-bold bg-gray-700 overflow-hidden">
-          <img
-            v-if="team.main.hero"
-            :src="team.main.hero.portrait"
-            class="w-full h-full object-cover"
-          />
-          <span v-else>{{ idx + 1 }}</span>
-        </div>
-        <div class="flex-1">
-          <div class="text-indigo-300 font-bold text-sm">{{ team.name }}</div>
-          <div class="text-gray-400 text-xs truncate">
-            {{ team.main.hero?.name || '無大將' }} / {{ team.vice1.hero?.name || '-' }} / {{ team.vice2.hero?.name || '-' }}
+    <div class="h-full bg-parchment text-ink flex flex-col">
+      <header class="px-4 py-3 border-b border-parchment-dim">
+        <h2 class="text-sm font-bold tracking-wide">配將模擬</h2>
+      </header>
+      <div class="px-4 py-2 text-xs text-ink-mute border-b border-parchment-dim">
+        當前隊組 · <span class="font-bold text-ink">本陣</span>
+      </div>
+      <div class="flex-1 overflow-y-auto py-1">
+        <button
+          v-for="(team, idx) in lineups"
+          :key="idx"
+          type="button"
+          class="w-full flex items-center justify-between px-4 py-2 transition-colors text-left border-l-2"
+          :class="currentTeamIndex === idx
+            ? 'bg-parchment-soft border-amber-700'
+            : 'border-transparent hover:bg-parchment-soft/60'"
+          @click="$emit('select', idx)"
+        >
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-xs text-ink-mute w-4 text-right">{{ idx + 1 }}</span>
+            <span class="text-sm truncate">{{ team.name }}</span>
           </div>
-        </div>
-        <el-icon v-if="currentTeamIndex === idx" class="text-indigo-500"><Check /></el-icon>
+          <span
+            class="text-xs tabular-nums"
+            :class="teamCost(team) > 20 ? 'text-red-500' : 'text-ink-mute'"
+          >{{ teamCost(team) }}/20</span>
+        </button>
       </div>
     </div>
   </el-drawer>
 </template>
 
 <script setup lang="ts">
-import { Check } from '@element-plus/icons-vue'
 import type { Lineup } from '../../composables/useLineups'
 
 defineProps<{
@@ -49,4 +51,9 @@ defineEmits<{
   (e: 'update:modelValue', v: boolean): void
   (e: 'select', idx: number): void
 }>()
+
+const teamCost = (team: Lineup): number =>
+  (team.main.hero?.cost ?? 0)
+  + (team.vice1.hero?.cost ?? 0)
+  + (team.vice2.hero?.cost ?? 0)
 </script>

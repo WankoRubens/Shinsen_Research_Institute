@@ -5,10 +5,14 @@
 
       <!-- View 1: Lineup Builder (Default) -->
       <div v-if="!isEditingInventory" class="flex flex-col md:flex-row h-full">
-        <TeamSidebarStrip
+        <TeamListPanel
           :lineups="lineups"
           :current-team-index="currentTeamIndex"
           @select="(idx: number) => currentTeamIndex = idx"
+          @add-team="onAddTeam"
+          @share="dialogs.open('share')"
+          @save-as-proposal="onSaveAsProposal"
+          @add-to-group="onAddToGroup"
         />
 
         <MobileTeamDrawer
@@ -147,7 +151,7 @@ import InventoryEditor from '../components/lineup-builder/InventoryEditor.vue'
 import LineupWorkspace, { type Role } from '../components/lineup-builder/LineupWorkspace.vue'
 import type { ResetTarget } from '../components/dialogs/ResetDialog.vue'
 import type { ShareScope } from '../components/dialogs/ShareDialog.vue'
-import TeamSidebarStrip from '../components/lineup-builder/TeamSidebarStrip.vue'
+import TeamListPanel from '../components/lineup-builder/TeamListPanel.vue'
 import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 
 import { useData, Hero, Skill, Trait } from '../composables/useData'
@@ -635,6 +639,22 @@ const onSignIn = (provider: OAuthProvider) => {
   authDialogVisible.value = false
   snapshotForRecovery()
   signIn(provider)  // full-page redirect — nothing after this runs
+}
+
+// TeamListPanel action stubs — Phase 3f / 6 will replace these.
+const onAddTeam = () => {
+  const empty = lineups.findIndex(l => !l.main.hero && !l.vice1.hero && !l.vice2.hero)
+  if (empty < 0) {
+    ElMessage.info('當前隊組已滿（10 隊）')
+    return
+  }
+  currentTeamIndex.value = empty
+}
+const onSaveAsProposal = () => {
+  ElMessage.info('「另存為提案」功能將在 Phase 3f 後啟用')
+}
+const onAddToGroup = () => {
+  ElMessage.info('「加入編組」功能將在 Phase 6 後啟用')
 }
 
 // Set by initFromHash when an incoming share is a v3 gacha-log snapshot.
