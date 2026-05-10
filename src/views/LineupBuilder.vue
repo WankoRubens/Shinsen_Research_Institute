@@ -89,21 +89,7 @@
 
     <ResetDialog v-model="resetDialogVisible" @confirm="clearLineup" />
 
-    <MySharesDialog
-      v-model="mySharesDialogVisible"
-      :loading="mySharesLoading"
-      :shares="myShares"
-      :editing-slug="editingSlug"
-      v-model:editing-draft="editingDraft"
-      @toggle-pin="togglePinShare"
-      @start-edit="startEditShareName"
-      @save-name="saveShareName"
-      @cancel-edit="cancelEditShareName"
-      @copy-url="copyShareUrl"
-      @remove="removeMyShare"
-    />
-
-    <RenameDialog
+<RenameDialog
       v-model="renameDialogVisible"
       v-model:name="renameInput"
       :saving="renameSaving"
@@ -153,7 +139,6 @@ import AuthDialog from '../components/dialogs/AuthDialog.vue'
 import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
 import RenameDialog from '../components/dialogs/RenameDialog.vue'
 import ShareDialog from '../components/dialogs/ShareDialog.vue'
-import MySharesDialog from '../components/dialogs/MySharesDialog.vue'
 import CreateProposalDialog from '../components/dialogs/CreateProposalDialog.vue'
 import ImportProposalDialog, { type ImportTarget } from '../components/dialogs/ImportProposalDialog.vue'
 import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
@@ -173,8 +158,7 @@ import { useLineups, makeTeam, type RoleData, type BingxueActive, type Lineup } 
 import { useGroups, MAX_TEAMS_PER_GROUP } from '../composables/useGroups'
 import { useInventory } from '../composables/useInventory'
 import {
-  createShare, loadShare, isShareEnabled,
-  listMyShares, renameMyShare, pinMyShare, deleteMyShare, type MyShare,
+  createShare, loadShare, isShareEnabled, type ShareKind,
 } from '../lib/share'
 import { handleAuthCallback, type OAuthProvider } from '../lib/auth'
 import type { SpectatorBlob } from '../lib/gachaLog'
@@ -234,7 +218,6 @@ const shareDialogVisible = dialogs.useDialog('share')
 const authDialogVisible = dialogs.useDialog('auth')
 const renameDialogVisible = dialogs.useDialog('rename')
 const gachaLogDialogVisible = dialogs.useDialog('gacha-log')
-const mySharesDialogVisible = dialogs.useDialog('my-shares')
 const mobileDetailVisible = dialogs.useDialog('mobile-slot-detail')
 const mobileSidebarVisible = dialogs.useDialog('mobile-team-drawer')
 const createProposalDialogVisible = dialogs.useDialog('create-proposal')
@@ -531,10 +514,12 @@ const shareLineup = async (type: ShareScope) => {
   // (Local var name avoids shadowing the displayName computed from useAuth.)
   const shareName = isLoggedIn.value ? shareNameInput.value.trim() : ''
 
+  const kind: ShareKind = type === 'current' ? 'lineup' : type === 'all' ? 'group' : 'inventory'
+
   let url: string
   if (isShareEnabled()) {
     try {
-      const slug = await createShare(data, shareName ? { displayName: shareName } : undefined)
+      const slug = await createShare(data, { kind, ...(shareName ? { displayName: shareName } : {}) })
       url = `${origin}#s/${slug}`
     } catch (e) {
       console.warn('[share] short URL failed, using long URL fallback:', e)
@@ -843,27 +828,6 @@ const gachaSpectatorBlob = ref<SpectatorBlob | null>(null)
 const { clearActiveProfile } = useActiveProfile()
 const { tryAutoApplyDefault } = useProfiles()
 
-// --- My Shares ---
-const mySharesLoading = ref(false)
-const myShares = ref<MyShare[]>([])
-// Inline rename: track which row (slug) is editing + the draft value.
-const editingSlug = ref<string | null>(null)
-const editingDraft = ref('')
-
-// Lazy-load shares whenever the my-shares overlay opens. Trigger comes from
-// AppLayout's user-menu via dialogs.open('my-shares').
-watch(mySharesDialogVisible, async (now) => {
-  if (!now) return
-  mySharesLoading.value = true
-  try {
-    myShares.value = await listMyShares()
-  } catch (e) {
-    ElMessage.error(`載入失敗：${(e as Error).message}`)
-  } finally {
-    mySharesLoading.value = false
-  }
-})
-
 // Prefill rename input from the current display name when the rename overlay
 // opens. Same trigger pattern: AppLayout opens the overlay, we react to it.
 watch(renameDialogVisible, (now) => {
@@ -881,65 +845,6 @@ watch(sessionExpiredCount, () => {
   clearActiveProfile()
   ElMessage.warning('登入已過期，請重新登入以同步雲端資料')
 })
-
-const startEditShareName = (s: MyShare) => {
-  editingSlug.value = s.slug
-  editingDraft.value = s.display_name ?? ''
-}
-
-const cancelEditShareName = () => {
-  editingSlug.value = null
-  editingDraft.value = ''
-}
-
-const saveShareName = async (s: MyShare) => {
-  const next = editingDraft.value.trim()
-  if (next === (s.display_name ?? '').trim()) {
-    cancelEditShareName()
-    return
-  }
-  try {
-    await renameMyShare(s.slug, next || null)
-    s.display_name = next || null
-    s.updated_at = new Date().toISOString()
-    cancelEditShareName()
-    ElMessage.success('已更新')
-  } catch (e) {
-    ElMessage.error(`更新失敗：${(e as Error).message}`)
-  }
-}
-
-const removeMyShare = async (s: MyShare) => {
-  try {
-    await deleteMyShare(s.slug)
-    myShares.value = myShares.value.filter(x => x.slug !== s.slug)
-    ElMessage.success('已刪除')
-  } catch (e) {
-    ElMessage.error(`刪除失敗：${(e as Error).message}`)
-  }
-}
-
-const togglePinShare = async (s: MyShare) => {
-  const next = !s.pinned
-  try {
-    await pinMyShare(s.slug, next)
-    s.pinned = next  // mutate in place; sortedMyShares is a computed off myShares
-    s.updated_at = new Date().toISOString()
-  } catch (e) {
-    ElMessage.error(`${next ? '釘選' : '取消釘選'}失敗：${(e as Error).message}`)
-  }
-}
-
-// Sort: pinned first, then named (alphabetical), then unnamed (most recent first).
-
-const copyShareUrl = (slug: string) => {
-  const url = `${window.location.origin}${window.location.pathname}#s/${slug}`
-  navigator.clipboard.writeText(url).then(() => {
-    ElMessage.success('連結已複製')
-  }).catch(() => {
-    ElMessage.error('複製失敗')
-  })
-}
 
 const submitRename = async () => {
   const name = renameInput.value.trim()

@@ -500,7 +500,7 @@ const onShare = async (): Promise<void> => {
     },
   }
   try {
-    const slug = await createShare(blob)
+    const slug = await createShare(blob, { kind: 'gacha_log' })
     const url = `${location.origin}${location.pathname}#s/${slug}`
     await navigator.clipboard.writeText(url).catch(() => undefined)
     ElMessage.success('已建立分享連結並複製到剪貼簿')

@@ -10,7 +10,6 @@ export type OverlayName =
   | 'auth'
   | 'rename'
   | 'changelog'
-  | 'my-shares'
   | 'gacha-log'
   | 'skill-select'
   | 'mobile-slot-detail'

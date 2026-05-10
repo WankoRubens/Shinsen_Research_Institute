@@ -92,7 +92,7 @@ export const getOrCreateProfileShareSlug = async (p: Profile): Promise<string> =
 
   const slug = await createShare(
     { inv_h: p.inv_h, inv_s: p.inv_s },
-    { displayName: `角色配置：${p.name}` },
+    { kind: 'profile', displayName: `角色配置：${p.name}` },
   )
   shareSlugCache.set(p.id, { slug, fingerprint: fp })
   return slug

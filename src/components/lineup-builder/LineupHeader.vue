@@ -179,9 +179,6 @@
               <el-dropdown-item command="gacha-log">
                 <el-icon class="mr-1"><Coin /></el-icon> 抽卡紀錄
               </el-dropdown-item>
-              <el-dropdown-item command="my-shares" divided>
-                <el-icon class="mr-1"><Share /></el-icon> 我的分享
-              </el-dropdown-item>
               <el-dropdown-item command="changelog" divided>
                 <el-icon class="mr-1"><Notebook /></el-icon>
                 <span>更新紀錄</span>
@@ -265,7 +262,7 @@ import { useGroups } from '../../composables/useGroups'
 import { useProfiles } from '../../composables/useProfiles'
 import { useActiveProfile } from '../../composables/useActiveProfile'
 
-export type UserMenuCmd = 'gacha-log' | 'my-shares' | 'changelog' | 'rename' | 'signout'
+export type UserMenuCmd = 'gacha-log' | 'changelog' | 'rename' | 'signout'
 
 const props = defineProps<{
   teamName: string

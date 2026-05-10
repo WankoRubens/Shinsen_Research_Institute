@@ -10,6 +10,7 @@ import AppLayout from '../layouts/AppLayout.vue'
 import LineupBuilder from '../views/LineupBuilder.vue'
 import ProfilesView from '../views/ProfilesView.vue'
 import MyGroups from '../views/MyGroups.vue'
+import SharesView from '../views/SharesView.vue'
 import ProposalsView from '../views/ProposalsView.vue'
 import GachaLogPage from '../views/GachaLogPage.vue'
 import SettingsView from '../views/SettingsView.vue'
@@ -23,6 +24,7 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'lineup', component: LineupBuilder },
       { path: 'profiles', name: 'profiles', component: ProfilesView },
       { path: 'groups', name: 'groups', component: MyGroups },
+      { path: 'shares', name: 'shares', component: SharesView },
       { path: 'proposals', name: 'proposals', component: ProposalsView },
       { path: 'gacha-log', name: 'gachaLog', component: GachaLogPage },
       { path: 'settings', name: 'settings', component: SettingsView },

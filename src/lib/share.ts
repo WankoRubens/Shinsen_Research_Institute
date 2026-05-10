@@ -22,20 +22,34 @@ const SLUG_PATTERN = /^[A-Za-z0-9]{12,14}$/
 
 export const isShareEnabled = isSupabaseConfigured
 
+export const SHARE_KINDS = ['lineup', 'group', 'inventory', 'profile', 'gacha_log'] as const
+export type ShareKind = typeof SHARE_KINDS[number]
+
+export const SHARE_KIND_LABELS: Record<ShareKind, string> = {
+  lineup: '單隊',
+  group: '編組',
+  inventory: '庫存',
+  profile: '角色配置',
+  gacha_log: '抽卡紀錄',
+}
+
 export interface CreateShareOptions {
   /** Sets shares.display_name. Only meaningful when logged in (anon shares
    *  are unlisted so a name has nowhere to surface). */
   displayName?: string
+  /** Required discriminator written to shares.kind. Drives the type column
+   *  in 我的分享 without needing to inspect blob shape on the list side. */
+  kind: ShareKind
 }
 
-export const createShare = async (blob: unknown, opts: CreateShareOptions = {}): Promise<string> => {
+export const createShare = async (blob: unknown, opts: CreateShareOptions): Promise<string> => {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('share backend not configured')
 
   const session = getSession()
   const token = session ? await getValidAccessToken() : null
   const userId = session && token ? session.user.id : null
 
-  const baseRow: Record<string, unknown> = { blob }
+  const baseRow: Record<string, unknown> = { blob, kind: opts.kind }
   if (userId) {
     baseRow.user_id = userId
     if (opts.displayName) baseRow.display_name = opts.displayName
@@ -75,6 +89,7 @@ export interface MyShare {
   slug: string
   display_name: string | null
   pinned: boolean
+  kind: ShareKind
   created_at: string
   updated_at: string
 }
@@ -87,7 +102,7 @@ export const listMyShares = async (): Promise<MyShare[]> => {
   if (!token) throw new Error('session expired')
 
   const url = `${SUPABASE_URL}/rest/v1/shares?user_id=eq.${session.user.id}` +
-    `&select=slug,display_name,pinned,created_at,updated_at&order=updated_at.desc`
+    `&select=slug,display_name,pinned,kind,created_at,updated_at&order=updated_at.desc`
   const res = await fetchWithTimeout(url, { headers: restHeaders(token) })
   if (!res.ok) throw new Error(`list shares failed: ${res.status}`)
   return (await res.json()) as MyShare[]
