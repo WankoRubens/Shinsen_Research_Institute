@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { useProfiles } from './useProfiles'
 
 // State
 const ownedHeroes = ref<string[]>([])
@@ -20,6 +21,9 @@ const saveInventory = () => {
   ownedHeroes.value = [...tempOwnedHeroes.value]
   ownedSkills.value = [...tempOwnedSkills.value]
   isEditingInventory.value = false
+  // Manual save = explicit user intent. Block tryAutoApplyDefault from
+  // overwriting on a still-pending session resolution.
+  useProfiles().markUserTouched()
 }
 
 const cancelEditingInventory = () => {

@@ -113,9 +113,6 @@
     <!-- Changelog Dialog -->
     <ChangelogDialog v-model="changelogDialogVisible" />
 
-    <!-- My Profiles Dialog -->
-    <MyProfilesDialog v-model="myProfilesDialogVisible" />
-
     <!-- Gacha Log Dialog -->
     <GachaLogDialog v-model="gachaLogDialogVisible" />
 
@@ -150,7 +147,6 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
-import MyProfilesDialog from '../components/dialogs/MyProfilesDialog.vue'
 import GachaLogDialog from '../components/dialogs/GachaLogDialog.vue'
 import ResetDialog from '../components/dialogs/ResetDialog.vue'
 import AuthDialog from '../components/dialogs/AuthDialog.vue'
@@ -188,7 +184,7 @@ import { useDialogs } from '../composables/useDialogs'
 import { useProposals } from '../composables/useProposals'
 import type { Proposal, ImportConflictResolution } from '../types/group'
 import { useChangelog } from '../composables/useChangelog'
-import { listMyProfiles } from '../lib/profiles'
+import { useProfiles } from '../composables/useProfiles'
 import { consumeInitialHash } from '../lib/initial-hash'
 
 const router = useRouter()
@@ -237,7 +233,6 @@ const resetDialogVisible = dialogs.useDialog('reset')
 const shareDialogVisible = dialogs.useDialog('share')
 const authDialogVisible = dialogs.useDialog('auth')
 const renameDialogVisible = dialogs.useDialog('rename')
-const myProfilesDialogVisible = dialogs.useDialog('my-profiles')
 const gachaLogDialogVisible = dialogs.useDialog('gacha-log')
 const mySharesDialogVisible = dialogs.useDialog('my-shares')
 const mobileDetailVisible = dialogs.useDialog('mobile-slot-detail')
@@ -845,28 +840,8 @@ const onImportProposal = (payload: {
 // Set by initFromHash when an incoming share is a v3 gacha-log snapshot.
 // Non-null switches the whole UI to spectator mode (no edit affordances).
 const gachaSpectatorBlob = ref<SpectatorBlob | null>(null)
-const { applyProfile, clearActiveProfile } = useActiveProfile()
-
-// Auto-apply the user's default profile after initFromHash settles. Skips
-// when (a) the user isn't logged in, (b) inventory was already filled by a
-// share link / OAuth recovery, or (c) the user has no default profile —
-// keeping fresh-page-loads silent for users who haven't opted in.
-const tryAutoLoadDefaultProfile = async (): Promise<void> => {
-  if (!isLoggedIn.value) return
-  if (ownedHeroes.value.length > 0 || ownedSkills.value.length > 0) return
-  try {
-    const profiles = await listMyProfiles()
-    const def = profiles.find(p => p.is_default)
-    if (def) {
-      applyProfile(def)
-      ElMessage.info(`已載入預設角色配置：${def.name}`)
-    }
-  } catch (e) {
-    // Silent fail — first-time users without grants/profiles shouldn't get
-    // an error toast on page load. Surfaces in console for debugging.
-    console.warn('[profiles] auto-load default skipped:', e)
-  }
-}
+const { clearActiveProfile } = useActiveProfile()
+const { tryAutoApplyDefault } = useProfiles()
 
 // --- My Shares ---
 const mySharesLoading = ref(false)
@@ -1050,7 +1025,7 @@ onMounted(async () => {
   // (share/recovery should win if present). No reason to block the changelog
   // open on a Supabase round-trip — they don't conflict, and `consumedHash`
   // already gates the changelog independently.
-  void tryAutoLoadDefaultProfile()
+  void tryAutoApplyDefault()
   // Auto-open changelog only when nothing else is competing for the user's
   // attention. Triggers for both first-time visitors and returning users on
   // a release day (LATEST_VERSION mismatch).

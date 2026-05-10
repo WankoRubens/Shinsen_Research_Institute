@@ -91,7 +91,7 @@ import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import {
   Grid, Flag, Document, Aim, Reading, Setting, Fold, Expand,
-  Message, ChatDotRound, EditPen,
+  Message, ChatDotRound, EditPen, User,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import SidebarLink from './SidebarLink.vue'
@@ -122,6 +122,7 @@ type NavItem = {
 
 const primaryNav: readonly NavItem[] = [
   { name: 'lineup', to: { name: 'lineup' }, icon: Grid, label: '配將模擬', badge: '工作台' },
+  { name: 'profiles', to: { name: 'profiles' }, icon: User, label: '角色管理' },
   { name: 'groups', to: { name: 'groups' }, icon: Flag, label: '我的編組' },
   { name: 'proposals', to: { name: 'proposals' }, icon: Document, label: '精選隊伍' },
   { name: 'gachaLog', to: { name: 'gachaLog' }, icon: Document, label: '抽卡紀錄' },

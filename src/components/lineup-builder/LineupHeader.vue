@@ -5,6 +5,59 @@
         <el-icon :size="20"><Menu /></el-icon>
       </el-button>
 
+      <!-- Profile selector — dropdown of the user's character profiles.
+           Only shown when logged in; anonymous users have no profile concept
+           and edit inventory directly via the right-side button. -->
+      <el-dropdown
+        v-if="!isEditingInventory && isLoggedIn"
+        trigger="click"
+        @command="onProfileCommand"
+        @visible-change="onProfileVisibleChange"
+        placement="bottom-start"
+      >
+        <button class="profile-pill group-pill" type="button">
+          <el-icon :size="13" class="opacity-70"><User /></el-icon>
+          <span class="font-bold text-ink">角色</span>
+          <span
+            class="font-bold truncate max-w-[100px]"
+            :class="activeProfileName ? 'text-focus' : 'text-ink-mute'"
+          >{{ activeProfileName ?? '不使用' }}</span>
+          <el-icon :size="12" class="opacity-60"><ArrowDown /></el-icon>
+        </button>
+        <template #dropdown>
+          <el-dropdown-menu class="min-w-[240px]">
+            <el-dropdown-item
+              command="unload"
+              :class="{ '!font-bold !text-focus': !activeProfileId }"
+            >
+              <el-icon class="mr-1"><CircleClose /></el-icon>
+              <span>不使用（可用全部武將/戰法）</span>
+            </el-dropdown-item>
+            <el-dropdown-item
+              v-for="p in profiles"
+              :key="p.id"
+              :command="`apply:${p.id}`"
+              :class="{ '!font-bold !text-focus': activeProfileId === p.id }"
+              divided
+            >
+              <el-icon class="mr-1" :class="p.is_default ? 'text-amber-500' : ''">
+                <component :is="p.is_default ? StarFilled : Avatar" />
+              </el-icon>
+              <span class="flex-1 truncate mr-2">{{ p.name }}</span>
+              <span class="text-[11px] text-ink-mute tabular-nums">
+                {{ p.inv_h.length }}武 · {{ p.inv_s.length }}法
+              </span>
+            </el-dropdown-item>
+            <el-dropdown-item command="edit-inventory" divided>
+              <el-icon class="mr-1"><Edit /></el-icon> 編輯目前庫存…
+            </el-dropdown-item>
+            <el-dropdown-item command="goto-profiles">
+              <el-icon class="mr-1"><Setting /></el-icon> 管理角色配置…
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+
       <!-- Group selector — dropdown with current group name. Switch is wired;
            rename / delete defer to a later follow-up. -->
       <el-dropdown
@@ -75,12 +128,17 @@
 
     <div class="flex items-center gap-1 md:gap-1 pr-1 md:pr-0">
       <template v-if="!isEditingInventory">
-        <el-button type="info" plain @click="$emit('start-editing-inventory')" class="hidden sm:inline-flex !rounded-sm">
-          <el-icon class="mr-1"><Edit /></el-icon> 編輯庫存
-        </el-button>
-        <el-button type="info" plain @click="$emit('start-editing-inventory')" class="sm:hidden !rounded-sm !w-9 !h-9 !p-0">
-          <el-icon><Edit /></el-icon>
-        </el-button>
+        <!-- Anonymous fallback: no profile pill exists for them, so keep an
+             explicit 編輯庫存 button. Logged-in users access editing via the
+             profile dropdown's 編輯目前庫存…項. -->
+        <template v-if="!isLoggedIn">
+          <el-button type="info" plain @click="$emit('start-editing-inventory')" class="hidden sm:inline-flex !rounded-sm">
+            <el-icon class="mr-1"><Edit /></el-icon> 編輯庫存
+          </el-button>
+          <el-button type="info" plain @click="$emit('start-editing-inventory')" class="sm:hidden !rounded-sm !w-9 !h-9 !p-0">
+            <el-icon><Edit /></el-icon>
+          </el-button>
+        </template>
 
         <el-button type="primary" plain @click="$emit('open-share')" class="hidden sm:inline-flex !rounded-sm">
           <el-icon class="mr-1"><Share /></el-icon> 分享
@@ -118,17 +176,6 @@
           </button>
           <template #dropdown>
             <el-dropdown-menu class="min-w-[220px]">
-              <el-dropdown-item disabled class="!cursor-default !opacity-100">
-                <div class="flex items-baseline gap-1 min-w-0">
-                  <span class="text-xs text-gray-500 flex-shrink-0">角色：</span>
-                  <span class="text-sm font-bold text-emerald-700 truncate">
-                    {{ activeProfileName ?? '預設' }}
-                  </span>
-                </div>
-              </el-dropdown-item>
-              <el-dropdown-item command="my-profiles">
-                <el-icon class="mr-1"><User /></el-icon> 管理角色配置
-              </el-dropdown-item>
               <el-dropdown-item command="gacha-log">
                 <el-icon class="mr-1"><Coin /></el-icon> 抽卡紀錄
               </el-dropdown-item>
@@ -155,26 +202,72 @@
       </template>
       <template v-else>
         <el-button @click="$emit('cancel-editing-inventory')" class="!rounded-sm">
-          <el-icon class="mr-1"><Close /></el-icon> <span class="hidden sm:inline">不儲存離開</span>
+          <el-icon class="mr-1"><Close /></el-icon> <span class="hidden sm:inline">取消</span>
         </el-button>
-        <el-button type="success" @click="$emit('save-inventory')" class="!rounded-sm">
-          <el-icon class="mr-1"><Check /></el-icon> <span class="hidden sm:inline">儲存庫存</span>
+
+        <!-- Anonymous: single in-memory save button (preserves the no-login UX). -->
+        <el-button
+          v-if="!isLoggedIn"
+          type="success"
+          @click="$emit('save-inventory')"
+          class="!rounded-sm"
+        >
+          <el-icon class="mr-1"><Check /></el-icon>
+          <span class="hidden sm:inline">儲存（本次階段）</span>
         </el-button>
+
+        <!-- Logged in: save to active profile (if any) -->
+        <el-button
+          v-if="isLoggedIn && activeProfileName"
+          type="success"
+          @click="$emit('save-inventory-active')"
+          class="!rounded-sm"
+        >
+          <el-icon class="mr-1"><Check /></el-icon>
+          <span class="hidden sm:inline">儲存到「{{ activeProfileName }}」</span>
+          <span class="sm:hidden">儲存</span>
+        </el-button>
+
+        <!-- Logged in: save as new profile. Active state: separate inline input;
+             no active state: this is the only save button (still input-driven). -->
+        <div class="flex items-center gap-1 ml-1">
+          <el-input
+            v-if="isLoggedIn"
+            v-model="newProfileName"
+            size="default"
+            maxlength="50"
+            :placeholder="activeProfileName ? '另存為新庫存…' : '儲存為新庫存…'"
+            class="!w-40 sm:!w-48"
+            @keyup.enter="onSaveAsNew"
+          />
+          <el-button
+            v-if="isLoggedIn"
+            type="primary"
+            :disabled="!newProfileName.trim()"
+            @click="onSaveAsNew"
+            class="!rounded-sm"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-button>
+        </div>
       </template>
     </div>
   </el-header>
 </template>
 
 <script setup lang="ts">
-import { Edit, Share, Delete, Menu, User, Bell, ArrowDown, Coin, Close, Check, Plus, Notebook } from '@element-plus/icons-vue'
+import { ref, watch } from 'vue'
+import { Edit, Share, Delete, Menu, User, Bell, ArrowDown, Coin, Close, Check, Plus, Notebook, CircleClose, StarFilled, Avatar, Setting } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { TROOP_TYPES, TROOP_LABELS } from '../../constants/traits'
 import type { TroopType } from '../../constants/traits'
 import { useGroups } from '../../composables/useGroups'
+import { useProfiles } from '../../composables/useProfiles'
+import { useActiveProfile } from '../../composables/useActiveProfile'
 
-export type UserMenuCmd = 'my-profiles' | 'gacha-log' | 'my-shares' | 'changelog' | 'rename' | 'signout'
+export type UserMenuCmd = 'gacha-log' | 'my-shares' | 'changelog' | 'rename' | 'signout'
 
-defineProps<{
+const props = defineProps<{
   teamName: string
   totalCost: number
   troopLevels: Record<TroopType, number>
@@ -184,20 +277,57 @@ defineProps<{
   displayName: string | null
   activeProfileName: string | null
 }>()
-defineEmits<{
+const emit = defineEmits<{
   (e: 'update:teamName', v: string): void
   (e: 'open-mobile-sidebar'): void
   (e: 'start-editing-inventory'): void
   (e: 'cancel-editing-inventory'): void
   (e: 'save-inventory'): void
+  (e: 'save-inventory-active'): void
+  (e: 'save-inventory-new', name: string): void
   (e: 'open-share'): void
   (e: 'open-reset'): void
   (e: 'open-changelog'): void
   (e: 'open-auth'): void
   (e: 'user-menu', cmd: UserMenuCmd): void
+  (e: 'apply-profile', id: string): void
+  (e: 'unload-profile'): void
+  (e: 'goto-profiles'): void
 }>()
 
 const { groups, currentGroup, currentGroupIndex, setCurrentGroup, addGroup } = useGroups()
+const { profiles, refresh: refreshProfiles } = useProfiles()
+const { activeProfileId } = useActiveProfile()
+
+// Inline new-profile-name input shown alongside the save buttons during
+// inventory editing. Reset each time the mode toggles so a stale draft from
+// the previous session can't auto-submit when re-opened.
+const newProfileName = ref('')
+watch(() => props.isEditingInventory, () => { newProfileName.value = '' })
+
+const onSaveAsNew = () => {
+  const name = newProfileName.value.trim()
+  if (!name) return
+  emit('save-inventory-new', name)
+}
+
+const onProfileVisibleChange = (visible: boolean) => {
+  // Refresh on open so the dropdown reflects rename/delete from another tab.
+  // Errors are swallowed inside refresh's caller — silent fail is fine here.
+  if (visible) void refreshProfiles().catch(() => { /* swallow */ })
+}
+
+const onProfileCommand = (cmd: string) => {
+  if (cmd === 'unload') {
+    emit('unload-profile')
+  } else if (cmd === 'edit-inventory') {
+    emit('start-editing-inventory')
+  } else if (cmd === 'goto-profiles') {
+    emit('goto-profiles')
+  } else if (cmd.startsWith('apply:')) {
+    emit('apply-profile', cmd.slice(6))
+  }
+}
 
 const onGroupCommand = (cmd: string) => {
   if (cmd.startsWith('switch:')) {
@@ -214,7 +344,8 @@ const onGroupCommand = (cmd: string) => {
 </script>
 
 <style scoped>
-.group-pill {
+.group-pill,
+.profile-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -230,11 +361,13 @@ const onGroupCommand = (cmd: string) => {
   line-height: 1;
   box-sizing: border-box;
 }
-.group-pill:hover {
+.group-pill:hover,
+.profile-pill:hover {
   background: rgb(var(--color-highlight));
   border-color: rgb(var(--color-focus));
 }
-.group-pill:focus-visible {
+.group-pill:focus-visible,
+.profile-pill:focus-visible {
   outline: 2px solid rgb(var(--color-focus));
   outline-offset: 2px;
 }

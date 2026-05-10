@@ -11,7 +11,6 @@ export type OverlayName =
   | 'rename'
   | 'changelog'
   | 'my-shares'
-  | 'my-profiles'
   | 'gacha-log'
   | 'skill-select'
   | 'mobile-slot-detail'

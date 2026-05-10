@@ -22,3 +22,12 @@ export function consumeInitialHash(): string {
   consumed = true
   return captured
 }
+
+/**
+ * Non-destructive read of the initial hash. Use from router guards that need
+ * to discriminate between share-blob URLs and ordinary user paths BEFORE the
+ * route mounts and consumes the hash. Returns '' if already consumed.
+ */
+export function peekInitialHash(): string {
+  return consumed ? '' : captured
+}

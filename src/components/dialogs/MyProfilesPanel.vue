@@ -1,115 +1,113 @@
 <template>
-  <el-dialog v-model="visible" title="我的角色配置" width="720px" align-center append-to-body>
-    <div v-loading="loading" class="min-h-[160px]">
-      <!-- Header actions -->
-      <div class="flex items-center gap-2 mb-3 flex-wrap">
-        <el-button type="primary" plain :icon="Plus" @click="openCreateDialog">
-          儲存目前庫存為新配置
-        </el-button>
-        <el-button :icon="Link" @click="openImportDialog">從分享連結匯入</el-button>
-        <span class="ml-auto text-[11px] text-gray-400">
-          配置只存庫存（武將/戰法），不含隊伍配置
-        </span>
-      </div>
-
-      <p
-        v-if="!loading && profiles.length === 0"
-        class="text-center text-gray-400 py-8 text-sm"
-      >
-        還沒有任何角色配置。<br>
-        在主畫面編輯庫存後，點上方按鈕儲存為配置。
-      </p>
-
-      <el-table v-else-if="profiles.length > 0" :data="profiles" size="default" style="width: 100%">
-        <el-table-column label="" width="44" align="center">
-          <template #default="{ row }">
-            <button
-              @click="toggleDefault(row)"
-              :title="row.is_default ? '取消預設' : '設為預設'"
-              class="default-btn"
-              :class="{ 'default-btn-on': row.is_default }"
-            >
-              <el-icon><component :is="row.is_default ? StarFilled : Star" /></el-icon>
-            </button>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="名稱" min-width="160">
-          <template #default="{ row }">
-            <div v-if="editingId === row.id" class="flex items-center gap-1">
-              <el-input
-                v-model="editingDraft"
-                size="small"
-                maxlength="50"
-                placeholder="輸入名稱"
-                @keyup.enter="saveRename(row)"
-                @keyup.esc="cancelRename"
-                autofocus
-              />
-              <el-button size="small" type="primary" :icon="Check" @click="saveRename(row)" />
-              <el-button size="small" :icon="Close" @click="cancelRename" />
-            </div>
-            <div v-else class="flex items-center gap-2 group">
-              <span class="text-gray-800 font-medium truncate">{{ row.name }}</span>
-              <span
-                v-if="activeProfileId === row.id"
-                class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex-shrink-0"
-              >使用中</span>
-              <el-button
-                text
-                size="small"
-                :icon="Edit"
-                class="opacity-0 group-hover:opacity-100"
-                @click="startRename(row)"
-              />
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="庫存" width="120" align="center">
-          <template #default="{ row }">
-            <div class="text-xs text-gray-500 leading-tight">
-              <div>{{ row.inv_h.length }} 武將</div>
-              <div>{{ row.inv_s.length }} 戰法</div>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="更新" width="90">
-          <template #default="{ row }">
-            <span class="text-xs text-gray-500">{{ relativeTime(row.updated_at) }}</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="" width="200" align="right">
-          <template #default="{ row }">
-            <div class="flex items-center justify-end gap-1">
-              <el-button
-                size="small"
-                type="primary"
-                @click="onApplyClick(row)"
-              >
-                套用
-              </el-button>
-              <el-tooltip content="用目前庫存覆寫此配置" placement="top">
-                <el-button size="small" :icon="RefreshRight" @click="overwriteWithCurrent(row)" />
-              </el-tooltip>
-              <el-popconfirm
-                title="確定刪除這個配置？刪除後無法復原。"
-                confirm-button-text="刪除"
-                cancel-button-text="取消"
-                confirm-button-type="danger"
-                @confirm="removeProfile(row)"
-              >
-                <template #reference>
-                  <el-button size="small" type="danger" :icon="Delete" />
-                </template>
-              </el-popconfirm>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+  <div v-loading="loading" class="min-h-[160px]">
+    <!-- Header actions -->
+    <div class="flex items-center gap-2 mb-3 flex-wrap">
+      <el-button type="primary" plain :icon="Plus" @click="openCreateDialog">
+        儲存目前庫存為新配置
+      </el-button>
+      <el-button :icon="Link" @click="openImportDialog">從分享連結匯入</el-button>
+      <span v-if="!compact" class="ml-auto text-[11px] text-gray-400">
+        配置只存庫存（武將/戰法），不含隊伍配置
+      </span>
     </div>
+
+    <p
+      v-if="!loading && profiles.length === 0"
+      class="text-center text-gray-400 py-8 text-sm"
+    >
+      還沒有任何角色配置。<br>
+      在主畫面編輯庫存後，點上方按鈕儲存為配置。
+    </p>
+
+    <el-table v-else-if="profiles.length > 0" :data="profiles" size="default" style="width: 100%">
+      <el-table-column label="" width="44" align="center">
+        <template #default="{ row }">
+          <button
+            @click="toggleDefault(row)"
+            :title="row.is_default ? '取消預設' : '設為預設'"
+            class="default-btn"
+            :class="{ 'default-btn-on': row.is_default }"
+          >
+            <el-icon><component :is="row.is_default ? StarFilled : Star" /></el-icon>
+          </button>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="名稱" min-width="160">
+        <template #default="{ row }">
+          <div v-if="editingId === row.id" class="flex items-center gap-1">
+            <el-input
+              v-model="editingDraft"
+              size="small"
+              maxlength="50"
+              placeholder="輸入名稱"
+              @keyup.enter="saveRename(row)"
+              @keyup.esc="cancelRename"
+              autofocus
+            />
+            <el-button size="small" type="primary" :icon="Check" @click="saveRename(row)" />
+            <el-button size="small" :icon="Close" @click="cancelRename" />
+          </div>
+          <div v-else class="flex items-center gap-2 group">
+            <span class="text-gray-800 font-medium truncate">{{ row.name }}</span>
+            <span
+              v-if="activeProfileId === row.id"
+              class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex-shrink-0"
+            >使用中</span>
+            <el-button
+              text
+              size="small"
+              :icon="Edit"
+              class="opacity-0 group-hover:opacity-100"
+              @click="startRename(row)"
+            />
+          </div>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="庫存" width="120" align="center">
+        <template #default="{ row }">
+          <div class="text-xs text-gray-500 leading-tight">
+            <div>{{ row.inv_h.length }} 武將</div>
+            <div>{{ row.inv_s.length }} 戰法</div>
+          </div>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="更新" width="90">
+        <template #default="{ row }">
+          <span class="text-xs text-gray-500">{{ relativeTime(row.updated_at) }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="" width="200" align="right">
+        <template #default="{ row }">
+          <div class="flex items-center justify-end gap-1">
+            <el-button
+              size="small"
+              type="primary"
+              @click="onApplyClick(row)"
+            >
+              套用
+            </el-button>
+            <el-tooltip content="複製此配置的分享連結" placement="top">
+              <el-button size="small" :icon="Share" @click="shareProfileLink(row)" />
+            </el-tooltip>
+            <el-popconfirm
+              title="確定刪除這個配置？刪除後無法復原。"
+              confirm-button-text="刪除"
+              cancel-button-text="取消"
+              confirm-button-type="danger"
+              @confirm="removeProfile(row)"
+            >
+              <template #reference>
+                <el-button size="small" type="danger" :icon="Delete" />
+              </template>
+            </el-popconfirm>
+          </div>
+        </template>
+      </el-table-column>
+    </el-table>
 
     <!-- Create-profile sub-dialog (asks for name) -->
     <el-dialog
@@ -178,42 +176,38 @@
         </el-button>
       </div>
     </el-dialog>
-  </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Plus, Link, Edit, Close, Check, Delete, Star, StarFilled, RefreshRight,
+  Plus, Link, Edit, Close, Check, Delete, Star, StarFilled, Share,
 } from '@element-plus/icons-vue'
 import {
-  listMyProfiles, createProfile, renameProfile, updateProfileInventory,
+  createProfile, renameProfile,
   setDefaultProfile, deleteProfile, type Profile,
 } from '../../lib/profiles'
+import { getOrCreateProfileShareSlug } from '../../composables/useProfiles'
+import { relativeTime } from '../../lib/time'
 import { loadShare } from '../../lib/share'
 import { useData } from '../../composables/useData'
 import { useInventory } from '../../composables/useInventory'
 import { useActiveProfile } from '../../composables/useActiveProfile'
+import { useProfiles } from '../../composables/useProfiles'
 
-const props = defineProps<{ modelValue: boolean }>()
-const emit = defineEmits<{ (e: 'update:modelValue', v: boolean): void }>()
-
-const visible = computed({
-  get: () => props.modelValue,
-  set: (v) => emit('update:modelValue', v),
-})
+withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
+const emit = defineEmits<{ (e: 'close-request'): void }>()
 
 const { heroes, skills } = useData()
 const { ownedHeroes, ownedSkills, isEditingInventory } = useInventory()
 const {
   applyProfile, syncActiveProfile, activeProfileId, activeProfile,
 } = useActiveProfile()
+const { profiles, loading, refresh } = useProfiles()
 
-const profiles = ref<Profile[]>([])
-const loading = ref(false)
-
-// Inline rename (matches MyShares dialog pattern).
+// Inline rename
 const editingId = ref<string | null>(null)
 const editingDraft = ref('')
 
@@ -229,7 +223,6 @@ const importUrl = ref('')
 const importName = ref('')
 const importLoading = ref(false)
 
-// JP-name lookup for current inventory. Built once per data load and reused.
 const heroChtToJp = computed(() => new Map(heroes.value.map(h => [h.name, h.name_jp])))
 const skillChtToJp = computed(() => new Map(skills.value.map(s => [s.name, s.name_jp])))
 
@@ -238,36 +231,23 @@ const currentInventoryAsJP = (): { inv_h: string[]; inv_s: string[] } => ({
   inv_s: ownedSkills.value.map(n => skillChtToJp.value.get(n) ?? n),
 })
 
-const refresh = async () => {
-  loading.value = true
+const safeRefresh = async () => {
   try {
-    profiles.value = await listMyProfiles()
-    // Keep activeProfile in sync if it was renamed/updated server-side, or
-    // null it out if the row got deleted elsewhere (e.g., another tab).
-    if (activeProfile.value) {
-      const updated = profiles.value.find(p => p.id === activeProfile.value!.id)
-      syncActiveProfile(updated ?? null)
-    }
+    await refresh()
   } catch (e) {
     ElMessage.error(`載入失敗：${(e as Error).message}`)
-  } finally {
-    loading.value = false
   }
 }
 
-watch(visible, (now) => {
-  if (now) refresh()
-  else cancelRename()
-})
+onMounted(safeRefresh)
 
-// --- Create ---
 const openCreateDialog = () => {
   if (isEditingInventory.value) {
     ElMessage.warning('請先儲存或取消庫存編輯')
     return
   }
   createName.value = ''
-  createAsDefault.value = profiles.value.length === 0  // first profile auto-default
+  createAsDefault.value = profiles.value.length === 0
   createDialogVisible.value = true
 }
 
@@ -281,9 +261,6 @@ const submitCreate = async () => {
   try {
     const { inv_h, inv_s } = currentInventoryAsJP()
     const created = await createProfile({ name, inv_h, inv_s })
-    // Two-step default toggle is a separate round-trip that can fail
-    // independently. If it does, the profile still exists — surface a warning
-    // rather than the generic 儲存失敗 (which would imply nothing was saved).
     let defaultMarkFailed = false
     if (createAsDefault.value) {
       try {
@@ -299,7 +276,7 @@ const submitCreate = async () => {
     } else {
       ElMessage.success(`「${name}」已儲存`)
     }
-    refresh()
+    safeRefresh()
   } catch (e) {
     ElMessage.error(`儲存失敗：${(e as Error).message}`)
   } finally {
@@ -307,16 +284,11 @@ const submitCreate = async () => {
   }
 }
 
-// --- Apply / Overwrite / Delete / Default ---
 const onApplyClick = async (p: Profile) => {
   if (isEditingInventory.value) {
     ElMessage.warning('請先儲存或取消庫存編輯')
     return
   }
-  // Confirm only when there's actual data at risk — i.e. inventory is
-  // non-empty AND we're not just re-applying the already-active profile (a
-  // re-apply is harmless). An empty inventory has nothing to lose, so the
-  // confirm would just be friction.
   const wouldOverwriteData = activeProfileId.value !== p.id &&
     (ownedHeroes.value.length > 0 || ownedSkills.value.length > 0)
   if (wouldOverwriteData) {
@@ -332,30 +304,20 @@ const onApplyClick = async (p: Profile) => {
   }
   applyProfile(p)
   ElMessage.success(`已套用「${p.name}」`)
-  visible.value = false
+  emit('close-request')
 }
 
-const overwriteWithCurrent = async (p: Profile) => {
-  if (isEditingInventory.value) {
-    ElMessage.warning('請先儲存或取消庫存編輯')
-    return
-  }
+// Mint (or reuse) a short slug-based share URL for this profile's inventory.
+// useProfiles caches the slug per profile within the session and invalidates
+// on inventory fingerprint change, so spam-clicking only writes once.
+const shareProfileLink = async (p: Profile) => {
   try {
-    await ElMessageBox.confirm(
-      `用目前庫存（${ownedHeroes.value.length} 武將, ${ownedSkills.value.length} 戰法）覆寫「${p.name}」？`,
-      '覆寫配置',
-      { confirmButtonText: '覆寫', cancelButtonText: '取消', type: 'warning' },
-    )
-  } catch {
-    return
-  }
-  try {
-    const { inv_h, inv_s } = currentInventoryAsJP()
-    await updateProfileInventory(p.id, inv_h, inv_s)
-    ElMessage.success(`已更新「${p.name}」`)
-    refresh()
+    const slug = await getOrCreateProfileShareSlug(p)
+    const url = `${location.origin}${location.pathname}#s/${slug}`
+    await navigator.clipboard.writeText(url)
+    ElMessage.success(`已複製「${p.name}」的分享連結`)
   } catch (e) {
-    ElMessage.error(`更新失敗：${(e as Error).message}`)
+    ElMessage.error(`分享失敗：${(e as Error).message}`)
   }
 }
 
@@ -373,13 +335,12 @@ const removeProfile = async (p: Profile) => {
 const toggleDefault = async (p: Profile) => {
   try {
     await setDefaultProfile(p.is_default ? null : p.id)
-    refresh()
+    safeRefresh()
   } catch (e) {
     ElMessage.error(`設定失敗：${(e as Error).message}`)
   }
 }
 
-// --- Rename ---
 const startRename = (p: Profile) => {
   editingId.value = p.id
   editingDraft.value = p.name
@@ -410,7 +371,6 @@ const saveRename = async (p: Profile) => {
   }
 }
 
-// --- Import from share link ---
 const openImportDialog = () => {
   if (isEditingInventory.value) {
     ElMessage.warning('請先儲存或取消庫存編輯')
@@ -421,8 +381,6 @@ const openImportDialog = () => {
   importDialogVisible.value = true
 }
 
-// Accept either a full URL or just the hash payload. Strips a leading `/`
-// in case the user copied a router-normalized URL.
 const parseShareInput = (input: string): { slug?: string; base64?: string } => {
   let payload = input.trim()
   const hashIdx = payload.indexOf('#')
@@ -436,7 +394,7 @@ const parseShareInput = (input: string): { slug?: string; base64?: string } => {
 interface ShareBlobLike {
   inv_h?: unknown
   inv_s?: unknown
-  inventory?: unknown   // legacy v1 — heroes only
+  inventory?: unknown
 }
 
 const submitImport = async () => {
@@ -470,7 +428,7 @@ const submitImport = async () => {
     await createProfile({ name, inv_h, inv_s })
     importDialogVisible.value = false
     ElMessage.success(`已匯入「${name}」（${inv_h.length} 武將, ${inv_s.length} 戰法）`)
-    refresh()
+    safeRefresh()
   } catch (e) {
     ElMessage.error(`匯入失敗：${(e as Error).message}`)
   } finally {
@@ -478,20 +436,9 @@ const submitImport = async () => {
   }
 }
 
-// --- Time helper (matches LineupBuilder.relativeTime) ---
-const relativeTime = (iso: string): string => {
-  const sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
-  if (sec < 60) return '剛剛'
-  if (sec < 3600) return `${Math.floor(sec / 60)} 分鐘前`
-  if (sec < 86400) return `${Math.floor(sec / 3600)} 小時前`
-  if (sec < 86400 * 30) return `${Math.floor(sec / 86400)} 天前`
-  return new Date(iso).toLocaleDateString('zh-Hant')
-}
 </script>
 
 <style scoped>
-/* Default star toggle — identical visual vocab to MyShares' pin star, but
-   amber-on means "default profile" rather than "pinned". */
 .default-btn {
   display: inline-flex;
   align-items: center;

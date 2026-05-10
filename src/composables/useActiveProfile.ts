@@ -2,6 +2,7 @@ import { ref, computed, readonly } from 'vue'
 import type { Profile } from '../lib/profiles'
 import { useInventory } from './useInventory'
 import { useData, type Hero, type Skill } from './useData'
+import { useProfiles } from './useProfiles'
 
 // The currently-applied profile (or null if user has never applied one this
 // session). Module-level so the dropdown header in LineupBuilder and the
@@ -42,6 +43,19 @@ export function useActiveProfile() {
       .filter((n): n is string => !!n)
     showOwnedOnly.value = ownedHeroes.value.length > 0 || ownedSkills.value.length > 0
     activeProfile.value = p
+    useProfiles().markUserTouched()
+  }
+
+  // User-driven "switch to no profile". Unlike clearActiveProfile (used for
+  // sign-out / session expiry, which leaves inventory intact so anonymous
+  // edits survive), this also empties the inventory and disables 顯示已擁有
+  // — semantically "use the full library, no roster gating".
+  const unloadProfile = (): void => {
+    ownedHeroes.value = []
+    ownedSkills.value = []
+    showOwnedOnly.value = false
+    activeProfile.value = null
+    useProfiles().markUserTouched()
   }
 
   // Updates the active profile's metadata WITHOUT touching inventory state.
@@ -51,13 +65,19 @@ export function useActiveProfile() {
   // reads better at the call site.
   const syncActiveProfile = (p: Profile | null): void => { activeProfile.value = p }
 
-  const clearActiveProfile = (): void => { activeProfile.value = null }
+  const clearActiveProfile = (): void => {
+    activeProfile.value = null
+    // Sign-out / session-expiry path: also drop the cached profile list and
+    // session-touched flag so the next user starts clean.
+    useProfiles().reset()
+  }
 
   return {
     activeProfile: readonly(activeProfile),
     activeProfileName: computed(() => activeProfile.value?.name ?? null),
     activeProfileId: computed(() => activeProfile.value?.id ?? null),
     applyProfile,
+    unloadProfile,
     syncActiveProfile,
     clearActiveProfile,
   }
