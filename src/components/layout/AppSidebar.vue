@@ -1,7 +1,7 @@
 <template>
   <!-- Desktop rail -->
   <aside
-    class="app-sidebar hidden md:flex flex-col border-r border-parchment-dim bg-white/60 backdrop-blur-sm"
+    class="app-sidebar hidden md:flex flex-col border-r border-divider bg-white"
     :class="collapsed ? 'w-16' : 'w-56'"
   >
     <SidebarBody

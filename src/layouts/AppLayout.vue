@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-dvh w-full bg-parchment text-ink">
+  <div class="flex h-dvh w-full bg-white text-ink">
     <AppSidebar
       v-model:collapsed="sidebarCollapsed"
       v-model:mobileOpen="sidebarMobileOpen"
@@ -27,7 +27,7 @@
       />
       <button
         v-else
-        class="md:hidden fixed top-3 left-3 z-50 w-9 h-9 rounded-full bg-white/90 border border-parchment-dim shadow flex items-center justify-center"
+        class="md:hidden fixed top-3 left-3 z-50 w-9 h-9 rounded-full bg-white/90 border border-divider shadow flex items-center justify-center"
         @click="sidebarMobileOpen = true"
         aria-label="open menu"
       >

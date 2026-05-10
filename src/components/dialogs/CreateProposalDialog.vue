@@ -32,7 +32,7 @@
 
       <div
         v-if="isLoggedIn"
-        class="flex items-center justify-between pt-1 border-t border-parchment-dim"
+        class="flex items-center justify-between pt-1 border-t border-divider"
       >
         <div class="flex flex-col gap-0.5">
           <span class="text-sm">公開分享</span>

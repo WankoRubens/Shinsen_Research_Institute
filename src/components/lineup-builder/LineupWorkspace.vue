@@ -2,11 +2,11 @@
   <div class="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
     <!-- Left: 3-col Lineup Grid -->
     <div
-      class="flex-none md:flex-1 overflow-y-auto p-0.5 md:p-6 bg-slate-50"
+      class="flex-none md:flex-1 overflow-y-auto p-0.5 md:p-[10px] bg-slate-50"
       @click.self="$emit('clear-skill-focus')"
     >
       <div
-        class="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-0.5 md:gap-4 pb-0 md:pb-0 h-auto"
+        class="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-0.5 md:gap-3 pb-0 md:pb-0 h-auto"
         :class="{ 'lineup-shake': lineupShakeActive }"
         @click.self="$emit('clear-skill-focus')"
         @animationend="$emit('update:lineupShakeActive', false)"
@@ -23,7 +23,6 @@
             v-model:skill1="currentLineup[slot.role].skill1"
             v-model:skill2="currentLineup[slot.role].skill2"
             v-model:stats="currentLineup[slot.role].stats"
-            v-model:equipTraits="currentLineup[slot.role].equipTraits"
             v-model:breakthrough="currentLineup[slot.role].breakthrough"
             v-model:bingxue="currentLineup[slot.role].bingxue"
             :focused-skill-slot="currentSelectingSkillRole === slot.role ? currentSelectingSkillSlot : null"

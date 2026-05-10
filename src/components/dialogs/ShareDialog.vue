@@ -22,7 +22,7 @@
 
       <div
         v-if="isLoggedIn"
-        class="flex items-start justify-between gap-3 rounded border border-parchment-dim bg-parchment-soft/50 px-3 py-2"
+        class="flex items-start justify-between gap-3 rounded border border-divider bg-highlight/50 px-3 py-2"
       >
         <div class="flex flex-col gap-0.5 min-w-0">
           <span class="text-sm">

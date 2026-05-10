@@ -69,13 +69,6 @@
       :role="currentDetailRole"
       :role-data="currentDetailRole ? currentLineup[currentDetailRole] : null"
       @update:hero="(h) => { if (currentDetailRole) currentLineup[currentDetailRole].hero = h }"
-      @open-equip="(idx) => { if (currentDetailRole) openEquipDialog(currentDetailRole, idx) }"
-    />
-
-    <EquipTraitDialog
-      v-model="equipDialogVisible"
-      :options="MOCK_EQUIP_TRAITS"
-      @select="handleEquipSelect"
     />
 
     <SkillSelectDialog
@@ -159,7 +152,6 @@ import { ElMessage } from 'element-plus'
 import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
 import MyProfilesDialog from '../components/dialogs/MyProfilesDialog.vue'
 import GachaLogDialog from '../components/dialogs/GachaLogDialog.vue'
-import EquipTraitDialog from '../components/dialogs/EquipTraitDialog.vue'
 import ResetDialog from '../components/dialogs/ResetDialog.vue'
 import AuthDialog from '../components/dialogs/AuthDialog.vue'
 import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
@@ -178,9 +170,9 @@ import type { ShareScope, ShareEventPayload } from '../components/dialogs/ShareD
 import TeamListPanel from '../components/lineup-builder/TeamListPanel.vue'
 import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 
-import { useData, Hero, Skill, Trait } from '../composables/useData'
+import { useData, Hero, Skill } from '../composables/useData'
 
-import { MOCK_EQUIP_TRAITS, ShareableData, ShareableLineup, ShareableBingxue } from '../constants/gameData'
+import { ShareableData, ShareableLineup, ShareableBingxue } from '../constants/gameData'
 import { useLineups, makeTeam, type RoleData, type BingxueActive, type Lineup } from '../composables/useLineups'
 import { useGroups, MAX_TEAMS_PER_GROUP } from '../composables/useGroups'
 import { useInventory } from '../composables/useInventory'
@@ -240,7 +232,6 @@ const {
 const dialogs = useDialogs()
 const { hasUnseen: hasUnseenChangelog, changelogDialogVisible } = useChangelog()
 
-const equipDialogVisible = dialogs.useDialog('equip-trait')
 const skillSelectDialogVisible = dialogs.useDialog('skill-select')
 const resetDialogVisible = dialogs.useDialog('reset')
 const shareDialogVisible = dialogs.useDialog('share')
@@ -253,31 +244,6 @@ const mobileDetailVisible = dialogs.useDialog('mobile-slot-detail')
 const mobileSidebarVisible = dialogs.useDialog('mobile-team-drawer')
 const createProposalDialogVisible = dialogs.useDialog('create-proposal')
 const importProposalDialogVisible = dialogs.useDialog('import-proposal')
-
-// Equip Traits Logic (Shared / Mobile)
-const currentEquipRole = ref<Role | null>(null)
-const currentEquipSlotIdx = ref<number | null>(null)
-
-const openEquipDialog = (role: Role, idx: number) => {
-  currentEquipRole.value = role
-  currentEquipSlotIdx.value = idx
-  equipDialogVisible.value = true
-}
-
-const handleEquipSelect = (trait: Trait | null) => {
-  if (currentEquipRole.value && currentEquipSlotIdx.value !== null) {
-    const role = currentLineup.value[currentEquipRole.value]
-    // Ensure array exists
-    if (!role.equipTraits) role.equipTraits = [null, null, null, null]
-    
-    // Create new array to trigger reactivity
-    const newTraits = [...role.equipTraits]
-    newTraits[currentEquipSlotIdx.value] = trait ? { ...trait } : null // clone to avoid reference issues
-    role.equipTraits = newTraits
-    
-    equipDialogVisible.value = false
-  }
-}
 
 const activeTab = ref<'heroes' | 'skills'>('heroes')
 
@@ -521,7 +487,6 @@ const serializeRole = (role: RoleData, prefix: 'm' | 'v1' | 'v2'): Partial<Share
   [`${prefix}_s1`]: skillToJp(role.skill1?.name),
   [`${prefix}_s2`]: skillToJp(role.skill2?.name),
   [`${prefix}_st`]: role.stats,
-  [`${prefix}_eq`]: role.equipTraits?.map(t => t ? {n: t.name, r: t.rank, d: t.description} : null),
   [`${prefix}_bt`]: role.breakthrough,
   [`${prefix}_bx`]: serializeBx(role.bingxue),
 }) as Partial<ShareableLineup>
@@ -651,9 +616,6 @@ const restoreFromBlob = (data: ShareableData) => {
     const s2Name = safeL[prefix + '_s2']
     if (s2Name) role.skill2 = findSkillByKey(s2Name) || null
     if (safeL[prefix + '_st']) role.stats = safeL[prefix + '_st']
-    if (safeL[prefix + '_eq']) {
-      role.equipTraits = safeL[prefix + '_eq'].map((t: any) => t ? { name: t.n, rank: t.r, description: t.d, active: true } : null)
-    }
     const bt = safeL[prefix + '_bt']
     if (typeof bt === 'number') role.breakthrough = Math.max(0, Math.min(5, bt))
     const bx = safeL[prefix + '_bx']

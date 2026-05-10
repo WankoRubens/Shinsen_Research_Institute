@@ -5,13 +5,13 @@
     direction="ltr"
     size="280px"
     :with-header="false"
-    class="!bg-parchment"
+    class="!bg-white"
   >
-    <div class="h-full bg-parchment text-ink flex flex-col">
-      <header class="px-4 py-3 border-b border-parchment-dim">
+    <div class="h-full bg-white text-ink flex flex-col">
+      <header class="px-4 py-3 border-b border-divider">
         <h2 class="text-sm font-bold tracking-wide">配將模擬</h2>
       </header>
-      <div class="px-4 py-2 text-xs text-ink-mute border-b border-parchment-dim">
+      <div class="px-4 py-2 text-xs text-ink-mute border-b border-divider">
         當前隊組 · <span class="font-bold text-ink">預設</span>
       </div>
       <div class="flex-1 min-h-0 overflow-y-auto py-1">
@@ -21,8 +21,8 @@
           type="button"
           class="w-full flex items-center justify-between px-4 py-2 transition-colors text-left border-l-2"
           :class="currentTeamIndex === idx
-            ? 'bg-parchment-soft border-amber-700'
-            : 'border-transparent hover:bg-parchment-soft/60'"
+            ? 'bg-highlight border-focus'
+            : 'border-transparent hover:bg-highlight'"
           @click="$emit('select', idx)"
         >
           <div class="flex items-center gap-2 min-w-0">

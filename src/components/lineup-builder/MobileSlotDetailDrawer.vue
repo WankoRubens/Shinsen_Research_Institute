@@ -12,9 +12,7 @@
       :role-name="role === 'main' ? '大將' : '副將'"
       :hero="roleData.hero"
       :stats="roleData.stats"
-      :equip-traits="roleData.equipTraits"
       @update:hero="(h: Hero | null) => $emit('update:hero', h)"
-      @open-equip="(idx: number) => $emit('open-equip', idx)"
     />
   </el-drawer>
 </template>
@@ -32,6 +30,5 @@ defineProps<{
 defineEmits<{
   (e: 'update:modelValue', v: boolean): void
   (e: 'update:hero', h: Hero | null): void
-  (e: 'open-equip', idx: number): void
 }>()
 </script>

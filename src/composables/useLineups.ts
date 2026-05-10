@@ -1,5 +1,5 @@
 import { reactive, ref, computed, watch } from 'vue'
-import { Hero, Skill, Trait, BingxueDirection } from './useData'
+import { Hero, Skill, BingxueDirection } from './useData'
 import { useGroups, MAX_TEAMS_PER_GROUP } from './useGroups'
 
 // Active 兵學 selection for a hero. A hero activates ONE direction at a time,
@@ -30,7 +30,6 @@ export interface RoleData {
     cha: number
     spd: number
   }
-  equipTraits: (Trait | null)[]
   breakthrough: number  // 0-5, controls which traits are active
   bingxue: BingxueActive
 }
@@ -56,7 +55,6 @@ export const emptyRole = (): RoleData => ({
   skill1: null,
   skill2: null,
   stats: { ...defaultStats },
-  equipTraits: [null, null, null, null],
   breakthrough: 0,
   bingxue: emptyBingxue(),
 })
@@ -184,7 +182,6 @@ const swapRoles = (roleA: 'main' | 'vice1' | 'vice2', roleB: 'main' | 'vice1' | 
   const clone = (r: RoleData): RoleData => ({
     ...r,
     stats: { ...r.stats },
-    equipTraits: [...r.equipTraits],
     bingxue: { ...r.bingxue, minors: r.bingxue.minors.map(m => ({ ...m })) },
   })
   const temp = clone(l[roleA])

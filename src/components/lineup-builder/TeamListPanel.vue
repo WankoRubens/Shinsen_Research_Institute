@@ -1,39 +1,30 @@
 <template>
-  <aside class="hidden md:flex flex-col w-[260px] flex-shrink-0 border-r border-parchment-dim bg-parchment text-ink h-full overflow-hidden">
-    <header class="px-4 py-3 border-b border-parchment-dim">
-      <h2 class="text-sm font-bold tracking-wide">配將模擬</h2>
-    </header>
-
-    <!-- Group selector — name now reads live from useGroups. Dropdown
-         interaction (switch / rename / add) lands in Phase 3e. -->
-    <div class="px-4 py-2 text-xs text-ink-mute border-b border-parchment-dim flex items-center justify-between">
-      <span>當前隊組 · <span class="font-bold text-ink">{{ currentGroup.name }}</span></span>
-      <el-icon class="opacity-40"><ArrowDown /></el-icon>
-    </div>
-
-    <div class="flex-1 min-h-0 overflow-y-auto py-1">
+  <aside class="hidden md:flex flex-col w-[200px] flex-shrink-0 border-r border-divider bg-white text-ink h-full overflow-hidden">
+    <!-- Group selector lives in LineupHeader (top bar). Sidebar is just the
+         team list for the active group. -->
+    <div class="flex-1 min-h-0 overflow-y-auto pt-2">
       <button
         v-for="(team, idx) in lineups"
         :key="idx"
         type="button"
-        class="w-full flex items-center justify-between px-4 py-2 transition-colors text-left border-l-2"
+        class="w-full flex items-center justify-between pl-0 pr-3 py-2 transition-colors text-left border-l-2"
         :class="currentTeamIndex === idx
-          ? 'bg-parchment-soft border-amber-700'
-          : 'border-transparent hover:bg-parchment-soft/60'"
+          ? 'bg-highlight border-focus'
+          : 'border-transparent hover:bg-highlight'"
         @click="$emit('select', idx)"
       >
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="text-xs text-ink-mute w-4 text-right">{{ idx + 1 }}</span>
-          <span class="text-sm truncate">{{ team.name }}</span>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="text-[11px] text-ink-mute w-4 text-right">{{ idx + 1 }}</span>
+          <span class="text-xs truncate">{{ team.name }}</span>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="flex items-center gap-1.5 flex-shrink-0">
           <span
-            class="text-xs tabular-nums"
+            class="text-[11px] tabular-nums"
             :class="teamCost(team) > 20 ? 'text-red-500' : 'text-ink-mute'"
           >{{ teamCost(team) }}/20</span>
           <span
             v-if="hasUnsavedChanges(idx)"
-            class="w-1.5 h-1.5 rounded-full bg-amber-700"
+            class="w-1.5 h-1.5 rounded-full bg-focus"
             aria-label="unsaved"
           />
         </div>
@@ -42,15 +33,17 @@
       <button
         v-if="lineups.length < MAX_TEAMS_PER_GROUP"
         type="button"
-        class="w-full px-4 py-2 mt-1 text-left text-xs text-ink-mute hover:text-ink hover:bg-parchment-soft/60 transition-colors flex items-center gap-1"
+        class="w-full pl-0 pr-3 py-2 mt-1 text-left text-xs text-ink-mute hover:text-ink hover:bg-surface-muted transition-colors flex items-center gap-1 border-l-2 border-transparent"
         @click="$emit('add-team')"
       >
-        <el-icon :size="12"><Plus /></el-icon>
+        <span class="w-4 text-right">
+          <el-icon :size="12"><Plus /></el-icon>
+        </span>
         <span>新增配將</span>
       </button>
     </div>
 
-    <div class="border-t border-parchment-dim px-3 py-3 flex flex-col gap-1.5">
+    <div class="border-t border-divider px-3 py-3 flex flex-col gap-1.5">
       <button class="action-row" @click="$emit('share')">
         <el-icon :size="14"><Share /></el-icon>
         <span>分享</span>
@@ -68,16 +61,14 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, Share, Document, Plus } from '@element-plus/icons-vue'
+import { Share, Document, Plus } from '@element-plus/icons-vue'
 import type { Lineup } from '../../composables/useLineups'
-import { useGroups, MAX_TEAMS_PER_GROUP } from '../../composables/useGroups'
+import { MAX_TEAMS_PER_GROUP } from '../../composables/useGroups'
 
 defineProps<{
   lineups: Lineup[]
   currentTeamIndex: number
 }>()
-
-const { currentGroup } = useGroups()
 
 defineEmits<{
   (e: 'select', idx: number): void
@@ -113,8 +104,8 @@ const hasUnsavedChanges = (_idx: number): boolean => false
   cursor: pointer;
 }
 .action-row:hover {
-  background: #F5F0E1;
-  border-color: #EFE9D8;
+  background: rgb(var(--color-highlight));
+  border-color: rgb(var(--color-focus));
   color: #1F2937;
 }
 </style>

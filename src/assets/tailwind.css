@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --color-highlight: 248 243 230;
+    --color-focus: 184 134 11;
+    --color-surface-muted: 240 240 240;
+    --color-divider: 231 231 231;
+    --color-brand: 192 147 39;
+  }
+}

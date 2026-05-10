@@ -38,30 +38,12 @@
       </div>
     </div>
 
-    <!-- Equip Traits Section -->
-    <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100 mb-4">
-      <div class="text-sm font-bold text-gray-700 mb-2 border-l-4 border-amber-500 pl-2">裝備特性</div>
-      <div class="grid grid-cols-2 gap-2">
-         <div 
-            v-for="(trait, idx) in equipTraits || [null, null, null, null]" 
-            :key="'eq'+idx" 
-            class="flex flex-col items-center justify-center p-2 rounded border border-dashed h-16 cursor-pointer hover:bg-gray-50"
-            :class="trait ? getTraitColor(trait.rank) + ' border-solid' : 'border-gray-300 text-gray-400'"
-            @click="$emit('open-equip', idx)"
-          >
-            <span v-if="trait" class="font-bold text-sm">{{ trait.name }}</span>
-            <el-icon v-else class="text-xl"><Plus /></el-icon>
-            <span v-if="trait" class="text-[10px] mt-1 opacity-80 truncate w-full text-center">{{ resolveTraitDesc(trait) }}</span>
-          </div>
-      </div>
-    </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { PropType, ref, watch } from 'vue'
-import { Edit, Plus } from '@element-plus/icons-vue'
+import { Edit } from '@element-plus/icons-vue'
 import RadarChart from './RadarChart.vue'
 import { Hero, Trait } from '../composables/useData'
 import { getTraitColor } from '../constants/gameData'
@@ -76,11 +58,10 @@ const resolveTraitDesc = (trait: any) => {
 const props = defineProps({
   roleName: String,
   hero: Object as PropType<Hero | null>,
-  stats: { type: Object as PropType<any>, required: true },
-  equipTraits: Array as PropType<(Trait | null)[]>
+  stats: { type: Object as PropType<any>, required: true }
 })
 
-const emit = defineEmits(['update:hero', 'open-stats', 'open-equip']) // traits update logic is internal to hero object for now, or we can emit update
+defineEmits(['update:hero', 'open-stats']) // traits update logic is internal to hero object for now
 
 // Trait Logic (Similar to LineupSlot but simplified for display/toggle)
 const localTraits = ref<Trait[]>([])

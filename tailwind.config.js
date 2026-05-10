@@ -7,16 +7,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        parchment: {
-          DEFAULT: '#FAF7F0',
-          soft: '#F5F0E1',
-          dim: '#EFE9D8',
-        },
         ink: {
           DEFAULT: '#1F2937',
           soft: '#475569',
           mute: '#94A3B8',
         },
+        highlight: 'rgb(var(--color-highlight) / <alpha-value>)',
+        focus: 'rgb(var(--color-focus) / <alpha-value>)',
+        surface: {
+          muted: 'rgb(var(--color-surface-muted) / <alpha-value>)',
+        },
+        divider: 'rgb(var(--color-divider) / <alpha-value>)',
+        brand: 'rgb(var(--color-brand) / <alpha-value>)',
       },
       fontFamily: {
         brand: ['"Noto Serif TC"', '"Noto Serif JP"', 'serif'],

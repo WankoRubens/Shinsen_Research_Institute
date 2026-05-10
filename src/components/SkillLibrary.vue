@@ -117,7 +117,7 @@
           <!-- Popover Content: Use SkillDescription -->
           <div class="text-xs space-y-2">
             <div class="flex justify-between items-start">
-              <div class="font-bold text-indigo-600 flex flex-col">
+              <div class="font-bold text-focus flex flex-col">
                 <span>{{ skill.type }}</span>
                 <span v-if="skill.activation_rate" class="text-[10px] text-gray-500 mt-0.5">
                   發動機率 {{ formatRate(skill.activation_rate) }}

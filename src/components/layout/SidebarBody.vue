@@ -3,13 +3,14 @@
     <!-- Brand -->
     <RouterLink
       to="/"
-      class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-parchment-soft"
+      class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-highlight"
+      :class="collapsed && 'justify-center'"
       @click="$emit('nav')"
     >
-      <div class="w-8 h-8 rounded-md bg-amber-700 text-white flex items-center justify-center font-brand text-sm shrink-0">信</div>
-      <div v-if="!collapsed" class="leading-tight">
-        <div class="font-brand font-bold text-ink text-sm">真戰配將</div>
-        <div class="text-[10px] text-ink-mute tracking-wide">SHINSEI · v1.0</div>
+      <div class="w-8 h-8 rounded-full border border-brand text-brand flex items-center justify-center font-brand font-bold text-[15.4px] leading-none shrink-0">猫</div>
+      <div v-if="!collapsed" class="flex flex-col justify-center h-8 leading-none">
+        <div class="font-brand font-bold text-ink text-[15.4px]">真戰配將</div>
+        <div class="text-[11px] text-ink-mute tracking-wide mt-1">SHINSEI · v1.0</div>
       </div>
     </RouterLink>
 
@@ -42,7 +43,7 @@
     </div>
 
     <!-- Footer: contact panel above, settings/collapse below -->
-    <div class="border-t border-parchment-dim pt-2 mt-2">
+    <div class="border-t border-divider pt-2 mt-2">
       <div v-if="!collapsed" class="px-1 mb-2 flex items-center gap-1">
         <el-tooltip content="yt.neko.vision@gmail.com" placement="top" :show-after="200">
           <a href="mailto:yt.neko.vision@gmail.com" class="footer-icon" aria-label="Email">
@@ -74,7 +75,8 @@
         @click="$emit('nav')"
       />
       <button
-        class="hidden md:flex w-full items-center gap-2 px-3 py-2 mt-1 rounded-lg text-ink-mute hover:bg-parchment-soft text-xs"
+        class="hidden md:flex w-full items-center gap-2 px-3 py-2 mt-1 rounded-lg text-ink-mute hover:bg-highlight text-xs"
+        :class="collapsed && 'justify-center'"
         @click="$emit('toggle-collapse')"
       >
         <el-icon :size="14"><Fold v-if="!collapsed" /><Expand v-else /></el-icon>
@@ -145,8 +147,8 @@ const soonNav: readonly NavItem[] = [
   transition: color 0.15s ease, background 0.15s ease;
 }
 .footer-link:hover {
-  color: #B45309;
-  background: #F5F0E1;
+  color: rgb(var(--color-focus));
+  background: rgb(var(--color-highlight));
 }
 
 .footer-icon {
@@ -163,7 +165,7 @@ const soonNav: readonly NavItem[] = [
   transition: color 0.15s ease, background 0.15s ease;
 }
 .footer-icon:hover {
-  color: #B45309;
-  background: #F5F0E1;
+  color: rgb(var(--color-focus));
+  background: rgb(var(--color-highlight));
 }
 </style>

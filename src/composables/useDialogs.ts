@@ -14,7 +14,6 @@ export type OverlayName =
   | 'my-profiles'
   | 'gacha-log'
   | 'skill-select'
-  | 'equip-trait'
   | 'mobile-slot-detail'
   | 'mobile-team-drawer'
   | 'create-proposal'

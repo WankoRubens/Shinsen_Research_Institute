@@ -19,7 +19,7 @@
               :key="p.id"
               type="button"
               class="flex items-center justify-between gap-2 px-3 py-2 rounded border text-left transition-colors"
-              :class="selectedId === p.id ? 'border-amber-700 bg-amber-50' : 'border-parchment-dim hover:bg-parchment-soft/60'"
+              :class="selectedId === p.id ? 'border-focus bg-highlight' : 'border-divider hover:bg-highlight/60'"
               @click="selectedId = p.id"
             >
               <div class="flex flex-col gap-0.5 min-w-0">
@@ -44,7 +44,7 @@
               :key="p.id"
               type="button"
               class="flex items-center justify-between gap-2 px-3 py-2 rounded border text-left transition-colors"
-              :class="selectedId === p.id ? 'border-amber-700 bg-amber-50' : 'border-parchment-dim hover:bg-parchment-soft/60'"
+              :class="selectedId === p.id ? 'border-focus bg-highlight' : 'border-divider hover:bg-highlight/60'"
               @click="selectedId = p.id"
             >
               <div class="flex flex-col gap-0.5 min-w-0">
@@ -62,7 +62,7 @@
       <!-- Target selector — where the imported team lands. Append is the
            default unless the group is full; overwrite is always available
            and slots into the current team in place (preserving its name). -->
-      <div class="flex flex-col gap-1.5 rounded border border-parchment-dim bg-parchment-soft/40 px-3 py-2">
+      <div class="flex flex-col gap-1.5 rounded border border-divider bg-highlight/40 px-3 py-2">
         <span class="text-xs text-ink-mute">匯入位置</span>
         <el-radio-group v-model="target" size="small">
           <el-radio value="append" :disabled="groupFull">
@@ -103,7 +103,7 @@
              teams' rows). The `target` dimension (append vs overwrite the
              current team) is independent and still controls *where* the
              imported team lands. -->
-      <div class="flex justify-end gap-2 pt-1 border-t border-parchment-dim">
+      <div class="flex justify-end gap-2 pt-1 border-t border-divider">
         <el-button @click="onCancel">取消</el-button>
         <template v-if="!hasAnyConflict">
           <el-button
