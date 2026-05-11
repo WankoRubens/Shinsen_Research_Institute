@@ -66,6 +66,12 @@ export const makeTeam = (idx: number): Lineup => ({
   vice2: emptyRole(),
 })
 
+// A team is "empty" when none of its three roles has a hero assigned —
+// skills, breakthrough, and bingxue are meaningless without a hero anchor.
+// Used by preview surfaces to hide unused team slots from screencaps.
+export const isEmptyTeam = (t: Lineup): boolean =>
+  !t.main.hero && !t.vice1.hero && !t.vice2.hero
+
 const { currentGroup } = useGroups()
 
 // Phase 3d: groups owns teams; useLineups exposes a stable `lineups` mirror

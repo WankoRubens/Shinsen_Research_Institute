@@ -1,11 +1,176 @@
 <template>
-  <PageStub
-    title="精選隊伍"
-    subtitle="社群分享 / 理論最強配將"
-    description="此頁面將呈現公開分享的精選隊伍，可篩選、收藏、匯入到自己的編組。"
-  />
+  <div class="flex-1 overflow-y-auto p-6 md:p-10">
+    <div class="max-w-7xl">
+      <div class="text-xs text-ink-mute tracking-widest uppercase">公開 · 我的提案</div>
+      <h1 class="font-brand text-2xl md:text-3xl font-bold text-ink mt-1">精選隊伍</h1>
+      <p class="mt-2 text-sm text-ink-mute leading-relaxed">
+        玩家公開分享的單隊提案。可投票、加入自己的編組，或檢視預覽。
+      </p>
+
+      <div class="mt-6 flex flex-wrap items-center gap-3">
+        <span class="text-xs text-ink-mute font-bold tracking-wider">武將篩選</span>
+        <el-select
+          v-model="selectedHeroes"
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          filterable
+          placeholder="選擇武將以篩選包含該武將的提案"
+          class="hero-filter"
+          clearable
+        >
+          <el-option
+            v-for="h in heroOptions"
+            :key="h.value"
+            :label="h.label"
+            :value="h.value"
+          />
+        </el-select>
+        <span v-if="selectedHeroes.length > 0" class="text-xs text-ink-mute">
+          篩出 <span class="font-bold text-ink">{{ activeListLength }}</span> 筆
+        </span>
+      </div>
+
+      <el-tabs v-model="activeTab" class="mt-5">
+        <el-tab-pane label="熱門公開" name="public">
+          <div v-loading="loadingPublic" class="min-h-[160px]">
+            <p
+              v-if="!loadingPublic && filteredPublic.length === 0"
+              class="text-center text-ink-mute py-10 text-sm"
+            >
+              {{ publicProposals.length === 0 ? '目前還沒有公開提案。' : '篩選後沒有符合的提案。' }}
+            </p>
+            <div v-else class="proposal-grid">
+              <ProposalCard
+                v-for="p in filteredPublic"
+                :key="p.id"
+                :proposal="p"
+                :voted="myVotes.has(p.id)"
+                :can-vote="isLoggedIn"
+                @vote="onVote(p.id)"
+              />
+            </div>
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="我的提案" name="mine" :disabled="!isLoggedIn">
+          <div v-if="!isLoggedIn" class="text-center text-ink-mute py-10 text-sm">
+            登入後可管理自己的提案。
+          </div>
+          <div v-else v-loading="loadingMine" class="min-h-[160px]">
+            <p
+              v-if="!loadingMine && filteredMine.length === 0"
+              class="text-center text-ink-mute py-10 text-sm"
+            >
+              {{ myProposals.length === 0
+                ? '還沒有任何提案。在配將模擬完成隊伍後，從側欄「另存為精選隊伍」建立。'
+                : '篩選後沒有符合的提案。' }}
+            </p>
+            <div v-else class="proposal-grid">
+              <ProposalCard
+                v-for="p in filteredMine"
+                :key="p.id"
+                :proposal="p"
+                :voted="myVotes.has(p.id)"
+                :can-vote="false"
+              />
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import PageStub from '../components/layout/PageStub.vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useProposals } from '../composables/useProposals'
+import { useAuth } from '../composables/useAuth'
+import { useData } from '../composables/useData'
+import type { Proposal } from '../types/group'
+import ProposalCard from '../components/preview/ProposalCard.vue'
+
+const { isLoggedIn } = useAuth()
+const { heroes } = useData()
+const {
+  myProposals, publicProposals, myVotes,
+  loadingMine, loadingPublic,
+  refreshMine, refreshPublic, vote,
+} = useProposals()
+
+const activeTab = ref<'public' | 'mine'>('public')
+const selectedHeroes = ref<string[]>([])
+
+onMounted(() => {
+  void refreshPublic()
+  if (isLoggedIn.value) void refreshMine()
+})
+
+watch(activeTab, (now) => {
+  if (now === 'mine' && isLoggedIn.value) void refreshMine()
+  if (now === 'public') void refreshPublic()
+})
+
+// Hero dropdown options sorted by rarity desc then cost desc to match the
+// ordering players see elsewhere. Value is the CHT name — that's what the
+// team's role.hero.name field stores and what filtering compares against.
+const heroOptions = computed(() => {
+  const numericRarity = (r: number | string | undefined): number =>
+    typeof r === 'number' ? r : Number(r) || 0
+  return [...heroes.value]
+    .sort((a, b) => numericRarity(b.rarity) - numericRarity(a.rarity) || (b.cost ?? 0) - (a.cost ?? 0))
+    .map(h => ({ value: h.name, label: h.name }))
+})
+
+const teamMatchesFilter = (p: Proposal): boolean => {
+  if (selectedHeroes.value.length === 0) return true
+  const names = new Set<string>()
+  if (p.team.main.hero?.name) names.add(p.team.main.hero.name)
+  if (p.team.vice1.hero?.name) names.add(p.team.vice1.hero.name)
+  if (p.team.vice2.hero?.name) names.add(p.team.vice2.hero.name)
+  // Union semantics: a proposal matches if it contains ANY selected hero.
+  return selectedHeroes.value.some(n => names.has(n))
+}
+
+const filteredPublic = computed(() => publicProposals.value.filter(teamMatchesFilter))
+const filteredMine = computed(() => myProposals.value.filter(teamMatchesFilter))
+
+const activeListLength = computed(() =>
+  activeTab.value === 'public' ? filteredPublic.value.length : filteredMine.value.length,
+)
+
+const onVote = async (id: string) => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('請先登入')
+    return
+  }
+  try {
+    await vote(id)
+  } catch (e) {
+    ElMessage.error(`投票失敗：${(e as Error).message}`)
+  }
+}
 </script>
+
+<style scoped>
+.hero-filter {
+  min-width: 320px;
+  max-width: 520px;
+  flex: 1;
+}
+
+/* Responsive 1 / 2 / 3-column layout for proposal cards. xl breakpoint
+   (≥1280px viewport) is when we have enough width for three compact cards
+   side-by-side without squeezing the 3-hero row inside each card. */
+.proposal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 768px) {
+  .proposal-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1280px) {
+  .proposal-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>

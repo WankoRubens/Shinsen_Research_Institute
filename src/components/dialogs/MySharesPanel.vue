@@ -69,6 +69,18 @@
           <span class="text-xs text-gray-500">{{ relativeTime(row.updated_at) }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="" width="44" align="center">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.kind === 'lineup' || row.kind === 'group'"
+            text
+            size="small"
+            :icon="View"
+            title="預覽"
+            @click="openPreview(row)"
+          />
+        </template>
+      </el-table-column>
       <el-table-column label="" width="60" align="center">
         <template #default="{ row }">
           <el-popconfirm
@@ -85,18 +97,48 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-drawer
+      v-model="previewDrawerVisible"
+      :title="previewTitle"
+      direction="rtl"
+      size="min(560px, 90vw)"
+      :destroy-on-close="true"
+    >
+      <div v-loading="previewLoading" class="min-h-[200px]">
+        <p v-if="!previewLoading && !preview && previewError" class="text-center text-red-500 text-sm py-8">
+          {{ previewError }}
+        </p>
+        <TeamPreviewCard
+          v-else-if="preview?.team"
+          :team="preview.team"
+          density="regular"
+        />
+        <GroupPreviewCard
+          v-else-if="previewGroup"
+          :group="previewGroup"
+          density="compact"
+        />
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Star, StarFilled, Edit, Delete, Check, Close } from '@element-plus/icons-vue'
+import { Star, StarFilled, Edit, Delete, Check, Close, View } from '@element-plus/icons-vue'
 import {
-  listMyShares, renameMyShare, pinMyShare, deleteMyShare,
+  listMyShares, loadShare, renameMyShare, pinMyShare, deleteMyShare,
   SHARE_KIND_LABELS, type MyShare, type ShareKind,
 } from '../../lib/share'
 import { relativeTime } from '../../lib/time'
+import { useData } from '../../composables/useData'
+import TeamPreviewCard from '../preview/TeamPreviewCard.vue'
+import GroupPreviewCard from '../preview/GroupPreviewCard.vue'
+import { hydrateShare, type HydratedShare } from '../preview/hydrateShare'
+import type { ShareableData } from '../../constants/gameData'
+import { isEmptyTeam } from '../../composables/useLineups'
 
 const shares = ref<MyShare[]>([])
 const loading = ref(false)
@@ -185,6 +227,46 @@ const copyUrl = (slug: string) => {
   }).catch(() => {
     ElMessage.error('複製失敗')
   })
+}
+
+// --- Preview drawer ---
+const { heroes, skills } = useData()
+const previewDrawerVisible = ref(false)
+const previewLoading = ref(false)
+const preview = ref<HydratedShare | null>(null)
+const previewTitle = ref('')
+const previewError = ref('')
+
+// Filter empty team slots out of a group preview. If every team is empty
+// (unusual for a share) we keep the original list so the drawer still has
+// something to render rather than collapsing to nothing.
+const previewGroup = computed(() => {
+  const g = preview.value?.group
+  if (!g) return null
+  const filled = g.teams.filter(t => !isEmptyTeam(t))
+  return {
+    name: g.name,
+    teams: filled.length > 0 ? filled : g.teams,
+  }
+})
+
+const openPreview = async (s: MyShare) => {
+  previewTitle.value = s.display_name || `#s/${s.slug}`
+  preview.value = null
+  previewError.value = ''
+  previewDrawerVisible.value = true
+  previewLoading.value = true
+  try {
+    const blob = (await loadShare(s.slug)) as ShareableData
+    preview.value = hydrateShare(blob, { heroes: heroes.value, skills: skills.value })
+    if (!preview.value.team && !preview.value.group) {
+      previewError.value = '此分享沒有可預覽的隊伍內容'
+    }
+  } catch (e) {
+    previewError.value = `載入失敗：${(e as Error).message}`
+  } finally {
+    previewLoading.value = false
+  }
 }
 </script>
 
