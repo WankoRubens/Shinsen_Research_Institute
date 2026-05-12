@@ -1,17 +1,11 @@
 <template>
-  <div class="flex-1 overflow-y-auto p-6 md:p-10">
+  <div class="flex-1 overflow-y-auto p-4 md:p-6">
     <div class="max-w-7xl">
-      <div class="text-xs text-ink-mute tracking-widest uppercase">配將編組</div>
-      <h1 class="font-brand text-2xl md:text-3xl font-bold text-ink mt-1">我的編組</h1>
-      <p class="mt-2 text-sm text-ink-mute leading-relaxed">
-        每個編組可放最多 {{ MAX_TEAMS_PER_GROUP }} 支隊伍。展開查看預覽，方便截圖分享給朋友。
-      </p>
-
-      <div v-if="groups.length === 0" class="mt-6 p-6 rounded-xl border border-dashed border-divider bg-white text-ink-soft text-sm">
+      <div v-if="groups.length === 0" class="p-6 rounded-xl border border-dashed border-divider bg-white text-ink-soft text-sm">
         還沒有任何編組。
       </div>
 
-      <el-collapse v-else v-model="expanded" class="mt-6 group-collapse">
+      <el-collapse v-else v-model="expanded" class="group-collapse">
         <el-collapse-item
           v-for="(g, idx) in groups"
           :key="g.id"
@@ -47,7 +41,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useGroups, MAX_TEAMS_PER_GROUP } from '../composables/useGroups'
+import { useGroups } from '../composables/useGroups'
 import GroupPreviewCard from '../components/preview/GroupPreviewCard.vue'
 import type { Group } from '../types/group'
 import { isEmptyTeam, type Lineup } from '../composables/useLineups'

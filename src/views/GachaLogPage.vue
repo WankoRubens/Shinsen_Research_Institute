@@ -1,19 +1,12 @@
 <template>
-  <div class="flex-1 overflow-y-auto p-6 md:p-10">
+  <div class="flex-1 overflow-y-auto p-4 md:p-6">
     <div class="max-w-7xl">
-      <div class="text-xs text-ink-mute tracking-widest uppercase">抽卡功能</div>
-      <h1 class="font-brand text-2xl md:text-3xl font-bold text-ink mt-1">抽卡紀錄</h1>
-      <p class="mt-2 text-sm text-ink-mute leading-relaxed">
-        為每個祈願池逐抽記錄，自動計算保底進度與稀有間隔；可分享給朋友檢視。
-      </p>
-
-      <div v-if="!isLoggedIn" class="mt-6 p-6 rounded-xl border border-dashed border-divider bg-white text-ink-soft">
+      <div v-if="!isLoggedIn" class="p-6 rounded-xl border border-dashed border-divider bg-white text-ink-soft">
         <p class="mb-3 text-sm">登入後抽卡紀錄會同步至雲端，可跨裝置存取與分享。</p>
         <el-button type="primary" @click="dialogs.open('auth')">登入 / 註冊</el-button>
       </div>
 
-      <div v-else class="mt-6 rounded-xl border border-divider bg-white p-4 md:p-6">
-        <div v-loading="isLoading" class="flex flex-col gap-3 min-h-[400px]">
+      <div v-else v-loading="isLoading" class="flex flex-col gap-3 min-h-[400px]">
           <!-- Inline create mode -->
           <div v-if="creatingBanner" class="flex items-center gap-2 pb-3 border-b border-divider">
             <span class="text-sm font-bold text-ink-mute flex-shrink-0">新增池</span>
@@ -279,7 +272,6 @@
               />
             </div>
           </template>
-        </div>
       </div>
     </div>
   </div>

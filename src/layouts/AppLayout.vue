@@ -30,26 +30,42 @@
         @unload-profile="onUnloadProfile"
         @goto-profiles="router.push({ name: 'profiles' })"
       />
-      <button
+      <PageHeader
         v-else
-        class="md:hidden fixed top-3 left-3 z-50 w-9 h-9 rounded-full bg-white/90 border border-divider shadow flex items-center justify-center"
-        @click="sidebarMobileOpen = true"
-        aria-label="open menu"
-      >
-        <el-icon :size="18"><Menu /></el-icon>
-      </button>
+        :title="pageTitle"
+        :description="pageDescription"
+        :is-logged-in="isLoggedIn"
+        :display-name="displayName"
+        :has-unseen-changelog="hasUnseenChangelog"
+        @open-mobile-sidebar="sidebarMobileOpen = true"
+        @open-changelog="dialogs.open('changelog')"
+        @open-auth="dialogs.open('auth')"
+        @user-menu="onUserMenu"
+      />
       <router-view />
     </main>
+
+    <!-- User display-name rename dialog. Lives at the layout level so it's
+         reachable from every page's UserControls menu, not just the lineup
+         route. -->
+    <RenameDialog
+      v-model="renameDialogVisible"
+      v-model:name="renameInput"
+      :saving="renameSaving"
+      @submit="submitRename"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Menu } from '@element-plus/icons-vue'
 import AppSidebar from '../components/layout/AppSidebar.vue'
-import LineupHeader, { type UserMenuCmd } from '../components/lineup-builder/LineupHeader.vue'
+import LineupHeader from '../components/lineup-builder/LineupHeader.vue'
+import PageHeader from '../components/layout/PageHeader.vue'
+import RenameDialog from '../components/dialogs/RenameDialog.vue'
+import type { UserMenuCmd } from '../components/layout/UserControls.vue'
 import { useLineups } from '../composables/useLineups'
 import { useInventory } from '../composables/useInventory'
 import { useTroopLevels } from '../composables/useTroopLevels'
@@ -68,6 +84,34 @@ const router = useRouter()
 const sidebarCollapsed = ref(false)
 const sidebarMobileOpen = ref(false)
 
+// Title / description for the shared PageHeader. Routes declare these
+// statically via meta; the coming-soon page picks dynamic values per :topic.
+const COMING_SOON_META: Record<string, { title: string; description: string }> = {
+  'battle-sim': {
+    title: '戰鬥模擬',
+    description: '依照雙方陣容自動推演戰鬥流程；目前仍在開發中，預計於後續版本上線。',
+  },
+  'hero-pedia': {
+    title: '武將圖鑑',
+    description: '完整武將資料卡，含技能、戰法、配置建議；目前仍在開發中，預計於後續版本上線。',
+  },
+}
+const pageTitle = computed<string>(() => {
+  if (route.name === 'comingSoon') {
+    const topic = String(route.params.topic ?? '')
+    return COMING_SOON_META[topic]?.title ?? '即將推出'
+  }
+  return String(route.meta.title ?? route.name ?? '')
+})
+const pageDescription = computed<string | undefined>(() => {
+  if (route.name === 'comingSoon') {
+    const topic = String(route.params.topic ?? '')
+    return COMING_SOON_META[topic]?.description ?? '此功能尚未上線。'
+  }
+  const d = route.meta.description
+  return typeof d === 'string' ? d : undefined
+})
+
 const { currentLineup, currentTeamName, totalCost } = useLineups()
 const troopLevels = useTroopLevels(currentLineup)
 const {
@@ -78,7 +122,7 @@ const {
   ownedHeroes,
   ownedSkills,
 } = useInventory()
-const { isLoggedIn, displayName, signOut } = useAuth()
+const { isLoggedIn, displayName, signOut, updateDisplayName } = useAuth()
 const {
   activeProfile, activeProfileName, applyProfile, unloadProfile, syncActiveProfile, clearActiveProfile,
 } = useActiveProfile()
@@ -153,6 +197,30 @@ const onSaveInventoryToNew = async (name: string) => {
     ElMessage.success(`已建立並切換到「${name}」`)
   } catch (e) {
     ElMessage.error(`建立失敗：${(e as Error).message}`)
+  }
+}
+
+const renameDialogVisible = dialogs.useDialog('rename')
+const renameInput = ref('')
+const renameSaving = ref(false)
+watch(renameDialogVisible, (now) => {
+  if (now) renameInput.value = displayName.value ?? ''
+})
+const submitRename = async () => {
+  const name = renameInput.value.trim()
+  if (!name) {
+    ElMessage.warning('名稱不可為空')
+    return
+  }
+  renameSaving.value = true
+  try {
+    await updateDisplayName(name)
+    renameDialogVisible.value = false
+    ElMessage.success('名稱已更新')
+  } catch (e) {
+    ElMessage.error(`更新失敗：${(e as Error).message}`)
+  } finally {
+    renameSaving.value = false
   }
 }
 

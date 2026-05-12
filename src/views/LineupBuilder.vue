@@ -89,12 +89,6 @@
 
     <ResetDialog v-model="resetDialogVisible" @confirm="clearLineup" />
 
-<RenameDialog
-      v-model="renameDialogVisible"
-      v-model:name="renameInput"
-      :saving="renameSaving"
-      @submit="submitRename"
-    />
 
     <!-- Changelog Dialog -->
     <ChangelogDialog v-model="changelogDialogVisible" />
@@ -133,7 +127,6 @@ import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
 import ResetDialog from '../components/dialogs/ResetDialog.vue'
 import AuthDialog from '../components/dialogs/AuthDialog.vue'
 import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
-import RenameDialog from '../components/dialogs/RenameDialog.vue'
 import ShareDialog from '../components/dialogs/ShareDialog.vue'
 import CreateProposalDialog from '../components/dialogs/CreateProposalDialog.vue'
 import ImportProposalDialog, { type ImportTarget } from '../components/dialogs/ImportProposalDialog.vue'
@@ -212,7 +205,6 @@ const skillSelectDialogVisible = dialogs.useDialog('skill-select')
 const resetDialogVisible = dialogs.useDialog('reset')
 const shareDialogVisible = dialogs.useDialog('share')
 const authDialogVisible = dialogs.useDialog('auth')
-const renameDialogVisible = dialogs.useDialog('rename')
 const mobileDetailVisible = dialogs.useDialog('mobile-slot-detail')
 const mobileSidebarVisible = dialogs.useDialog('mobile-team-drawer')
 const createProposalDialogVisible = dialogs.useDialog('create-proposal')
@@ -669,11 +661,9 @@ const consumeRecovery = (): boolean => {
 // --- Auth ---
 const {
   isLoggedIn, displayName, needsDisplayName,
-  signIn, updateDisplayName, refreshFromStorage,
+  signIn, refreshFromStorage,
   sessionExpiredCount,
 } = useAuth()
-const renameInput = ref('')
-const renameSaving = ref(false)
 
 const onSignIn = (provider: OAuthProvider) => {
   authDialogVisible.value = false
@@ -823,12 +813,6 @@ const gachaSpectatorBlob = ref<SpectatorBlob | null>(null)
 const { clearActiveProfile } = useActiveProfile()
 const { tryAutoApplyDefault } = useProfiles()
 
-// Prefill rename input from the current display name when the rename overlay
-// opens. Same trigger pattern: AppLayout opens the overlay, we react to it.
-watch(renameDialogVisible, (now) => {
-  if (now) renameInput.value = displayName.value
-})
-
 // React to involuntary session expiration (refresh token revoked). The user
 // did NOT click "sign out" — their token genuinely died (revoked elsewhere,
 // password changed, refresh window exceeded). Quietly transition the UI:
@@ -840,24 +824,6 @@ watch(sessionExpiredCount, () => {
   clearActiveProfile()
   ElMessage.warning('登入已過期，請重新登入以同步雲端資料')
 })
-
-const submitRename = async () => {
-  const name = renameInput.value.trim()
-  if (!name) {
-    ElMessage.warning('名稱不可為空')
-    return
-  }
-  renameSaving.value = true
-  try {
-    await updateDisplayName(name)
-    renameDialogVisible.value = false
-    ElMessage.success('名稱已更新')
-  } catch (e) {
-    ElMessage.error(`更新失敗：${(e as Error).message}`)
-  } finally {
-    renameSaving.value = false
-  }
-}
 
 // Returns true if a competing UI was shown (toast / rename dialog) — caller
 // uses this to suppress the changelog auto-open so it doesn't overlay them.
@@ -877,8 +843,8 @@ const initFromHash = async (): Promise<boolean> => {
       refreshFromStorage()
       const recovered = consumeRecovery()
       ElMessage.success(recovered ? '登入成功，已還原配置' : '登入成功')
-      // First-time prompt: ask new users to pick a display name. The watch
-      // on renameDialogVisible takes care of prefilling renameInput.
+      // First-time prompt: ask new users to pick a display name. AppLayout
+      // owns the rename dialog and prefills the input when it opens.
       if (needsDisplayName.value) dialogs.open('rename')
       router.replace('/')
       return true

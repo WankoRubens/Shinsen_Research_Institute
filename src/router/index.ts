@@ -22,13 +22,64 @@ const routes: RouteRecordRaw[] = [
     component: AppLayout,
     children: [
       { path: '', name: 'lineup', component: LineupBuilder },
-      { path: 'profiles', name: 'profiles', component: ProfilesView },
-      { path: 'groups', name: 'groups', component: MyGroups },
-      { path: 'shares', name: 'shares', component: SharesView },
-      { path: 'proposals', name: 'proposals', component: ProposalsView },
-      { path: 'gacha-log', name: 'gachaLog', component: GachaLogPage },
-      { path: 'settings', name: 'settings', component: SettingsView },
-      { path: 'coming-soon/:topic?', name: 'comingSoon', component: ComingSoon },
+      {
+        path: 'profiles',
+        name: 'profiles',
+        component: ProfilesView,
+        meta: {
+          title: '角色管理',
+          description: '每個角色配置是一份具名的庫存（武將 + 戰法）。可建立多份用於主帳 / 小號 / 朋友的庫存，套用後配將模擬會以該庫存為準。',
+        },
+      },
+      {
+        path: 'groups',
+        name: 'groups',
+        component: MyGroups,
+        meta: {
+          title: '我的編組',
+          // Cap mirrors MAX_TEAMS_PER_GROUP in types/group.ts — update both if changed.
+          description: '每個編組可放最多 10 支隊伍，展開查看預覽，方便截圖分享給朋友。',
+        },
+      },
+      {
+        path: 'shares',
+        name: 'shares',
+        component: SharesView,
+        meta: {
+          title: '我的分享',
+          description: '所有已建立的分享連結。可釘選到頂端、命名、複製連結、刪除。',
+        },
+      },
+      {
+        path: 'proposals',
+        name: 'proposals',
+        component: ProposalsView,
+        meta: {
+          title: '精選隊伍',
+          description: '玩家公開分享的單隊提案。可投票、加入自己的編組，或檢視預覽。',
+        },
+      },
+      {
+        path: 'gacha-log',
+        name: 'gachaLog',
+        component: GachaLogPage,
+        meta: {
+          title: '抽卡紀錄',
+          description: '為每個祈願池逐抽記錄，自動計算保底進度與稀有間隔；可分享給朋友檢視。',
+        },
+      },
+      {
+        path: 'settings',
+        name: 'settings',
+        component: SettingsView,
+        meta: { title: '設定', description: '語系、外觀、帳號設定。' },
+      },
+      {
+        path: 'coming-soon/:topic?',
+        name: 'comingSoon',
+        component: ComingSoon,
+        meta: { title: '即將推出' },
+      },
     ],
   },
   // Catch-all is critical: legacy share links (#<base64>), short share links

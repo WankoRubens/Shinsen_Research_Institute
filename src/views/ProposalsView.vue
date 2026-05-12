@@ -1,13 +1,7 @@
 <template>
-  <div class="flex-1 overflow-y-auto p-6 md:p-10">
+  <div class="flex-1 overflow-y-auto p-4 md:p-6">
     <div class="max-w-7xl">
-      <div class="text-xs text-ink-mute tracking-widest uppercase">公開 · 我的提案</div>
-      <h1 class="font-brand text-2xl md:text-3xl font-bold text-ink mt-1">精選隊伍</h1>
-      <p class="mt-2 text-sm text-ink-mute leading-relaxed">
-        玩家公開分享的單隊提案。可投票、加入自己的編組，或檢視預覽。
-      </p>
-
-      <div class="mt-6 flex flex-wrap items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
         <span class="text-xs text-ink-mute font-bold tracking-wider">武將篩選</span>
         <el-select
           v-model="selectedHeroes"
@@ -31,7 +25,7 @@
         </span>
       </div>
 
-      <el-tabs v-model="activeTab" class="mt-5">
+      <el-tabs v-model="activeTab" class="mt-4">
         <el-tab-pane label="熱門公開" name="public">
           <div v-loading="loadingPublic" class="min-h-[160px]">
             <p
