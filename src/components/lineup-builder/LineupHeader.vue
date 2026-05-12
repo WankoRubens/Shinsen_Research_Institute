@@ -176,10 +176,7 @@
           </button>
           <template #dropdown>
             <el-dropdown-menu class="min-w-[220px]">
-              <el-dropdown-item command="gacha-log">
-                <el-icon class="mr-1"><Coin /></el-icon> 抽卡紀錄
-              </el-dropdown-item>
-              <el-dropdown-item command="changelog" divided>
+              <el-dropdown-item command="changelog">
                 <el-icon class="mr-1"><Notebook /></el-icon>
                 <span>更新紀錄</span>
                 <span
@@ -254,7 +251,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Edit, Share, Delete, Menu, User, Bell, ArrowDown, Coin, Close, Check, Plus, Notebook, CircleClose, StarFilled, Avatar, Setting } from '@element-plus/icons-vue'
+import { Edit, Share, Delete, Menu, User, Bell, ArrowDown, Close, Check, Plus, Notebook, CircleClose, StarFilled, Avatar, Setting } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { TROOP_TYPES, TROOP_LABELS } from '../../constants/traits'
 import type { TroopType } from '../../constants/traits'
@@ -262,7 +259,7 @@ import { useGroups } from '../../composables/useGroups'
 import { useProfiles } from '../../composables/useProfiles'
 import { useActiveProfile } from '../../composables/useActiveProfile'
 
-export type UserMenuCmd = 'gacha-log' | 'changelog' | 'rename' | 'signout'
+export type UserMenuCmd = 'changelog' | 'rename' | 'signout'
 
 const props = defineProps<{
   teamName: string

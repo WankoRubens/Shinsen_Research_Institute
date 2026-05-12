@@ -91,7 +91,7 @@ import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import {
   Grid, Flag, Document, Aim, Reading, Setting, Fold, Expand,
-  Message, ChatDotRound, EditPen, User, Share,
+  Message, ChatDotRound, EditPen, User, Share, MagicStick,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import SidebarLink from './SidebarLink.vue'
@@ -126,7 +126,7 @@ const primaryNav: readonly NavItem[] = [
   { name: 'groups', to: { name: 'groups' }, icon: Flag, label: '我的編組' },
   { name: 'shares', to: { name: 'shares' }, icon: Share, label: '我的分享' },
   { name: 'proposals', to: { name: 'proposals' }, icon: Document, label: '精選隊伍' },
-  { name: 'gachaLog', to: { name: 'gachaLog' }, icon: Document, label: '抽卡紀錄' },
+  { name: 'gachaLog', to: { name: 'gachaLog' }, icon: MagicStick, label: '抽卡紀錄' },
 ]
 
 const soonNav: readonly NavItem[] = [

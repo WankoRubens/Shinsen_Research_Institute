@@ -163,8 +163,6 @@ const onUserMenu = async (cmd: UserMenuCmd) => {
     ElMessage.success('已登出')
   } else if (cmd === 'rename') {
     dialogs.open('rename')
-  } else if (cmd === 'gacha-log') {
-    dialogs.open('gacha-log')
   } else if (cmd === 'changelog') {
     dialogs.open('changelog')
   }

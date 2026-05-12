@@ -47,7 +47,7 @@
         <div
           v-for="(item, i) in flatItems"
           :key="item.draw.id"
-          :class="horizontal ? 'w-12 lg:w-16 flex-shrink-0' : ''"
+          :class="horizontal ? 'w-14 lg:w-20 flex-shrink-0' : ''"
         >
           <DrawCard
             :draw="item.draw"

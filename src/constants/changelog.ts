@@ -33,6 +33,14 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.3.3',
+    date: '2026-05-12',
+    entries: [
+      { tag: 'feat', text: '抽卡紀錄移至左側欄成為一級功能，不再藏在使用者選單裡' },
+      { tag: 'ui', text: '抽卡紀錄頁改用切換池下拉選單，新增、重命名、刪除改為就地操作，減少彈窗層數' },
+    ],
+  },
+  {
     version: '0.3.2',
     date: '2026-05-09',
     entries: [

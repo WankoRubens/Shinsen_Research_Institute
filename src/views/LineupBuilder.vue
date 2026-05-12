@@ -99,9 +99,6 @@
     <!-- Changelog Dialog -->
     <ChangelogDialog v-model="changelogDialogVisible" />
 
-    <!-- Gacha Log Dialog -->
-    <GachaLogDialog v-model="gachaLogDialogVisible" />
-
     <AuthDialog v-model="authDialogVisible" @sign-in="onSignIn" />
 
     <CreateProposalDialog
@@ -133,7 +130,6 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
-import GachaLogDialog from '../components/dialogs/GachaLogDialog.vue'
 import ResetDialog from '../components/dialogs/ResetDialog.vue'
 import AuthDialog from '../components/dialogs/AuthDialog.vue'
 import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
@@ -217,7 +213,6 @@ const resetDialogVisible = dialogs.useDialog('reset')
 const shareDialogVisible = dialogs.useDialog('share')
 const authDialogVisible = dialogs.useDialog('auth')
 const renameDialogVisible = dialogs.useDialog('rename')
-const gachaLogDialogVisible = dialogs.useDialog('gacha-log')
 const mobileDetailVisible = dialogs.useDialog('mobile-slot-detail')
 const mobileSidebarVisible = dialogs.useDialog('mobile-team-drawer')
 const createProposalDialogVisible = dialogs.useDialog('create-proposal')
