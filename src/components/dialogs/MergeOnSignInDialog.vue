@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="本地與雲端編組不一致"
+    title="偵測到尚未同步的編組變更"
     width="600px"
     :close-on-click-modal="false"
     :show-close="false"
@@ -9,7 +9,7 @@
   >
     <template v-if="ctx">
       <p class="text-sm text-ink-soft mb-4 leading-relaxed">
-        登入後發現雲端已有編組，且與本機目前的編組不同。請選擇要如何整合：
+        這台裝置上有尚未同步的編組，與此帳號上次保存的編組不同。請選擇要如何整合：
       </p>
 
       <!-- Local vs cloud side cards. Each side has a 預覽 button that opens
@@ -18,7 +18,7 @@
       <div class="grid grid-cols-2 gap-3 mb-5">
         <section class="side-card">
           <header class="side-card__head">
-            <span class="side-card__tag">本地</span>
+            <span class="side-card__tag">此裝置</span>
             <span class="side-card__count tabular-nums">
               <strong>{{ localCount }}</strong> 編組
             </span>
@@ -37,12 +37,12 @@
             :icon="View"
             class="!rounded-sm side-card__preview"
             @click="openLocalPreview"
-          >預覽本地編組</el-button>
+          >預覽此裝置編組</el-button>
         </section>
 
         <section class="side-card">
           <header class="side-card__head">
-            <span class="side-card__tag side-card__tag--cloud">雲端</span>
+            <span class="side-card__tag side-card__tag--cloud">帳號保存</span>
             <span class="side-card__count tabular-nums">
               <strong>{{ cloudCount }}</strong> 編組
             </span>
@@ -61,7 +61,7 @@
             :icon="View"
             class="!rounded-sm side-card__preview"
             @click="openCloudPreview"
-          >預覽雲端編組</el-button>
+          >預覽帳號保存的編組</el-button>
         </section>
       </div>
 
@@ -108,13 +108,13 @@
        cascade into closing the merge dialog. -->
   <el-dialog
     v-model="localPreviewOpen"
-    title="本地編組預覽"
+    title="此裝置編組預覽"
     width="720px"
     append-to-body
     align-center
   >
     <div v-if="localGroupsHydrated.length === 0" class="text-center text-ink-mute py-6 text-sm">
-      本地沒有可預覽的編組。
+      此裝置沒有可預覽的編組。
     </div>
     <div v-else class="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
       <GroupPreviewCard
@@ -129,13 +129,13 @@
 
   <el-dialog
     v-model="cloudPreviewOpen"
-    title="雲端編組預覽"
+    title="帳號保存的編組預覽"
     width="720px"
     append-to-body
     align-center
   >
     <div v-if="cloudGroupsHydrated.length === 0" class="text-center text-ink-mute py-6 text-sm">
-      雲端沒有可預覽的編組。
+      此帳號之前沒有保存的編組。
     </div>
     <div v-else class="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
       <GroupPreviewCard
@@ -166,18 +166,18 @@ const APPEND_MAX_TOTAL = 20  // mirrors useGroupPersistence.resolveMergeAppend
 const OPTIONS = [
   {
     value: 'append',
-    label: '合併（追加雲端到本地）',
-    hint: `本地編組保持不動，雲端編組接在後面（總計最多 ${APPEND_MAX_TOTAL} 個）。`,
+    label: '兩邊都保留（合併）',
+    hint: `此裝置上的編組保持不動，帳號之前保存的編組接在後面（總計最多 ${APPEND_MAX_TOTAL} 個）。`,
   },
   {
     value: 'keep-cloud',
-    label: '採用雲端，捨棄本地',
-    hint: '本地將自動建立備份分享連結後再被取代，可在「我的分享」找回。',
+    label: '採用帳號之前保存的編組（捨棄這台裝置上的變更）',
+    hint: '此裝置上的變更會自動建立備份分享連結後再被取代，可在「我的分享」找回。',
   },
   {
     value: 'keep-local',
-    label: '採用本地，覆寫雲端',
-    hint: '雲端先建立備份分享連結再被覆寫，可在「我的分享」找回。',
+    label: '採用這台裝置目前的編組（覆寫帳號之前保存的）',
+    hint: '帳號之前保存的編組會先建立備份分享連結再被覆寫，可在「我的分享」找回。',
   },
 ] as const
 
@@ -285,13 +285,13 @@ const onConfirm = async () => {
   try {
     if (choice.value === 'append') {
       await resolveMergeAppend()
-      ElMessage.success('已合併本地與雲端編組')
+      ElMessage.success('已合併兩邊的編組')
     } else if (choice.value === 'keep-cloud') {
       const res = await resolveMergeKeepCloud()
-      showBackupToast(res.backupSlug, '已採用雲端版本')
+      showBackupToast(res.backupSlug, '已採用帳號之前保存的編組')
     } else if (choice.value === 'keep-local') {
       const res = await resolveMergeKeepLocal()
-      showBackupToast(res.backupSlug, '已用本地覆寫雲端')
+      showBackupToast(res.backupSlug, '已用此裝置的編組覆寫帳號保存版本')
     }
   } finally {
     busy.value = false

@@ -5,11 +5,11 @@
       <section class="settings-card">
         <header class="settings-card__head">
           <h2 class="font-brand text-xl font-bold text-ink">雲端同步</h2>
-          <span class="text-sm text-ink-mute">編組資料跨裝置同步，變動會於約 2 秒後寫入雲端</span>
+          <span class="text-sm text-ink-mute">編組變更會自動同步到此帳號，可在其他裝置繼續編輯</span>
         </header>
 
         <div v-if="!isLoggedIn" class="text-base text-ink-mute">
-          登入後可開啟雲端同步，編組會自動備份並在裝置間同步。
+          登入後可開啟雲端同步，編組會在裝置間同步。
         </div>
 
         <template v-else>
