@@ -74,6 +74,24 @@ const regenerateCurrentGroupId = (): void => {
   if (g) g.id = makeGroupId()
 }
 
+// Append a pre-built team to an arbitrary group identified by index. Caller
+// must pass a deep-cloned Team (the snapshot becomes part of reactive state)
+// and is responsible for capacity checks via MAX_TEAMS_PER_GROUP — this
+// helper enforces it defensively but returns false on overflow rather than
+// throwing. When the target IS the current group, useLineups' lineups mirror
+// won't auto-resync (the watcher fires on currentGroup identity change, not
+// on in-place pushes); callers in that case should prefer
+// useLineups.addTeamFromSnapshot which keeps the mirror in lockstep. For
+// any other target index, the autosave deep-watcher picks up the mutation
+// and the next cloud push PATCHes the affected group.
+const appendTeamToGroup = (groupIdx: number, team: Team): boolean => {
+  if (groupIdx < 0 || groupIdx >= groups.length) return false
+  const g = groups[groupIdx]
+  if (g.teams.length >= MAX_TEAMS_PER_GROUP) return false
+  g.teams.push(team)
+  return true
+}
+
 // Wipe groups[] back to a single default group with a fresh id. Used by the
 // "全部重置" reset. The fresh id ensures any stale cloud rows tied to the
 // old ids get cleaned up by stale-detect on the next push, instead of being
@@ -101,5 +119,6 @@ export function useGroups() {
     replaceGroups,
     regenerateCurrentGroupId,
     resetToDefault,
+    appendTeamToGroup,
   }
 }

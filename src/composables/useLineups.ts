@@ -143,6 +143,28 @@ const addTeamFromSnapshot = (team: Lineup): boolean => {
   return true
 }
 
+// Remove a team from the current group by index, then keep the mirror and
+// currentTeamIndex in sync. Auto-seeds an empty team via ensureTeamCount if
+// the removal would leave the group with zero teams (Group invariant: >= 1).
+// Returns true on success, false if idx is out of range.
+const removeTeamFromCurrent = (idx: number): boolean => {
+  if (idx < 0 || idx >= lineups.length) return false
+  currentGroup.value.teams.splice(idx, 1)
+  lineups.splice(idx, 1)
+  if (lineups.length === 0) {
+    // ensureTeamCount(1) seeds a fresh empty team into both the source and
+    // the mirror via its existing push helper.
+    ensureTeamCount(1)
+    currentTeamIndex.value = 0
+  } else if (currentTeamIndex.value >= lineups.length) {
+    currentTeamIndex.value = lineups.length - 1
+  } else if (currentTeamIndex.value > idx) {
+    // The currently-selected team shifted left by one.
+    currentTeamIndex.value -= 1
+  }
+  return true
+}
+
 // Getters
 const currentLineup = computed(() => lineups[currentTeamIndex.value])
 
@@ -228,6 +250,7 @@ export function useLineups() {
     swapRoles,
     addTeam,
     addTeamFromSnapshot,
+    removeTeamFromCurrent,
     ensureTeamCount,
   }
 }

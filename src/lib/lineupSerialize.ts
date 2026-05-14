@@ -183,6 +183,23 @@ const buildTeamFromShareable = (
   return team
 }
 
+// Public wrapper for the import flows (share-link, cross-group). Returns
+// the rebuilt Lineup alongside the deduped healing report so callers can
+// surface a "N entries auto-cleared" toast without having to manage the
+// report array themselves. The full applyBlobToState path is too broad
+// for these flows — it wipes the active group via replaceGroups, whereas
+// importers want to append a single team or build a list of teams to
+// stitch into the existing groups[].
+export const hydrateShareableTeam = (
+  l: ShareableLineup,
+  idx: number,
+  deps: SerializeDeps,
+): { team: Lineup; healed: string[] } => {
+  const report: string[] = []
+  const team = buildTeamFromShareable(l, idx, deps, report)
+  return { team, healed: Array.from(new Set(report)) }
+}
+
 // In-place hydrate of an existing Lineup (used by the v2 legacy path which
 // mutates the active group's teams[] rather than wholesale-replacing).
 const hydrateTeamInPlace = (
