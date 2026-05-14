@@ -13,6 +13,7 @@
           @share="dialogs.open('share')"
           @save-as-proposal="onSaveAsProposal"
           @add-to-group="onAddToGroup"
+          @remove-team="onRemoveTeam"
         />
 
         <MobileTeamDrawer
@@ -20,6 +21,7 @@
           :lineups="lineups"
           :current-team-index="currentTeamIndex"
           @select="(idx: number) => { currentTeamIndex = idx; mobileSidebarVisible = false }"
+          @remove-team="onRemoveTeam"
         />
 
         <LineupWorkspace
@@ -174,6 +176,7 @@ const {
   swapRoles,
   addTeam,
   addTeamFromSnapshot,
+  removeTeamFromCurrent,
   ensureTeamCount,
   emptyRole: makeEmptyRole,
 } = useLineups()
@@ -617,6 +620,23 @@ const onSignIn = (provider: OAuthProvider) => {
 // TeamListPanel actions
 const onAddTeam = () => {
   if (!addTeam()) ElMessage.info(`當前隊組已滿（${MAX_TEAMS_PER_GROUP} 隊）`)
+}
+
+const onRemoveTeam = (idx: number) => {
+  const team = lineups[idx]
+  if (!team) return
+  const removedName = team.name
+  const wasLast = lineups.length === 1
+  if (!removeTeamFromCurrent(idx)) return
+  // Synchronously persist so an F5 / logout right after delete doesn't
+  // lose the change (the autosave watcher's 800ms debounce would race
+  // page unload otherwise). Same pattern as the reset handler.
+  flushLocalAutosave()
+  if (wasLast) {
+    ElMessage.info(`已刪除「${removedName}」，並自動建立一支空隊伍`)
+  } else {
+    ElMessage.info(`已刪除「${removedName}」`)
+  }
 }
 
 const proposalSubmitting = ref(false)

@@ -3,15 +3,18 @@
     <!-- Group selector lives in LineupHeader (top bar). Sidebar is just the
          team list for the active group. -->
     <div class="flex-1 min-h-0 overflow-y-auto pt-2">
-      <button
+      <div
         v-for="(team, idx) in lineups"
         :key="idx"
-        type="button"
-        class="w-full flex items-center justify-between pl-0 pr-3 py-2 transition-colors text-left border-l-2"
+        role="button"
+        tabindex="0"
+        class="group relative w-full flex items-center justify-between pl-0 pr-3 py-2 transition-colors text-left border-l-2 cursor-pointer"
         :class="currentTeamIndex === idx
           ? 'bg-highlight border-focus'
           : 'border-transparent hover:bg-highlight'"
         @click="$emit('select', idx)"
+        @keydown.enter="$emit('select', idx)"
+        @keydown.space.prevent="$emit('select', idx)"
       >
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="text-[11px] text-ink-mute w-4 text-right">{{ idx + 1 }}</span>
@@ -27,8 +30,42 @@
             class="w-1.5 h-1.5 rounded-full bg-focus"
             aria-label="unsaved"
           />
+          <!-- Empty team → instant delete. Non-empty → popconfirm. -->
+          <span
+            v-if="isEmptyTeam(team)"
+            class="row-action opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+            @click.stop="$emit('remove-team', idx)"
+            @keydown.enter.stop="$emit('remove-team', idx)"
+            @keydown.space.stop.prevent="$emit('remove-team', idx)"
+            role="button"
+            tabindex="0"
+            :aria-label="`刪除 ${team.name}`"
+          >
+            <el-icon :size="13"><Delete /></el-icon>
+          </span>
+          <el-popconfirm
+            v-else
+            :title="`刪除「${team.name}」？無法復原`"
+            confirm-button-text="刪除"
+            cancel-button-text="取消"
+            confirm-button-type="danger"
+            :width="220"
+            @confirm="$emit('remove-team', idx)"
+          >
+            <template #reference>
+              <span
+                class="row-action opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+                @click.stop
+                role="button"
+                tabindex="0"
+                :aria-label="`刪除 ${team.name}`"
+              >
+                <el-icon :size="13"><Delete /></el-icon>
+              </span>
+            </template>
+          </el-popconfirm>
         </div>
-      </button>
+      </div>
 
       <button
         v-if="lineups.length < MAX_TEAMS_PER_GROUP"
@@ -61,8 +98,8 @@
 </template>
 
 <script setup lang="ts">
-import { Share, Document, Plus } from '@element-plus/icons-vue'
-import type { Lineup } from '../../composables/useLineups'
+import { Share, Document, Plus, Delete } from '@element-plus/icons-vue'
+import { type Lineup, isEmptyTeam } from '../../composables/useLineups'
 import { MAX_TEAMS_PER_GROUP } from '../../composables/useGroups'
 
 defineProps<{
@@ -76,6 +113,7 @@ defineEmits<{
   (e: 'share'): void
   (e: 'save-as-proposal'): void
   (e: 'add-to-group'): void
+  (e: 'remove-team', idx: number): void
 }>()
 
 const teamCost = (team: Lineup): number =>
@@ -107,5 +145,21 @@ const hasUnsavedChanges = (_idx: number): boolean => false
   background: rgb(var(--color-highlight));
   border-color: rgb(var(--color-focus));
   color: #1F2937;
+}
+
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+}
+.row-action:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
 }
 </style>
