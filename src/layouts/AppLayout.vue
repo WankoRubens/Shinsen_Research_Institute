@@ -54,6 +54,12 @@
       :saving="renameSaving"
       @submit="submitRename"
     />
+
+    <!-- Cloud-sync dialogs (Phase C). Live at the layout level so they
+         surface regardless of which route the user is on when a merge /
+         conflict needs resolving. -->
+    <MergeOnSignInDialog />
+    <CloudConflictDialog />
   </div>
 </template>
 
@@ -65,6 +71,8 @@ import AppSidebar from '../components/layout/AppSidebar.vue'
 import LineupHeader from '../components/lineup-builder/LineupHeader.vue'
 import PageHeader from '../components/layout/PageHeader.vue'
 import RenameDialog from '../components/dialogs/RenameDialog.vue'
+import MergeOnSignInDialog from '../components/dialogs/MergeOnSignInDialog.vue'
+import CloudConflictDialog from '../components/dialogs/CloudConflictDialog.vue'
 import type { UserMenuCmd } from '../components/layout/UserControls.vue'
 import { useLineups } from '../composables/useLineups'
 import { useInventory } from '../composables/useInventory'
@@ -75,6 +83,7 @@ import { useProfiles } from '../composables/useProfiles'
 import { useDialogs } from '../composables/useDialogs'
 import { useChangelog } from '../composables/useChangelog'
 import { useData } from '../composables/useData'
+import { useGroupPersistence } from '../composables/useGroupPersistence'
 import {
   createProfile, updateProfileInventory, type Profile,
 } from '../lib/profiles'
@@ -130,6 +139,7 @@ const { profiles, refresh: refreshProfiles } = useProfiles()
 const dialogs = useDialogs()
 const { hasUnseen: hasUnseenChangelog } = useChangelog()
 const { heroes, skills } = useData()
+const { flushPendingCloudPush, flushLocalAutosave } = useGroupPersistence()
 
 // CHT→JP name lookup so saved profiles stay translation-stable. Built once
 // per data load via computed; the same logic exists in MyProfilesPanel — could
@@ -226,6 +236,13 @@ const submitRename = async () => {
 
 const onUserMenu = async (cmd: UserMenuCmd) => {
   if (cmd === 'signout') {
+    // Flush local FIRST (synchronous): the user's in-flight edits made within
+    // ~800ms of clicking logout sit in the debounced autosave timer and would
+    // otherwise be lost when the page transitions / reloads after signout.
+    // Then flush cloud (async) so any pending push completes before the auth
+    // token is invalidated.
+    flushLocalAutosave()
+    await flushPendingCloudPush()
     await signOut()
     clearActiveProfile()
     ElMessage.success('已登出')

@@ -37,16 +37,31 @@ export interface ShareableLineup {
 // v3 envelope — wraps teams under a named group so multi-group payloads can
 // round-trip. v2 (`lineups: ShareableLineup[]`) stays as the legacy read path
 // and folds into the active group on restore.
+//
+// v4 additions are optional so v3 share-link blobs still typecheck and the
+// share-load codepath stays unchanged. Autosave blobs always set v: 4.
 export interface ShareableGroup {
   name: string
   teams: ShareableLineup[]
+  // v4 — stable client-side id and per-group last-write timestamp.
+  // Used by autosave restore to preserve group identity across reloads and,
+  // later, by cloud sync to map local groups to DB rows via client_id.
+  id?: string
+  updated_at?: string
 }
 
 export interface ShareableData {
-  v?: number  // 1 = CHT names, 2 = JP names (rename-resilient), 3 = JP names + groups envelope.
+  v?: number  // 1 = CHT names, 2 = JP names, 3 = JP names + groups envelope, 4 = v3 + autosave metadata.
   inv_h?: string[]
   inv_s?: string[]
   inventory?: string[] // legacy v1 support
   lineups?: ShareableLineup[]  // v1/v2 — flat (single-group) team list
   groups?: ShareableGroup[]    // v3 — named-group envelope
+  // v4 — autosave metadata. Restored on next session to put the user back
+  // where they left off (active group index), and used by the cross-tab
+  // reconciler (gen counter) and the future cloud-sync handoff (device_id).
+  active_group_index?: number
+  gen?: number
+  device_id?: string
+  saved_at?: string  // ISO timestamp of the localStorage write
 }

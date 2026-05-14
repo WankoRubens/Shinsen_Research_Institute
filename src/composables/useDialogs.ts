@@ -15,6 +15,10 @@ export type OverlayName =
   | 'mobile-team-drawer'
   | 'create-proposal'
   | 'import-proposal'
+  // Note: cloud-merge / cloud-conflict are NOT in this union. Those dialogs
+  // are controlled directly by cloudMerge.value / cloudConflict.value refs
+  // inside useGroupPersistence so the single-active overlay logic here
+  // doesn't interfere with their lifecycle.
 
 const active = ref<OverlayName | null>(null)
 

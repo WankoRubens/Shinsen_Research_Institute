@@ -43,18 +43,47 @@ const setCurrentGroup = (idx: number) => {
   if (idx >= 0 && idx < groups.length) currentGroupIndex.value = idx
 }
 
-// Wholesale replacement, used by share-blob v3 restore. Keeps the `groups`
-// proxy stable (callers holding the reference keep seeing updates) but the
-// element identities are new — watchers on `currentGroup` fire so useLineups
-// can resync its mirror.
-const replaceGroups = (incoming: { name: string; teams: Team[] }[]) => {
+// Wholesale replacement, used by share-blob v3 restore AND by localStorage
+// autosave restore. Keeps the `groups` proxy stable (callers holding the
+// reference keep seeing updates) but the element identities are new —
+// watchers on `currentGroup` fire so useLineups can resync its mirror.
+//
+// `id` may be passed in by the autosave restore path so a group keeps the
+// same client-side id across reloads (needed for cross-tab reconciliation
+// and, later, cloud-sync client_id mapping). If omitted (share-link path,
+// proposal import), a fresh id is generated as before.
+const replaceGroups = (incoming: { id?: string; name: string; teams: Team[] }[]) => {
   if (incoming.length === 0) return
   const next: Group[] = incoming.map((g) => ({
-    id: makeGroupId(),
+    id: g.id ?? makeGroupId(),
     name: g.name,
     teams: g.teams,
   }))
   groups.splice(0, groups.length, ...next)
+  currentGroupIndex.value = 0
+}
+
+// Replace the current group's id with a fresh one. Called when the user
+// resets the current group's teams — the underlying intent is "start this
+// group over", which for cloud sync means we want the next push to create
+// a new cloud row (and let stale-detect remove the previous one). Without
+// this, the stale group id would PATCH the old cloud row, silently mixing
+// the "reset" intent with whatever was on cloud under the same client_id.
+const regenerateCurrentGroupId = (): void => {
+  const g = groups[currentGroupIndex.value]
+  if (g) g.id = makeGroupId()
+}
+
+// Wipe groups[] back to a single default group with a fresh id. Used by the
+// "全部重置" reset. The fresh id ensures any stale cloud rows tied to the
+// old ids get cleaned up by stale-detect on the next push, instead of being
+// silently overwritten in place.
+const resetToDefault = (): void => {
+  groups.splice(0, groups.length, {
+    id: makeGroupId(),
+    name: '預設',
+    teams: [],
+  })
   currentGroupIndex.value = 0
 }
 
@@ -70,5 +99,7 @@ export function useGroups() {
     renameGroup,
     setCurrentGroup,
     replaceGroups,
+    regenerateCurrentGroupId,
+    resetToDefault,
   }
 }

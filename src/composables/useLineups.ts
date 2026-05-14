@@ -195,13 +195,17 @@ const swapRoles = (roleA: 'main' | 'vice1' | 'vice2', roleB: 'main' | 'vice1' | 
   l[roleB] = temp
 }
 
-const clearLineup = (type: 'all' | 'current') => {
-  if (type === 'current') {
+// 'team'  = clear the 3 roles of the currently-displayed team
+// 'group' = clear roles across every team in the current group's lineups
+// (No 'all' here — wiping ALL groups lives in useGroups.resetToDefault since
+//  it requires recreating the groups[] array, which useLineups doesn't own.)
+const clearLineup = (type: 'team' | 'group') => {
+  if (type === 'team') {
     currentLineup.value.main = emptyRole()
     currentLineup.value.vice1 = emptyRole()
     currentLineup.value.vice2 = emptyRole()
   }
-  if (type === 'all') {
+  if (type === 'group') {
     lineups.forEach(l => {
       l.main = emptyRole()
       l.vice1 = emptyRole()

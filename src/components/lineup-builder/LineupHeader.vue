@@ -221,7 +221,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Edit, Share, Delete, Menu, User, ArrowDown, Close, Check, Plus, CircleClose, StarFilled, Avatar, Setting } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { TROOP_TYPES, TROOP_LABELS } from '../../constants/traits'
 import type { TroopType } from '../../constants/traits'
 import { useGroups } from '../../composables/useGroups'
@@ -257,7 +257,7 @@ const emit = defineEmits<{
   (e: 'goto-profiles'): void
 }>()
 
-const { groups, currentGroup, currentGroupIndex, setCurrentGroup, addGroup } = useGroups()
+const { groups, currentGroup, currentGroupIndex, setCurrentGroup, addGroup, renameGroup } = useGroups()
 const { profiles, refresh: refreshProfiles } = useProfiles()
 const { activeProfileId } = useActiveProfile()
 
@@ -291,7 +291,7 @@ const onProfileCommand = (cmd: string) => {
   }
 }
 
-const onGroupCommand = (cmd: string) => {
+const onGroupCommand = async (cmd: string) => {
   if (cmd.startsWith('switch:')) {
     const idx = Number(cmd.slice(7))
     if (idx !== currentGroupIndex.value) setCurrentGroup(idx)
@@ -300,7 +300,28 @@ const onGroupCommand = (cmd: string) => {
     setCurrentGroup(newIdx)
     ElMessage.success(`已建立並切換到 ${groups[newIdx].name}`)
   } else if (cmd === 'rename') {
-    ElMessage.info('重新命名功能將於後續版本啟用')
+    // Inline prompt — same pattern as the rename buttons inside MyGroups.vue
+    // and MyProfilesPanel.vue. Validates non-empty + length cap; ESC / cancel
+    // is a soft no-op.
+    try {
+      const { value } = await ElMessageBox.prompt('輸入新名稱', '重新命名編組', {
+        confirmButtonText: '儲存',
+        cancelButtonText: '取消',
+        inputValue: currentGroup.value.name,
+        inputValidator: (v: string) => {
+          const trimmed = (v ?? '').trim()
+          if (!trimmed) return '名稱不可為空'
+          if (trimmed.length > 20) return '名稱最多 20 字'
+          return true
+        },
+      })
+      const next = value.trim()
+      if (next === currentGroup.value.name) return
+      renameGroup(currentGroupIndex.value, next)
+      ElMessage.success('編組已重新命名')
+    } catch {
+      // ElMessageBox rejects on cancel; treat as a no-op.
+    }
   }
 }
 </script>

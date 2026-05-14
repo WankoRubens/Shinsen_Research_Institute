@@ -1,0 +1,1142 @@
+// Phase A + C — localStorage autosave AND opt-in cloud sync for 編組.
+//
+// Two channels, one source of truth:
+//   - localStorage (Phase A): ~800ms debounce, every reactive edit. Works
+//     for anon + signed-in users. The session-level source of truth.
+//   - Supabase lineup_groups (Phase C): ~1800ms debounce, only when signed
+//     in and cloudSyncEnabled. Cross-device mirror of the local state.
+//
+// Why a separate composable (not folded into useGroups):
+//   - useLineups owns a watch(currentGroup, syncLineupsFromGroup) that fires
+//     on every group identity change. Adding a save-on-change watch inside
+//     useGroups risks circular reactivity. Persistence sits as a separate
+//     orchestrator that reads the live state and writes to storage / cloud.
+//   - LineupBuilder.vue already owns the share-link / OAuth-recovery
+//     restore flow; this composable adds the autosave channel without
+//     touching that ordering.
+//
+// Cross-tab strategy (risk #2 from the backend review):
+//   BroadcastChannel + monotonic `gen` counter inside the blob. Each tab
+//   increments its gen on save; on receiving a saved message from another
+//   tab whose gen is higher than ours, we re-read localStorage and
+//   reconcile. Last-writer-wins per debounce window, with a short
+//   `suppressWritesUntil` time window that drops reactive echoes when
+//   applying an incoming message. We deliberately do NOT listen to `storage`:
+//   `storage` doesn't fire on the writing tab, which would require a second
+//   "I just saved" channel for status UI later; BroadcastChannel covers both.
+//
+// active_group_index (risk #5):
+//   Stored inside the v4 blob, applied after replaceGroups (which resets to
+//   0) inside the same synchronous tick during restoreFromLocalStorage().
+//
+// Healing (risk #4):
+//   applyBlobToState returns a `healed` array of JP keys that failed to
+//   resolve. The host view watches `healingReport` and toasts an aggregate
+//   count.
+//
+// Cloud conflict (risk #3):
+//   Per-row optimistic lock via &updated_at=eq.<iso>. A 0-row PATCH
+//   response → conflict; we surface the 'cloud-conflict' dialog with the
+//   server row vs the local group, and the user picks: use cloud / overwrite
+//   cloud / defer (turn sync off for this session).
+//
+// Anon → signed-in handoff (risk #1):
+//   2x2 table inside tryBootstrapCloudSync. Both-non-empty is the only
+//   path that prompts; the other three corners apply silently.
+
+import { reactive, ref, watch } from 'vue'
+import { useData } from './useData'
+import { useGroups } from './useGroups'
+import { useLineups, isEmptyTeam, type Lineup } from './useLineups'
+import { useInventory } from './useInventory'
+import { useAuth } from './useAuth'
+import {
+  applyBlobToState,
+  isEmptyShareableLineup,
+  makeSerializer,
+  type ApplyBlobDeps,
+} from '../lib/lineupSerialize'
+import {
+  bulkCreateLineupGroups,
+  createLineupGroup,
+  deleteLineupGroup,
+  listMyLineupGroups,
+  patchLineupGroupForce,
+  patchLineupGroupWithLock,
+  type CloudLineupGroup,
+} from '../lib/lineupGroups'
+import { createShare } from '../lib/share'
+import { onSessionEvent } from '../lib/auth'
+import type { ShareableData, ShareableGroup } from '../constants/gameData'
+
+const STORAGE_KEY = 'nobunaga.groups.v4'
+const DEVICE_ID_KEY = 'nobunaga.device.id'
+const CLOUD_SYNC_PREF_KEY = 'nobunaga.cloud_sync_enabled'
+// Per-user persisted meta map. Used as the "we've already synced on this
+// device for this user" signal so reloads don't re-prompt the merge dialog
+// when local + cloud are already in sync. Keyed by user_id so a different
+// user signing in on the same device gets a fresh handoff.
+const CLOUD_META_KEY_PREFIX = 'nobunaga.cloud_sync_meta.'
+const BROADCAST_CHANNEL_NAME = 'nobunaga.groups'
+const LOCAL_DEBOUNCE_MS = 800
+const CLOUD_DEBOUNCE_MS = 1800
+
+// Module-singleton state — same pattern as useGroups / useLineups so any
+// component can pull the composable without re-wiring watchers.
+const healingReport = ref<string[]>([])
+let localGen = 0
+// Time-window suppression for reactive echoes. When we apply an incoming
+// blob (cross-tab message, merge dialog choice, conflict resolution), the
+// resulting replaceGroups() triggers our deep watcher — but those writes
+// would loop the same data back to disk / cloud. A single boolean isn't
+// enough because Vue may batch reactive updates across multiple ticks for
+// a single replaceGroups call. We instead arm a short time window
+// (SUPPRESS_WINDOW_MS) during which scheduleWrite is a no-op.
+const SUPPRESS_WINDOW_MS = 50
+let suppressWritesUntil = 0
+let debounceHandle: number | null = null
+let cloudDebounceHandle: number | null = null
+let bc: BroadcastChannel | null = null
+let autosaveEnabled = false
+let cloudBootstrapped = false
+
+// Cloud-sync reactive surface — components subscribe via useGroupPersistence().
+const cloudSyncEnabled = ref<boolean>(loadCloudSyncPref())
+const cloudStatus = ref<
+  'idle' | 'syncing' | 'conflict' | 'offline' | 'error'
+>('idle')
+
+// Maps a local ShareableGroup.id (client_id) to its corresponding cloud row
+// id + the updated_at observed at the last successful read/write. The
+// updated_at is the optimistic-lock precondition for the next PATCH.
+const cloudGroupsByClientId = reactive(
+  new Map<string, { cloudId: string; serverUpdatedAt: string }>(),
+)
+
+// Surfaces the conflict dialog. Populated when a PATCH hits the
+// precondition-failed (0-row) response. Cleared by the dialog's resolution
+// handlers.
+const cloudConflict = ref<{
+  localGroupId: string  // ShareableGroup.id of the local group whose push conflicted
+  serverRow: CloudLineupGroup
+} | null>(null)
+
+// Surfaces the merge-on-sign-in dialog. Populated by tryBootstrapCloudSync
+// when both local and cloud are non-empty. Cleared by the dialog's choice
+// handlers.
+const cloudMerge = ref<{
+  localBlob: ShareableData
+  cloudRows: CloudLineupGroup[]
+} | null>(null)
+
+function loadCloudSyncPref(): boolean {
+  try {
+    return localStorage.getItem(CLOUD_SYNC_PREF_KEY) !== 'false'
+  } catch {
+    return true
+  }
+}
+
+function persistCloudSyncPref(v: boolean): void {
+  try {
+    localStorage.setItem(CLOUD_SYNC_PREF_KEY, v ? 'true' : 'false')
+  } catch {
+    /* swallow — quota / private browsing */
+  }
+}
+
+// Persist the in-memory cloudGroupsByClientId snapshot for the given user.
+// Called after every successful sync operation so a reload can skip the
+// 2x2 bootstrap (and its merge dialog) when we've already synced.
+type PersistedCloudMeta = Record<
+  string, // client_id
+  { cloudId: string; serverUpdatedAt: string }
+>
+
+const cloudMetaKey = (userId: string): string => `${CLOUD_META_KEY_PREFIX}${userId}`
+
+const loadPersistedCloudMeta = (userId: string): PersistedCloudMeta | null => {
+  try {
+    const raw = localStorage.getItem(cloudMetaKey(userId))
+    return raw ? (JSON.parse(raw) as PersistedCloudMeta) : null
+  } catch {
+    return null
+  }
+}
+
+const writePersistedCloudMeta = (userId: string): void => {
+  try {
+    const obj: PersistedCloudMeta = {}
+    cloudGroupsByClientId.forEach((v, k) => {
+      obj[k] = { cloudId: v.cloudId, serverUpdatedAt: v.serverUpdatedAt }
+    })
+    localStorage.setItem(cloudMetaKey(userId), JSON.stringify(obj))
+  } catch {
+    /* swallow — quota / private browsing */
+  }
+}
+
+// Convenience — called from every code path that mutates cloudGroupsByClientId
+// so persistence stays in lockstep with the in-memory map. No-op when the
+// user is anonymous (shouldn't be reached anyway, but defensive).
+const syncCloudMetaToStorage = (): void => {
+  const { user } = useAuth()
+  const userId = user.value?.id
+  if (!userId) return
+  writePersistedCloudMeta(userId)
+}
+
+// Drop ALL persisted cloud meta entries (every user key under the prefix).
+// Called on signed-out / expired session events: persisted meta represents
+// "this device was in sync with cloud at moment of sync", which becomes
+// false the instant the user logs out — they can mutate local arbitrarily
+// while signed out, and the next sign-in must re-verify via the 2x2.
+// Scanning by prefix (rather than passing a single userId) keeps this safe
+// across account switches and works even when the session has already been
+// torn down by the time this listener fires.
+const clearPersistedCloudMeta = (): void => {
+  try {
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith(CLOUD_META_KEY_PREFIX)) keysToRemove.push(k)
+    }
+    for (const k of keysToRemove) localStorage.removeItem(k)
+  } catch {
+    /* swallow */
+  }
+}
+
+// Lazy device_id — created on first read, persists across reloads. Used in
+// every save to differentiate "I just wrote this" from "another tab wrote it".
+const getOrCreateDeviceId = (): string => {
+  let id = localStorage.getItem(DEVICE_ID_KEY)
+  if (!id) {
+    // crypto.randomUUID is available in all evergreen browsers we target.
+    id = `dev_${crypto.randomUUID()}`
+    localStorage.setItem(DEVICE_ID_KEY, id)
+  }
+  return id
+}
+
+// Seed localGen from the existing blob at module load so a reload doesn't
+// reset to 0 and confuse cross-tab race detection (other tabs would all
+// look "newer" by gen and trigger needless reconciliations).
+const seedLocalGen = (): void => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+    const blob = JSON.parse(raw) as ShareableData
+    localGen = typeof blob.gen === 'number' ? blob.gen : 0
+  } catch {
+    localGen = 0
+  }
+}
+seedLocalGen()
+
+// Helpers ----------------------------------------------------------------
+
+// "Pristine default" — true when useGroups still has exactly the
+// post-bootstrap state (1 group named 預設, 1 empty team). Used to decide
+// whether localStorage restore should run, or whether some earlier step
+// (share-link, OAuth recovery snapshot) has already populated the UI.
+const isPristineDefaultState = (): boolean => {
+  const { groups } = useGroups()
+  const { ownedHeroes, ownedSkills } = useInventory()
+  if (groups.length !== 1) return false
+  const g = groups[0]
+  if (g.teams.length > 1) return false
+  if (g.teams.length === 1 && !isEmptyTeam(g.teams[0])) return false
+  if (ownedHeroes.value.length > 0 || ownedSkills.value.length > 0) return false
+  return true
+}
+
+// "Empty" for the merge decision — zero groups, OR all groups contain only
+// empty teams. A fresh seeded group (one empty team) counts as empty.
+const isEmptyGroupSet = (groups: { teams: Lineup[] }[]): boolean => {
+  for (const g of groups) {
+    for (const t of g.teams) {
+      if (!isEmptyTeam(t)) return false
+    }
+  }
+  return true
+}
+
+// Build the v4 ShareableData blob from the current live state. Pure with
+// respect to the state refs it reads.
+const buildBlob = (): ShareableData => {
+  const { heroes, skills } = useData()
+  const { groups, currentGroupIndex } = useGroups()
+  const { ownedHeroes, ownedSkills } = useInventory()
+
+  const serializer = makeSerializer({
+    heroes: heroes.value,
+    skills: skills.value,
+  })
+  localGen += 1
+
+  return {
+    v: 4,
+    device_id: getOrCreateDeviceId(),
+    gen: localGen,
+    saved_at: new Date().toISOString(),
+    active_group_index: currentGroupIndex.value,
+    inv_h: ownedHeroes.value.map((n) => serializer.toJpHero(n) ?? n),
+    inv_s: ownedSkills.value.map((n) => serializer.toJpSkill(n) ?? n),
+    groups: groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      // updated_at is per-group; bump on every save so cloud sync has a
+      // per-row freshness signal. Phase A does not consume it.
+      updated_at: new Date().toISOString(),
+      teams: g.teams.map((t) => serializer.serializeLineup(t)),
+    })),
+  }
+}
+
+// Centralized deps factory — keeps applyBlobToState's argument list explicit
+// and lets restore() / cross-tab reconcile / merge dialog share the same wiring.
+const buildApplyDeps = (): ApplyBlobDeps => {
+  const { heroes, skills } = useData()
+  const { lineups, ensureTeamCount } = useLineups()
+  const { replaceGroups } = useGroups()
+  const { ownedHeroes, ownedSkills, showOwnedOnly } = useInventory()
+  return {
+    heroes: heroes.value,
+    skills: skills.value,
+    ownedHeroes,
+    ownedSkills,
+    showOwnedOnly,
+    lineups,
+    ensureTeamCount,
+    replaceGroups,
+  }
+}
+
+// Apply an arbitrary ShareableData blob to state. Used by the cross-tab
+// reconciler and (indirectly) by the merge dialog's "use cloud" path.
+const applyBlobToLiveState = (blob: ShareableData): void => {
+  const deps = buildApplyDeps()
+  const { healed, activeIndex } = applyBlobToState(blob, deps)
+  if (activeIndex != null) {
+    const { setCurrentGroup, groups } = useGroups()
+    if (activeIndex >= 0 && activeIndex < groups.length) {
+      setCurrentGroup(activeIndex)
+    }
+  }
+  if (healed.length > 0) healingReport.value = healed
+}
+
+// Build a ShareableData blob from a list of cloud rows. Mirror of the v4
+// shape produced by buildBlob, with values pulled from the cloud rather
+// than from local state.
+const cloudRowsToBlob = (rows: CloudLineupGroup[]): ShareableData => ({
+  v: 4,
+  groups: rows.map<ShareableGroup>((r) => ({
+    id: r.client_id ?? r.id, // fall back to db id when client_id was never set (cloud-first row)
+    name: r.name,
+    updated_at: r.updated_at,
+    teams: r.teams,
+  })),
+})
+
+// Local autosave ---------------------------------------------------------
+
+const writeBlobToStorage = (): void => {
+  if (Date.now() < suppressWritesUntil) {
+    // Reactive echo from a recent applyBlobToLiveState (cross-tab message,
+    // merge / conflict resolution). The window expires on its own — no need
+    // to clear it here.
+    return
+  }
+  try {
+    const blob = buildBlob()
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(blob))
+    bc?.postMessage({
+      type: 'saved',
+      gen: blob.gen,
+      device_id: blob.device_id,
+    })
+    // Cloud push uses a longer debounce so PostgREST writes scale to user
+    // pause cadence, not edit-frame rate.
+    scheduleCloudPush(blob)
+  } catch (e) {
+    // localStorage can throw on quota exceeded / private-browsing-disabled.
+    // Don't crash the UI — surface a console warning. The next save attempt
+    // re-tries on its own.
+    console.warn('[autosave] write failed:', e)
+  }
+}
+
+const scheduleWrite = (): void => {
+  if (!autosaveEnabled) return
+  if (debounceHandle != null) clearTimeout(debounceHandle)
+  debounceHandle = window.setTimeout(writeBlobToStorage, LOCAL_DEBOUNCE_MS)
+}
+
+// Public: synchronously persist the current in-memory state to localStorage,
+// bypassing the debounce window and the suppress guard. Called after every
+// "user-meaningful" decision (merge resolution, conflict resolution, signout)
+// so a F5 / logout / browser close that follows immediately does not lose
+// the just-applied state. The reactive watcher's debounced write is already
+// suppressed by these decision paths (to prevent a redundant write of state
+// we're about to apply); without this explicit flush, the write never
+// happens and localStorage stays frozen at the pre-decision state.
+const flushLocalAutosave = (): void => {
+  if (debounceHandle != null) {
+    clearTimeout(debounceHandle)
+    debounceHandle = null
+  }
+  suppressWritesUntil = 0
+  writeBlobToStorage()
+}
+
+// Apply the blob currently in localStorage back into state. Used by the
+// cross-tab listener — when another tab saves, we re-read and reconcile.
+const applyBlobFromStorage = (): void => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+    const blob = JSON.parse(raw) as ShareableData
+    applyBlobToLiveState(blob)
+    localGen = typeof blob.gen === 'number' ? blob.gen : localGen
+  } catch (e) {
+    console.warn('[autosave] cross-tab reconcile failed:', e)
+  }
+}
+
+// Cloud sync -------------------------------------------------------------
+
+// Tracks the most recent blob queued for cloud push. Captured here (instead
+// of only inside the setTimeout closure) so flushPendingCloudPush() can
+// cancel the debounce and synchronously fire the same blob before the user's
+// auth token gets invalidated by signOut.
+let pendingCloudBlob: ShareableData | null = null
+
+const scheduleCloudPush = (blob: ShareableData): void => {
+  if (!cloudSyncEnabled.value) return
+  const { isLoggedIn } = useAuth()
+  if (!isLoggedIn.value) return
+  // While the merge dialog is up, we haven't agreed on what cloud state
+  // should look like — suppress pushes until the user resolves it.
+  if (cloudMerge.value) return
+  // While a conflict is unresolved, stop pushing to avoid clobbering the
+  // server row before the user has decided. The conflict dialog's resolvers
+  // re-enable by clearing cloudConflict.
+  if (cloudStatus.value === 'conflict') return
+  pendingCloudBlob = blob
+  if (cloudDebounceHandle != null) clearTimeout(cloudDebounceHandle)
+  cloudDebounceHandle = window.setTimeout(() => {
+    const b = pendingCloudBlob
+    pendingCloudBlob = null
+    cloudDebounceHandle = null
+    if (b) void pushBlobToCloud(b)
+  }, CLOUD_DEBOUNCE_MS)
+}
+
+// Public: cancel any debounced cloud push and fire it immediately. Callers
+// (signOut handler) await this so the user's last edits make it to cloud
+// BEFORE the auth token is invalidated. No-op when nothing is pending or
+// when the user isn't logged in.
+const flushPendingCloudPush = async (): Promise<void> => {
+  if (cloudDebounceHandle != null) {
+    clearTimeout(cloudDebounceHandle)
+    cloudDebounceHandle = null
+  }
+  const b = pendingCloudBlob
+  pendingCloudBlob = null
+  if (!b) return
+  const { isLoggedIn } = useAuth()
+  if (!isLoggedIn.value) return
+  if (!cloudSyncEnabled.value) return
+  try {
+    await pushBlobToCloud(b)
+  } catch (e) {
+    // Don't block signout on a failed flush — local data survives, and the
+    // user already pressed the logout button.
+    console.warn('[cloud-sync] flush-on-signout push failed:', e)
+  }
+}
+
+const pushBlobToCloud = async (blob: ShareableData): Promise<void> => {
+  if (!cloudSyncEnabled.value) return
+  const { isLoggedIn } = useAuth()
+  if (!isLoggedIn.value) return
+  if (!blob.groups || blob.groups.length === 0) return
+
+  cloudStatus.value = 'syncing'
+  try {
+    for (let i = 0; i < blob.groups.length; i++) {
+      const g = blob.groups[i]
+      if (!g.id) continue // shouldn't happen for v4 blobs; defensive guard
+      const meta = cloudGroupsByClientId.get(g.id)
+      if (!meta) {
+        // First push for this group → INSERT. The partial unique index on
+        // (user_id, client_id) makes this idempotent w.r.t. a retry.
+        const row = await createLineupGroup({
+          client_id: g.id,
+          name: g.name,
+          teams: g.teams,
+          sort_order: i,
+        })
+        cloudGroupsByClientId.set(g.id, {
+          cloudId: row.id,
+          serverUpdatedAt: row.updated_at,
+        })
+      } else {
+        const result = await patchLineupGroupWithLock(meta.cloudId, meta.serverUpdatedAt, {
+          name: g.name,
+          teams: g.teams,
+          sort_order: i,
+        })
+        if (result.kind === 'ok') {
+          meta.serverUpdatedAt = result.row.updated_at
+        } else if (result.kind === 'conflict') {
+          // Surface the conflict to the user; halt the rest of the push so
+          // we don't compound the divergence.
+          cloudConflict.value = {
+            localGroupId: g.id,
+            serverRow: result.serverRow,
+          }
+          cloudStatus.value = 'conflict'
+          return
+        } else {
+          // 'error' — log and bail; next edit retries via the debounce.
+          console.warn('[cloud-sync] patch failed:', result.message)
+          cloudStatus.value = 'error'
+          return
+        }
+      }
+    }
+    // Delete cloud rows whose client_id no longer exists locally (user
+    // deleted the group). Only run when the local groups list is the source
+    // of truth — i.e. cloud sync is enabled and we've finished the bootstrap.
+    if (cloudBootstrapped) {
+      const liveIds = new Set(blob.groups.map((g) => g.id))
+      const stale: Array<[string, string]> = []  // [clientId, cloudId]
+      for (const [clientId, meta] of cloudGroupsByClientId.entries()) {
+        if (!liveIds.has(clientId)) stale.push([clientId, meta.cloudId])
+      }
+      for (const [clientId, cloudId] of stale) {
+        try {
+          await deleteLineupGroup(cloudId)
+          cloudGroupsByClientId.delete(clientId)
+        } catch (e) {
+          console.warn('[cloud-sync] delete stale row failed:', e)
+        }
+      }
+    }
+    cloudStatus.value = 'idle'
+    // Snapshot the freshly observed updated_at values + any new client_id
+    // entries so a reload's fast-path picks up the latest preconditions.
+    syncCloudMetaToStorage()
+  } catch (e) {
+    // Network / auth-expired failures — don't retry in a loop, the next
+    // edit will reschedule. Status surface drives any user-visible UI.
+    console.warn('[cloud-sync]', e)
+    cloudStatus.value = 'offline'
+  }
+}
+
+// Apply cloud rows to local state. Used by the 2x2 silent path (local
+// empty, cloud non-empty) and by "use cloud" in the conflict / merge dialogs.
+const applyCloudRowsToLocal = (rows: CloudLineupGroup[]): void => {
+  const blob = cloudRowsToBlob(rows)
+  // Suppress the autosave echo from the reactive replaceGroups that follows.
+  // Without this the local watcher would fire and immediately push the same
+  // data back to cloud (harmless but wasteful) before the meta map is set up.
+  suppressWritesUntil = Date.now() + SUPPRESS_WINDOW_MS
+  applyBlobToLiveState(blob)
+  // Rebuild the client_id ↔ cloudId meta map from the rows we just loaded.
+  cloudGroupsByClientId.clear()
+  for (const r of rows) {
+    const clientId = r.client_id ?? r.id
+    cloudGroupsByClientId.set(clientId, {
+      cloudId: r.id,
+      serverUpdatedAt: r.updated_at,
+    })
+  }
+}
+
+// Backup-share-link safety net — used by the discard-side of the merge dialog
+// so the user never silently loses data. Returns the slug or null on failure.
+const createBackupShareLink = async (blob: ShareableData): Promise<string | null> => {
+  try {
+    return await createShare(blob, { kind: 'group', displayName: `編組備份 ${new Date().toLocaleString('zh-TW')}` })
+  } catch (e) {
+    console.warn('[cloud-sync] backup share failed:', e)
+    return null
+  }
+}
+
+// Public: kick off the anon→signed-in handoff. Idempotent — guarded by
+// cloudBootstrapped. Called from LineupBuilder.vue's onMounted after the
+// other restore paths have settled, and from the post-OAuth callback hook.
+const tryBootstrapCloudSync = async (): Promise<void> => {
+  if (cloudBootstrapped) return
+  const { isLoggedIn, user } = useAuth()
+  if (!isLoggedIn.value) return
+  if (!cloudSyncEnabled.value) {
+    cloudBootstrapped = true // remember so toggling sync back on doesn't re-prompt
+    return
+  }
+  const userId = user.value?.id
+  if (!userId) return // shouldn't happen given isLoggedIn — defensive
+
+  // Determine local emptiness up-front — used by both the fast-path guard
+  // and the 2x2. We read groups directly (not via buildBlob) so the
+  // read-only decision doesn't pollute the cross-tab gen counter.
+  const { groups: liveGroups } = useGroups()
+  const localActuallyEmpty = isEmptyGroupSet(liveGroups)
+
+  // Fast path: this device + user has been bootstrapped before AND local
+  // still has actual content. Restore the cloud meta so subsequent PATCHes
+  // carry the optimistic-lock preconditions we last observed; skip the 2x2
+  // / merge dialog entirely. If a competing device pushed while we were
+  // offline, the next push hits a precondition mismatch and surfaces the
+  // conflict dialog naturally.
+  //
+  // We REQUIRE non-empty local for the fast path. With empty local, the
+  // "local == cloud" invariant the fast path assumes is broken: either the
+  // user wiped local (reset, browser data clear) while signed out, OR
+  // localStorage never got the post-cloud-fetch write. In either case we
+  // must fall through to the full 2x2, otherwise the empty local would
+  // silently overwrite cloud on the next autosave push.
+  const persisted = loadPersistedCloudMeta(userId)
+  if (persisted && !localActuallyEmpty) {
+    cloudGroupsByClientId.clear()
+    for (const [clientId, m] of Object.entries(persisted)) {
+      cloudGroupsByClientId.set(clientId, m)
+    }
+    cloudBootstrapped = true
+    cloudStatus.value = 'idle'
+    return
+  }
+
+  // Cold start (or local-wiped re-bootstrap). Run the 2x2.
+  cloudStatus.value = 'syncing'
+  let cloudRows: CloudLineupGroup[]
+  try {
+    cloudRows = await listMyLineupGroups()
+  } catch (e) {
+    console.warn('[cloud-sync] bootstrap list failed:', e)
+    cloudStatus.value = 'offline'
+    return
+  }
+
+  // Empty-check the cloud side: a cloud row with only empty teams counts
+  // as empty — that data is dead weight and shouldn't force a merge dialog.
+  const cloudActuallyEmpty = cloudRows.every(
+    (r) => r.teams.every(isEmptyShareableLineup),
+  )
+
+  if (localActuallyEmpty && cloudActuallyEmpty) {
+    // Both empty — silent no-op. Persist an empty meta so reloads take the
+    // fast path above.
+    cloudBootstrapped = true
+    cloudStatus.value = 'idle'
+    syncCloudMetaToStorage()
+    return
+  }
+
+  if (localActuallyEmpty && !cloudActuallyEmpty) {
+    // Silent apply: cloud → local. applyCloudRowsToLocal populates the meta
+    // map; persist it so the next reload takes the fast path. flushLocalAutosave
+    // also writes the freshly-applied groups to localStorage immediately —
+    // without it, a F5 within 800ms would re-read the pre-apply (empty) blob.
+    applyCloudRowsToLocal(cloudRows)
+    cloudBootstrapped = true
+    cloudStatus.value = 'idle'
+    syncCloudMetaToStorage()
+    flushLocalAutosave()
+    return
+  }
+
+  if (!localActuallyEmpty && cloudActuallyEmpty) {
+    // Silent upload: local → cloud. buildBlob here is the actual write — it
+    // owns the gen bump because we'll be persisting these groups to cloud.
+    const localBlob = buildBlob()
+    try {
+      const created = await bulkCreateLineupGroups(
+        (localBlob.groups ?? []).map((g, i) => ({
+          client_id: g.id,
+          name: g.name,
+          teams: g.teams,
+          sort_order: i,
+        })),
+      )
+      for (const r of created) {
+        const clientId = r.client_id ?? r.id
+        cloudGroupsByClientId.set(clientId, {
+          cloudId: r.id,
+          serverUpdatedAt: r.updated_at,
+        })
+      }
+      cloudBootstrapped = true
+      cloudStatus.value = 'idle'
+      syncCloudMetaToStorage()
+    } catch (e) {
+      console.warn('[cloud-sync] bulk upload failed:', e)
+      cloudStatus.value = 'offline'
+    }
+    return
+  }
+
+  // Both non-empty — needs explicit user choice. Dialog resolver handlers
+  // call syncCloudMetaToStorage on success.
+  const localBlob = buildBlob()
+  cloudMerge.value = { localBlob, cloudRows }
+  cloudStatus.value = 'idle'
+}
+
+// Merge-dialog resolutions ---------------------------------------------
+
+export interface MergeResolutionResult {
+  kind: 'keep-cloud' | 'keep-local' | 'append' | 'cancel'
+  backupSlug?: string | null
+}
+
+const resolveMergeKeepCloud = async (): Promise<MergeResolutionResult> => {
+  const ctx = cloudMerge.value
+  if (!ctx) return { kind: 'cancel' }
+  cloudStatus.value = 'syncing'
+
+  // Safety net: stash the local data as a backup share link so the user
+  // can recover if they realize this was the wrong choice.
+  const backupSlug = await createBackupShareLink(ctx.localBlob)
+
+  applyCloudRowsToLocal(ctx.cloudRows)
+  cloudMerge.value = null
+  cloudBootstrapped = true
+  cloudStatus.value = 'idle'
+  syncCloudMetaToStorage()
+  flushLocalAutosave()
+  return { kind: 'keep-cloud', backupSlug }
+}
+
+const resolveMergeKeepLocal = async (): Promise<MergeResolutionResult> => {
+  const ctx = cloudMerge.value
+  if (!ctx) return { kind: 'cancel' }
+  cloudStatus.value = 'syncing'
+
+  // Backup the cloud state as a share link before destroying it.
+  const cloudBlob = cloudRowsToBlob(ctx.cloudRows)
+  const backupSlug = await createBackupShareLink(cloudBlob)
+
+  // Snapshot the local state RIGHT NOW — same rationale as
+  // resolveMergeAppend: the dialog can sit open for minutes; the user's
+  // intent on "keep local" is to push their CURRENT local state to cloud,
+  // not the bootstrap-time snapshot in ctx.localBlob.
+  const freshLocalBlob = buildBlob()
+
+  // Delete all cloud rows, then bulk-create from local.
+  try {
+    for (const r of ctx.cloudRows) {
+      try {
+        await deleteLineupGroup(r.id)
+      } catch (e) {
+        console.warn('[cloud-sync] delete row during overwrite failed:', e)
+      }
+    }
+    const created = await bulkCreateLineupGroups(
+      (freshLocalBlob.groups ?? []).map((g, i) => ({
+        client_id: g.id,
+        name: g.name,
+        teams: g.teams,
+        sort_order: i,
+      })),
+    )
+    cloudGroupsByClientId.clear()
+    for (const r of created) {
+      const clientId = r.client_id ?? r.id
+      cloudGroupsByClientId.set(clientId, {
+        cloudId: r.id,
+        serverUpdatedAt: r.updated_at,
+      })
+    }
+    cloudMerge.value = null
+    cloudBootstrapped = true
+    cloudStatus.value = 'idle'
+    syncCloudMetaToStorage()
+    flushLocalAutosave()
+    return { kind: 'keep-local', backupSlug }
+  } catch (e) {
+    console.warn('[cloud-sync] keep-local failed:', e)
+    cloudStatus.value = 'error'
+    return { kind: 'cancel' }
+  }
+}
+
+// Append cloud groups after local. Capped at 20 total — past that the UI
+// (我的編組 page) wouldn't render gracefully anyway, and the dialog has
+// already warned about truncation.
+const APPEND_MAX_TOTAL = 20
+
+const resolveMergeAppend = async (): Promise<MergeResolutionResult> => {
+  const ctx = cloudMerge.value
+  if (!ctx) return { kind: 'cancel' }
+  cloudStatus.value = 'syncing'
+
+  // Snapshot the local state RIGHT NOW (not at bootstrap time). The dialog
+  // can sit open for minutes; any local edits the user made while the dialog
+  // was visible would be lost if we used ctx.localBlob (the bootstrap-time
+  // snapshot). ctx.localBlob is still kept as the backup-share-link target.
+  const freshLocalBlob = buildBlob()
+  const localGroups = freshLocalBlob.groups ?? []
+  const capacity = Math.max(0, APPEND_MAX_TOTAL - localGroups.length)
+  // Order cloud rows by updated_at desc so the most-recently-touched groups
+  // win the capacity contest if we have to truncate.
+  const cloudRowsSorted = [...ctx.cloudRows].sort(
+    (a, b) => (a.updated_at < b.updated_at ? 1 : a.updated_at > b.updated_at ? -1 : 0),
+  )
+  const cloudRowsToAppend = cloudRowsSorted.slice(0, capacity)
+
+  // Disambiguate name collisions: any local group whose name matches a
+  // cloud group we're about to append gets a "本地-" prefix. IDs were
+  // already distinct, so this is purely a readability fix — without it the
+  // user sees two identically-named entries (e.g. two "新編組") and can't
+  // tell which is which after reload.
+  const cloudNames = new Set(cloudRowsToAppend.map((r) => r.name))
+  const localGroupsRenamed = localGroups.map((g) =>
+    cloudNames.has(g.name) ? { ...g, name: `本地-${g.name}` } : g,
+  )
+
+  // Build the merged blob: local groups first (keep their ids), then cloud
+  // groups (keep their cloud-side client_ids so subsequent pushes round-trip).
+  const merged: ShareableData = {
+    v: 4,
+    inv_h: freshLocalBlob.inv_h,
+    inv_s: freshLocalBlob.inv_s,
+    active_group_index: freshLocalBlob.active_group_index,
+    groups: [
+      ...localGroupsRenamed,
+      ...cloudRowsToAppend.map<ShareableGroup>((r) => ({
+        id: r.client_id ?? r.id,
+        name: r.name,
+        updated_at: r.updated_at,
+        teams: r.teams,
+      })),
+    ],
+  }
+
+  suppressWritesUntil = Date.now() + SUPPRESS_WINDOW_MS
+  applyBlobToLiveState(merged)
+
+  // Seed the meta map for the cloud rows we just adopted. The local ones
+  // will INSERT on the next pushBlobToCloud (no meta entry → createLineupGroup
+  // path).
+  for (const r of cloudRowsToAppend) {
+    const clientId = r.client_id ?? r.id
+    cloudGroupsByClientId.set(clientId, {
+      cloudId: r.id,
+      serverUpdatedAt: r.updated_at,
+    })
+  }
+  cloudMerge.value = null
+  cloudBootstrapped = true
+  cloudStatus.value = 'idle'
+  syncCloudMetaToStorage()
+  flushLocalAutosave()
+  return { kind: 'append' }
+}
+
+const resolveMergeCancel = (): void => {
+  cloudMerge.value = null
+  // Mark bootstrapped so token refresh / other `persisted` events in THIS
+  // session don't re-trigger the dialog. Next page reload still re-runs
+  // bootstrap (cloudBootstrapped is module-state, not persisted), giving
+  // the user a fresh prompt on a new session.
+  cloudBootstrapped = true
+  cloudStatus.value = 'idle'
+}
+
+// Conflict-dialog resolutions ------------------------------------------
+
+const resolveConflictUseServer = async (): Promise<void> => {
+  const ctx = cloudConflict.value
+  if (!ctx) return
+  cloudStatus.value = 'syncing'
+
+  // Build a blob that mirrors the current local group list with ONE entry
+  // swapped to the server row's data, then apply it wholesale via
+  // applyBlobToLiveState — the only sanctioned mutation path that runs the
+  // healing pass and triggers the useLineups watcher cleanly.
+  const { groups } = useGroups()
+  const { heroes, skills } = useData()
+  const serializer = makeSerializer({ heroes: heroes.value, skills: skills.value })
+  const mergedGroups: ShareableGroup[] = groups.map((g) => {
+    if (g.id === ctx.localGroupId) {
+      return {
+        id: ctx.serverRow.client_id ?? ctx.serverRow.id,
+        name: ctx.serverRow.name,
+        updated_at: ctx.serverRow.updated_at,
+        teams: ctx.serverRow.teams,
+      }
+    }
+    // Pass-through groups need their Lineup[] re-serialized to ShareableLineup
+    // so the blob shape is homogeneous before applyBlobToLiveState rebuilds.
+    return {
+      id: g.id,
+      name: g.name,
+      teams: g.teams.map((t) => serializer.serializeLineup(t)),
+    }
+  })
+
+  suppressWritesUntil = Date.now() + SUPPRESS_WINDOW_MS
+  applyBlobToLiveState({ v: 4, groups: mergedGroups })
+
+  // Refresh meta for the swapped group so the next push uses the freshly
+  // observed updated_at as its precondition.
+  const clientId = ctx.serverRow.client_id ?? ctx.serverRow.id
+  cloudGroupsByClientId.set(clientId, {
+    cloudId: ctx.serverRow.id,
+    serverUpdatedAt: ctx.serverRow.updated_at,
+  })
+  cloudConflict.value = null
+  cloudStatus.value = 'idle'
+  syncCloudMetaToStorage()
+  flushLocalAutosave()
+}
+
+const resolveConflictForceOverwrite = async (): Promise<void> => {
+  const ctx = cloudConflict.value
+  if (!ctx) return
+  cloudStatus.value = 'syncing'
+
+  // Find the current local group (post-edit) and push it without the lock.
+  const { groups } = useGroups()
+  const localGroup = groups.find((g) => g.id === ctx.localGroupId)
+  if (!localGroup) {
+    cloudConflict.value = null
+    cloudStatus.value = 'idle'
+    return
+  }
+  const { heroes, skills } = useData()
+  const serializer = makeSerializer({ heroes: heroes.value, skills: skills.value })
+  try {
+    const row = await patchLineupGroupForce(ctx.serverRow.id, {
+      name: localGroup.name,
+      teams: localGroup.teams.map((t) => serializer.serializeLineup(t)),
+    })
+    cloudGroupsByClientId.set(ctx.localGroupId, {
+      cloudId: row.id,
+      serverUpdatedAt: row.updated_at,
+    })
+    cloudConflict.value = null
+    cloudStatus.value = 'idle'
+    syncCloudMetaToStorage()
+  } catch (e) {
+    console.warn('[cloud-sync] force overwrite failed:', e)
+    cloudStatus.value = 'error'
+  }
+}
+
+const resolveConflictDefer = (): void => {
+  cloudConflict.value = null
+  cloudSyncEnabled.value = false
+  persistCloudSyncPref(false)
+  cloudStatus.value = 'idle'
+}
+
+// Manual toggle ---------------------------------------------------------
+
+const setCloudSyncEnabled = (v: boolean): void => {
+  cloudSyncEnabled.value = v
+  persistCloudSyncPref(v)
+  if (v) {
+    // Turning sync on after a defer / fresh session — re-run bootstrap.
+    cloudBootstrapped = false
+    void tryBootstrapCloudSync()
+  } else {
+    // Turning sync off — drop the meta map so re-enabling later starts
+    // from a clean slate.
+    cloudGroupsByClientId.clear()
+    cloudBootstrapped = false
+  }
+}
+
+// Lifecycle -------------------------------------------------------------
+
+// Latch: only run cloud bootstrap from session events AFTER the host view's
+// onMounted has finished its restore sequence (share-link, OAuth recovery,
+// localStorage). Set to true by enableAutosave (the last thing onMounted
+// does). Before that, session events queue intent but don't fire bootstrap
+// — that prevents a race where a fast `persisted` event fires concurrently
+// with restoreFromLocalStorage and pushes stale state to cloud.
+let postMountReady = false
+
+// Subscribe to auth events once at module load. signed-out / expired must
+// disable cloud-sync state but NEVER touch localStorage — the user's local
+// data has to survive sign-out per the brief.
+onSessionEvent((e) => {
+  if (e === 'expired' || e === 'signed-out') {
+    cloudGroupsByClientId.clear()
+    cloudBootstrapped = false
+    cloudConflict.value = null
+    cloudMerge.value = null
+    cloudStatus.value = 'idle'
+    // Invalidate persisted meta — once signed out, the "local == cloud"
+    // invariant no longer holds (user can reset, edit, etc., off-line).
+    // Forces the next sign-in through the full 2x2 instead of fast-path.
+    clearPersistedCloudMeta()
+    if (e === 'expired') {
+      // Token is dead — drop any pending push instead of letting the
+      // setTimeout tick fire it and 401 silently. (signed-out is already
+      // covered by flushPendingCloudPush() in AppLayout's handler.)
+      if (cloudDebounceHandle != null) {
+        clearTimeout(cloudDebounceHandle)
+        cloudDebounceHandle = null
+      }
+      pendingCloudBlob = null
+    }
+    // Don't flip cloudSyncEnabled — the user's preference survives a
+    // session round trip. Next sign-in re-bootstraps.
+  } else if (e === 'persisted') {
+    // Post-OAuth callback fires this once the new token lands. If onMounted
+    // has already finished, run bootstrap now (the user just signed in and
+    // is sitting on the page); otherwise defer to enableAutosave's latch.
+    if (postMountReady) void tryBootstrapCloudSync()
+  }
+})
+
+// Public: attempt a restore from localStorage. Returns true if anything was
+// restored. Caller (LineupBuilder.vue onMounted) is responsible for the
+// ordering: share-link / OAuth recovery first, then this. If the state has
+// already been mutated by either of those earlier paths, this is a no-op.
+const restoreFromLocalStorage = (): boolean => {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (!raw) return false
+
+  // Guard: if a share link / OAuth recovery already populated state, skip
+  // — that path wins by convention (intent is explicit, autosave is
+  // ambient).
+  if (!isPristineDefaultState()) return false
+
+  let blob: ShareableData
+  try {
+    blob = JSON.parse(raw) as ShareableData
+  } catch {
+    return false
+  }
+
+  // Refuse to restore from blobs we don't recognise (v3 share blobs live
+  // under a different localStorage key — the auth recovery one — so they
+  // shouldn't end up here).
+  if (blob.v !== 4) return false
+
+  applyBlobToLiveState(blob)
+  return true
+}
+
+// Public: enable the autosave watcher + cross-tab listener. Idempotent.
+// Also flips postMountReady so subsequent session events trigger bootstrap.
+const enableAutosave = (): void => {
+  if (autosaveEnabled) return
+  autosaveEnabled = true
+  postMountReady = true
+
+  const { groups, currentGroupIndex } = useGroups()
+  const { ownedHeroes, ownedSkills } = useInventory()
+
+  watch(
+    [() => groups, currentGroupIndex, ownedHeroes, ownedSkills],
+    scheduleWrite,
+    { deep: true },
+  )
+
+  // BroadcastChannel may be unavailable in very old browsers — degrade
+  // gracefully: autosave still works, just without cross-tab reconciliation.
+  if (typeof BroadcastChannel === 'function') {
+    bc = new BroadcastChannel(BROADCAST_CHANNEL_NAME)
+    const ourDeviceId = getOrCreateDeviceId()
+    bc.onmessage = (ev) => {
+      const msg = ev.data as
+        | { type: 'saved'; gen: number; device_id: string }
+        | undefined
+      if (!msg || msg.type !== 'saved') return
+      if (msg.device_id !== ourDeviceId) return
+      if (msg.gen <= localGen) return
+      // While a merge / conflict dialog is open, ignore cross-tab updates —
+      // the dialog's snapshot would diverge from live state mid-decision,
+      // and resolving with the diverged snapshot would silently discard
+      // edits made in the other tab.
+      if (cloudMerge.value || cloudConflict.value) return
+      suppressWritesUntil = Date.now() + SUPPRESS_WINDOW_MS
+      applyBlobFromStorage()
+    }
+  }
+}
+
+const disableAutosave = (): void => {
+  autosaveEnabled = false
+  if (debounceHandle != null) {
+    clearTimeout(debounceHandle)
+    debounceHandle = null
+  }
+  if (cloudDebounceHandle != null) {
+    clearTimeout(cloudDebounceHandle)
+    cloudDebounceHandle = null
+  }
+  if (bc) {
+    bc.close()
+    bc = null
+  }
+}
+
+const clearStoredGroups = (): void => {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* swallow */
+  }
+}
+
+export interface UseGroupPersistence {
+  // Phase A
+  restoreFromLocalStorage: () => boolean
+  enableAutosave: () => void
+  disableAutosave: () => void
+  clearStoredGroups: () => void
+  healingReport: typeof healingReport
+  // Phase C
+  cloudSyncEnabled: typeof cloudSyncEnabled
+  cloudStatus: typeof cloudStatus
+  cloudConflict: typeof cloudConflict
+  cloudMerge: typeof cloudMerge
+  tryBootstrapCloudSync: () => Promise<void>
+  flushPendingCloudPush: () => Promise<void>
+  flushLocalAutosave: () => void
+  setCloudSyncEnabled: (v: boolean) => void
+  resolveMergeKeepCloud: () => Promise<MergeResolutionResult>
+  resolveMergeKeepLocal: () => Promise<MergeResolutionResult>
+  resolveMergeAppend: () => Promise<MergeResolutionResult>
+  resolveMergeCancel: () => void
+  resolveConflictUseServer: () => Promise<void>
+  resolveConflictForceOverwrite: () => Promise<void>
+  resolveConflictDefer: () => void
+}
+
+export function useGroupPersistence(): UseGroupPersistence {
+  return {
+    restoreFromLocalStorage,
+    enableAutosave,
+    disableAutosave,
+    clearStoredGroups,
+    healingReport,
+    cloudSyncEnabled,
+    cloudStatus,
+    cloudConflict,
+    cloudMerge,
+    tryBootstrapCloudSync,
+    flushPendingCloudPush,
+    flushLocalAutosave,
+    setCloudSyncEnabled,
+    resolveMergeKeepCloud,
+    resolveMergeKeepLocal,
+    resolveMergeAppend,
+    resolveMergeCancel,
+    resolveConflictUseServer,
+    resolveConflictForceOverwrite,
+    resolveConflictDefer,
+  }
+}

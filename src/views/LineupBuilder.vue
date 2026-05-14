@@ -142,9 +142,11 @@ import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 
 import { useData, Hero, Skill } from '../composables/useData'
 
-import { ShareableData, ShareableLineup, ShareableBingxue } from '../constants/gameData'
-import { useLineups, makeTeam, type RoleData, type BingxueActive, type Lineup } from '../composables/useLineups'
+import { ShareableData, ShareableLineup } from '../constants/gameData'
+import { useLineups, type Lineup } from '../composables/useLineups'
 import { useGroups, MAX_TEAMS_PER_GROUP } from '../composables/useGroups'
+import { useGroupPersistence } from '../composables/useGroupPersistence'
+import { applyBlobToState, makeSerializer } from '../lib/lineupSerialize'
 import { useInventory } from '../composables/useInventory'
 import {
   createShare, loadShare, isShareEnabled, type ShareKind,
@@ -176,7 +178,12 @@ const {
   emptyRole: makeEmptyRole,
 } = useLineups()
 
-const { currentGroup, replaceGroups } = useGroups()
+const {
+  currentGroup,
+  replaceGroups,
+  regenerateCurrentGroupId,
+  resetToDefault: resetGroupsToDefault,
+} = useGroups()
 
 const {
   myProposals,
@@ -409,59 +416,49 @@ const conflictingSkillNames = computed(() => {
 })
 
 const clearLineup = (type: ResetTarget) => {
-  if (type === 'current') {
-    clearLineupData('current')
+  if (type === 'team') {
+    clearLineupData('team')
     ElMessage.info('當前隊伍已重置')
   }
-  if (type === 'all') {
-    clearLineupData('all')
-    clearInventory()
-    ElMessage.info('所有資料已重置')
+  if (type === 'group') {
+    // Clear teams in the current group, then regenerate its id so the next
+    // cloud push removes the old (stale) cloud row instead of PATCH-ing it
+    // — keeps the "reset this group" intent honest across local + cloud.
+    clearLineupData('group')
+    regenerateCurrentGroupId()
+    ElMessage.info('當前編組已重置')
   }
   if (type === 'inventory') {
     clearInventory()
     ElMessage.info('庫存已清空')
   }
+  if (type === 'all') {
+    // Wipe groups[] back to a single default group (fresh id) and clear
+    // inventory. The fresh id again ensures stale cloud rows get cleaned
+    // up by stale-detect rather than silently overwritten.
+    resetGroupsToDefault()
+    clearInventory()
+    ElMessage.info('所有資料已重置')
+  }
+  // Synchronously persist so an immediate F5 / logout doesn't lose the
+  // reset (the watcher's 800ms debounce would otherwise race the unload).
+  flushLocalAutosave()
   resetDialogVisible.value = false
 }
 
-const serializeBx = (bx?: BingxueActive): ShareableBingxue | undefined =>
-  bx?.direction
-    ? { d: bx.direction, m: bx.major, n: bx.minors.map(mi => ({ n: mi.name, l: mi.level })) }
-    : undefined
-
-// CHT → JP name mapping happens only at share/restore boundary.
-// Internal state stays CHT (rest of app filters by CHT name).
-// Maps are built once per data load and reused across every share serialization
-// (each call would otherwise scan the whole heroes/skills array per lookup).
-const heroChtToJp = computed(() =>
-  new Map(heroes.value.map(h => [h.name, h.name_jp])))
-const skillChtToJp = computed(() =>
-  new Map(skills.value.map(s => [s.name, s.name_jp])))
+// Share / autosave / OAuth-recovery all serialize through the same factory
+// in src/lib/lineupSerialize.ts so the JP-name mapping and field-name
+// conventions live in one place. The maps are built once per call (cheap)
+// from the current heroes/skills refs.
+const serializer = computed(() =>
+  makeSerializer({ heroes: heroes.value, skills: skills.value }),
+)
 const heroToJp = (cht: string | undefined): string | undefined =>
-  cht ? (heroChtToJp.value.get(cht) ?? cht) : undefined
+  serializer.value.toJpHero(cht)
 const skillToJp = (cht: string | undefined): string | undefined =>
-  cht ? (skillChtToJp.value.get(cht) ?? cht) : undefined
-
-// Computed keys widen to `string` in TS, so the explicit Partial cast is the
-// honest contract — the runtime field names (`m_s1`, `v1_s1`, etc.) match
-// ShareableLineup by convention. Typos in the template literals would silently
-// produce ignored fields; the cast at least keeps callers honest about shape.
-const serializeRole = (role: RoleData, prefix: 'm' | 'v1' | 'v2'): Partial<ShareableLineup> => ({
-  [prefix]: heroToJp(role.hero?.name),
-  [`${prefix}_s1`]: skillToJp(role.skill1?.name),
-  [`${prefix}_s2`]: skillToJp(role.skill2?.name),
-  [`${prefix}_st`]: role.stats,
-  [`${prefix}_bt`]: role.breakthrough,
-  [`${prefix}_bx`]: serializeBx(role.bingxue),
-}) as Partial<ShareableLineup>
-
-const serializeLineup = (l: typeof lineups[number]): ShareableLineup => ({
-  name: l.name,
-  ...serializeRole(l.main, 'm'),
-  ...serializeRole(l.vice1, 'v1'),
-  ...serializeRole(l.vice2, 'v2'),
-})
+  serializer.value.toJpSkill(cht)
+const serializeLineup = (l: Lineup): ShareableLineup =>
+  serializer.value.serializeLineup(l)
 
 // Optional name for the next share — entered in the share dialog when logged
 // in. Reset whenever the share dialog opens so it doesn't carry over between
@@ -551,79 +548,25 @@ const onShareDialogSubmit = async (payload: ShareEventPayload) => {
 
 const { heroes, skills } = useData()
 
-// Restore in-memory state from a ShareableData blob (used by share links AND
-// by sign-in recovery). Lookups try JP first (v2), CHT second (v1 / legacy).
+// Restore in-memory state from a ShareableData blob — share links, OAuth
+// recovery, and localStorage autosave all go through here. The healing pass
+// (soft-null on unresolved JP keys) lives inside applyBlobToState so a
+// renamed hero / skill upstream doesn't silently leave stale fields behind.
 const restoreFromBlob = (data: ShareableData) => {
-  const findHeroByKey = (key: string) =>
-    heroes.value.find(h => h.name_jp === key || h.name === key || h.aliases?.includes(key))
-  const findSkillByKey = (key: string) =>
-    skills.value.find(s => s.name_jp === key || s.name === key || s.aliases?.includes(key))
-  // Drop empty strings — legacy Supabase rows from before the pipeline
-  // emitted `name_jp = null` for override-added skills may contain `""` keys
-  // that find nothing and would otherwise survive via the `?? k` fallback.
-  const toCht = <T extends { name: string }>(arr: string[], finder: (k: string) => T | undefined): string[] =>
-    arr.map(k => finder(k)?.name ?? k).filter(Boolean)
-
-  if (data.inventory) ownedHeroes.value = toCht(data.inventory, findHeroByKey)
-  if (data.inv_h) ownedHeroes.value = toCht(data.inv_h, findHeroByKey)
-  if (data.inv_s) ownedSkills.value = toCht(data.inv_s, findSkillByKey)
-
-  if ((data.inv_h && data.inv_h.length > 0) || (data.inv_s && data.inv_s.length > 0) || (data.inventory && data.inventory.length > 0)) {
-    showOwnedOnly.value = true
-  }
-
-  // Per-role hydrate — used by both v2 (in-place mutate active group's teams)
-  // and v3 (build fresh teams to push through replaceGroups).
-  const restoreRole = (prefix: string, role: RoleData, l: ShareableLineup) => {
-    const safeL = l as any
-    const hName = safeL[prefix]
-    if (hName) role.hero = findHeroByKey(hName) || null
-    const s1Name = safeL[prefix + '_s1']
-    if (s1Name) role.skill1 = findSkillByKey(s1Name) || null
-    const s2Name = safeL[prefix + '_s2']
-    if (s2Name) role.skill2 = findSkillByKey(s2Name) || null
-    if (safeL[prefix + '_st']) role.stats = safeL[prefix + '_st']
-    const bt = safeL[prefix + '_bt']
-    if (typeof bt === 'number') role.breakthrough = Math.max(0, Math.min(5, bt))
-    const bx = safeL[prefix + '_bx']
-    if (bx && bx.d) {
-      role.bingxue = {
-        direction: bx.d,
-        major: bx.m ?? null,
-        minors: Array.isArray(bx.n) ? bx.n.map((mi: any) => ({ name: mi.n, level: mi.l })) : [],
-      }
-    }
-  }
-
-  const hydrateTeam = (target: Lineup, l: ShareableLineup) => {
-    if (l.name) target.name = l.name
-    restoreRole('m', target.main, l)
-    restoreRole('v1', target.vice1, l)
-    restoreRole('v2', target.vice2, l)
-  }
-
-  // v3 — wipe-and-replace via the groups envelope. Used by share-all links
-  // and by post-OAuth recovery snapshots.
-  if (data.groups && Array.isArray(data.groups) && data.groups.length > 0) {
-    const incoming = data.groups.map((g) => {
-      const teams = (g.teams || []).slice(0, MAX_TEAMS_PER_GROUP).map((l, i) => {
-        const team = makeTeam(i)
-        hydrateTeam(team, l)
-        return team
-      })
-      // Guarantee at least one team per group so the UI never renders an
-      // empty lineups array.
-      if (teams.length === 0) teams.push(makeTeam(0))
-      return { name: g.name || '預設', teams }
-    })
-    replaceGroups(incoming)
-  } else if (data.lineups && Array.isArray(data.lineups)) {
-    // v2 legacy — populate the active group's teams in place.
-    ensureTeamCount(data.lineups.length)
-    data.lineups.forEach((l, i) => {
-      if (i >= lineups.length) return
-      hydrateTeam(lineups[i], l)
-    })
+  const report = applyBlobToState(data, {
+    heroes: heroes.value,
+    skills: skills.value,
+    ownedHeroes,
+    ownedSkills,
+    showOwnedOnly,
+    lineups,
+    ensureTeamCount,
+    replaceGroups,
+  })
+  if (report.healed.length > 0) {
+    ElMessage.warning(
+      `已自動清除 ${report.healed.length} 個無法解析的英雄或戰法（資料表更新後）`,
+    )
   }
 }
 
@@ -885,13 +828,49 @@ const initFromHash = async (): Promise<boolean> => {
   return false
 }
 
+// Autosave + restore — survives reload for both anon and signed-in users.
+// restoreFromLocalStorage is a no-op if a share link or OAuth recovery has
+// already mutated state (those paths win by convention — explicit intent
+// beats ambient autosave). enableAutosave installs the deep watcher + the
+// cross-tab BroadcastChannel listener. tryBootstrapCloudSync runs the
+// anon→signed-in handoff (2x2 silent paths + the explicit merge dialog).
+const {
+  restoreFromLocalStorage,
+  enableAutosave,
+  tryBootstrapCloudSync,
+  flushLocalAutosave,
+  healingReport: autosaveHealingReport,
+} = useGroupPersistence()
+
+watch(autosaveHealingReport, (keys) => {
+  if (keys.length === 0) return
+  ElMessage.warning(
+    `已自動清除 ${keys.length} 個無法解析的英雄或戰法（資料表更新後）`,
+  )
+})
+
 onMounted(async () => {
   const consumedHash = await initFromHash()
+  // restoreFromLocalStorage internally guards on isPristineDefaultState — if
+  // a share link, OAuth recovery snapshot, or anything else already populated
+  // the UI in this tick, this is a no-op.
+  restoreFromLocalStorage()
   // Fire-and-forget: the auto-load sequencing only depends on initFromHash
   // (share/recovery should win if present). No reason to block the changelog
   // open on a Supabase round-trip — they don't conflict, and `consumedHash`
   // already gates the changelog independently.
   void tryAutoApplyDefault()
+  // Enable autosave AFTER all the restore paths have had a chance to run.
+  // Doing it earlier risks capturing transient pre-restore state into
+  // localStorage. enableAutosave also flips the post-mount-ready latch
+  // inside useGroupPersistence so later session events trigger bootstrap.
+  enableAutosave()
+  // Bootstrap cloud sync once the local restore + autosave watcher are
+  // settled. If signed in, this fetches the cloud rows and runs the 2x2
+  // merge decision (silent for 3 of 4 corners, dialog for both-non-empty).
+  // No-op for anon users; runs again automatically on `persisted` session
+  // events (post-OAuth callback).
+  void tryBootstrapCloudSync()
   // Auto-open changelog only when nothing else is competing for the user's
   // attention. Triggers for both first-time visitors and returning users on
   // a release day (LATEST_VERSION mismatch).
