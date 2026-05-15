@@ -18,18 +18,6 @@
         />
       </div>
 
-      <div class="flex flex-col gap-1">
-        <label class="text-xs text-ink-mute">描述（可選）</label>
-        <el-input
-          v-model="description"
-          type="textarea"
-          :rows="3"
-          maxlength="200"
-          placeholder="戰術核心、依賴的兵種、適用場景…"
-          show-word-limit
-        />
-      </div>
-
       <div
         v-if="isLoggedIn"
         class="flex items-center justify-between pt-1 border-t border-divider"
@@ -66,11 +54,10 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', v: boolean): void
-  (e: 'submit', payload: { name: string; description: string; isPublic: boolean }): void
+  (e: 'submit', payload: { name: string; isPublic: boolean }): void
 }>()
 
 const name = ref('')
-const description = ref('')
 const isPublic = ref(false)
 
 const nameValid = computed(() => name.value.trim().length > 0)
@@ -79,7 +66,6 @@ const nameValid = computed(() => name.value.trim().length > 0)
 watch(() => props.modelValue, (now) => {
   if (now) {
     name.value = ''
-    description.value = ''
     isPublic.value = false
   }
 })
@@ -90,7 +76,6 @@ const onSubmit = () => {
   if (!nameValid.value) return
   emit('submit', {
     name: name.value.trim(),
-    description: description.value.trim(),
     isPublic: props.isLoggedIn ? isPublic.value : false,
   })
 }

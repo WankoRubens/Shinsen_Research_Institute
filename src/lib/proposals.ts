@@ -23,6 +23,8 @@ interface ProposalRow {
   user_id: string | null
   author_name: string | null
   vote_count: number
+  upvote_count: number
+  downvote_count: number
   forked_from: string | null
   created_at: string
   updated_at: string
@@ -31,22 +33,26 @@ interface ProposalRow {
 const rowToProposal = (row: ProposalRow): Proposal => ({
   id: row.id,
   name: row.name,
-  description: row.description ?? '',
   team: row.team_blob as Proposal['team'],
   isPublic: row.is_public,
   authorId: row.user_id,
   authorName: row.author_name,
   voteCount: row.vote_count,
+  // Older rows from pre-migration deploys may lack the per-direction columns;
+  // coerce nullish to 0 so the UI never NaN-renders.
+  upvoteCount: row.upvote_count ?? 0,
+  downvoteCount: row.downvote_count ?? 0,
   forkedFrom: row.forked_from,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 })
 
+export type VoteDirection = 1 | -1
+
 export const isProposalsEnabled = isSupabaseConfigured
 
 export interface CreateProposalInput {
   name: string
-  description?: string
   team: Proposal['team']
   isPublic: boolean
   forkedFrom?: string | null
@@ -60,9 +66,11 @@ export const createProposal = async (input: CreateProposalInput): Promise<Propos
   const token = await getValidAccessToken()
   if (!token) throw new Error('login required to create a proposal')
 
+  // description column is intentionally omitted — the UI no longer accepts
+  // user-supplied descriptions (anti-harassment), and the DB default for the
+  // column is NULL, so new rows land cleanly without a stale empty-string.
   const body = {
     name: input.name,
-    description: input.description ?? null,
     team_blob: input.team,
     is_public: input.isPublic,
     forked_from: input.forkedFrom ?? null,
@@ -83,11 +91,11 @@ export const createProposal = async (input: CreateProposalInput): Promise<Propos
   return rowToProposal(rows[0])
 }
 
-/** Update a proposal (owner only via RLS). Use for renaming, edit description,
- *  or flipping is_public after the fact. */
+/** Update a proposal (owner only via RLS). Use for renaming or flipping
+ *  is_public after the fact. */
 export const updateProposal = async (
   id: string,
-  patch: Partial<Pick<CreateProposalInput, 'name' | 'description' | 'isPublic'>>,
+  patch: Partial<Pick<CreateProposalInput, 'name' | 'isPublic'>>,
 ): Promise<Proposal> => {
   if (!SUPABASE_URL) throw new Error('proposals backend not configured')
   const token = await getValidAccessToken()
@@ -95,7 +103,6 @@ export const updateProposal = async (
 
   const body: Record<string, unknown> = {}
   if (patch.name !== undefined) body.name = patch.name
-  if (patch.description !== undefined) body.description = patch.description
   if (patch.isPublic !== undefined) body.is_public = patch.isPublic
 
   const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/proposals?id=eq.${encodeURIComponent(id)}`, {
@@ -137,58 +144,74 @@ export const listMyProposals = async (): Promise<Proposal[]> => {
 }
 
 /** Browse the public proposal feed, anon-readable. */
-export const listPublicProposals = async (limit = 50): Promise<Proposal[]> => {
+export const listPublicProposals = async (limit = 50, offset = 0): Promise<Proposal[]> => {
   if (!SUPABASE_URL) throw new Error('proposals backend not configured')
 
-  const url = `${SUPABASE_URL}/rest/v1/proposals?is_public=eq.true&select=*&order=vote_count.desc,updated_at.desc&limit=${limit}`
+  const url = `${SUPABASE_URL}/rest/v1/proposals?is_public=eq.true&select=*`
+    + `&order=vote_count.desc,updated_at.desc`
+    + `&limit=${limit}&offset=${offset}`
   const res = await fetchWithTimeout(url, { headers: restHeaders(null) })
   if (!res.ok) throw new Error(`proposals public list failed: ${res.status}`)
   return ((await res.json()) as ProposalRow[]).map(rowToProposal)
 }
 
-/** Toggle the current user's vote on a proposal. vote_count is maintained
- *  by a DB trigger so the client only flips the membership row. */
-export const toggleProposalVote = async (proposalId: string, on: boolean): Promise<void> => {
+/** Set the current user's vote direction on a proposal. Upserts on
+ *  (proposal_id, user_id) — inserts a fresh row or flips `value` if a row
+ *  already exists. The DB trigger fans out to upvote_count/downvote_count
+ *  and the net vote_count. */
+export const setProposalVote = async (
+  proposalId: string,
+  direction: VoteDirection,
+): Promise<void> => {
+  if (!SUPABASE_URL) throw new Error('proposals backend not configured')
+  const token = await getValidAccessToken()
+  if (!token) throw new Error('login required to vote')
+
+  // PostgREST upsert: `on_conflict=` targets the unique constraint we want to
+  // resolve against (the PK here) and Prefer=merge-duplicates tells the server
+  // to UPDATE on conflict rather than skip.
+  const url = `${SUPABASE_URL}/rest/v1/proposal_votes`
+    + `?on_conflict=proposal_id,user_id`
+  const res = await fetchWithTimeout(url, {
+    method: 'POST',
+    headers: {
+      ...restHeaders(token),
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify({ proposal_id: proposalId, value: direction }),
+  })
+  if (!res.ok) throw new Error(`vote set failed: ${res.status} ${await res.text()}`)
+}
+
+export const clearProposalVote = async (proposalId: string): Promise<void> => {
   if (!SUPABASE_URL) throw new Error('proposals backend not configured')
   const token = await getValidAccessToken()
   const session = getSession()
   if (!token || !session) throw new Error('login required to vote')
 
-  if (on) {
-    const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/proposal_votes`, {
-      method: 'POST',
-      headers: {
-        ...restHeaders(token),
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=ignore-duplicates,return=minimal',
-      },
-      body: JSON.stringify({ proposal_id: proposalId }),
-    })
-    if (!res.ok) throw new Error(`vote add failed: ${res.status}`)
-  } else {
-    // Filter on (proposal_id, user_id) so we hit the PK exactly. RLS would
-    // also restrict this to our own row, but matching the PK keeps the query
-    // intent explicit and survives any future RLS policy edits.
-    const url = `${SUPABASE_URL}/rest/v1/proposal_votes`
-      + `?proposal_id=eq.${encodeURIComponent(proposalId)}`
-      + `&user_id=eq.${encodeURIComponent(session.user.id)}`
-    const res = await fetchWithTimeout(url, { method: 'DELETE', headers: restHeaders(token) })
-    if (!res.ok) throw new Error(`vote remove failed: ${res.status}`)
-  }
+  // Filter on (proposal_id, user_id) so we hit the PK exactly. RLS also
+  // restricts this to our own row; matching the PK keeps the query
+  // intent explicit and survives future RLS edits.
+  const url = `${SUPABASE_URL}/rest/v1/proposal_votes`
+    + `?proposal_id=eq.${encodeURIComponent(proposalId)}`
+    + `&user_id=eq.${encodeURIComponent(session.user.id)}`
+  const res = await fetchWithTimeout(url, { method: 'DELETE', headers: restHeaders(token) })
+  if (!res.ok) throw new Error(`vote remove failed: ${res.status}`)
 }
 
-/** Returns the set of proposal_ids the current user has voted for. Used to
- *  paint the heart icon on browse. Anon users get an empty set. */
-export const listMyVotes = async (): Promise<Set<string>> => {
-  if (!SUPABASE_URL) return new Set()
+/** Returns a Map of proposal_id → direction (1 = upvoted, -1 = downvoted) for
+ *  the current user. Anon users get an empty Map. */
+export const listMyVotes = async (): Promise<Map<string, VoteDirection>> => {
+  if (!SUPABASE_URL) return new Map()
   const token = await getValidAccessToken()
-  if (!token) return new Set()
+  if (!token) return new Map()
 
   const res = await fetchWithTimeout(
-    `${SUPABASE_URL}/rest/v1/proposal_votes?select=proposal_id`,
+    `${SUPABASE_URL}/rest/v1/proposal_votes?select=proposal_id,value`,
     { headers: restHeaders(token) },
   )
-  if (!res.ok) return new Set()
-  const rows = (await res.json()) as Array<{ proposal_id: string }>
-  return new Set(rows.map(r => r.proposal_id))
+  if (!res.ok) return new Map()
+  const rows = (await res.json()) as Array<{ proposal_id: string; value: number }>
+  return new Map(rows.map(r => [r.proposal_id, (r.value === -1 ? -1 : 1) as VoteDirection]))
 }

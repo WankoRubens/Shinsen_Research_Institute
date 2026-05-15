@@ -1,5 +1,5 @@
 <template>
-  <div class="team-preview" :class="`team-preview--${density}`">
+  <div class="team-preview" :class="[`team-preview--${density}`, { 'team-preview--flush': !bordered }]">
     <div v-if="showHeader" class="header">
       <div class="title-wrap">
         <span class="title-bar" />
@@ -143,10 +143,12 @@ const props = withDefaults(defineProps<{
   title?: string
   showHeader?: boolean
   showWatermark?: boolean
+  bordered?: boolean
 }>(), {
   density: 'regular',
   showHeader: true,
   showWatermark: true,
+  bordered: true,
 })
 
 const portraitSize = computed(() => props.density === 'compact' ? 104 : 166)
@@ -206,6 +208,15 @@ const hasAnyBingxue = computed(() =>
   box-shadow: inset 0 1px 0 rgba(180, 83, 9, 0.08);
 }
 .team-preview--compact { padding: 10px; }
+
+/* Flush variant: drop the standalone framing so a wrapping card can own the
+   bounding visual. Keeps the amber gradient background that gives the
+   preview its identity. */
+.team-preview--flush {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
 
 .header {
   display: flex;

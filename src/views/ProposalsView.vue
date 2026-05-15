@@ -34,17 +34,34 @@
             >
               {{ publicProposals.length === 0 ? '目前還沒有公開提案。' : '篩選後沒有符合的提案。' }}
             </p>
-            <div v-else class="proposal-grid">
-              <ProposalCard
-                v-for="p in filteredPublic"
-                :key="p.id"
-                :proposal="p"
-                :voted="myVotes.has(p.id)"
-                :can-vote="isLoggedIn"
-                @vote="onVote(p.id)"
-                @import-to-group="onImportToGroup(p)"
-              />
-            </div>
+            <template v-else>
+              <div class="proposal-grid">
+                <ProposalCard
+                  v-for="p in filteredPublic"
+                  :key="p.id"
+                  :proposal="p"
+                  :voted-direction="myVotes.get(p.id) ?? null"
+                  :can-vote="isLoggedIn && !isOwnedByMe(p)"
+                  :can-edit="isOwnedByMe(p)"
+                  :current-user-name="displayName"
+                  @upvote="onVote(p.id, 1)"
+                  @downvote="onVote(p.id, -1)"
+                  @import-to-group="onImportToGroup(p)"
+                  @delete="onDelete(p)"
+                  @toggle-public="onTogglePublic(p)"
+                />
+              </div>
+              <div ref="publicSentinel" class="sentinel" aria-hidden="true" />
+              <p v-if="loadingPublicMore" class="text-center text-ink-mute py-3 text-xs">
+                載入中…
+              </p>
+              <p
+                v-else-if="!publicHasMore && publicProposals.length > 0"
+                class="text-center text-ink-mute py-3 text-xs"
+              >
+                已載完所有公開提案
+              </p>
+            </template>
           </div>
         </el-tab-pane>
         <el-tab-pane label="我的提案" name="mine" :disabled="!isLoggedIn">
@@ -65,9 +82,13 @@
                 v-for="p in filteredMine"
                 :key="p.id"
                 :proposal="p"
-                :voted="myVotes.has(p.id)"
+                :voted-direction="myVotes.get(p.id) ?? null"
                 :can-vote="false"
+                :can-edit="true"
+                :current-user-name="displayName"
                 @import-to-group="onImportToGroup(p)"
+                @delete="onDelete(p)"
+                @toggle-public="onTogglePublic(p)"
               />
             </div>
           </div>
@@ -86,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useProposals } from '../composables/useProposals'
 import { useAuth } from '../composables/useAuth'
@@ -101,26 +122,63 @@ import { applyConflictResolution } from '../lib/teamConflicts'
 import ProposalCard from '../components/preview/ProposalCard.vue'
 import ExportTeamToGroupDialog, { type ExportSource } from '../components/dialogs/ExportTeamToGroupDialog.vue'
 
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, user, displayName } = useAuth()
 const { heroes } = useData()
 const {
   myProposals, publicProposals, myVotes,
-  loadingMine, loadingPublic,
-  refreshMine, refreshPublic, vote,
+  loadingMine, loadingPublic, loadingPublicMore, publicHasMore,
+  refreshMine, refreshPublic, loadMorePublic,
+  vote, remove, togglePublic,
 } = useProposals()
 
-const activeTab = ref<'public' | 'mine'>('public')
+// Default to "我的提案" for signed-in users — that's the management surface
+// they came here to use. Anonymous visitors land on "熱門公開" since their
+// "mine" tab is disabled anyway.
+const activeTab = ref<'public' | 'mine'>(isLoggedIn.value ? 'mine' : 'public')
 const selectedHeroes = ref<string[]>([])
+const publicSentinel = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+const isOwnedByMe = (p: Proposal): boolean =>
+  !!user.value && p.authorId === user.value.id
 
 onMounted(() => {
   void refreshPublic()
   if (isLoggedIn.value) void refreshMine()
 })
 
+const attachObserver = (): void => {
+  if (observer || !publicSentinel.value) return
+  observer = new IntersectionObserver((entries) => {
+    if (entries.some(e => e.isIntersecting)) void loadMorePublic()
+  }, { rootMargin: '200px' })
+  observer.observe(publicSentinel.value)
+}
+const detachObserver = (): void => {
+  observer?.disconnect()
+  observer = null
+}
+
+// Sentinel mounts/unmounts as the public tab toggles and as the list switches
+// between empty-state and grid. flush:'post' so the ref is current before we
+// (re)attach.
+watch([publicSentinel, activeTab], () => {
+  if (activeTab.value === 'public' && publicSentinel.value) attachObserver()
+  else detachObserver()
+}, { flush: 'post' })
+
 watch(activeTab, (now) => {
   if (now === 'mine' && isLoggedIn.value) void refreshMine()
   if (now === 'public') void refreshPublic()
 })
+
+// Flip to "我的提案" the moment a mid-session login completes so the user
+// lands on their management surface instead of having to switch manually.
+watch(isLoggedIn, (loggedIn) => {
+  if (loggedIn && activeTab.value === 'public') activeTab.value = 'mine'
+})
+
+onBeforeUnmount(detachObserver)
 
 // Hero dropdown options sorted by rarity desc then cost desc to match the
 // ordering players see elsewhere. Value is the CHT name — that's what the
@@ -150,15 +208,42 @@ const activeListLength = computed(() =>
   activeTab.value === 'public' ? filteredPublic.value.length : filteredMine.value.length,
 )
 
-const onVote = async (id: string) => {
+const onVote = async (id: string, direction: 1 | -1) => {
   if (!isLoggedIn.value) {
     ElMessage.warning('請先登入')
     return
   }
   try {
-    await vote(id)
+    await vote(id, direction)
   } catch (e) {
     ElMessage.error(`投票失敗：${(e as Error).message}`)
+  }
+}
+
+const onDelete = async (p: Proposal) => {
+  try {
+    await remove(p.id)
+    ElMessage.success(`已刪除「${p.name}」`)
+  } catch (e) {
+    ElMessage.error(`刪除失敗：${(e as Error).message}`)
+  }
+}
+
+const onTogglePublic = async (p: Proposal) => {
+  const wasPublic = p.isPublic
+  try {
+    await togglePublic(p.id, !wasPublic)
+    ElMessage.success(wasPublic ? '已設為私人' : '已公開')
+    // Mirror the change into the public feed: going public re-fetches so the
+    // newly-public proposal appears at the appropriate position; going private
+    // just strips it from the local public list.
+    if (wasPublic) {
+      publicProposals.value = publicProposals.value.filter(x => x.id !== p.id)
+    } else {
+      void refreshPublic()
+    }
+  } catch (e) {
+    ElMessage.error(`切換失敗：${(e as Error).message}`)
   }
 }
 
@@ -233,5 +318,10 @@ const onExported = ({
 }
 @media (min-width: 1280px) {
   .proposal-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.sentinel {
+  height: 1px;
+  width: 100%;
 }
 </style>

@@ -64,8 +64,10 @@ export interface Proposal {
   id: string
   /** Free-text label, max ~50 chars (UI-enforced). */
   name: string
-  /** Optional short rationale. */
-  description: string
+  /** Optional short rationale. Legacy: the UI no longer surfaces description
+   *  (removed to keep the public feed harassment-free), but the DB column
+   *  remains for old rows. New proposals are created with description = null. */
+  description?: string
   /** Frozen team payload — same shape as Lineup but with snapshot semantics. */
   team: Team
   /** False = private (only owner sees it); True = public (listed on the proposal feed). */
@@ -74,8 +76,11 @@ export interface Proposal {
   authorId: string | null
   /** Author display name at the time of share (frozen). */
   authorName: string | null
-  /** Vote count, denormalized; source of truth is proposal_votes table. */
+  /** Net score (upvoteCount − downvoteCount); used to rank the public feed. */
   voteCount: number
+  /** Per-direction counters; denormalized from proposal_votes for cheap reads. */
+  upvoteCount: number
+  downvoteCount: number
   /** ISO timestamps. */
   createdAt: string
   updatedAt: string

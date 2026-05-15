@@ -544,7 +544,6 @@ const onShareDialogSubmit = async (payload: ShareEventPayload) => {
     try {
       await createProposalFromLineup(currentLineup.value, {
         name: proposalName,
-        description: '',
         isPublic: true,
         authorName: displayName.value || null,
       })
@@ -658,12 +657,13 @@ const onSaveAsProposal = () => {
   createProposalDialogVisible.value = true
 }
 
-const onSubmitProposal = async (payload: { name: string; description: string; isPublic: boolean }) => {
+const onSubmitProposal = async (payload: { name: string; isPublic: boolean }) => {
   proposalSubmitting.value = true
   try {
+    // Display-name cap (10 chars) lives inside createFromLineup so both
+    // create paths stay consistent without callers having to remember it.
     await createProposalFromLineup(currentLineup.value, {
       name: payload.name,
-      description: payload.description,
       isPublic: payload.isPublic,
       authorName: displayName.value || null,
     })
