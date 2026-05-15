@@ -6,6 +6,9 @@
         <el-button type="primary" plain :icon="Plus" class="!rounded-sm" @click="onAddGroup">
           新增編組
         </el-button>
+        <el-button plain :icon="Link" class="!rounded-sm" @click="onImportFromLink">
+          由分享連結匯入…
+        </el-button>
         <span class="text-xs text-ink-mute tabular-nums">
           共 <span class="font-bold text-ink">{{ groups.length }}</span> 個編組
         </span>
@@ -139,14 +142,16 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDialogs } from '../composables/useDialogs'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, MoreFilled, Edit, Delete, InfoFilled } from '@element-plus/icons-vue'
+import { Plus, MoreFilled, Edit, Delete, InfoFilled, Link } from '@element-plus/icons-vue'
 import { useGroups, MAX_TEAMS_PER_GROUP } from '../composables/useGroups'
 import TeamPreviewCard from '../components/preview/TeamPreviewCard.vue'
 import type { Group } from '../types/group'
 import { isEmptyTeam, type Lineup } from '../composables/useLineups'
 
 const router = useRouter()
+const dialogs = useDialogs()
 const {
   groups,
   currentGroupIndex,
@@ -188,6 +193,16 @@ const onAddGroup = () => {
   const idx = addGroup()
   setCurrentGroup(idx)
   ElMessage.success(`已建立並切換到「${groups[idx].name}」`)
+}
+
+const onImportFromLink = () => {
+  // Switch to the lineup builder first so the import dialog has the right
+  // ambient state (currentGroup / lineups) and the user sees the result
+  // immediately after confirming. The dialog itself is mounted there; we
+  // just flip the route then ask the global dialogs registry to open it.
+  void router.push({ name: 'lineup' }).then(() => {
+    dialogs.open('import-from-link')
+  })
 }
 
 const onSwitch = (idx: number) => {

@@ -29,6 +29,7 @@
         @apply-profile="onApplyProfile"
         @unload-profile="onUnloadProfile"
         @goto-profiles="router.push({ name: 'profiles' })"
+        @import-from-link="dialogs.open('import-from-link')"
       />
       <PageHeader
         v-else

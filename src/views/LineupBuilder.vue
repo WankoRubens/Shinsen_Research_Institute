@@ -12,7 +12,7 @@
           @add-team="onAddTeam"
           @share="dialogs.open('share')"
           @save-as-proposal="onSaveAsProposal"
-          @add-to-group="onAddToGroup"
+          @export-to-group="onExportTeamToOtherGroup"
           @remove-team="onRemoveTeam"
         />
 
@@ -104,17 +104,17 @@
       @submit="onSubmitProposal"
     />
 
-    <ImportProposalDialog
-      v-model="importProposalDialogVisible"
-      :loading-mine="loadingMyProposals"
-      :loading-public="loadingPublicProposals"
-      :my-proposals="myProposals"
-      :public-proposals="publicProposals"
-      :lineups="lineups"
-      :current-team-index="currentTeamIndex"
-      :max-teams="MAX_TEAMS_PER_GROUP"
-      @tab-change="onImportProposalTabChange"
-      @import="onImportProposal"
+    <ExportTeamToGroupDialog
+      v-model="exportTeamDialogVisible"
+      variant="export"
+      :source="exportTeamSource"
+      :exclude-group-id="currentGroup?.id"
+      @exported="onExportTeamConfirmed"
+    />
+
+    <ImportFromLinkDialog
+      v-model="importFromLinkDialogVisible"
+      @import="onImportFromLink"
     />
   </el-container>
 
@@ -131,7 +131,8 @@ import AuthDialog from '../components/dialogs/AuthDialog.vue'
 import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
 import ShareDialog from '../components/dialogs/ShareDialog.vue'
 import CreateProposalDialog from '../components/dialogs/CreateProposalDialog.vue'
-import ImportProposalDialog, { type ImportTarget } from '../components/dialogs/ImportProposalDialog.vue'
+import ExportTeamToGroupDialog, { type ExportSource } from '../components/dialogs/ExportTeamToGroupDialog.vue'
+import ImportFromLinkDialog, { type ImportFromLinkPayload } from '../components/dialogs/ImportFromLinkDialog.vue'
 import SkillDragPreview from '../components/lineup-builder/SkillDragPreview.vue'
 import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
 import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
@@ -159,7 +160,8 @@ import { useAuth } from '../composables/useAuth'
 import { useActiveProfile } from '../composables/useActiveProfile'
 import { useDialogs } from '../composables/useDialogs'
 import { useProposals } from '../composables/useProposals'
-import type { Proposal, ImportConflictResolution } from '../types/group'
+import { applyConflictResolution } from '../lib/teamConflicts'
+import type { ImportConflictResolution } from '../types/group'
 import { useChangelog } from '../composables/useChangelog'
 import { useProfiles } from '../composables/useProfiles'
 import { consumeInitialHash } from '../lib/initial-hash'
@@ -178,23 +180,21 @@ const {
   addTeamFromSnapshot,
   removeTeamFromCurrent,
   ensureTeamCount,
-  emptyRole: makeEmptyRole,
 } = useLineups()
 
 const {
+  groups,
   currentGroup,
+  currentGroupIndex,
+  setCurrentGroup,
   replaceGroups,
   regenerateCurrentGroupId,
   resetToDefault: resetGroupsToDefault,
+  appendTeamToGroup,
+  addGroup,
 } = useGroups()
 
 const {
-  myProposals,
-  publicProposals,
-  loadingMine: loadingMyProposals,
-  loadingPublic: loadingPublicProposals,
-  refreshMine: refreshMyProposals,
-  refreshPublic: refreshPublicProposals,
   createFromLineup: createProposalFromLineup,
 } = useProposals()
 
@@ -218,7 +218,13 @@ const authDialogVisible = dialogs.useDialog('auth')
 const mobileDetailVisible = dialogs.useDialog('mobile-slot-detail')
 const mobileSidebarVisible = dialogs.useDialog('mobile-team-drawer')
 const createProposalDialogVisible = dialogs.useDialog('create-proposal')
-const importProposalDialogVisible = dialogs.useDialog('import-proposal')
+const exportTeamDialogVisible = dialogs.useDialog('export-team-to-group')
+const importFromLinkDialogVisible = dialogs.useDialog('import-from-link')
+
+// Snapshot the team to export at the moment the user clicks the menu entry.
+// Captured here (not read live) so the dialog can sit open across edits to
+// the live team without the snapshot mutating underneath the user.
+const exportTeamSource = ref<ExportSource | null>(null)
 
 const activeTab = ref<'heroes' | 'skills'>('heroes')
 
@@ -670,104 +676,176 @@ const onSubmitProposal = async (payload: { name: string; description: string; is
   }
 }
 
-const onAddToGroup = () => {
-  // Group-full is no longer a hard block — overwrite-current-team is always
-  // available as an alternative target. The dialog renders its radio
-  // accordingly.
-  importProposalDialogVisible.value = true
-  refreshMyProposals()
-}
-
-const onImportProposalTabChange = (tab: 'mine' | 'public') => {
-  if (tab === 'public' && publicProposals.value.length === 0) {
-    refreshPublicProposals()
+// Export-to-group: snapshot the focused team and open the picker. The
+// destination dialog excludes the current group (via currentGroup.id), so
+// the user only ever picks "somewhere else". Deep-clone here so a later
+// edit to the live team can't mutate the snapshot held by the dialog.
+const onExportTeamToOtherGroup = () => {
+  if (groups.length <= 1) {
+    ElMessage.info('尚無其他編組，請先在「我的編組」建立新編組')
+    return
   }
+  const live = currentLineup.value
+  const cloned: Lineup = JSON.parse(JSON.stringify(live))
+  exportTeamSource.value = { team: cloned, displayName: live.name }
+  exportTeamDialogVisible.value = true
 }
 
-const onImportProposal = (payload: {
-  proposal: Proposal
+const onExportTeamConfirmed = ({
+  destGroupIdx,
+  resolution,
+}: {
+  destGroupIdx: number
   resolution: ImportConflictResolution
-  target: ImportTarget
 }) => {
-  const { proposal, resolution, target } = payload
-
-  // Deep-clone so the proposal's frozen team blob never aliases into our
-  // reactive state — subsequent mutations would otherwise leak back to the
-  // proposal object cached in useProposals.myProposals / publicProposals.
-  const team: Lineup = JSON.parse(JSON.stringify(proposal.team))
-
-  // Collision pool: hero AND skill names already in OTHER teams. When
-  // overwriting the current team, skip it (it's about to be replaced).
-  const heroPool = new Set<string>()
-  const skillPool = new Set<string>()
-  lineups.forEach((l, i) => {
-    if (target === 'overwrite' && i === currentTeamIndex.value) return
-    for (const role of ['main', 'vice1', 'vice2'] as const) {
-      const r = l[role]
-      if (r.hero) heroPool.add(r.hero.name)
-      if (r.skill1) skillPool.add(r.skill1.name)
-      if (r.skill2) skillPool.add(r.skill2.name)
-    }
-  })
-
-  if (resolution === 'leave-empty') {
-    // Drop the colliding piece (hero whole role; skill just that slot) so
-    // the imported team lands without stomping originals. Hero clear
-    // implicitly drops the role's skills too — skill checks below are then
-    // skipped via `continue` against the now-stale local `r`.
-    for (const role of ['main', 'vice1', 'vice2'] as const) {
-      const r = team[role]
-      if (r?.hero && heroPool.has(r.hero.name)) {
-        team[role] = makeEmptyRole()
-        continue  // load-bearing: r is stale after the assignment above
-      }
-      if (r?.skill1 && skillPool.has(r.skill1.name)) r.skill1 = null
-      if (r?.skill2 && skillPool.has(r.skill2.name)) r.skill2 = null
-    }
-  } else if (resolution === 'overwrite') {
-    // Mirror image: clear the same piece on the originating team(s) so the
-    // imported team lands intact.
-    const incomingHeroes = new Set<string>()
-    const incomingSkills = new Set<string>()
-    for (const role of ['main', 'vice1', 'vice2'] as const) {
-      const r = team[role]
-      if (r?.hero) incomingHeroes.add(r.hero.name)
-      if (r?.skill1) incomingSkills.add(r.skill1.name)
-      if (r?.skill2) incomingSkills.add(r.skill2.name)
-    }
-    lineups.forEach((l, i) => {
-      if (target === 'overwrite' && i === currentTeamIndex.value) return
-      for (const role of ['main', 'vice1', 'vice2'] as const) {
-        const r = l[role]
-        if (r.hero && incomingHeroes.has(r.hero.name)) {
-          l[role] = makeEmptyRole()
-          continue  // see leave-empty branch — r is stale after this
-        }
-        if (r.skill1 && incomingSkills.has(r.skill1.name)) r.skill1 = null
-        if (r.skill2 && incomingSkills.has(r.skill2.name)) r.skill2 = null
-      }
-    })
+  const src = exportTeamSource.value
+  if (!src) return
+  const destGroup = groups[destGroupIdx]
+  if (!destGroup) return
+  applyConflictResolution(src.team, destGroup.teams, resolution)
+  // Branch on isCurrent so the lineups mirror stays in lockstep when the
+  // destination IS the active group. The dialog's excludeGroupId pre-filter
+  // makes this benign in normal flow, but cross-tab edits between dialog
+  // open and confirm could shift `currentGroupIndex` into the picked slot —
+  // mirror the ProposalsView pattern so the call site is structurally
+  // correct regardless of UX guards above it.
+  const isCurrent = destGroupIdx === currentGroupIndex.value
+  const ok = isCurrent
+    ? addTeamFromSnapshot(src.team)
+    : appendTeamToGroup(destGroupIdx, src.team)
+  if (!ok) {
+    ElMessage.error('該編組已滿，無法加入')
+    return
   }
+  flushLocalAutosave()
+  exportTeamSource.value = null
+  ElMessage.success(`已將「${src.displayName}」匯入到「${destGroup.name}」`)
+}
 
-  if (target === 'append') {
-    if (!addTeamFromSnapshot(team)) {
-      ElMessage.error('當前隊組已滿，無法加入')
+// Surface healing aggregate as a single info toast — share blobs created on
+// older data versions may reference renamed hero/skill keys; the hydrator
+// resets unresolvable roles to empty (see lineupSerialize.restoreRoleInto),
+// and the count tells the user how many entries were dropped.
+const reportHealedFromImport = (healed: string[]): void => {
+  if (healed.length === 0) return
+  ElMessage.warning(`已自動清除 ${healed.length} 個無法解析的英雄或戰法（資料版本差異）`)
+}
+
+const onImportFromLink = (payload: ImportFromLinkPayload) => {
+  if (payload.kind === 'set') {
+    // Replace-on-pristine: when the user's local state is the post-reset
+    // default (single empty 預設 group, empty inventory), the imported
+    // groups REPLACE local rather than appending. This avoids leaving a
+    // dead empty placeholder at index 0 — without it, a later cloud restore
+    // would land currentGroupIndex on the placeholder instead of the user's
+    // real content (the "login lands on empty default" bug).
+    if (isPristineDefaultState()) {
+      const next = payload.groups.map((ig) => ({
+        name: ig.name,
+        teams: ig.teams.slice(0, MAX_TEAMS_PER_GROUP).map(
+          (t) => JSON.parse(JSON.stringify(t)) as Lineup,
+        ),
+      }))
+      const truncated = payload.groups.reduce(
+        (n, ig) => n + Math.max(0, ig.teams.length - MAX_TEAMS_PER_GROUP),
+        0,
+      )
+      replaceGroups(next)
+      // replaceGroups defaults currentGroupIndex to 0 — that's the first
+      // imported group, which is what we want here.
+      flushLocalAutosave()
+      reportHealedFromImport(payload.healed)
+      if (truncated > 0) {
+        ElMessage.warning(`已匯入 ${next.length} 個編組，但有 ${truncated} 支隊伍因容量上限被略過`)
+      } else {
+        ElMessage.success(`已匯入 ${next.length} 個編組`)
+      }
       return
     }
-  } else {
-    // Overwrite in place — preserve the existing team's name (the user's
-    // mental label) and replace the three role payloads. Mutating fields
-    // individually keeps the same proxy identity that LineupSlot is bound to.
-    const dest = currentLineup.value
-    dest.main = team.main
-    dest.vice1 = team.vice1
-    dest.vice2 = team.vice2
+    // Otherwise: append each incoming group as a NEW group. Prefix with
+    // "匯入-" when the display name collides with an existing group — keeps
+    // the picker unambiguous on subsequent edits.
+    const existing = new Set(groups.map((g) => g.name))
+    let firstNewIdx: number | null = null
+    let added = 0
+    let truncated = 0
+    for (const ig of payload.groups) {
+      const finalName = existing.has(ig.name) ? `匯入-${ig.name}` : ig.name
+      const newIdx = addGroup(finalName)
+      if (firstNewIdx === null) firstNewIdx = newIdx
+      existing.add(finalName)
+      // Push teams into the new group. appendTeamToGroup honors
+      // MAX_TEAMS_PER_GROUP — log a truncation hint if any team is dropped.
+      let pushed = 0
+      for (const t of ig.teams) {
+        const clone: Lineup = JSON.parse(JSON.stringify(t))
+        if (appendTeamToGroup(newIdx, clone)) {
+          pushed += 1
+        } else {
+          truncated += 1
+        }
+      }
+      if (pushed > 0) added += 1
+    }
+    // Switch to the first new group so the user sees their import immediately.
+    if (firstNewIdx !== null) setCurrentGroup(firstNewIdx)
+    flushLocalAutosave()
+    reportHealedFromImport(payload.healed)
+    if (truncated > 0) {
+      ElMessage.warning(`已新增 ${added} 個編組，但有 ${truncated} 支隊伍因容量上限被略過`)
+    } else {
+      ElMessage.success(`已新增 ${added} 個編組`)
+    }
+    return
+  }
+  // payload.kind === 'teams'
+  // Apply hero/skill conflict resolution against the destination (current)
+  // group BEFORE pushing. In overwrite mode the team about to be replaced is
+  // excluded from the pool — it's going away. Mutates each incoming clone
+  // and (for 'overwrite' resolution) the destination's other teams in place.
+  //
+  // Cascading mutation is intentional: applyConflictResolution rebuilds the
+  // collision pool internally on each call, so iteration N+1 sees the
+  // partially-mutated `lineups` from iteration N. The final state is
+  // order-independent (same hero cleared once is idempotent), but resist
+  // any "optimization" that pre-computes the pool once before the loop —
+  // that would re-introduce collisions the prior iteration just cleared.
+  const excludeIdx =
+    payload.action === 'overwrite' ? currentTeamIndex.value : undefined
+  const clones: Lineup[] = payload.teams.map(
+    (t) => JSON.parse(JSON.stringify(t)) as Lineup,
+  )
+  for (const clone of clones) {
+    applyConflictResolution(clone, lineups, payload.resolution, excludeIdx)
   }
 
-  importProposalDialogVisible.value = false
-  ElMessage.success(
-    `已將「${proposal.name}」${target === 'overwrite' ? '覆寫至' : '加入'}當前隊組`,
-  )
+  if (payload.action === 'overwrite') {
+    // Exactly one team picked (validated by the dialog). Mirror onImportProposal's
+    // role-level assignment so LineupSlot's bound proxies stay stable; the
+    // team name is taken from the incoming team.
+    const incoming = clones[0]
+    const dest = currentLineup.value
+    dest.name = incoming.name
+    dest.main = incoming.main
+    dest.vice1 = incoming.vice1
+    dest.vice2 = incoming.vice2
+    flushLocalAutosave()
+    reportHealedFromImport(payload.healed)
+    ElMessage.success('已覆寫當前顯示的隊伍')
+    return
+  }
+  // append
+  let added = 0
+  for (const clone of clones) {
+    if (addTeamFromSnapshot(clone)) added += 1
+  }
+  flushLocalAutosave()
+  reportHealedFromImport(payload.healed)
+  if (added === clones.length) {
+    ElMessage.success(`已加入 ${added} 支隊伍到當前編組`)
+  } else {
+    ElMessage.warning(`已加入 ${added} 支隊伍，剩餘因容量上限未加入`)
+  }
 }
 
 // Set by initFromHash when an incoming share is a v3 gacha-log snapshot.
@@ -859,6 +937,7 @@ const {
   enableAutosave,
   tryBootstrapCloudSync,
   flushLocalAutosave,
+  isPristineDefaultState,
   healingReport: autosaveHealingReport,
 } = useGroupPersistence()
 

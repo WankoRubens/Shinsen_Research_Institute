@@ -14,27 +14,19 @@
       </p>
 
       <div class="grid grid-cols-2 gap-3 mb-4">
-        <section class="version-card">
-          <header class="version-card__head">
-            <span class="version-card__tag">本地</span>
-            <span class="version-card__name font-brand truncate">{{ localGroup?.name ?? '—' }}</span>
-          </header>
-          <div class="version-card__meta">
+        <VersionCard :name="localGroup?.name ?? '—'" tag="本地">
+          <template #meta>
             <span><strong>{{ localTeamCount }}</strong> 隊</span>
             <span>Cost <strong>{{ localCost }}</strong></span>
-          </div>
-        </section>
+          </template>
+        </VersionCard>
 
-        <section class="version-card">
-          <header class="version-card__head">
-            <span class="version-card__tag version-card__tag--cloud">雲端</span>
-            <span class="version-card__name font-brand truncate">{{ ctx.serverRow.name }}</span>
-          </header>
-          <div class="version-card__meta">
+        <VersionCard :name="ctx.serverRow.name" tag="雲端" tag-variant="highlight">
+          <template #meta>
             <span><strong>{{ serverTeamCount }}</strong> 隊</span>
             <span>更新於 {{ serverUpdatedLabel }}</span>
-          </div>
-        </section>
+          </template>
+        </VersionCard>
       </div>
 
       <p class="text-[11px] text-ink-mute mb-4 leading-relaxed">
@@ -63,6 +55,7 @@ import { useGroups } from '../../composables/useGroups'
 import { useGroupPersistence } from '../../composables/useGroupPersistence'
 import { isEmptyTeam } from '../../composables/useLineups'
 import { isEmptyShareableLineup } from '../../lib/lineupSerialize'
+import VersionCard from '../preview/VersionCard.vue'
 
 const {
   cloudConflict,
@@ -150,54 +143,3 @@ const onDefer = () => {
 }
 </script>
 
-<style scoped>
-.version-card {
-  background: #ffffff;
-  border: 1px solid rgb(var(--color-divider));
-  border-radius: 8px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-.version-card__head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-.version-card__tag {
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 1px 6px;
-  border-radius: 2px;
-  color: rgb(var(--color-ink-soft, 71 85 105));
-  background: rgb(var(--color-surface-muted));
-  border: 1px solid rgb(var(--color-divider));
-}
-.version-card__tag--cloud {
-  color: rgb(var(--color-focus));
-  background: rgb(var(--color-highlight));
-  border-color: rgb(var(--color-focus) / 0.55);
-}
-.version-card__name {
-  font-size: 14px;
-  font-weight: 700;
-  color: rgb(var(--color-ink));
-  min-width: 0;
-}
-.version-card__meta {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: rgb(var(--color-ink-soft, 71 85 105));
-  font-variant-numeric: tabular-nums;
-}
-.version-card__meta strong {
-  color: rgb(var(--color-ink));
-  font-weight: 700;
-}
-</style>

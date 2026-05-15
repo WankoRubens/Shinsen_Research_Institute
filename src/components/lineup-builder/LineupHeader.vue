@@ -88,6 +88,9 @@
             <el-dropdown-item command="rename">
               <el-icon class="mr-1"><Edit /></el-icon> 重新命名
             </el-dropdown-item>
+            <el-dropdown-item command="import-from-link">
+              <el-icon class="mr-1"><Link /></el-icon> 由分享連結匯入…
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -220,7 +223,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Edit, Share, Delete, Menu, User, ArrowDown, Close, Check, Plus, CircleClose, StarFilled, Avatar, Setting } from '@element-plus/icons-vue'
+import { Edit, Share, Delete, Menu, User, ArrowDown, Close, Check, Plus, CircleClose, StarFilled, Avatar, Setting, Link } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { TROOP_TYPES, TROOP_LABELS } from '../../constants/traits'
 import type { TroopType } from '../../constants/traits'
@@ -255,6 +258,7 @@ const emit = defineEmits<{
   (e: 'apply-profile', id: string): void
   (e: 'unload-profile'): void
   (e: 'goto-profiles'): void
+  (e: 'import-from-link'): void
 }>()
 
 const { groups, currentGroup, currentGroupIndex, setCurrentGroup, addGroup, renameGroup } = useGroups()
@@ -299,6 +303,8 @@ const onGroupCommand = async (cmd: string) => {
     const newIdx = addGroup()
     setCurrentGroup(newIdx)
     ElMessage.success(`已建立並切換到 ${groups[newIdx].name}`)
+  } else if (cmd === 'import-from-link') {
+    emit('import-from-link')
   } else if (cmd === 'rename') {
     // Inline prompt — same pattern as the rename buttons inside MyGroups.vue
     // and MyProfilesPanel.vue. Validates non-empty + length cap; ESC / cancel

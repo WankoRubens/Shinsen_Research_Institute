@@ -89,16 +89,16 @@
         <el-icon :size="14"><Document /></el-icon>
         <span>另存為精選隊伍</span>
       </button>
-      <button class="action-row" @click="$emit('add-to-group')">
-        <el-icon :size="14"><Plus /></el-icon>
-        <span>加入編組</span>
+      <button class="action-row" @click="$emit('export-to-group')">
+        <el-icon :size="14"><Position /></el-icon>
+        <span>導出到其他編組</span>
       </button>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { Share, Document, Plus, Delete } from '@element-plus/icons-vue'
+import { Share, Document, Plus, Delete, Position } from '@element-plus/icons-vue'
 import { type Lineup, isEmptyTeam } from '../../composables/useLineups'
 import { MAX_TEAMS_PER_GROUP } from '../../composables/useGroups'
 
@@ -112,7 +112,7 @@ defineEmits<{
   (e: 'add-team'): void
   (e: 'share'): void
   (e: 'save-as-proposal'): void
-  (e: 'add-to-group'): void
+  (e: 'export-to-group'): void
   (e: 'remove-team', idx: number): void
 }>()
 

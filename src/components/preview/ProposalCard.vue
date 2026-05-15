@@ -13,23 +13,33 @@
           <span class="dot">·</span>
           {{ relativeTime(proposal.updatedAt) }}
         </span>
-        <button
-          type="button"
-          class="vote-btn"
-          :class="{ 'vote-btn--on': voted, 'vote-btn--disabled': !canVote }"
-          :disabled="!canVote"
-          @click="$emit('vote')"
-        >
-          <el-icon :size="14"><CaretTop /></el-icon>
-          <span>{{ proposal.voteCount }}</span>
-        </button>
+        <div class="actions">
+          <button
+            type="button"
+            class="action-btn"
+            @click="$emit('import-to-group')"
+          >
+            <el-icon :size="14"><Plus /></el-icon>
+            <span>匯入到編組</span>
+          </button>
+          <button
+            type="button"
+            class="action-btn"
+            :class="{ 'action-btn--on': voted, 'action-btn--disabled': !canVote }"
+            :disabled="!canVote"
+            @click="$emit('vote')"
+          >
+            <el-icon :size="14"><CaretTop /></el-icon>
+            <span>{{ proposal.voteCount }}</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { CaretTop } from '@element-plus/icons-vue'
+import { CaretTop, Plus } from '@element-plus/icons-vue'
 import type { Proposal } from '../../types/group'
 import { relativeTime } from '../../lib/time'
 import TeamPreviewCard from './TeamPreviewCard.vue'
@@ -39,7 +49,10 @@ defineProps<{
   voted: boolean
   canVote: boolean
 }>()
-defineEmits<{ (e: 'vote'): void }>()
+defineEmits<{
+  (e: 'vote'): void
+  (e: 'import-to-group'): void
+}>()
 </script>
 
 <style scoped>
@@ -73,7 +86,12 @@ defineEmits<{ (e: 'vote'): void }>()
   color: rgb(var(--color-ink-mute));
 }
 .dot { margin: 0 4px; }
-.vote-btn {
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.action-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -87,16 +105,16 @@ defineEmits<{ (e: 'vote'): void }>()
   transition: background 0.15s, border-color 0.15s, color 0.15s;
   font-variant-numeric: tabular-nums;
 }
-.vote-btn:hover:not(.vote-btn--disabled) {
+.action-btn:hover:not(.action-btn--disabled) {
   background: rgb(var(--color-highlight));
   border-color: rgb(var(--color-focus));
 }
-.vote-btn--on {
+.action-btn--on {
   background: #fef3c7;
   border-color: #f59e0b;
   color: #b45309;
 }
-.vote-btn--disabled {
+.action-btn--disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }

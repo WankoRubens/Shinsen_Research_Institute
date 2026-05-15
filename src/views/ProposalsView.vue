@@ -42,6 +42,7 @@
                 :voted="myVotes.has(p.id)"
                 :can-vote="isLoggedIn"
                 @vote="onVote(p.id)"
+                @import-to-group="onImportToGroup(p)"
               />
             </div>
           </div>
@@ -66,12 +67,21 @@
                 :proposal="p"
                 :voted="myVotes.has(p.id)"
                 :can-vote="false"
+                @import-to-group="onImportToGroup(p)"
               />
             </div>
           </div>
         </el-tab-pane>
       </el-tabs>
     </div>
+
+    <ExportTeamToGroupDialog
+      v-model="exportDialogVisible"
+      variant="import"
+      :source="exportSource"
+      :default-group-id="currentGroup?.id"
+      @exported="onExported"
+    />
   </div>
 </template>
 
@@ -81,8 +91,15 @@ import { ElMessage } from 'element-plus'
 import { useProposals } from '../composables/useProposals'
 import { useAuth } from '../composables/useAuth'
 import { useData } from '../composables/useData'
-import type { Proposal } from '../types/group'
+import { useGroups } from '../composables/useGroups'
+import { useGroupPersistence } from '../composables/useGroupPersistence'
+import { useDialogs } from '../composables/useDialogs'
+import { useLineups } from '../composables/useLineups'
+import type { Proposal, ImportConflictResolution } from '../types/group'
+import type { Lineup } from '../composables/useLineups'
+import { applyConflictResolution } from '../lib/teamConflicts'
 import ProposalCard from '../components/preview/ProposalCard.vue'
+import ExportTeamToGroupDialog, { type ExportSource } from '../components/dialogs/ExportTeamToGroupDialog.vue'
 
 const { isLoggedIn } = useAuth()
 const { heroes } = useData()
@@ -143,6 +160,56 @@ const onVote = async (id: string) => {
   } catch (e) {
     ElMessage.error(`投票失敗：${(e as Error).message}`)
   }
+}
+
+// Export-to-group: parameterize the shared dialog with the proposal's team
+// snapshot. excludeGroupId is intentionally omitted — from the proposal page,
+// every local group is a valid destination including whatever is currently
+// active in the builder.
+const dialogs = useDialogs()
+const { groups, currentGroup, currentGroupIndex, appendTeamToGroup } = useGroups()
+const { addTeamFromSnapshot } = useLineups()
+const { flushLocalAutosave } = useGroupPersistence()
+const exportDialogVisible = dialogs.useDialog('export-team-to-group')
+const exportSource = ref<ExportSource | null>(null)
+
+const onImportToGroup = (p: Proposal) => {
+  // Deep-clone so the proposal's frozen team blob never aliases reactive state.
+  const team: Lineup = JSON.parse(JSON.stringify(p.team))
+  exportSource.value = { team, displayName: p.name }
+  exportDialogVisible.value = true
+}
+
+const onExported = ({
+  destGroupIdx,
+  resolution,
+}: {
+  destGroupIdx: number
+  resolution: ImportConflictResolution
+}) => {
+  const src = exportSource.value
+  if (!src) return
+  const destGroup = groups[destGroupIdx]
+  if (!destGroup) return
+  applyConflictResolution(src.team, destGroup.teams, resolution)
+  // When the destination is the currently active group, route through
+  // useLineups.addTeamFromSnapshot so the lineups mirror stays in lockstep.
+  // appendTeamToGroup only mutates groups[idx].teams — it doesn't fire the
+  // currentGroup watcher (in-place push doesn't change group identity), so a
+  // direct call leaves the builder's team list stale until the user switches
+  // groups and back. Routing through useLineups for the current-group case
+  // keeps the new team visible immediately.
+  const isCurrent = destGroupIdx === currentGroupIndex.value
+  const ok = isCurrent
+    ? addTeamFromSnapshot(src.team)
+    : appendTeamToGroup(destGroupIdx, src.team)
+  if (!ok) {
+    ElMessage.error('該編組已滿，無法加入')
+    return
+  }
+  flushLocalAutosave()
+  exportSource.value = null
+  ElMessage.success(`已將「${src.displayName}」匯入到「${destGroup.name}」`)
 }
 </script>
 

@@ -45,8 +45,8 @@ export const MAX_TEAMS_PER_GROUP = 10
  * - 'leave-empty': place the imported team but null out any role whose hero
  *   collides; the existing team keeps its hero.
  *
- * Surface in `ImportProposalDialog`. Phase 6 reuses this in the proposals
- * page when "加入編組" is initiated from outside the LineupBuilder.
+ * Surface in `ExportTeamToGroupDialog` (shared between LineupBuilder's
+ * "導出到其他編組" entrypoint and the ProposalsView "匯入到編組" button).
  */
 export type ImportConflictResolution = 'cancel' | 'overwrite' | 'leave-empty'
 

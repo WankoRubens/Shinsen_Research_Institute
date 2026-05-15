@@ -50,6 +50,7 @@ import { useGroups } from './useGroups'
 import { useLineups, isEmptyTeam, type Lineup } from './useLineups'
 import { useInventory } from './useInventory'
 import { useAuth } from './useAuth'
+import { useDialogs } from './useDialogs'
 import {
   applyBlobToState,
   isEmptyShareableLineup,
@@ -260,6 +261,16 @@ const isEmptyGroupSet = (groups: { teams: Lineup[] }[]): boolean => {
     }
   }
   return true
+}
+
+// Index of the first group whose teams are not ALL empty. Used to bias the
+// active group toward content the user can actually see after a cloud restore
+// — without it, `replaceGroups`'s default of index 0 can land on a leftover
+// pristine "預設" placeholder while the user's real imported group sits at
+// index 1 (silent restore after share-link → logout → reset → login).
+const firstNonEmptyGroupIndex = (groups: { teams: Lineup[] }[]): number => {
+  const idx = groups.findIndex((g) => g.teams.some((t) => !isEmptyTeam(t)))
+  return idx === -1 ? 0 : idx
 }
 
 // Build the v4 ShareableData blob from the current live state. Pure with
@@ -547,6 +558,12 @@ const applyCloudRowsToLocal = (rows: CloudLineupGroup[]): void => {
   // data back to cloud (harmless but wasteful) before the meta map is set up.
   suppressWritesUntil = Date.now() + SUPPRESS_WINDOW_MS
   applyBlobToLiveState(blob)
+  // Bias currentGroupIndex toward the first non-empty group. The blob from
+  // cloud has no `active_group_index` (cloud schema doesn't persist it), so
+  // applyBlobToLiveState leaves the freshly-replaced groups pointed at
+  // index 0 — which is wrong when index 0 is a leftover empty placeholder.
+  const { groups, setCurrentGroup } = useGroups()
+  setCurrentGroup(firstNonEmptyGroupIndex(groups))
   // Rebuild the client_id ↔ cloudId meta map from the rows we just loaded.
   cloudGroupsByClientId.clear()
   for (const r of rows) {
@@ -1056,11 +1073,15 @@ const enableAutosave = (): void => {
       if (!msg || msg.type !== 'saved') return
       if (msg.device_id !== ourDeviceId) return
       if (msg.gen <= localGen) return
-      // While a merge / conflict dialog is open, ignore cross-tab updates —
-      // the dialog's snapshot would diverge from live state mid-decision,
+      // While a merge / conflict / import dialog is open, ignore cross-tab
+      // updates — the dialog's snapshot (capacity calc, hydrated teams,
+      // local-name collision set) would diverge from live state mid-decision,
       // and resolving with the diverged snapshot would silently discard
       // edits made in the other tab.
       if (cloudMerge.value || cloudConflict.value) return
+      const { active } = useDialogs()
+      if (active.value === 'import-from-link') return
+      if (active.value === 'export-team-to-group') return
       suppressWritesUntil = Date.now() + SUPPRESS_WINDOW_MS
       applyBlobFromStorage()
     }
@@ -1097,6 +1118,7 @@ export interface UseGroupPersistence {
   enableAutosave: () => void
   disableAutosave: () => void
   clearStoredGroups: () => void
+  isPristineDefaultState: () => boolean
   healingReport: typeof healingReport
   // Phase C
   cloudSyncEnabled: typeof cloudSyncEnabled
@@ -1122,6 +1144,7 @@ export function useGroupPersistence(): UseGroupPersistence {
     enableAutosave,
     disableAutosave,
     clearStoredGroups,
+    isPristineDefaultState,
     healingReport,
     cloudSyncEnabled,
     cloudStatus,
