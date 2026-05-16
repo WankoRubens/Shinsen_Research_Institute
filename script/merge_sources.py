@@ -49,14 +49,15 @@ from paths import (
 # cfg.skill_kind buckets per source kind. cfg.skill[] is a flat array
 # distinguished by `skill_kind`. We only consider the kinds that map onto
 # the corresponding user yaml.
-SKILL_KINDS = {"主动", "被动", "指挥", "突击", "战前", "阵法", "兵种"}
+SKILL_KINDS = {"主动", "被动", "指挥", "突击", "阵法", "兵种"}
 TRAIT_KINDS = {"特性"}
 BINGXUE_KINDS = {"天赋"}
 ASSEMBLY_KINDS = {"评定众"}
 
-# Out-of-scope kinds (装備特技 + UI). merge_sources.py never produces
-# entries for these. See refactor plan section "Resolved Decisions".
-OUT_OF_SCOPE_KINDS = {"特技", "卡框"}
+# Out-of-scope kinds. 战前 = pre-battle/round-scheduled skills (疾行, 守御,
+# 齊射, 破軍 etc.) that aren't user-selectable in the lineup builder. 特技 =
+# 装備特技 + UI 卡框. merge_sources.py never produces entries for these.
+OUT_OF_SCOPE_KINDS = {"特技", "卡框", "战前"}
 
 # Roman numeral normalization for matching cfg.skill.name vs multi_lang.
 ROMAN_MAP = {

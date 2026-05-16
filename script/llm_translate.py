@@ -27,9 +27,9 @@ from pathlib import Path
 from tqdm import tqdm
 
 from llm_core import (
-    CANONICAL_STATUSES, COMMON_RULES, SKILL_TAGS, SKILL_OUTPUT_FORMAT,
+    CANONICAL_STATUSES, COMMON_RULES, SKILL_OUTPUT_FORMAT,
     DEFAULT_MODEL, MODEL_FREE, MODEL_GEMMA, MODEL_HAIKU, MODEL_SONNET,
-    call_llm, parse_llm_output, autofix_frontend, has_kana,
+    call_llm, parse_llm_output, has_kana,
     validate_skill_entry, validate_trait_entry, validate_bingxue_entry,
     validate_entry_quality,
     load_llm_cache, save_llm_cache, save_raw_cache,

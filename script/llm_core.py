@@ -38,6 +38,7 @@ CANONICAL_STATUSES = (
     "洞察 免疫 "
     "援護 挑釁 牽制"
 )
+_CANONICAL_STATUS_SET = frozenset(CANONICAL_STATUSES.split())
 
 SKILL_TAGS = (
     "兵刃傷害 謀略傷害 真實傷害 "
@@ -140,6 +141,9 @@ Output ONLY valid YAML. No markdown fences. No explanation."""
 _OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 _http_client: httpx.Client | None = None
 
+# Token usage accumulator (referenced inside call_llm)
+_token_totals: dict[str, int] = {"prompt": 0, "completion": 0, "cached": 0, "calls": 0}
+
 
 def _get_client() -> httpx.Client:
     global _http_client
@@ -220,10 +224,6 @@ def call_llm(
             tqdm.write(f"    [cache] {cached} tokens read from cache")
 
     return data["choices"][0]["message"]["content"].strip()
-
-
-# Token usage accumulator
-_token_totals: dict[str, int] = {"prompt": 0, "completion": 0, "cached": 0, "calls": 0}
 
 
 def reset_token_totals():
@@ -655,8 +655,7 @@ def validate_entry_quality(data: dict) -> list[str]:
     # 2. {var:X} references not in vars
     var_refs = re.findall(r'\{var:(\w+)\}', full_text)
     for ref in var_refs:
-        ref_key = ref.split(":")[0] if ":" in ref else ref
-        if ref_key not in vars_dict:
+        if ref not in vars_dict:
             errors.append(f"{{var:{ref}}} not in vars")
 
     # 3. base without max
@@ -692,10 +691,9 @@ def validate_entry_quality(data: dict) -> list[str]:
             errors.append("{var:}/{status:}/{scale:} found in battle (use $key)")
 
     # 8. {status:X} references non-canonical status names
-    _canonical = set(CANONICAL_STATUSES.split())
     status_refs = re.findall(r'\{status:([^}]+)\}', full_text)
     for sr in status_refs:
-        if sr not in _canonical:
+        if sr not in _CANONICAL_STATUS_SET:
             errors.append(f"{{status:{sr}}} is not a canonical status")
 
     return errors

@@ -46,7 +46,7 @@ CFG_AUTHORITATIVE = os.environ.get("CFG_AUTHORITATIVE", "1") == "1"
 # update both files.
 ZH_HANS_TO_HANT_TYPE = {
     "主动": "主動", "被动": "被動", "指挥": "指揮", "突击": "突擊",
-    "战前": "戰前", "阵法": "陣法", "兵种": "兵種",
+    "阵法": "陣法", "兵种": "兵種",
     "特性": "特性", "天赋": "天賦", "评定众": "評定眾",
 }
 
@@ -354,77 +354,76 @@ def _skill_stub_defaults(clean: dict) -> dict:
     return clean
 
 
-def apply_skill_overrides(
-    skills: list[dict], overrides: dict, cfg_fields_fn=None,
+def _apply_overrides(
+    items: list[dict],
+    overrides: dict,
+    stub_defaults_fn,
+    cfg_fields_fn=None,
 ) -> list[dict]:
-    """Apply skill overrides.
+    """Generic override applier shared by skills and heroes.
 
     Supported actions:
-      - `modify` (default): deep-merge into existing skill matched by dict key
-      - `add`: append new skill (key is JP or CHT name). Auto-dedups by same
-        `name` and honors the legacy `_replaces: <jp_name>` field.
-      - `replace`: drop existing skill matched by dict key (must be JP name),
-        then append the entry. The symmetric "delete-then-add" form.
-      - `delete`: remove existing skill matched by dict key.
+      - `modify` (default): deep-merge into existing item matched by dict key
+      - `add`: append new item. Auto-dedups via legacy `_replaces` field.
+      - `replace`: drop existing item matched by dict key, then append.
+      - `delete`: remove existing item matched by dict key.
 
-    `cfg_fields_fn(key)` (optional) returns a dict of fields to fill via
-    setdefault on `_action: add` clean entries. Override values still win;
-    cfg only fills missing fields.
+    `stub_defaults_fn(clean, key)` fills in default fields for added entries.
+    `cfg_fields_fn(key)` (optional) fills missing fields from cfg on add/replace.
     """
-    skill_index = {s["name"]: i for i, s in enumerate(skills)}
-    skill_index_jp = {s.get("name_jp"): i for i, s in enumerate(skills) if s.get("name_jp")}
+    name_index = {it["name"]: i for i, it in enumerate(items)}
+    jp_index = {it.get("name_jp"): i for i, it in enumerate(items) if it.get("name_jp")}
 
     def _find(key: str) -> int | None:
-        idx = skill_index.get(key)
-        return skill_index_jp.get(key) if idx is None else idx
+        idx = name_index.get(key)
+        return jp_index.get(key) if idx is None else idx
 
     def _drop(victim_key: str):
         idx = _find(victim_key)
-        if idx is not None and skills[idx] is not None:
-            skills[idx] = None
+        if idx is not None and items[idx] is not None:
+            items[idx] = None
 
-    def _fill_cfg(clean: dict, key: str) -> None:
-        if not cfg_fields_fn:
-            return
-        for field, cfg_val in (cfg_fields_fn(key) or {}).items():
-            clean.setdefault(field, cfg_val)
+    def _build_new(key: str, ov: dict) -> dict:
+        aliases = _normalize_replaces(ov.get("_replaces"))
+        for old in aliases:
+            _drop(old)
+        clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+        if aliases:
+            clean["aliases"] = aliases
+        if cfg_fields_fn:
+            for field, cfg_val in (cfg_fields_fn(key) or {}).items():
+                clean.setdefault(field, cfg_val)
+        return stub_defaults_fn(clean, key)
 
     for key, ov in overrides.items():
         action = ov.get("_action", "modify")
         if action == "delete":
             _drop(key)
-            continue
-        if action == "replace":
+        elif action == "replace":
             _drop(key)
-            aliases = _normalize_replaces(ov.get("_replaces"))
-            for old in aliases:
-                _drop(old)
-            clean = {k: v for k, v in ov.items() if not k.startswith("_")}
-            if aliases:
-                clean["aliases"] = aliases
-            _fill_cfg(clean, key)
-            skills.append(_skill_stub_defaults(clean))
-            continue
-        if action == "add":
+            items.append(_build_new(key, ov))
+        elif action == "add":
             # Only honor explicit _replaces. Duplicate-name detection is
             # check_build.py's job — silently dropping a same-named existing
             # entry here would mask typos.
-            aliases = _normalize_replaces(ov.get("_replaces"))
-            for old in aliases:
-                _drop(old)
-            clean = {k: v for k, v in ov.items() if not k.startswith("_")}
-            if aliases:
-                clean["aliases"] = aliases
-            _fill_cfg(clean, key)
-            skills.append(_skill_stub_defaults(clean))
-            continue
-        # modify: deep merge into existing skill
-        idx = _find(key)
-        if idx is not None:
-            clean = {k: v for k, v in ov.items() if not k.startswith("_")}
-            skills[idx] = deep_merge(skills[idx], clean)
+            items.append(_build_new(key, ov))
+        else:  # modify: deep merge into existing item
+            idx = _find(key)
+            if idx is not None:
+                clean = {k: v for k, v in ov.items() if not k.startswith("_")}
+                items[idx] = deep_merge(items[idx], clean)
 
-    return [s for s in skills if s is not None]
+    return [it for it in items if it is not None]
+
+
+def apply_skill_overrides(
+    skills: list[dict], overrides: dict, cfg_fields_fn=None,
+) -> list[dict]:
+    return _apply_overrides(
+        skills, overrides,
+        stub_defaults_fn=lambda clean, _key: _skill_stub_defaults(clean),
+        cfg_fields_fn=cfg_fields_fn,
+    )
 
 
 def _hero_stub_defaults(clean: dict, key: str) -> dict:
@@ -448,71 +447,11 @@ def _hero_stub_defaults(clean: dict, key: str) -> dict:
 def apply_hero_overrides(
     heroes: list[dict], overrides: dict, cfg_fields_fn=None,
 ) -> list[dict]:
-    """Apply hero overrides.
-
-    Supported actions:
-      - `modify` (default): deep-merge into existing hero matched by dict key
-      - `add`: append new hero. Honors legacy `_replaces: <jp_name>` and
-        auto-dedups by same `name`.
-      - `replace`: drop existing hero matched by dict key (must be JP name)
-        then append the new entry. Symmetric delete-then-add.
-      - `delete`: remove existing hero matched by dict key.
-
-    `cfg_fields_fn(key)` (optional) returns a dict of fields to fill via
-    setdefault on `_action: add` clean entries. Override values still win;
-    cfg only fills missing fields.
-    """
-    hero_index = {h["name"]: i for i, h in enumerate(heroes)}
-    hero_index_jp = {h.get("name_jp"): i for i, h in enumerate(heroes) if h.get("name_jp")}
-
-    def _find(key: str) -> int | None:
-        idx = hero_index.get(key)
-        return hero_index_jp.get(key) if idx is None else idx
-
-    def _drop(victim_key: str):
-        idx = _find(victim_key)
-        if idx is not None and heroes[idx] is not None:
-            heroes[idx] = None
-
-    def _fill_cfg(clean: dict, key: str) -> None:
-        if not cfg_fields_fn:
-            return
-        for field, cfg_val in (cfg_fields_fn(key) or {}).items():
-            clean.setdefault(field, cfg_val)
-
-    for key, ov in overrides.items():
-        action = ov.get("_action", "modify")
-        if action == "delete":
-            _drop(key)
-            continue
-        if action == "replace":
-            _drop(key)
-            aliases = _normalize_replaces(ov.get("_replaces"))
-            for old in aliases:
-                _drop(old)
-            clean = {k: v for k, v in ov.items() if not k.startswith("_")}
-            if aliases:
-                clean["aliases"] = aliases
-            _fill_cfg(clean, key)
-            heroes.append(_hero_stub_defaults(clean, key))
-            continue
-        if action == "add":
-            aliases = _normalize_replaces(ov.get("_replaces"))
-            for old in aliases:
-                _drop(old)
-            clean = {k: v for k, v in ov.items() if not k.startswith("_")}
-            if aliases:
-                clean["aliases"] = aliases
-            _fill_cfg(clean, key)
-            heroes.append(_hero_stub_defaults(clean, key))
-            continue
-        # modify
-        idx = _find(key)
-        if idx is not None:
-            clean = {k: v for k, v in ov.items() if not k.startswith("_")}
-            heroes[idx] = deep_merge(heroes[idx], clean)
-
-    return [h for h in heroes if h is not None]
+    return _apply_overrides(
+        heroes, overrides,
+        stub_defaults_fn=_hero_stub_defaults,
+        cfg_fields_fn=cfg_fields_fn,
+    )
 
 
 def ensure_str(val) -> str:
