@@ -265,6 +265,19 @@ const onImportToGroup = (p: Proposal) => {
   exportDialogVisible.value = true
 }
 
+// Suffix `(2)`, `(3)`... if `desired` collides with any name in `taken`.
+// Strips an existing `(N)` suffix from desired first so re-imports of the
+// same proposal don't accumulate `(2) (2) (2)`.
+const uniqueTeamName = (desired: string, taken: string[]): string => {
+  const base = desired.replace(/\s*\(\d+\)\s*$/, '').trim() || desired
+  if (!taken.includes(base)) return base
+  for (let n = 2; n < 100; n++) {
+    const candidate = `${base} (${n})`
+    if (!taken.includes(candidate)) return candidate
+  }
+  return `${base} (${Date.now()})`
+}
+
 const onExported = ({
   destGroupIdx,
   resolution,
@@ -277,6 +290,11 @@ const onExported = ({
   const destGroup = groups[destGroupIdx]
   if (!destGroup) return
   applyConflictResolution(src.team, destGroup.teams, resolution)
+  // Use the proposal title as the imported team's name, de-duped against
+  // teams already in the destination group. The team's own `name` (often
+  // the default "隊伍 N" from when the author saved it) is irrelevant to
+  // the importer; the proposal title is what they actually picked.
+  src.team.name = uniqueTeamName(src.displayName, destGroup.teams.map((t) => t.name))
   // When the destination is the currently active group, route through
   // useLineups.addTeamFromSnapshot so the lineups mirror stays in lockstep.
   // appendTeamToGroup only mutates groups[idx].teams — it doesn't fire the
