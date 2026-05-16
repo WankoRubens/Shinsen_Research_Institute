@@ -6,8 +6,8 @@ export interface Segment {
   data?: any
 }
 
-export const PLACEHOLDER_REGEX = /\{(\w+):([^\}]+)\}/g
-export const RANGE_REGEX = /(\d+(?:\.\d+)?%?)\s*(?:->|to|→)\s*(\d+(?:\.\d+)?%?)/g
+const PLACEHOLDER_REGEX = /\{(\w+):([^\}]+)\}/g
+const RANGE_REGEX = /(\d+(?:\.\d+)?%?)\s*(?:->|to|→)\s*(\d+(?:\.\d+)?%?)/g
 
 /**
  * 模板解析器 - 將技能描述中的 {type:content} 模板轉換為可渲染的segments
@@ -152,7 +152,5 @@ export function useTemplateParser() {
   return {
     parseText,
     parseTextToPlain,
-    PLACEHOLDER_REGEX,
-    RANGE_REGEX
   }
 }

@@ -1,6 +1,7 @@
 import { reactive, ref, computed, watch } from 'vue'
 import { Hero, Skill, BingxueDirection } from './useData'
-import { useGroups, MAX_TEAMS_PER_GROUP } from './useGroups'
+import { useGroups } from './useGroups'
+import { MAX_TEAMS_PER_GROUP } from '../types/group'
 
 // Active 兵學 selection for a hero. A hero activates ONE direction at a time,
 // picks 1 of 3 majors (1 pt), plus minors from 6 available using a 5-point budget.
@@ -194,14 +195,12 @@ const allUsedSkillNames = computed(() => {
   return names
 })
 
-const totalCost = computed(() => {
-  let cost = 0
-  const l = currentLineup.value
-  if (l.main.hero) cost += l.main.hero.cost
-  if (l.vice1.hero) cost += l.vice1.hero.cost
-  if (l.vice2.hero) cost += l.vice2.hero.cost
-  return cost
-})
+export const computeTeamCost = (team: Lineup): number =>
+  (team.main.hero?.cost ?? 0)
+  + (team.vice1.hero?.cost ?? 0)
+  + (team.vice2.hero?.cost ?? 0)
+
+const totalCost = computed(() => computeTeamCost(currentLineup.value))
 
 // Actions
 const swapRoles = (roleA: 'main' | 'vice1' | 'vice2', roleB: 'main' | 'vice1' | 'vice2') => {
@@ -245,7 +244,6 @@ export function useLineups() {
     allUsedHeroNames,
     allUsedSkillNames,
     totalCost,
-    emptyRole,
     clearLineup,
     swapRoles,
     addTeam,

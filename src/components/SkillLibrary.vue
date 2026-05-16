@@ -56,7 +56,7 @@
     </div>
 
     <!-- List -->
-    <div class="flex-1 overflow-y-auto p-0 md:p-2" v-loading="loading">
+    <div class="flex-1 overflow-y-auto p-0 md:p-2">
        <div v-if="filteredSkills.length === 0" class="text-center py-10 text-gray-400">
         無符合條件的戰法
       </div>
@@ -164,7 +164,7 @@ const props = defineProps({
 
 const emit = defineEmits(['select', 'update:ownedSkills', 'update:filterOwned', 'skill-drag-start', 'skill-drag-end'])
 
-const { skills, heroes, loading } = useData()
+const { skills, heroes } = useData()
 
 const teachersBySkill = computed(() => {
   const map = new Map<string, string[]>()

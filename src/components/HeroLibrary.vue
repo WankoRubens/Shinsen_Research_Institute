@@ -116,7 +116,7 @@
     </div>
 
     <!-- Grid -->
-    <div class="flex-1 overflow-y-auto p-0 md:p-2" v-loading="loading">
+    <div class="flex-1 overflow-y-auto p-0 md:p-2">
       <div v-if="filteredHeroes.length === 0" class="text-center py-10 text-gray-400">
         無符合條件的武將
       </div>
@@ -162,7 +162,7 @@ import { useData, Hero } from '../composables/useData'
 import { TROOP_TYPES } from '../constants/traits'
 import HeroCard from './HeroCard.vue'
 
-const { heroes, loading } = useData()
+const { heroes } = useData()
 const emit = defineEmits(['select', 'update:ownedHeroes', 'update:filterOwned'])
 
 const props = defineProps({

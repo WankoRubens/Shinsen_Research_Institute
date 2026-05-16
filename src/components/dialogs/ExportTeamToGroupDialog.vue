@@ -95,7 +95,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useGroups, MAX_TEAMS_PER_GROUP } from '../../composables/useGroups'
+import { useGroups } from '../../composables/useGroups'
+import { MAX_TEAMS_PER_GROUP } from '../../types/group'
 import type { Lineup } from '../../composables/useLineups'
 import type { ImportConflictResolution } from '../../types/group'
 import { buildCollisionPool, previewCollisions } from '../../lib/teamConflicts'
@@ -186,11 +187,19 @@ const selectedGroup = computed(() =>
 )
 const selectedGroupName = computed(() => selectedGroup.value?.name ?? '')
 
+// Pool depends only on the destination group's teams. Splitting it out
+// avoids rebuilding when the source team prop changes but the destination
+// stays the same.
+const collisionPool = computed(() => {
+  const g = selectedGroup.value
+  return g ? buildCollisionPool(g.teams) : null
+})
+
 const collisionPreview = computed<{ heroes: string[]; skills: string[] }>(() => {
   const t = props.source?.team
-  const g = selectedGroup.value
-  if (!t || !g) return { heroes: [], skills: [] }
-  return previewCollisions(t, buildCollisionPool(g.teams))
+  const pool = collisionPool.value
+  if (!t || !pool) return { heroes: [], skills: [] }
+  return previewCollisions(t, pool)
 })
 
 const hasAnyConflict = computed(

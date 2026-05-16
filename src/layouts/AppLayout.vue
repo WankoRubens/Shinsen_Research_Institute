@@ -61,6 +61,11 @@
          conflict needs resolving. -->
     <MergeOnSignInDialog />
     <CloudConflictDialog />
+
+    <!-- Auth + changelog dialogs. Layout-level so login / 更新紀錄 work
+         from every route, not just the lineup builder. -->
+    <ChangelogDialog v-model="changelogDialogVisible" />
+    <AuthDialog v-model="authDialogVisible" @sign-in="onSignIn" />
   </div>
 </template>
 
@@ -74,6 +79,8 @@ import PageHeader from '../components/layout/PageHeader.vue'
 import RenameDialog from '../components/dialogs/RenameDialog.vue'
 import MergeOnSignInDialog from '../components/dialogs/MergeOnSignInDialog.vue'
 import CloudConflictDialog from '../components/dialogs/CloudConflictDialog.vue'
+import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
+import AuthDialog from '../components/dialogs/AuthDialog.vue'
 import type { UserMenuCmd } from '../components/layout/UserControls.vue'
 import { useLineups } from '../composables/useLineups'
 import { useInventory } from '../composables/useInventory'
@@ -85,6 +92,7 @@ import { useDialogs } from '../composables/useDialogs'
 import { useChangelog } from '../composables/useChangelog'
 import { useData } from '../composables/useData'
 import { useGroupPersistence } from '../composables/useGroupPersistence'
+import { makeSerializer } from '../lib/lineupSerialize'
 import {
   createProfile, updateProfileInventory, type Profile,
 } from '../lib/profiles'
@@ -132,24 +140,37 @@ const {
   ownedHeroes,
   ownedSkills,
 } = useInventory()
-const { isLoggedIn, displayName, signOut, updateDisplayName } = useAuth()
+const { isLoggedIn, displayName, signIn, signOut, updateDisplayName } = useAuth()
 const {
   activeProfile, activeProfileName, applyProfile, unloadProfile, syncActiveProfile, clearActiveProfile,
 } = useActiveProfile()
 const { profiles, refresh: refreshProfiles } = useProfiles()
 const dialogs = useDialogs()
-const { hasUnseen: hasUnseenChangelog } = useChangelog()
+const { hasUnseen: hasUnseenChangelog, changelogDialogVisible } = useChangelog()
 const { heroes, skills } = useData()
-const { flushPendingCloudPush, flushLocalAutosave } = useGroupPersistence()
+const { flushPendingCloudPush, flushLocalAutosave, snapshotForRecovery } = useGroupPersistence()
 
-// CHT→JP name lookup so saved profiles stay translation-stable. Built once
-// per data load via computed; the same logic exists in MyProfilesPanel — could
-// be extracted to a shared util later (TODO post-i18n work).
-const heroChtToJp = computed(() => new Map(heroes.value.map(h => [h.name, h.name_jp])))
-const skillChtToJp = computed(() => new Map(skills.value.map(s => [s.name, s.name_jp])))
+const authDialogVisible = dialogs.useDialog('auth')
+
+// OAuth full-page redirect — snapshot in-progress lineup so the post-redirect
+// mount can restore it. Snapshot itself is harmless from non-lineup routes
+// (it just captures the current state, which on those routes is whatever
+// the user last had in the builder).
+const onSignIn = (provider: Parameters<typeof signIn>[0]) => {
+  authDialogVisible.value = false
+  snapshotForRecovery()
+  signIn(provider)
+}
+
+// CHT→JP name lookup so saved profiles stay translation-stable. Uses the
+// shared serializer factory (which also handles aliases) so the mapping
+// rules stay in one place — see lineupSerialize.ts.
+const serializer = computed(() =>
+  makeSerializer({ heroes: heroes.value, skills: skills.value }),
+)
 const inventoryAsJP = (h: string[], s: string[]): { inv_h: string[]; inv_s: string[] } => ({
-  inv_h: h.map(n => heroChtToJp.value.get(n) ?? n),
-  inv_s: s.map(n => skillChtToJp.value.get(n) ?? n),
+  inv_h: h.map(n => serializer.value.toJpHero(n) ?? n),
+  inv_s: s.map(n => serializer.value.toJpSkill(n) ?? n),
 })
 
 const onApplyProfile = (id: string) => {

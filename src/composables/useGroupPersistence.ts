@@ -275,7 +275,13 @@ const firstNonEmptyGroupIndex = (groups: { teams: Lineup[] }[]): number => {
 
 // Build the v4 ShareableData blob from the current live state. Pure with
 // respect to the state refs it reads.
-const buildBlob = (): ShareableData => {
+//
+// `bumpGen` controls whether localGen is incremented — set true on the
+// write paths (localStorage autosave, cloud upload, post-merge cloud push)
+// so cross-tab `gen` comparisons see fresh values; set false for read-only
+// snapshots (OAuth recovery, merge dialog context capture) so the counter
+// doesn't drift ahead of what was actually persisted.
+const buildBlob = (bumpGen = true): ShareableData => {
   const { heroes, skills } = useData()
   const { groups, currentGroupIndex } = useGroups()
   const { ownedHeroes, ownedSkills } = useInventory()
@@ -284,7 +290,7 @@ const buildBlob = (): ShareableData => {
     heroes: heroes.value,
     skills: skills.value,
   })
-  localGen += 1
+  if (bumpGen) localGen += 1
 
   return {
     v: 4,
@@ -336,6 +342,42 @@ const applyBlobToLiveState = (blob: ShareableData): void => {
     }
   }
   if (healed.length > 0) healingReport.value = healed
+}
+
+// OAuth-recovery snapshot ----------------------------------------------
+// Captures full live state under a 5-min TTL'd localStorage key, so the
+// post-redirect mount can restore everything the user had in flight.
+// Triggered by any view that initiates `signIn` (LineupBuilder /
+// AppLayout's UserControls). The restore side (consumeRecovery) is only
+// useful from LineupBuilder because applyBlobToLiveState writes back into
+// the lineup builder state graph.
+const RECOVERY_KEY = 'nobunaga.auth.recovery'
+const RECOVERY_TTL_MS = 5 * 60 * 1000
+
+const snapshotForRecovery = (): void => {
+  try {
+    localStorage.setItem(
+      RECOVERY_KEY,
+      JSON.stringify({ blob: buildBlob(false), ts: Date.now() }),
+    )
+  } catch {
+    // localStorage full / disabled — silent drop is fine, the user just
+    // loses their in-progress lineup if they actually complete OAuth.
+  }
+}
+
+const consumeRecovery = (): boolean => {
+  const raw = localStorage.getItem(RECOVERY_KEY)
+  if (!raw) return false
+  localStorage.removeItem(RECOVERY_KEY)
+  try {
+    const { blob, ts } = JSON.parse(raw) as { blob: ShareableData; ts: number }
+    if (Date.now() - ts > RECOVERY_TTL_MS) return false
+    applyBlobToLiveState(blob)
+    return true
+  } catch {
+    return false
+  }
 }
 
 // Build a ShareableData blob from a list of cloud rows. Mirror of the v4
@@ -700,8 +742,9 @@ const tryBootstrapCloudSync = async (): Promise<void> => {
   }
 
   // Both non-empty — needs explicit user choice. Dialog resolver handlers
-  // call syncCloudMetaToStorage on success.
-  const localBlob = buildBlob()
+  // call syncCloudMetaToStorage on success. ctx snapshot only — the actual
+  // writes happen inside the resolveMerge* handlers and bump gen there.
+  const localBlob = buildBlob(false)
   cloudMerge.value = { localBlob, cloudRows }
   cloudStatus.value = 'idle'
 }
@@ -1119,6 +1162,8 @@ export interface UseGroupPersistence {
   disableAutosave: () => void
   clearStoredGroups: () => void
   isPristineDefaultState: () => boolean
+  snapshotForRecovery: () => void
+  consumeRecovery: () => boolean
   healingReport: typeof healingReport
   // Phase C
   cloudSyncEnabled: typeof cloudSyncEnabled
@@ -1145,6 +1190,8 @@ export function useGroupPersistence(): UseGroupPersistence {
     disableAutosave,
     clearStoredGroups,
     isPristineDefaultState,
+    snapshotForRecovery,
+    consumeRecovery,
     healingReport,
     cloudSyncEnabled,
     cloudStatus,

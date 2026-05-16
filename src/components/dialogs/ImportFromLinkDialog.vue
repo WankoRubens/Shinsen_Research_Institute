@@ -208,7 +208,8 @@ import { Loading } from '@element-plus/icons-vue'
 import { loadShare, isShareEnabled } from '../../lib/share'
 import { hydrateShareableTeam } from '../../lib/lineupSerialize'
 import { useData } from '../../composables/useData'
-import { useGroups, MAX_TEAMS_PER_GROUP } from '../../composables/useGroups'
+import { useGroups } from '../../composables/useGroups'
+import { MAX_TEAMS_PER_GROUP } from '../../types/group'
 import { useLineups, isEmptyTeam, type Lineup } from '../../composables/useLineups'
 import type { ShareableData, ShareableLineup } from '../../constants/gameData'
 import type { ImportConflictResolution } from '../../types/group'
@@ -311,19 +312,22 @@ const isPickDisabled = (key: string): boolean => {
 // replaced is excluded from the pool — it's going away anyway. Dedup is
 // natural via Set inside buildCollisionPool + the union below.
 const { currentTeamIndex } = useLineups()
-const pickConflicts = computed<{ heroes: string[]; skills: string[] }>(() => {
-  if (mode.value !== 'pick' || pickedKeys.value.length === 0) {
-    return { heroes: [], skills: [] }
-  }
-  // Self-contained guard: overwrite is only meaningful with exactly 1 pick.
-  // The `togglePick` callback resets pickAction to 'append' on 2+ picks,
-  // but we re-assert that invariant here so this computed remains correct
-  // regardless of update ordering in Vue's reactive graph.
+
+// Pool only depends on lineups + which team (if any) is being overwritten.
+// Splitting it out from pickConflicts means re-picking doesn't rebuild it.
+const collisionPool = computed(() => {
   const excludeIdx =
     pickAction.value === 'overwrite' && pickedKeys.value.length === 1
       ? currentTeamIndex.value
       : undefined
-  const pool = buildCollisionPool(lineups, excludeIdx)
+  return buildCollisionPool(lineups, excludeIdx)
+})
+
+const pickConflicts = computed<{ heroes: string[]; skills: string[] }>(() => {
+  if (mode.value !== 'pick' || pickedKeys.value.length === 0) {
+    return { heroes: [], skills: [] }
+  }
+  const pool = collisionPool.value
   const heroes = new Set<string>()
   const skills = new Set<string>()
   for (const ft of flatTeams.value) {

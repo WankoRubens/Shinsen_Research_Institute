@@ -192,6 +192,7 @@ import {
 import { getOrCreateProfileShareSlug } from '../../composables/useProfiles'
 import { relativeTime } from '../../lib/time'
 import { loadShare } from '../../lib/share'
+import { makeSerializer } from '../../lib/lineupSerialize'
 import { useData } from '../../composables/useData'
 import { useInventory } from '../../composables/useInventory'
 import { useActiveProfile } from '../../composables/useActiveProfile'
@@ -223,12 +224,15 @@ const importUrl = ref('')
 const importName = ref('')
 const importLoading = ref(false)
 
-const heroChtToJp = computed(() => new Map(heroes.value.map(h => [h.name, h.name_jp])))
-const skillChtToJp = computed(() => new Map(skills.value.map(s => [s.name, s.name_jp])))
+// Share the serializer factory with AppLayout / LineupBuilder so alias
+// handling stays consistent across all CHT→JP profile-stable mappings.
+const serializer = computed(() =>
+  makeSerializer({ heroes: heroes.value, skills: skills.value }),
+)
 
 const currentInventoryAsJP = (): { inv_h: string[]; inv_s: string[] } => ({
-  inv_h: ownedHeroes.value.map(n => heroChtToJp.value.get(n) ?? n),
-  inv_s: ownedSkills.value.map(n => skillChtToJp.value.get(n) ?? n),
+  inv_h: ownedHeroes.value.map(n => serializer.value.toJpHero(n) ?? n),
+  inv_s: ownedSkills.value.map(n => serializer.value.toJpSkill(n) ?? n),
 })
 
 const safeRefresh = async () => {

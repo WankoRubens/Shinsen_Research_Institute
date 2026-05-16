@@ -118,7 +118,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Lineup } from '../../composables/useLineups'
+import { computeTeamCost, type Lineup } from '../../composables/useLineups'
 import { useData, type Skill } from '../../composables/useData'
 import { useTroopLevels } from '../../composables/useTroopLevels'
 import { TROOP_TYPES, TROOP_LABELS } from '../../constants/traits'
@@ -159,9 +159,7 @@ const roles = computed(() => [
   { key: 'vice2', label: '副將', data: props.team.vice2 },
 ])
 
-const totalCost = computed(() =>
-  roles.value.reduce((sum, r) => sum + (r.data.hero?.cost ?? 0), 0),
-)
+const totalCost = computed(() => computeTeamCost(props.team))
 
 const uniqueSkills = computed(() =>
   roles.value.map(r => findSkillByName(r.data.hero?.unique_skill)),

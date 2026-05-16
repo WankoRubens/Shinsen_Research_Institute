@@ -99,8 +99,8 @@
 
 <script setup lang="ts">
 import { Share, Document, Plus, Delete, Position } from '@element-plus/icons-vue'
-import { type Lineup, isEmptyTeam } from '../../composables/useLineups'
-import { MAX_TEAMS_PER_GROUP } from '../../composables/useGroups'
+import { type Lineup, isEmptyTeam, computeTeamCost } from '../../composables/useLineups'
+import { MAX_TEAMS_PER_GROUP } from '../../types/group'
 
 defineProps<{
   lineups: Lineup[]
@@ -116,10 +116,7 @@ defineEmits<{
   (e: 'remove-team', idx: number): void
 }>()
 
-const teamCost = (team: Lineup): number =>
-  (team.main.hero?.cost ?? 0)
-  + (team.vice1.hero?.cost ?? 0)
-  + (team.vice2.hero?.cost ?? 0)
+const teamCost = computeTeamCost
 
 // Stub — needs a per-team baseline snapshot to diff against. Lands with
 // the proposal-save / share-blob persistence work in a later phase.

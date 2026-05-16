@@ -202,11 +202,6 @@ const bingxue = ref<Record<string, BingxueOption>>(
   (bingxueData as Record<string, BingxueOption>) || {}
 )
 
-const loading = ref(false)
-
 export function useData() {
-  const fetchAllData = async () => {
-    loading.value = false
-  }
-  return { heroes, skills, statuses, bingxue, loading, fetchAllData }
+  return { heroes, skills, statuses, bingxue }
 }

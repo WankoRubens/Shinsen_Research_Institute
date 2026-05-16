@@ -92,11 +92,6 @@
     <ResetDialog v-model="resetDialogVisible" @confirm="clearLineup" />
 
 
-    <!-- Changelog Dialog -->
-    <ChangelogDialog v-model="changelogDialogVisible" />
-
-    <AuthDialog v-model="authDialogVisible" @sign-in="onSignIn" />
-
     <CreateProposalDialog
       v-model="createProposalDialogVisible"
       :is-logged-in="isLoggedIn"
@@ -125,9 +120,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import ChangelogDialog from '../components/dialogs/ChangelogDialog.vue'
 import ResetDialog from '../components/dialogs/ResetDialog.vue'
-import AuthDialog from '../components/dialogs/AuthDialog.vue'
 import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
 import ShareDialog from '../components/dialogs/ShareDialog.vue'
 import CreateProposalDialog from '../components/dialogs/CreateProposalDialog.vue'
@@ -147,14 +140,15 @@ import { useData, Hero, Skill } from '../composables/useData'
 
 import { ShareableData, ShareableLineup } from '../constants/gameData'
 import { useLineups, type Lineup } from '../composables/useLineups'
-import { useGroups, MAX_TEAMS_PER_GROUP } from '../composables/useGroups'
+import { useGroups } from '../composables/useGroups'
+import { MAX_TEAMS_PER_GROUP } from '../types/group'
 import { useGroupPersistence } from '../composables/useGroupPersistence'
 import { applyBlobToState, makeSerializer } from '../lib/lineupSerialize'
 import { useInventory } from '../composables/useInventory'
 import {
   createShare, loadShare, isShareEnabled, type ShareKind,
 } from '../lib/share'
-import { handleAuthCallback, type OAuthProvider } from '../lib/auth'
+import { handleAuthCallback } from '../lib/auth'
 import type { SpectatorBlob } from '../lib/gachaLog'
 import { useAuth } from '../composables/useAuth'
 import { useActiveProfile } from '../composables/useActiveProfile'
@@ -209,7 +203,7 @@ const {
 } = useInventory()
 
 const dialogs = useDialogs()
-const { hasUnseen: hasUnseenChangelog, changelogDialogVisible } = useChangelog()
+const { hasUnseen: hasUnseenChangelog } = useChangelog()
 
 const skillSelectDialogVisible = dialogs.useDialog('skill-select')
 const resetDialogVisible = dialogs.useDialog('reset')
@@ -571,6 +565,9 @@ const restoreFromBlob = (data: ShareableData) => {
     ensureTeamCount,
     replaceGroups,
   })
+  if (report.activeIndex != null && report.activeIndex >= 0 && report.activeIndex < groups.length) {
+    setCurrentGroup(report.activeIndex)
+  }
   if (report.healed.length > 0) {
     ElMessage.warning(
       `已自動清除 ${report.healed.length} 個無法解析的英雄或戰法（資料表更新後）`,
@@ -578,49 +575,17 @@ const restoreFromBlob = (data: ShareableData) => {
   }
 }
 
-// Snapshot current state under a recovery key before OAuth full-page redirect,
-// so handleAuthCallback's success path can restore the lineup the user was
-// building. 5-minute TTL so a stale snapshot from days ago doesn't surprise.
-const RECOVERY_KEY = 'nobunaga.auth.recovery'
-const RECOVERY_TTL_MS = 5 * 60 * 1000
-
-const snapshotForRecovery = () => {
-  const blob: ShareableData = { v: 3 }
-  blob.groups = [{
-    name: currentGroup.value.name,
-    teams: lineups.map(serializeLineup),
-  }]
-  blob.inv_h = ownedHeroes.value.map(n => heroToJp(n) ?? n)
-  blob.inv_s = ownedSkills.value.map(n => skillToJp(n) ?? n)
-  localStorage.setItem(RECOVERY_KEY, JSON.stringify({ blob, ts: Date.now() }))
-}
-
-const consumeRecovery = (): boolean => {
-  const raw = localStorage.getItem(RECOVERY_KEY)
-  if (!raw) return false
-  localStorage.removeItem(RECOVERY_KEY)
-  try {
-    const { blob, ts } = JSON.parse(raw) as { blob: ShareableData; ts: number }
-    if (Date.now() - ts > RECOVERY_TTL_MS) return false
-    restoreFromBlob(blob)
-    return true
-  } catch {
-    return false
-  }
-}
+// Snapshot/consume recovery is provided by useGroupPersistence (so AppLayout's
+// login button can also snapshot). LineupBuilder still owns the consumeRecovery
+// trigger inside onMounted because that's where the post-redirect restore
+// sequence is orchestrated.
 
 // --- Auth ---
 const {
   isLoggedIn, displayName, needsDisplayName,
-  signIn, refreshFromStorage,
+  refreshFromStorage,
   sessionExpiredCount,
 } = useAuth()
-
-const onSignIn = (provider: OAuthProvider) => {
-  authDialogVisible.value = false
-  snapshotForRecovery()
-  signIn(provider)  // full-page redirect — nothing after this runs
-}
 
 // TeamListPanel actions
 const onAddTeam = () => {
@@ -938,6 +903,7 @@ const {
   tryBootstrapCloudSync,
   flushLocalAutosave,
   isPristineDefaultState,
+  consumeRecovery,
   healingReport: autosaveHealingReport,
 } = useGroupPersistence()
 

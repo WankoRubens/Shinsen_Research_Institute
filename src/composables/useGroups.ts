@@ -105,8 +105,6 @@ const resetToDefault = (): void => {
   currentGroupIndex.value = 0
 }
 
-export { MAX_TEAMS_PER_GROUP }
-
 export function useGroups() {
   return {
     groups,
