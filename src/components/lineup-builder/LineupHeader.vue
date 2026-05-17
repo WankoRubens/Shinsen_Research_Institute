@@ -7,13 +7,15 @@
 
       <!-- Profile selector — dropdown of the user's character profiles.
            Only shown when logged in; anonymous users have no profile concept
-           and edit inventory directly via the right-side button. -->
+           and edit inventory directly via the right-side button.
+           Mobile hides this; the MobileTeamDrawer renders an equivalent. -->
       <el-dropdown
         v-if="!isEditingInventory && isLoggedIn"
         trigger="click"
         @command="onProfileCommand"
         @visible-change="onProfileVisibleChange"
         placement="bottom-start"
+        class="hidden md:inline-flex"
       >
         <button class="profile-pill group-pill" type="button">
           <el-icon :size="13" class="opacity-70"><User /></el-icon>
@@ -59,12 +61,14 @@
       </el-dropdown>
 
       <!-- Group selector — dropdown with current group name. Switch is wired;
-           rename / delete defer to a later follow-up. -->
+           rename / delete defer to a later follow-up.
+           Mobile hides this; the MobileTeamDrawer renders an equivalent. -->
       <el-dropdown
         v-if="!isEditingInventory"
         trigger="click"
         @command="onGroupCommand"
         placement="bottom-start"
+        class="hidden md:inline-flex"
       >
         <button class="group-pill" type="button">
           <span class="font-bold text-ink">編組</span>

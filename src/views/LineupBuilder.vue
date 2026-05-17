@@ -22,6 +22,10 @@
           :current-team-index="currentTeamIndex"
           @select="(idx: number) => { currentTeamIndex = idx; mobileSidebarVisible = false }"
           @remove-team="onRemoveTeam"
+          @add-team="onAddTeam"
+          @share="dialogs.open('share')"
+          @export-to-group="onExportTeamToOtherGroup"
+          @import-from-link="dialogs.open('import-from-link')"
         />
 
         <LineupWorkspace
@@ -70,7 +74,6 @@
       v-model="mobileDetailVisible"
       :role="currentDetailRole"
       :role-data="currentDetailRole ? currentLineup[currentDetailRole] : null"
-      @update:hero="(h) => { if (currentDetailRole) currentLineup[currentDetailRole].hero = h }"
     />
 
     <SkillSelectDialog

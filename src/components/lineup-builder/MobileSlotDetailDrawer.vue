@@ -12,14 +12,12 @@
       :role-name="role === 'main' ? '大將' : '副將'"
       :hero="roleData.hero"
       :stats="roleData.stats"
-      @update:hero="(h: Hero | null) => $emit('update:hero', h)"
     />
   </el-drawer>
 </template>
 
 <script setup lang="ts">
 import MobileSlotDetail from '../MobileSlotDetail.vue'
-import type { Hero } from '../../composables/useData'
 import type { RoleData } from '../../composables/useLineups'
 
 defineProps<{
@@ -29,6 +27,5 @@ defineProps<{
 }>()
 defineEmits<{
   (e: 'update:modelValue', v: boolean): void
-  (e: 'update:hero', h: Hero | null): void
 }>()
 </script>

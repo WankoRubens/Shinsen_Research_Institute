@@ -152,10 +152,11 @@
 
       <!-- Stats row (only when hero) — click opens stats editor.
            freePointsRemaining shown in tooltip via title; bonus colour cues
-           which stats already received free points. -->
+           which stats already received free points.
+           Hidden on mobile — the MobileSlotDetailDrawer surfaces these instead. -->
       <div
         v-if="hero"
-        class="rounded border border-divider bg-white cursor-pointer hover:border-focus transition-colors px-1 py-1 md:px-1.5 md:py-1"
+        class="hidden md:block rounded border border-divider bg-white cursor-pointer hover:border-focus transition-colors px-1 py-1 md:px-1.5 md:py-1"
         :title="`點擊調整自由加點 · 剩餘 ${freePointsRemaining} 點`"
         @click.stop="openStatsEditor"
       >
@@ -226,7 +227,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <div class="text-[9px] md:text-sm text-ink-soft truncate mb-0.5">{{ hero?.unique_skill || '---' }}</div>
-                <BriefDescription v-if="uniqueSkillData?.brief_description" :text="uniqueSkillData.brief_description" :vars="uniqueSkillData.vars" class="text-[7px] md:text-[11px] italic text-ink-soft" />
+                <BriefDescription v-if="uniqueSkillData?.brief_description" :text="uniqueSkillData.brief_description" :vars="uniqueSkillData.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
               </div>
             </div>
           </template>
@@ -300,7 +301,7 @@
               <div class="flex-1 min-w-0">
                 <div v-if="skill1" class="text-[9px] md:text-sm font-bold text-ink truncate mb-0.5">{{ skill1.name }}</div>
                 <div v-else class="text-[9px] md:text-sm text-ink-mute mb-0.5">習得</div>
-                <BriefDescription v-if="skill1?.brief_description" :text="skill1.brief_description" :vars="skill1.vars" class="text-[7px] md:text-[11px] italic text-ink-soft" />
+                <BriefDescription v-if="skill1?.brief_description" :text="skill1.brief_description" :vars="skill1.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
               </div>
               <el-button v-if="skill1" link type="danger" size="small" class="!p-0 !h-auto" @click.stop="$emit('update:skill1', null)">
                 <el-icon :size="10"><Close /></el-icon>
@@ -374,7 +375,7 @@
               <div class="flex-1 min-w-0">
                 <div v-if="skill2" class="text-[9px] md:text-sm font-bold text-ink truncate mb-0.5">{{ skill2.name }}</div>
                 <div v-else class="text-[9px] md:text-sm text-ink-mute mb-0.5">習得</div>
-                <BriefDescription v-if="skill2?.brief_description" :text="skill2.brief_description" :vars="skill2.vars" class="text-[7px] md:text-[11px] italic text-ink-soft" />
+                <BriefDescription v-if="skill2?.brief_description" :text="skill2.brief_description" :vars="skill2.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
               </div>
               <el-button v-if="skill2" link type="danger" size="small" class="!p-0 !h-auto" @click.stop="$emit('update:skill2', null)">
                 <el-icon :size="10"><Close /></el-icon>

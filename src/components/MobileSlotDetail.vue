@@ -1,20 +1,23 @@
 <template>
   <div class="flex flex-col h-full bg-slate-50 p-4 overflow-y-auto">
     
-    <!-- Header with Radar -->
-    <div class="flex items-center gap-4 mb-6">
-      <div class="flex-shrink-0 bg-white rounded-full p-2 shadow-sm border border-gray-100" @click="$emit('open-stats')">
-        <RadarChart :stats="stats" :base-stats="hero?.stats" :size="100" />
-        <div class="text-[10px] text-center text-indigo-500 mt-1"><el-icon><Edit /></el-icon> 配點</div>
-      </div>
-      
-      <div class="flex-1 space-y-2">
-         <div class="font-bold text-lg text-gray-800">{{ roleName }} - {{ hero?.name }}</div>
-         <div class="text-xs text-gray-500">
-            <div class="flex justify-between border-b border-gray-200 py-1"><span>統帥</span> <span class="font-bold text-gray-800">{{ stats.lea }}</span></div>
-            <div class="flex justify-between border-b border-gray-200 py-1"><span>武勇</span> <span class="font-bold text-gray-800">{{ stats.val }}</span></div>
-            <div class="flex justify-between border-b border-gray-200 py-1"><span>智略</span> <span class="font-bold text-gray-800">{{ stats.int }}</span></div>
-         </div>
+    <!-- Header + stats table -->
+    <div class="mb-4">
+      <div class="font-bold text-lg text-gray-800 mb-3">{{ roleName }} - {{ hero?.name }}</div>
+      <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+        <div class="grid grid-cols-3 gap-2">
+          <div
+            v-for="key in STAT_KEYS"
+            :key="key"
+            class="flex flex-col items-center py-1"
+          >
+            <span class="text-[11px] text-gray-500 mb-0.5">{{ STAT_LABELS[key] }}</span>
+            <span class="text-base font-bold text-gray-800 leading-none">{{ stats[key] }}</span>
+            <span v-if="bonus(key) > 0" class="text-[10px] text-emerald-600 mt-0.5">+{{ bonus(key) }}</span>
+            <span v-else-if="bonus(key) < 0" class="text-[10px] text-red-500 mt-0.5">{{ bonus(key) }}</span>
+            <span v-else class="text-[10px] text-transparent mt-0.5 select-none">·</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -43,8 +46,6 @@
 
 <script setup lang="ts">
 import { PropType, ref, watch } from 'vue'
-import { Edit } from '@element-plus/icons-vue'
-import RadarChart from './RadarChart.vue'
 import { Hero, Trait } from '../composables/useData'
 import { getTraitColor } from '../constants/gameData'
 import { useTemplateParser } from '../composables/useTemplateParser'
@@ -61,7 +62,13 @@ const props = defineProps({
   stats: { type: Object as PropType<any>, required: true }
 })
 
-defineEmits(['update:hero', 'open-stats']) // traits update logic is internal to hero object for now
+const STAT_KEYS = ['lea', 'val', 'int', 'pol', 'cha', 'spd'] as const
+const STAT_LABELS: Record<typeof STAT_KEYS[number], string> = {
+  lea: '統', val: '武', int: '智', pol: '政', cha: '魅', spd: '速',
+}
+const bonus = (key: typeof STAT_KEYS[number]): number =>
+  (props.stats?.[key] ?? 0) - (props.hero?.stats?.[key] ?? 0)
+
 
 // Trait Logic (Similar to LineupSlot but simplified for display/toggle)
 const localTraits = ref<Trait[]>([])
