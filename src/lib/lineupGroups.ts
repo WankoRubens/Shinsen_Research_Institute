@@ -46,6 +46,11 @@ export interface CreateLineupGroupInput {
   sort_order?: number
 }
 
+// Idempotent w.r.t. the (user_id, client_id) partial unique index when
+// client_id is provided: ignore-duplicates suppresses the INSERT and returns
+// an empty body if a row already exists; we then GET by client_id so the
+// caller always receives a populated CloudLineupGroup (existing or new) to
+// hydrate its meta map. Without client_id, this is a plain INSERT.
 export const createLineupGroup = async (
   input: CreateLineupGroupInput,
 ): Promise<CloudLineupGroup> => {
@@ -59,12 +64,15 @@ export const createLineupGroup = async (
   if (input.client_id) row.client_id = input.client_id
 
   const url = `${SUPABASE_URL}/rest/v1/lineup_groups?select=${COLS}`
+  const prefer = input.client_id
+    ? 'return=representation,resolution=ignore-duplicates'
+    : 'return=representation'
   const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: {
       ...restHeaders(token),
       'Content-Type': 'application/json',
-      Prefer: 'return=representation',
+      Prefer: prefer,
     },
     body: JSON.stringify(row),
   })
@@ -72,7 +80,34 @@ export const createLineupGroup = async (
     throw new Error(`create lineup_group failed: ${res.status} ${await res.text()}`)
   }
   const rows = (await res.json()) as CloudLineupGroup[]
-  return rows[0]
+  if (rows.length > 0) return rows[0]
+  // Empty body = ignore-duplicates suppressed an INSERT. Fetch the existing
+  // row so callers always get a usable CloudLineupGroup back.
+  if (!input.client_id) {
+    throw new Error('create lineup_group: empty response with no client_id to recover from')
+  }
+  const existing = await getLineupGroupByClientId(input.client_id)
+  if (!existing) {
+    throw new Error(
+      `create lineup_group: ignore-duplicates returned empty but no row found for client_id=${input.client_id}`,
+    )
+  }
+  return existing
+}
+
+// RLS scopes by user_id automatically, so this lookup naturally resolves to
+// the current user's row. Used by createLineupGroup's empty-body recovery
+// and by useGroupPersistence's meta-map heal-on-409 path.
+const getLineupGroupByClientId = async (
+  clientId: string,
+): Promise<CloudLineupGroup | null> => {
+  const { token } = await requireAuth()
+  const url = `${SUPABASE_URL}/rest/v1/lineup_groups?client_id=eq.${encodeURIComponent(clientId)}` +
+    `&select=${COLS}`
+  const res = await fetchWithTimeout(url, { headers: restHeaders(token) })
+  if (!res.ok) throw new Error(`get lineup_group by client_id failed: ${res.status}`)
+  const rows = (await res.json()) as CloudLineupGroup[]
+  return rows[0] ?? null
 }
 
 // Bulk insert used by the anon→signed-in handoff when local has groups and

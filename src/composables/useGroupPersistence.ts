@@ -478,6 +478,14 @@ const scheduleCloudPush = (blob: ShareableData): void => {
   // re-enable by clearing cloudConflict.
   if (cloudStatus.value === 'conflict') return
   pendingCloudBlob = blob
+  // Bootstrap-not-yet-complete guard: keep the latest blob in
+  // pendingCloudBlob but don't arm the debounce. Without this guard, a
+  // push that fires during the listMyLineupGroups await sees an empty
+  // cloudGroupsByClientId map, takes the INSERT branch for every group,
+  // and 409s against existing cloud rows. markBootstrapped() reschedules
+  // pendingCloudBlob the instant bootstrap completes — pushes are queued,
+  // never dropped.
+  if (!cloudBootstrapped) return
   if (cloudDebounceHandle != null) clearTimeout(cloudDebounceHandle)
   cloudDebounceHandle = window.setTimeout(() => {
     const b = pendingCloudBlob
@@ -485,6 +493,42 @@ const scheduleCloudPush = (blob: ShareableData): void => {
     cloudDebounceHandle = null
     if (b) void pushBlobToCloud(b)
   }, CLOUD_DEBOUNCE_MS)
+}
+
+// Flip the bootstrap latch and flush any push that was queued during the
+// async bootstrap window. Called from every exit point of
+// tryBootstrapCloudSync (including the merge dialog resolvers) so the
+// pendingCloudBlob captured by scheduleCloudPush's guard never silently
+// sits forever.
+const markBootstrapped = (): void => {
+  cloudBootstrapped = true
+  if (pendingCloudBlob) {
+    const blob = pendingCloudBlob
+    pendingCloudBlob = null
+    scheduleCloudPush(blob)
+  }
+}
+
+// Replace cloudGroupsByClientId with a fresh snapshot from cloud. Used to
+// recover when bulkCreateLineupGroups returns fewer rows than inputs (some
+// inputs collided on the partial unique index and were silently dropped by
+// `resolution=ignore-duplicates`) — without this, the missing entries would
+// cause the next push to take the INSERT branch and 409 against the same
+// rows we just failed to (re-)insert.
+const hydrateMapFromCloud = async (): Promise<void> => {
+  try {
+    const rows = await listMyLineupGroups()
+    cloudGroupsByClientId.clear()
+    for (const r of rows) {
+      const clientId = r.client_id ?? r.id
+      cloudGroupsByClientId.set(clientId, {
+        cloudId: r.id,
+        serverUpdatedAt: r.updated_at,
+      })
+    }
+  } catch (e) {
+    console.warn('[cloud-sync] hydrate map from cloud failed:', e)
+  }
 }
 
 // Public: cancel any debounced cloud push and fire it immediately. Callers
@@ -524,8 +568,10 @@ const pushBlobToCloud = async (blob: ShareableData): Promise<void> => {
       if (!g.id) continue // shouldn't happen for v4 blobs; defensive guard
       const meta = cloudGroupsByClientId.get(g.id)
       if (!meta) {
-        // First push for this group → INSERT. The partial unique index on
-        // (user_id, client_id) makes this idempotent w.r.t. a retry.
+        // First push for this group → INSERT. createLineupGroup uses
+        // ignore-duplicates + GET-by-client_id fallback, so a stale local
+        // map (cloud row exists but we don't know about it) self-heals into
+        // a populated row reference instead of throwing a 409.
         const row = await createLineupGroup({
           client_id: g.id,
           name: g.name,
@@ -636,7 +682,7 @@ const tryBootstrapCloudSync = async (): Promise<void> => {
   const { isLoggedIn, user } = useAuth()
   if (!isLoggedIn.value) return
   if (!cloudSyncEnabled.value) {
-    cloudBootstrapped = true // remember so toggling sync back on doesn't re-prompt
+    markBootstrapped() // remember so toggling sync back on doesn't re-prompt
     return
   }
   const userId = user.value?.id
@@ -667,8 +713,8 @@ const tryBootstrapCloudSync = async (): Promise<void> => {
     for (const [clientId, m] of Object.entries(persisted)) {
       cloudGroupsByClientId.set(clientId, m)
     }
-    cloudBootstrapped = true
     cloudStatus.value = 'idle'
+    markBootstrapped()
     return
   }
 
@@ -692,9 +738,9 @@ const tryBootstrapCloudSync = async (): Promise<void> => {
   if (localActuallyEmpty && cloudActuallyEmpty) {
     // Both empty — silent no-op. Persist an empty meta so reloads take the
     // fast path above.
-    cloudBootstrapped = true
     cloudStatus.value = 'idle'
     syncCloudMetaToStorage()
+    markBootstrapped()
     return
   }
 
@@ -704,10 +750,10 @@ const tryBootstrapCloudSync = async (): Promise<void> => {
     // also writes the freshly-applied groups to localStorage immediately —
     // without it, a F5 within 800ms would re-read the pre-apply (empty) blob.
     applyCloudRowsToLocal(cloudRows)
-    cloudBootstrapped = true
     cloudStatus.value = 'idle'
     syncCloudMetaToStorage()
     flushLocalAutosave()
+    markBootstrapped()
     return
   }
 
@@ -715,15 +761,14 @@ const tryBootstrapCloudSync = async (): Promise<void> => {
     // Silent upload: local → cloud. buildBlob here is the actual write — it
     // owns the gen bump because we'll be persisting these groups to cloud.
     const localBlob = buildBlob()
+    const localInputs = (localBlob.groups ?? []).map((g, i) => ({
+      client_id: g.id,
+      name: g.name,
+      teams: g.teams,
+      sort_order: i,
+    }))
     try {
-      const created = await bulkCreateLineupGroups(
-        (localBlob.groups ?? []).map((g, i) => ({
-          client_id: g.id,
-          name: g.name,
-          teams: g.teams,
-          sort_order: i,
-        })),
-      )
+      const created = await bulkCreateLineupGroups(localInputs)
       for (const r of created) {
         const clientId = r.client_id ?? r.id
         cloudGroupsByClientId.set(clientId, {
@@ -731,9 +776,15 @@ const tryBootstrapCloudSync = async (): Promise<void> => {
           serverUpdatedAt: r.updated_at,
         })
       }
-      cloudBootstrapped = true
+      // ignore-duplicates can silently drop colliding rows from the response.
+      // Defensive: if the response is short, re-list cloud to refill missing
+      // map entries so the next push doesn't take an INSERT branch that 409s.
+      if (created.length < localInputs.length) {
+        await hydrateMapFromCloud()
+      }
       cloudStatus.value = 'idle'
       syncCloudMetaToStorage()
+      markBootstrapped()
     } catch (e) {
       console.warn('[cloud-sync] bulk upload failed:', e)
       cloudStatus.value = 'offline'
@@ -767,10 +818,10 @@ const resolveMergeKeepCloud = async (): Promise<MergeResolutionResult> => {
 
   applyCloudRowsToLocal(ctx.cloudRows)
   cloudMerge.value = null
-  cloudBootstrapped = true
   cloudStatus.value = 'idle'
   syncCloudMetaToStorage()
   flushLocalAutosave()
+  markBootstrapped()
   return { kind: 'keep-cloud', backupSlug }
 }
 
@@ -798,14 +849,13 @@ const resolveMergeKeepLocal = async (): Promise<MergeResolutionResult> => {
         console.warn('[cloud-sync] delete row during overwrite failed:', e)
       }
     }
-    const created = await bulkCreateLineupGroups(
-      (freshLocalBlob.groups ?? []).map((g, i) => ({
-        client_id: g.id,
-        name: g.name,
-        teams: g.teams,
-        sort_order: i,
-      })),
-    )
+    const localInputs = (freshLocalBlob.groups ?? []).map((g, i) => ({
+      client_id: g.id,
+      name: g.name,
+      teams: g.teams,
+      sort_order: i,
+    }))
+    const created = await bulkCreateLineupGroups(localInputs)
     cloudGroupsByClientId.clear()
     for (const r of created) {
       const clientId = r.client_id ?? r.id
@@ -814,11 +864,17 @@ const resolveMergeKeepLocal = async (): Promise<MergeResolutionResult> => {
         serverUpdatedAt: r.updated_at,
       })
     }
+    // Defensive: deleteLineupGroup above is best-effort (errors are swallowed),
+    // so a stray surviving cloud row could collide with our insert and be
+    // dropped by ignore-duplicates. Re-list cloud to fill any missing meta.
+    if (created.length < localInputs.length) {
+      await hydrateMapFromCloud()
+    }
     cloudMerge.value = null
-    cloudBootstrapped = true
     cloudStatus.value = 'idle'
     syncCloudMetaToStorage()
     flushLocalAutosave()
+    markBootstrapped()
     return { kind: 'keep-local', backupSlug }
   } catch (e) {
     console.warn('[cloud-sync] keep-local failed:', e)
@@ -893,10 +949,10 @@ const resolveMergeAppend = async (): Promise<MergeResolutionResult> => {
     })
   }
   cloudMerge.value = null
-  cloudBootstrapped = true
   cloudStatus.value = 'idle'
   syncCloudMetaToStorage()
   flushLocalAutosave()
+  markBootstrapped()
   return { kind: 'append' }
 }
 
@@ -906,8 +962,8 @@ const resolveMergeCancel = (): void => {
   // session don't re-trigger the dialog. Next page reload still re-runs
   // bootstrap (cloudBootstrapped is module-state, not persisted), giving
   // the user a fresh prompt on a new session.
-  cloudBootstrapped = true
   cloudStatus.value = 'idle'
+  markBootstrapped()
 }
 
 // Conflict-dialog resolutions ------------------------------------------
@@ -1009,9 +1065,16 @@ const setCloudSyncEnabled = (v: boolean): void => {
     void tryBootstrapCloudSync()
   } else {
     // Turning sync off — drop the meta map so re-enabling later starts
-    // from a clean slate.
+    // from a clean slate. Also cancel any in-flight debounce and discard
+    // the queued blob, so a re-enable doesn't resurrect a stale pre-disable
+    // push and clobber cloud with old state. Mirrors the `expired` handler.
     cloudGroupsByClientId.clear()
     cloudBootstrapped = false
+    if (cloudDebounceHandle != null) {
+      clearTimeout(cloudDebounceHandle)
+      cloudDebounceHandle = null
+    }
+    pendingCloudBlob = null
   }
 }
 
