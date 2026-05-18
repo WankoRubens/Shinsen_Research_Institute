@@ -107,11 +107,11 @@ const sidebarMobileOpen = ref(false)
 const COMING_SOON_META: Record<string, { title: string; description: string }> = {
   'battle-sim': {
     title: '戰鬥模擬',
-    description: '依照雙方陣容自動推演戰鬥流程；目前仍在開發中，預計於後續版本上線。',
+    description: '依照雙方陣容自動推演戰鬥流程；老實說目前八字沒半撇，先別期待。',
   },
-  'hero-pedia': {
-    title: '武將圖鑑',
-    description: '完整武將資料卡，含技能、戰法、配置建議；目前仍在開發中，預計於後續版本上線。',
+  'hero-db': {
+    title: '武將資料庫',
+    description: '橫向比較各武將屬性、適性與「精選隊伍」上的人氣度；不做配置建議，純資料呈現。目前仍在開發中。',
   },
 }
 const pageTitle = computed<string>(() => {

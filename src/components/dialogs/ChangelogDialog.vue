@@ -42,7 +42,7 @@
           </span>
         </div>
 
-        <ul class="space-y-1.5 pl-1 mb-4">
+        <ul class="space-y-1.5 pl-1 mb-3">
           <li
             v-for="(e, i) in v.entries"
             :key="i"
@@ -59,6 +59,13 @@
             <span class="flex-1 min-w-0">{{ e.text }}</span>
           </li>
         </ul>
+
+        <div
+          v-if="v.note"
+          class="text-xs italic text-gray-600 border-l-2 border-purple-300 bg-purple-50/40 pl-2 pr-2 py-1.5 mb-4 rounded-r"
+        >
+          <span class="font-semibold text-purple-600 not-italic mr-1">作者碎念：</span>{{ v.note }}
+        </div>
 
         <div v-if="idx < CHANGELOG.length - 1" class="border-b border-gray-100 mb-4"></div>
       </div>

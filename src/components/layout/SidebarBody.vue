@@ -40,6 +40,19 @@
         :active="activeRoute === item.name"
         @click="$emit('nav')"
       />
+
+      <SidebarSection v-if="!collapsed" label="八字沒半撇" class="mt-4" />
+      <SidebarLink
+        v-for="item in wishNav"
+        :key="item.name"
+        :to="item.to"
+        :icon="item.icon"
+        :label="item.label"
+        badge="?"
+        :collapsed="collapsed"
+        :active="activeRoute === item.name"
+        @click="$emit('nav')"
+      />
     </div>
 
     <!-- Footer: contact panel above, settings/collapse below -->
@@ -130,8 +143,13 @@ const primaryNav: readonly NavItem[] = [
 ]
 
 const soonNav: readonly NavItem[] = [
+  { name: 'heroDb', to: { name: 'comingSoon', params: { topic: 'hero-db' } }, icon: Reading, label: '武將資料庫' },
+]
+
+// 八字沒半撇 — features that are nominally planned but realistically unlikely
+// to ship. Kept reachable so curious users can still see the description page.
+const wishNav: readonly NavItem[] = [
   { name: 'battleSim', to: { name: 'comingSoon', params: { topic: 'battle-sim' } }, icon: Aim, label: '戰鬥模擬' },
-  { name: 'heroPedia', to: { name: 'comingSoon', params: { topic: 'hero-pedia' } }, icon: Reading, label: '武將圖鑑' },
 ]
 </script>
 

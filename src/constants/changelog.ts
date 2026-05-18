@@ -13,6 +13,8 @@ export interface ChangelogVersion {
   version: string
   date: string
   entries: ChangelogEntry[]
+  /** 作者碎念 — informal author note rendered below the entries list. */
+  note?: string
 }
 
 export const TAG_LABELS: Record<ChangelogTag, string> = {
@@ -32,6 +34,14 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 }
 
 export const CHANGELOG: ChangelogVersion[] = [
+  {
+    version: '0.4.0',
+    date: '2026-05-18',
+    entries: [
+      { tag: 'ui', text: '整體版面大改版，各位都是我的白老鼠，有問題拜託反饋（電腦版找左下角建議與回報）' },
+    ],
+    note: '官方現在內建配將算不算官方逼死同人(X)',
+  },
   {
     version: '0.3.3',
     date: '2026-05-12',
