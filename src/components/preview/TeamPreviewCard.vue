@@ -2,6 +2,10 @@
   <div class="team-preview" :class="[`team-preview--${density}`, { 'team-preview--flush': !bordered }]">
     <div v-if="showHeader" class="header">
       <div class="title-wrap">
+        <!-- title-prefix slot: optional chip/badge that sits left of the
+             title-bar (ProposalCard uses this for the visibility toggle).
+             Stays out of layout when no slot is filled. -->
+        <slot name="title-prefix" />
         <span class="title-bar" />
         <span class="title font-brand">{{ resolvedTitle }}</span>
         <div v-if="activeTroops.length > 0" class="troop-chips">
