@@ -28,7 +28,7 @@ MODEL_SONNET = "anthropic/claude-sonnet-4.6"
 DEFAULT_MODEL = MODEL_HAIKU
 
 CANONICAL_STATUSES = (
-    "威壓 麻痺 封擊 無策 混亂 疲弊 "
+    "威壓 麻痺 封擊 無策 混亂 疲弊 畏縮 "
     "閃避 抵禦 必中 先攻 "
     "連擊 破陣 亂舞 "
     "會心 奇謀 "

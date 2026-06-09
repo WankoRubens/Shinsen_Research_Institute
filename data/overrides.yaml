@@ -971,6 +971,208 @@ skills:
             value: $lower_hp_damage_reduction
     is_event_skill: true
     _action: add
+  出奇制勝:
+    name: 出奇制勝
+    type: 被動
+    rarity: S
+    target: 自身
+    activation_rate: 100%
+    raw_text: 戰鬥中，自帶主動戰法造成傷害提高14%-28%（受智略影響）。自身成功發動自帶主動戰法後，有35%-70%機率使自身獲得2%→4%攻心效果（受智略影響，可疊加4次）
+    description: 戰鬥中，自帶主動戰法造成傷害提高{var:damage_buff}（{scale:智略}）。 自身成功發動自帶主動戰法後，有{var:crit_chance}機率使自身獲得{var:crit_effect}{status:會心}效果
+      （{scale:智略}，可疊加{var:crit_stack_max}次）。
+    brief_description: 提高主動戰法傷害，機率獲得會心
+    tags:
+    - 增益
+    - 施加狀態
+    - 被動觸發
+    - 智略系
+    - 條件觸發
+    vars:
+      damage_buff:
+        base: 0.14
+        max: 0.28
+      crit_chance:
+        base: 0.35
+        max: 0.7
+      crit_effect:
+        base: 0.02
+        max: 0.04
+      crit_stack_max: 4
+    battle:
+      type: 被動
+      trigger: always
+      do:
+      - trigger: beforeAction
+        when: ability_type == "主動"
+        to: self
+        do:
+        - type: buff
+          stat: damage
+          value: $damage_buff
+          scale: 智略
+      - trigger: afterAction
+        when: ability_triggered_success && ability_type == "主動"
+        to: self
+        do:
+        - type: roll
+          chance: $crit_chance
+          on_success:
+          - type: applyStatus
+            status: 會心
+            value: $crit_effect
+            scale: 智略
+            max_stack: $crit_stack_max
+    is_event_skill: true
+    _action: add
+  三河武士:
+    name: 三河武士
+    type: 兵種
+    rarity: S
+    target: 自軍全體
+    activation_rate: 100%
+    description: 將足輕進階為忠勇雙全的三河武士。 戰鬥中，使自軍全體統率增加{var:stat_buff}； 自軍全體累計受到3次普通攻擊後（每次成功發動後所需次數+1），下回合開始時觸發1次不屈：恢復自軍全體兵力（恢復率{var:recovery_rate}，{scale:統率}）。
+      第4次觸發不屈時，改為使自軍每名武將對隨機敵軍單體造成傷害（傷害率{var:damage_rate}，類型由武勇和智略較高一項決定）且不再觸發不屈。 若為德川家康統領，統率增加值額外受其自身統率影響。
+    brief_description: 足輕進階，恢復與傷害兼備
+    tags:
+    - 增益
+    - 兵種
+    - 治療
+    - 真實傷害
+    - 群體傷害
+    - 被動觸發
+    raw_text: 三河武士 (S) 種類： 足輕兵種戰法 | 增益 發動機率： 效果： 將足輕進階為忠勇雙全的三河武士：戰鬥中，使我軍全體統率增加8→16；我軍全體累計受到3次普通攻擊後（每次成功發動後所需次數+1），下回合開始時觸發1次不屈：恢復我軍全體兵力（恢復率30%→60%，受統率影響）。第4次觸發不屈時，改為使我軍每名武將對隨機敵軍單體造成傷害（傷害率41%→82%，類型由武勇和智略較高一項決定）且不再觸發不屈；若為德川家康統領，統率增加值額外受其自身統率影響
+    vars:
+      stat_buff:
+        base: 8
+        max: 16
+        type: flat
+      recovery_rate:
+        base: 0.3
+        max: 0.6
+      damage_rate:
+        base: 0.41
+        max: 0.82
+      tokugawa_stat_scale: true
+    battle:
+      type: 兵種
+      trigger: always
+      do:
+      - trigger: battleStart
+        to: allyAll
+        do:
+        - type: buff
+          stat: 統率
+          value: $stat_buff
+      - trigger: afterAction
+        when: normal_attack_count >= 3
+        to: allyAll
+        do:
+        - type: heal
+          value: $recovery_rate
+          scale: 統率
+        - type: addStack
+          stack_name: 不屈次數
+          count: 1
+      - trigger: turnStart
+        when: 不屈次數 == 4
+        to: allyAll
+        do:
+        - type: damage
+          damage_type: 真實傷害
+          value: $damage_rate
+          target_type: enemySingle
+          target_selection: random
+    is_event_skill: true
+    _action: add
+  越後先手組:
+    name: 越後先手組
+    type: 兵種
+    rarity: S
+    target: 自軍全體
+    activation_rate: 100%
+    description: 將騎兵進階為先手製勝的越後先手組。 戰鬥中，自軍全體速度增加{var:speed_buff}； 第2回合起，自軍全體每回合行動前，有{var:activation_rate}的機率（受武勇和速度影響）恢復自軍單體兵力（恢復率{var:recovery_rate}，{scale:武勇}）。
+      若為上杉謙信統領，自軍武勇最高武將透過普通攻擊擊敗目標時，額外觸發一次兵力恢復效果。
+    brief_description: 騎兵進階，提速並機率恢復兵力
+    tags:
+    - 增益
+    - 兵種
+    - 治療
+    - 提升屬性
+    - 被動觸發
+    - 武勇系
+    - 速度系
+    raw_text: 越後先手組 (S) 種類： 騎兵兵種戰法 | 增益 發動機率： 效果： 將騎兵進階為先手製勝的越後先手組：戰鬥中，我軍全體速度增加12→24；第2回合起，我軍全體每回合行動前，有17.5%→35%的機率（受武勇和速度影響）恢復我軍單體兵力（恢復率39%→78%，受武勇影響）。若為上杉謙信統領，我軍武勇最高武將透過普通攻擊擊敗目標時，額外觸發一次兵力恢復效果
+    vars:
+      speed_buff:
+        base: 12
+        max: 24
+        type: flat
+      activation_rate:
+        base: 0.175
+        max: 0.35
+      recovery_rate:
+        base: 0.39
+        max: 0.78
+    battle:
+      type: 兵種
+      trigger: always
+      do:
+      - trigger: battleStart
+        to: allyAll
+        do:
+        - type: buff
+          stat: 速度
+          value: $speed_buff
+      - trigger: beforeAction
+        when: turn >= 2
+        to: allySingle
+        do:
+        - type: roll
+          chance: $activation_rate
+          scale:
+          - 武勇
+          - 速度
+          on_success:
+          - type: heal
+            value: $recovery_rate
+            scale: 武勇
+    is_event_skill: true
+    _action: add
+  追亡逐北:
+    name: 追亡逐北
+    type: 主動
+    rarity: S
+    target: 敵軍單體
+    activation_rate: 35%
+    description: 對敵軍單體造成{var:dmg_rate}謀略傷害（{scale:智略}）， 並施加{status:畏縮}狀態，持續1回合。
+    brief_description: 單體謀略傷害並施加畏縮
+    tags:
+    - 謀略傷害
+    - 單體傷害
+    - 施加狀態
+    - 控制
+    - 主動發動
+    - 智略系
+    vars:
+      dmg_rate:
+        base: 0.73
+        max: 1.46
+    battle:
+      type: 主動
+      trigger: beforeAction
+      rate: 0.35
+      do:
+      - to: enemySingle
+        do:
+        - type: damage
+          damage_type: 謀略傷害
+          value: $dmg_rate
+          scale: 智略
+        - type: applyStatus
+          status: 畏縮
+          duration: 1
+    is_event_skill: true
+    _action: add
 heroes:
   柿崎景家:
     _action: add

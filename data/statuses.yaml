@@ -45,6 +45,12 @@
   category: action_restriction
   description: 禁用對方指揮與被動技能；同時清除對方已對他人施加的指揮/被動殘留狀態
 
+畏縮:
+  id: flinch
+  name: 畏縮
+  category: action_restriction
+  description: 禁用指揮與被動戰法
+
 # === Combat State (戰鬥狀態) ===
 閃避:
   id: dodge
