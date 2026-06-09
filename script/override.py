@@ -2,24 +2,22 @@
 Interactive CLI for managing data overrides.
 
 Supports:
+  - Quick add: paste raw text to add skills, heroes, or both at once (default)
   - Modify existing skills via natural language instructions
-  - Add new skills (regular or event skills)
-  - Add new heroes
+  - Recompile override skills from their raw_text
 
 Uses OpenRouter LLM to validate modifications and format new entries.
 
 Usage:
+    python script/override.py                 # quick add (skills/heroes/mixed)
     python script/override.py --modify-skill
-    python script/override.py --add-skill
-    python script/override.py --add-hero
+    python script/override.py --recompile
 """
 
 import argparse
-import json
 import re
 import sys
 import yaml
-from pathlib import Path
 
 from llm_core import (
     COMMON_RULES, SKILL_OUTPUT_FORMAT,
@@ -27,14 +25,9 @@ from llm_core import (
     call_llm, parse_llm_output, autofix_frontend, load_overrides,
     validate_skill_entry, validate_entry_quality,
 )
-from llm_translate import (
-    build_batch_prompt as build_skill_batch_prompt,
-    build_single_prompt as build_skill_single_prompt,
-)
 from paths import (
-    OVERRIDES_YAML, SKILLS_CRAWLED,
+    OVERRIDES_YAML,
     SKILLS_CANONICAL, TRAITS_CANONICAL,
-    HEROES_JSON, SKILLS_JSON,
 )
 
 BACK_CMD = "<"
@@ -261,312 +254,6 @@ def do_modify_skill(model: str):
     overrides["skills"][target_key] = existing
     save_overrides(overrides)
     print(f"[done] Override saved for '{target_key}' in {OVERRIDES_YAML}")
-
-
-# ---------------------------------------------------------------------------
-# Add Skill
-# ---------------------------------------------------------------------------
-
-def _build_add_skill_prompt(info: dict) -> str:
-    """Build prompt for guided add-skill. Uses OVERRIDE_SYSTEM_PROMPT as system."""
-    skill_dict = {
-        "raw": {
-            "name": info["name"],
-            "type": info["type"],
-            "rarity": info["rarity"],
-            "target": info["target"],
-            "activation_rate": "",
-            "source_hero": info.get("source_hero", ""),
-            "description": info["description"],
-            "commander_bonus": "",
-        }
-    }
-    _, user = build_skill_single_prompt(skill_dict)
-    return user
-
-
-def _collect_one_skill() -> dict | None:
-    """Collect one skill's raw info from user. Returns dict or None if cancelled."""
-    try:
-        is_event = prompt_confirm("Is this an event skill (事件戰法)?", default=False)
-        name = prompt_input("Skill name (CHT)")
-        skill_type = prompt_choice("Type", ["被動", "主動", "指揮", "突擊", "兵種"])
-        rarity = prompt_choice("Rarity", ["S", "A", "B"])
-        target = prompt_input("Target (e.g., 敵軍單體, 自身, 我方全體)")
-        description = prompt_input("Skill description (natural language, can include numbers)")
-
-        source_hero = ""
-        unique_hero = ""
-        if not is_event:
-            unique_hero = prompt_input("Unique hero (固有武將, leave empty if teachable)", required=False)
-            if not unique_hero:
-                source_hero = prompt_input("Source hero (傳承者)", required=False)
-
-        return {
-            "name": name, "type": skill_type, "rarity": rarity,
-            "target": target, "description": description,
-            "is_event": is_event, "source_hero": source_hero, "unique_hero": unique_hero,
-        }
-    except GoBack:
-        return None
-
-
-def _process_skill_with_llm(info: dict, model: str) -> tuple[str, dict] | None:
-    """Send one skill to LLM, return (name, result) or None on failure."""
-    name = info["name"]
-    prompt = _build_add_skill_prompt(info)
-
-    try:
-        raw = call_llm(prompt, system_prompt=OVERRIDE_SYSTEM_PROMPT, model=model)
-        result = parse_llm_output(raw)
-    except Exception as e:
-        print(f"  [error] LLM failed for '{name}': {e}")
-        return None
-
-    if result is None:
-        print(f"  [error] Failed to parse LLM response for '{name}'")
-        return None
-
-    # Auto-fix known LLM issues (override results are flat, not nested under frontend)
-    fixes = autofix_frontend(result)
-    if fixes:
-        print(f"    [autofix] {'; '.join(fixes)}")
-
-    result["_action"] = "add"
-    result["raw_text"] = info["description"]
-    result["name"] = name
-    if info["is_event"]:
-        result["is_event_skill"] = True
-    if info["source_hero"]:
-        result["source_hero"] = info["source_hero"]
-    if info["unique_hero"]:
-        result["unique_hero"] = info["unique_hero"]
-        result["is_unique"] = True
-
-    return name, result
-
-
-def do_add_skill(model: str):
-    print("\n=== Add New Skill (batch mode) ===")
-    print("  Collect skills first, then run LLM for all at once.")
-    print("  Type '<' to go back.\n")
-
-    queue = []
-    while True:
-        print(f"\n--- Skill #{len(queue) + 1} ---")
-        info = _collect_one_skill()
-        if info is None:
-            if not queue:
-                print("[cancelled]")
-                return
-            print("  (skipped)")
-        else:
-            queue.append(info)
-            print(f"  [queued] {info['name']} ({info['type']}, {info['rarity']})")
-
-        if queue:
-            print(f"\n  Queue: {len(queue)} skill(s) — {', '.join(s['name'] for s in queue)}")
-            choice = prompt_choice("Action", ["add", "run"], default="add")
-            if choice == "run":
-                break
-
-    print(f"\n[llm] Processing {len(queue)} skill(s)...")
-    results = []
-    for i, info in enumerate(queue, 1):
-        print(f"  [{i}/{len(queue)}] {info['name']}...")
-        out = _process_skill_with_llm(info, model)
-        if out:
-            results.append(out)
-
-    if not results:
-        print("[error] All skills failed LLM processing.")
-        return
-
-    # Preview all
-    print(f"\n[preview] {len(results)} skill(s) to add:")
-    for name, result in results:
-        print(yaml.dump({name: result}, allow_unicode=True, default_flow_style=False, sort_keys=False))
-
-    if not prompt_confirm(f"Add all {len(results)} skill(s)?"):
-        print("[cancelled]")
-        return
-
-    overrides = load_overrides()
-    overrides.setdefault("skills", {})
-    added = 0
-    for name, result in results:
-        if not _confirm_overwrite(name, overrides):
-            print(f"  [skipped] {name}")
-            continue
-        overrides["skills"][name] = result
-        added += 1
-    if added:
-        save_overrides(overrides)
-    print(f"[done] {added}/{len(results)} skill(s) added to {OVERRIDES_YAML}")
-
-
-# ---------------------------------------------------------------------------
-# Add Hero
-# ---------------------------------------------------------------------------
-
-HERO_STEPS = [
-    "name", "rarity", "cost", "faction", "clan", "gender",
-    "stats", "unique_skill", "teachable_skill", "assembly_skill",
-    "portrait", "traits",
-]
-
-STAT_FIELDS = [("lea", "統率"), ("val", "武勇"), ("int", "智略"), ("pol", "政治"), ("cha", "魅力"), ("spd", "速度")]
-
-
-def _collect_hero_field(step: str, collected: dict):
-    """Collect one hero field. Raises GoBack to go back."""
-    if step == "name":
-        collected["name"] = prompt_input("Hero name (CHT)")
-    elif step == "rarity":
-        collected["rarity"] = int(prompt_input("Rarity", default="5"))
-    elif step == "cost":
-        collected["cost"] = int(prompt_input("Cost", default="7"))
-    elif step == "faction":
-        collected["faction"] = prompt_input("Faction (勢力)")
-    elif step == "clan":
-        collected["clan"] = prompt_input("Clan (氏族)", default=collected.get("faction", ""))
-    elif step == "gender":
-        collected["gender"] = prompt_choice("Gender", ["男", "女"])
-    elif step == "stats":
-        print("\n  Stats (六維):")
-        stats = {}
-        stat_idx = 0
-        while stat_idx < len(STAT_FIELDS):
-            key, label = STAT_FIELDS[stat_idx]
-            try:
-                stats[key] = int(prompt_input(f"  {label} ({key})"))
-                stat_idx += 1
-            except GoBack:
-                if stat_idx > 0:
-                    stat_idx -= 1
-                else:
-                    raise
-        collected["stats"] = stats
-    elif step == "unique_skill":
-        collected["unique_skill"] = prompt_input("Unique skill name (固有技能, CHT)")
-    elif step == "teachable_skill":
-        collected["teachable_skill"] = prompt_input("Teachable skill name (傳承技能, CHT)", required=False)
-    elif step == "assembly_skill":
-        collected["assembly_skill"] = prompt_input("Assembly skill name (評定衆技能)", required=False)
-    elif step == "portrait":
-        collected["portrait"] = prompt_input("Portrait URL", required=False)
-    elif step == "traits":
-        _collect_traits(collected)
-
-
-def _collect_traits(collected: dict):
-    """Collect traits with auto-lookup from existing translated data."""
-    print("\n  Traits (特性, enter empty name to finish, '<' to go back):")
-    print("  (rank is auto-derived from name suffix: III→A, II→B, I→C, else S)")
-    traits = []
-    trait_idx = 0
-    while trait_idx < 4:
-        try:
-            trait_name = prompt_input(f"  Trait {trait_idx+1} name", required=False)
-        except GoBack:
-            if trait_idx > 0:
-                traits.pop()
-                trait_idx -= 1
-                print(f"  (back to trait {trait_idx+1})")
-                continue
-            else:
-                raise
-        if not trait_name:
-            break
-
-        existing = find_trait(trait_name)
-        if existing:
-            desc = existing.get("description", "")
-            print(f"    [found] {existing.get('name', trait_name)}: {desc[:60]}{'...' if len(desc) > 60 else ''}")
-            traits.append({
-                "name": existing.get("name", trait_name),
-                "description": desc,
-                "vars": existing.get("vars", {}),
-                "active": True,
-            })
-        else:
-            print(f"    [new] Trait not found in existing data, enter description:")
-            try:
-                trait_desc = prompt_input(f"  Trait {trait_idx+1} description")
-            except GoBack:
-                continue  # re-ask trait name
-            traits.append({
-                "name": trait_name,
-                "description": trait_desc,
-                "active": True,
-            })
-        trait_idx += 1
-    collected["traits"] = traits
-
-
-def do_add_hero(model: str):
-    print("\n=== Add New Hero === (type '<' at any step to go back)")
-
-    collected = {}
-    step_idx = 0
-    while step_idx < len(HERO_STEPS):
-        step = HERO_STEPS[step_idx]
-        try:
-            _collect_hero_field(step, collected)
-            step_idx += 1
-        except GoBack:
-            if step_idx > 0:
-                step_idx -= 1
-                print(f"  (back to: {HERO_STEPS[step_idx]})")
-            else:
-                print("[cancelled]")
-                return
-
-    hero = {
-        "_action": "add",
-        "name": collected["name"],
-        "rarity": collected["rarity"],
-        "cost": collected["cost"],
-        "faction": collected["faction"],
-        "clan": collected["clan"],
-        "gender": collected["gender"],
-        "portrait": collected.get("portrait", ""),
-        "detail_url": "",
-        "unique_skill": collected["unique_skill"],
-        "teachable_skill": collected.get("teachable_skill", ""),
-        "assembly_skill": collected.get("assembly_skill", ""),
-        "stats": collected["stats"],
-        "traits": collected.get("traits", []),
-    }
-
-    print("\n[preview] Hero to add:")
-    print(yaml.dump({collected["name"]: hero}, allow_unicode=True, default_flow_style=False, sort_keys=False))
-
-    if not prompt_confirm("Add this hero?"):
-        print("[cancelled]")
-        return
-
-    overrides = load_overrides()
-    overrides.setdefault("heroes", {})
-    overrides["heroes"][collected["name"]] = hero
-    save_overrides(overrides)
-    print(f"[done] Hero '{collected['name']}' added to {OVERRIDES_YAML}")
-
-    # Check if referenced skills exist, offer to add them
-    missing_skills = []
-    for skill_field, label in [("unique_skill", "固有技能"), ("teachable_skill", "傳承技能")]:
-        skill_name = collected.get(skill_field, "")
-        if skill_name and not find_skill(skill_name):
-            missing_skills.append((skill_name, label))
-
-    if missing_skills:
-        print(f"\n[info] The following skills were not found:")
-        for name, label in missing_skills:
-            print(f"  - {name} ({label})")
-        if prompt_confirm("Add these skills now?"):
-            for name, label in missing_skills:
-                print(f"\n--- Adding skill: {name} ({label}) ---")
-                _add_skill_for_hero(name, label, collected["name"], model)
 
 
 # ---------------------------------------------------------------------------
@@ -1084,44 +771,6 @@ Only output the failed skills: {', '.join(name for name, _, _ in bad_skills)}"""
         for w in warnings:
             print(f"  [warn] {w}")
 
-
-def _add_skill_for_hero(skill_name: str, label: str, hero_name: str, model: str):
-    """Shortcut to add a skill referenced by a hero."""
-    is_unique = label == "固有技能"
-    skill_type = prompt_choice("Type", ["被動", "主動", "指揮", "突擊", "兵種"])
-    rarity = prompt_choice("Rarity", ["S", "A", "B"])
-    target = prompt_input("Target (e.g., 敵軍單體, 自身, 我方全體)")
-    description = prompt_input("Skill description (natural language, can include numbers)")
-
-    info = {
-        "name": skill_name, "type": skill_type, "rarity": rarity,
-        "target": target, "description": description, "is_event": False,
-        "source_hero": hero_name if not is_unique else "",
-        "unique_hero": hero_name if is_unique else "",
-    }
-
-    print("\n[llm] Formatting skill data...")
-    out = _process_skill_with_llm(info, model)
-    if out is None:
-        return
-
-    name, result = out
-    print("\n[preview] Skill to add:")
-    print(yaml.dump({name: result}, allow_unicode=True, default_flow_style=False, sort_keys=False))
-
-    overrides = load_overrides()
-    overrides.setdefault("skills", {})
-
-    if not _confirm_overwrite(name, overrides):
-        print(f"[skipped] {name}")
-        return
-    if not prompt_confirm("Add this skill?"):
-        print(f"[skipped] {name}")
-        return
-
-    overrides["skills"][name] = result
-    save_overrides(overrides)
-    print(f"[done] Skill '{name}' added to {OVERRIDES_YAML}")
 
 
 # ---------------------------------------------------------------------------
