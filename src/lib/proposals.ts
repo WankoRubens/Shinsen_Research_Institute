@@ -7,7 +7,7 @@
 // variant feed replaced it.
 
 import { SUPABASE_URL, fetchWithTimeout, isSupabaseConfigured, restHeaders } from './supabase'
-import { getValidAccessToken } from './auth'
+import { getSession, getValidAccessToken } from './auth'
 import type { Proposal } from '../types/group'
 
 interface ProposalRow {
@@ -109,13 +109,31 @@ export const updateProposal = async (
   return rowToProposal(rows[0])
 }
 
-/** List the current user's own proposals (private + public). Auth required. */
+/** Delete a proposal (owner only via RLS). */
+export const deleteProposal = async (id: string): Promise<void> => {
+  if (!SUPABASE_URL) throw new Error('proposals backend not configured')
+  const token = await getValidAccessToken()
+  if (!token) throw new Error('login required to delete a proposal')
+
+  const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/proposals?id=eq.${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: restHeaders(token),
+  })
+  if (!res.ok) throw new Error(`proposal delete failed: ${res.status}`)
+}
+
+/** List the current user's own proposals (private + public). Auth required.
+ *  Must filter by user_id explicitly: the proposals table has an OR of RLS
+ *  SELECT policies (owner OR is_public), so an unfiltered query also returns
+ *  every public proposal from other users — they would leak into 我的提案. */
 export const listMyProposals = async (): Promise<Proposal[]> => {
   if (!SUPABASE_URL) throw new Error('proposals backend not configured')
   const token = await getValidAccessToken()
   if (!token) return []
+  const userId = getSession()?.user.id
+  if (!userId) return []
 
-  const url = `${SUPABASE_URL}/rest/v1/proposals?select=*&order=updated_at.desc`
+  const url = `${SUPABASE_URL}/rest/v1/proposals?select=*&user_id=eq.${encodeURIComponent(userId)}&order=updated_at.desc`
   const res = await fetchWithTimeout(url, { headers: restHeaders(token) })
   if (!res.ok) throw new Error(`proposals list failed: ${res.status}`)
   return ((await res.json()) as ProposalRow[]).map(rowToProposal)

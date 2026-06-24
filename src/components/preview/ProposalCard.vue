@@ -49,13 +49,37 @@
           </el-icon>
           <span class="visibility-label">{{ proposal.isPublic ? '公開' : '私人' }}</span>
         </span>
+
+        <el-popconfirm
+          v-if="canEdit"
+          :title="proposal.isPublic
+            ? '確定刪除此提案？公開的變體也會一併撤回'
+            : '確定刪除此提案？此動作無法復原'"
+          confirm-button-text="刪除"
+          cancel-button-text="取消"
+          confirm-button-type="danger"
+          :width="260"
+          @confirm="$emit('delete')"
+        >
+          <template #reference>
+            <button
+              type="button"
+              class="delete-chip"
+              title="刪除提案"
+              aria-label="刪除提案"
+              @click.stop
+            >
+              <el-icon :size="13"><Delete /></el-icon>
+            </button>
+          </template>
+        </el-popconfirm>
       </template>
     </TeamPreviewCard>
   </div>
 </template>
 
 <script setup lang="ts">
-import { View, Hide } from '@element-plus/icons-vue'
+import { View, Hide, Delete } from '@element-plus/icons-vue'
 import type { Proposal } from '../../types/group'
 import TeamPreviewCard from './TeamPreviewCard.vue'
 
@@ -69,6 +93,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'toggle-public'): void
+  (e: 'delete'): void
 }>()
 </script>
 
@@ -121,6 +146,27 @@ defineEmits<{
   border-color: #f59e0b;
 }
 .visibility-chip--static { cursor: default; }
+
+/* Delete chip: icon-only square, neutral by default, reddens on hover so the
+   destructive intent only shows when the user reaches for it. */
+.delete-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid rgb(var(--color-divider));
+  color: rgb(var(--color-ink-soft));
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  flex-shrink: 0;
+}
+.delete-chip:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
 .visibility-label {
   font-size: 11px;
   letter-spacing: 0.5px;

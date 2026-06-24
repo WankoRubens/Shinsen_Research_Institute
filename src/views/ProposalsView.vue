@@ -199,6 +199,7 @@
                 :proposal="p"
                 :can-edit="true"
                 @toggle-public="onTogglePublic(p)"
+                @delete="onDelete(p)"
               />
             </div>
           </div>
@@ -259,7 +260,7 @@ const {
 } = useVariants()
 const {
   myProposals, loadingMine,
-  refreshMine, togglePublic,
+  refreshMine, togglePublic, remove,
 } = useProposals()
 
 const activeTab = ref<'public' | 'mine'>(isLoggedIn.value ? 'mine' : 'public')
@@ -485,6 +486,15 @@ const onTogglePublic = async (p: Proposal): Promise<void> => {
     ElMessage.success(wasPublic ? '已設為私人' : '已公開')
     void refreshHeroSets()
   } catch (e) { ElMessage.error(`切換失敗：${(e as Error).message}`) }
+}
+
+const onDelete = async (p: Proposal): Promise<void> => {
+  try {
+    await remove(p.id)
+    ElMessage.success('已刪除提案')
+    // A public proposal's variant may have been withdrawn — refresh the feed.
+    if (p.isPublic) void refreshHeroSets()
+  } catch (e) { ElMessage.error(`刪除失敗：${(e as Error).message}`) }
 }
 </script>
 

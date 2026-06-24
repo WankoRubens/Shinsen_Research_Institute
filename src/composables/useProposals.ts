@@ -8,10 +8,9 @@
 // Functions removed in the variant-first migration:
 //   - publicProposals / refreshPublic / loadMorePublic  → use useVariants
 //   - vote / myVotes / applyVoteDeltas                  → variants are voted
-//   - remove (proposal delete)                          → not surfaced in UI
 //
 // LineupBuilder consumes only createFromLineup; ProposalsView consumes
-// myProposals / loadingMine / refreshMine / togglePublic.
+// myProposals / loadingMine / refreshMine / togglePublic / remove.
 
 import { ref } from 'vue'
 import type { Proposal } from '../types/group'
@@ -20,6 +19,7 @@ import { snapshotTeam } from '../lib/lineup'
 import {
   createProposal as remoteCreate,
   updateProposal as remoteUpdate,
+  deleteProposal as remoteDelete,
   listMyProposals,
   isProposalsEnabled,
 } from '../lib/proposals'
@@ -84,6 +84,23 @@ export function useProposals() {
     }
   }
 
+  // Delete a proposal. If it was public, withdraw the matching variant first
+  // so the public pool doesn't keep a now-orphaned entry. Variant-sync errors
+  // are non-fatal; the proposal delete is the user's intent and must proceed.
+  const remove = async (id: string): Promise<void> => {
+    const target = myProposals.value.find(p => p.id === id)
+    if (target?.isPublic) {
+      try {
+        const variantId = await findVariantForTeam(target.team)
+        if (variantId) await withdrawVariant(variantId)
+      } catch (e) {
+        console.warn('variant sync on remove failed:', e)
+      }
+    }
+    await remoteDelete(id)
+    myProposals.value = myProposals.value.filter(p => p.id !== id)
+  }
+
   return {
     myProposals,
     loadingMine,
@@ -91,6 +108,7 @@ export function useProposals() {
     refreshMine,
     createFromLineup,
     togglePublic,
+    remove,
     isEnabled: isProposalsEnabled,
   }
 }
