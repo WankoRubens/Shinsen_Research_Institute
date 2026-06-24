@@ -363,6 +363,10 @@ For EACH skill, output a YAML document under that skill's name as the top-level 
 - `tags`: list from ONLY these allowed tags: """ + SKILL_TAGS + """
 - Use {var:key} in description to reference the shared vars dict
 - Do NOT include a `vars` field here — vars live at the top level
+- `commander_description`: include this field ONLY when the skill has a 大將技 (大将技) clause.
+  Put the 大將技 effect text HERE, using the SAME {var:}/{scale:}/{status:} syntax as `description`.
+  Do NOT leave the 大將技 sentence inline in `description`, and do NOT prefix it with 「大將技：」
+  (the frontend renders the 大將技 label itself). `description` must contain only the base effect.
 
 ## `battle` — Structured extraction for battle engine
 - ALL text (including `bonus.commander.description`) must be in Traditional Chinese (繁體中文)
@@ -373,7 +377,8 @@ For EACH skill, output a YAML document under that skill's name as the top-level 
 - Effect types: damage, heal, buff, debuff, applyStatus, removeStatus, addStack, roll, sequence, conditional
 - Trigger types: always, battleStart, turnStart, beforeAction, afterAction, beforeAttack, afterAttack, onDamaged, onHeal
 - Target types: self, allySingle, allyMultiple, allyAll, enemySingle, enemyMultiple, enemyAll
-- 大将技 → `bonus.commander`
+- 大将技 → put the text form in `text.commander_description` (frontend, {var:} syntax) AND the
+  structured form in `battle.bonus.commander` (battle engine, $key syntax). Never inline 大將技 in `text.description`.
 
 ### Reference examples (correct format):
 
@@ -399,6 +404,7 @@ Example 1 (主動, damage + status + commander):
     description: >
       對敵軍複數（2人）造成{var:dmg_rate}兵刃傷害，
       並施加{status:挑釁}狀態，使其突擊戰法傷害降低{var:assault_debuff}（{scale:統率}），持續{var:duration}回合。
+    commander_description: 額外使敵軍普通攻擊傷害降低{var:atk_debuff}（{scale:統率}），持續{var:duration}回合。
     brief_description: 複數兵刃傷害並施加挑釁
     tags: [兵刃傷害, 群體傷害, 施加狀態, 減益, 主動發動, 大將技]
   battle:

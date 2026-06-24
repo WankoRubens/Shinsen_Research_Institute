@@ -35,6 +35,14 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.4.1',
+    date: '2026-06-09',
+    entries: [
+      { tag: 'data', text: '新增本季事件戰法（出奇制勝、三河武士、越後先手組、追亡逐北）' },
+    ],
+    note: '記得要把庫存模式關閉才能看到新增的事件戰法',
+  },
+  {
     version: '0.4.0',
     date: '2026-05-18',
     entries: [
