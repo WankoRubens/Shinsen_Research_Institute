@@ -35,6 +35,14 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.4.2',
+    date: '2026-06-24',
+    entries: [
+      { tag: 'fix', text: '修正切換隊伍或重新整理後，武將的突破與屬性數值會歸零的問題' },
+      { tag: 'fix', text: '修正「我的提案」會誤顯示他人公開提案；並新增提案刪除功能' },
+    ],
+  },
+  {
     version: '0.4.1',
     date: '2026-06-09',
     entries: [
