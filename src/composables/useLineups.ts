@@ -43,7 +43,7 @@ export interface Lineup {
 }
 
 // State
-const defaultStats = { lea: 100, val: 100, int: 100, pol: 100, cha: 100, spd: 100 }
+export const defaultStats = { lea: 100, val: 100, int: 100, pol: 100, cha: 100, spd: 100 }
 
 const emptyBingxue = (): BingxueActive => ({
   direction: null,

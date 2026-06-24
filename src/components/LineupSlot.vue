@@ -648,13 +648,15 @@ const maxBreakthrough = computed(() => {
   return 3
 })
 
-watch(() => props.hero, (newHero, oldHero) => {
-  if (newHero?.stats) {
-    emit('update:stats', { ...newHero.stats })
-  }
-  if (oldHero && newHero?.name !== oldHero?.name) {
-    emit('update:breakthrough', 0)
-  } else if (newHero && props.breakthrough > maxBreakthrough.value) {
+// Clamp a breakthrough that exceeds the hero's rarity cap (e.g. restored data,
+// or a hero whose rarity is lower than a previously-stored value). This only
+// caps; it NEVER resets to base. Resetting stats/breakthrough on a genuine hero
+// assignment is the parent's job (LineupBuilder.selectHeroFromLibrary) — doing
+// it here on any props.hero change would also fire on team switch / restore,
+// where props.hero changes merely because the slot now shows a different team,
+// and would wipe the user's saved 突破/屬性.
+watch(() => props.hero, () => {
+  if (props.hero && props.breakthrough > maxBreakthrough.value) {
     emit('update:breakthrough', maxBreakthrough.value)
   }
 }, { immediate: true })

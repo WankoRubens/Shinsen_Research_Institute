@@ -142,7 +142,7 @@ import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 import { useData, Hero, Skill } from '../composables/useData'
 
 import { ShareableData, ShareableLineup } from '../constants/gameData'
-import { useLineups, type Lineup } from '../composables/useLineups'
+import { useLineups, defaultStats, type Lineup } from '../composables/useLineups'
 import { useGroups } from '../composables/useGroups'
 import { MAX_TEAMS_PER_GROUP } from '../types/group'
 import { useGroupPersistence } from '../composables/useGroupPersistence'
@@ -317,15 +317,31 @@ const handleSkillSlotDrop = (targetRole: Role, sourceRole: Role, sourceSlotIdx: 
   else src.skill2 = tgtSkill
 }
 
+// Assign a hero into a role. When the hero actually changes, reset that role's
+// stats to the new hero's base and clear breakthrough — the previous values
+// were relative to the old hero and no longer apply. This reset lives here (the
+// explicit user-assignment path) rather than in a LineupSlot watch, so that
+// switching teams or restoring saved data — which also change props.hero —
+// never wipe the user's 突破/屬性.
+const assignHeroToRole = (role: Role, hero: Hero) => {
+  const slot = currentLineup.value[role]
+  if (slot.hero?.name === hero.name) return
+  slot.hero = hero
+  // Fall back to defaultStats for any key the hero data is missing, so the
+  // single source of truth lives in useLineups (no divergent literals).
+  slot.stats = { ...defaultStats, ...hero.stats }
+  slot.breakthrough = 0
+}
+
 const selectHeroFromLibrary = (hero: Hero) => {
   if (currentSelectingHeroRole.value) {
-    currentLineup.value[currentSelectingHeroRole.value].hero = hero
+    assignHeroToRole(currentSelectingHeroRole.value, hero)
     ElMessage.success(`已選擇 ${hero.name}`)
   } else {
-    if (!currentLineup.value.main.hero) currentLineup.value.main.hero = hero
-    else if (!currentLineup.value.vice1.hero) currentLineup.value.vice1.hero = hero
-    else if (!currentLineup.value.vice2.hero) currentLineup.value.vice2.hero = hero
-    else currentLineup.value.main.hero = hero 
+    if (!currentLineup.value.main.hero) assignHeroToRole('main', hero)
+    else if (!currentLineup.value.vice1.hero) assignHeroToRole('vice1', hero)
+    else if (!currentLineup.value.vice2.hero) assignHeroToRole('vice2', hero)
+    else assignHeroToRole('main', hero)
   }
 }
 
