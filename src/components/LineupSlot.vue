@@ -146,7 +146,7 @@
         <HeroCard v-if="hero" :hero="hero" hide-name class="w-full h-full border-none shadow-none pointer-events-none" />
         <div v-else class="text-ink-mute flex flex-col items-center py-2 md:py-10">
           <el-icon :size="16" class="md:text-3xl"><Plus /></el-icon>
-          <span class="text-[9px] md:text-xs mt-0.5">選擇</span>
+          <span class="text-[9px] md:text-xs mt-0.5">選択</span>
         </div>
       </div>
 
@@ -163,9 +163,9 @@
         <div class="grid grid-cols-6 gap-0.5">
           <div v-for="key in STAT_KEYS" :key="key" class="flex flex-col items-center leading-none">
             <span class="text-[8px] md:text-[9px] text-ink-mute mb-0.5">{{ statLabels[key] }}</span>
-            <span class="text-[10px] md:text-xs font-bold text-ink">{{ heroBaseStats[key] + (statBonus[key] || 0) }}</span>
-            <span v-if="statBonus[key] > 0" class="text-[7px] md:text-[8px] text-emerald-600 mt-0.5">+{{ statBonus[key] }}</span>
-            <span v-else-if="statBonus[key] < 0" class="text-[7px] md:text-[8px] text-red-500 mt-0.5">{{ statBonus[key] }}</span>
+            <span class="text-[10px] md:text-xs font-bold text-ink">{{ formatStat(heroBaseStats[key] + (statBonus[key] || 0)) }}</span>
+            <span v-if="statBonus[key] > 0" class="text-[7px] md:text-[8px] text-emerald-600 mt-0.5">+{{ formatStat(statBonus[key]) }}</span>
+            <span v-else-if="statBonus[key] < 0" class="text-[7px] md:text-[8px] text-red-500 mt-0.5">{{ formatStat(statBonus[key]) }}</span>
             <span v-else class="text-[7px] md:text-[8px] text-transparent mt-0.5 select-none">·</span>
           </div>
         </div>
@@ -181,7 +181,7 @@
         >
           <template #content>
             <div class="max-w-[200px]">
-              <div class="font-bold mb-1">{{ trait.name }}</div>
+              <div class="font-bold mb-1">{{ displayTraitName(trait) }}</div>
               <div class="text-xs mb-2">{{ resolveTraitDesc(trait) }}</div>
               <div class="text-[10px] opacity-80 border-t pt-1 border-gray-500">
                 {{ traitUnlockLabel(idx) }}{{ trait.active ? '' : ' · 尚未啟用' }}
@@ -195,7 +195,7 @@
               { 'opacity-50 saturate-50': !trait.active }
             ]"
           >
-            {{ trait.name }}
+            {{ displayTraitName(trait) }}
           </div>
         </el-tooltip>
       </div>
@@ -226,8 +226,8 @@
                 主
               </div>
               <div class="flex-1 min-w-0">
-                <div class="text-[9px] md:text-sm text-ink-soft truncate mb-0.5">{{ hero?.unique_skill || '---' }}</div>
-                <BriefDescription v-if="uniqueSkillData?.brief_description" :text="uniqueSkillData.brief_description" :vars="uniqueSkillData.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
+                <div class="text-[9px] md:text-sm text-ink-soft truncate mb-0.5">{{ uniqueSkillData ? displaySkillName(uniqueSkillData) : hero?.unique_skill || '---' }}</div>
+                <BriefDescription v-if="displaySkillBrief(uniqueSkillData)" :text="displaySkillBrief(uniqueSkillData)" :vars="uniqueSkillData?.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
               </div>
             </div>
           </template>
@@ -245,8 +245,8 @@
               </div>
             </div>
             <SkillDescription
-              :description="uniqueSkillData.description"
-              :commander-description="uniqueSkillData.commander_description"
+              :description="displaySkillDescription(uniqueSkillData)"
+              :commander-description="displaySkillCommanderDescription(uniqueSkillData)"
               :is-max-level="isMaxLevel"
               :vars="uniqueSkillData.vars"
             />
@@ -256,7 +256,7 @@
             </div>
           </div>
           <div v-else class="text-xs text-gray-500">
-            <p>此武將的專屬固有戰法（資料庫中未找到詳細資訊）。</p>
+            <p>この武将の専属固有戦法です（データベースに詳細情報がありません）。</p>
           </div>
         </el-popover>
 
@@ -264,7 +264,7 @@
         <el-popover
           placement="bottom"
           :offset="12"
-          :title="skill1?.name"
+          :title="skill1 ? displaySkillName(skill1) : ''"
           :width="240"
           trigger="hover"
           :disabled="!skill1 || skillDragging"
@@ -299,9 +299,9 @@
               </div>
 
               <div class="flex-1 min-w-0">
-                <div v-if="skill1" class="text-[9px] md:text-sm font-bold text-ink truncate mb-0.5">{{ skill1.name }}</div>
+                <div v-if="skill1" class="text-[9px] md:text-sm font-bold text-ink truncate mb-0.5">{{ displaySkillName(skill1) }}</div>
                 <div v-else class="text-[9px] md:text-sm text-ink-mute mb-0.5">習得</div>
-                <BriefDescription v-if="skill1?.brief_description" :text="skill1.brief_description" :vars="skill1.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
+                <BriefDescription v-if="displaySkillBrief(skill1)" :text="displaySkillBrief(skill1)" :vars="skill1?.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
               </div>
               <el-button v-if="skill1" link type="danger" size="small" class="!p-0 !h-auto" @click.stop="$emit('update:skill1', null)">
                 <el-icon :size="10"><Close /></el-icon>
@@ -322,8 +322,8 @@
               </div>
             </div>
             <SkillDescription
-              :description="skill1.description"
-              :commander-description="skill1.commander_description"
+              :description="displaySkillDescription(skill1)"
+              :commander-description="displaySkillCommanderDescription(skill1)"
               :is-max-level="isMaxLevel"
               :vars="skill1.vars"
             />
@@ -338,7 +338,7 @@
         <el-popover
           placement="bottom"
           :offset="12"
-          :title="skill2?.name"
+          :title="skill2 ? displaySkillName(skill2) : ''"
           :width="240"
           trigger="hover"
           :disabled="!skill2 || skillDragging"
@@ -373,9 +373,9 @@
               </div>
 
               <div class="flex-1 min-w-0">
-                <div v-if="skill2" class="text-[9px] md:text-sm font-bold text-ink truncate mb-0.5">{{ skill2.name }}</div>
+                <div v-if="skill2" class="text-[9px] md:text-sm font-bold text-ink truncate mb-0.5">{{ displaySkillName(skill2) }}</div>
                 <div v-else class="text-[9px] md:text-sm text-ink-mute mb-0.5">習得</div>
-                <BriefDescription v-if="skill2?.brief_description" :text="skill2.brief_description" :vars="skill2.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
+                <BriefDescription v-if="displaySkillBrief(skill2)" :text="displaySkillBrief(skill2)" :vars="skill2?.vars" class="hidden md:block text-[7px] md:text-[11px] italic text-ink-soft" />
               </div>
               <el-button v-if="skill2" link type="danger" size="small" class="!p-0 !h-auto" @click.stop="$emit('update:skill2', null)">
                 <el-icon :size="10"><Close /></el-icon>
@@ -396,8 +396,8 @@
               </div>
             </div>
             <SkillDescription
-              :description="skill2.description"
-              :commander-description="skill2.commander_description"
+              :description="displaySkillDescription(skill2)"
+              :commander-description="displaySkillCommanderDescription(skill2)"
               :is-max-level="isMaxLevel"
               :vars="skill2.vars"
             />
@@ -420,7 +420,7 @@
         <div class="space-y-2">
           <div v-for="(label, key) in statLabels" :key="key" class="flex items-center gap-1.5">
             <div class="w-8 text-xs font-bold text-gray-600">{{ label }}</div>
-            <div class="text-xs text-gray-400 w-8 text-right">{{ heroBaseStats[key] }}</div>
+            <div class="text-xs text-gray-400 w-10 text-right">{{ formatStat(heroBaseStats[key]) }}</div>
             <button class="px-1.5 py-0.5 text-xs rounded border hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
               :disabled="localBonus[key] <= 0"
               @click="adjustBonus(key, -10)">-10</button>
@@ -428,7 +428,7 @@
               :disabled="localBonus[key] <= 0"
               @click="adjustBonus(key, -1)">-</button>
             <div class="w-10 text-center text-xs font-bold" :class="localBonus[key] > 0 ? 'text-green-600' : localBonus[key] < 0 ? 'text-red-500' : 'text-gray-400'">
-              {{ localBonus[key] > 0 ? '+' : '' }}{{ localBonus[key] }}
+              {{ localBonus[key] > 0 ? '+' : '' }}{{ formatStat(localBonus[key]) }}
             </div>
             <button class="px-1.5 py-0.5 text-xs rounded border hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
               :disabled="localFreeRemaining <= 0"
@@ -436,7 +436,7 @@
             <button class="px-1.5 py-0.5 text-xs rounded border hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
               :disabled="localFreeRemaining < 10"
               @click="adjustBonus(key, 10)">+10</button>
-            <div class="w-8 text-xs font-bold text-right text-gray-800">{{ heroBaseStats[key] + localBonus[key] }}</div>
+            <div class="w-10 text-xs font-bold text-right text-gray-800">{{ formatStat(heroBaseStats[key] + localBonus[key]) }}</div>
           </div>
         </div>
         <button class="text-xs text-gray-400 hover:text-red-500 self-end" @click="resetBonus">重置</button>
@@ -461,6 +461,7 @@ import BingxueSection from './BingxueSection.vue'
 import type { BingxueActive } from '../composables/useLineups'
 import { Hero, Skill, Trait, useData } from '../composables/useData'
 import { useTemplateParser } from '../composables/useTemplateParser'
+import { useLocalizedGameData } from '../composables/useLocalizedGameData'
 
 import { TRANSPARENT_GIF, formatRate as _formatRate, getTraitColor } from '../constants/gameData'
 import { TRAIT_UNLOCK } from '../constants/traits'
@@ -487,10 +488,19 @@ const isConflictSkill = (skill: Skill | null | undefined) =>
 
 const { skills } = useData()
 const { parseTextToPlain } = useTemplateParser()
+const {
+  skillName: displaySkillName,
+  skillDescription: displaySkillDescription,
+  skillCommanderDescription: displaySkillCommanderDescription,
+  skillBriefDescription: displaySkillBrief,
+  traitName: displayTraitName,
+  traitDescription: displayTraitDescription,
+} = useLocalizedGameData()
 
 const resolveTraitDesc = (trait: any) => {
-  if (!trait?.description) return '說明: 尚未建立資料'
-  return parseTextToPlain(trait.description, false, trait.vars)
+  const description = displayTraitDescription(trait)
+  if (!description) return '説明: まだデータがありません'
+  return parseTextToPlain(description, false, trait.vars)
 }
 
 const isMaxLevel = ref(true)
@@ -551,6 +561,11 @@ const handleHeroDropEvent = (event: DragEvent) => {
 const freePointsTotal = computed(() => 50 + (props.breakthrough ?? 0) * 10)
 const statsDialogVisible = ref(false)
 const STAT_KEYS = ['lea', 'val', 'int', 'pol', 'cha', 'spd'] as const
+const formatStat = (value: number | string | null | undefined) => {
+  if (value === null || value === undefined || value === '') return '-'
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric.toFixed(2) : String(value)
+}
 
 const heroBaseStats = computed(() => {
   const s = props.hero?.stats
@@ -636,7 +651,7 @@ const localTraits = computed<Trait[]>(() => {
 
 const traitUnlockLabel = (idx: number) => {
   const req = TRAIT_UNLOCK[idx]
-  if (req === 0) return '固有特性 (永久生效)'
+  if (req === 0) return '固有特性（常時有効）'
   return `需要 ${req} 星突破解鎖`
 }
 

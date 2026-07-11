@@ -41,6 +41,10 @@ data/*
 !data/cfg_aliases.yaml
 !data/source_corrections.yaml
 !data/key_normalization.yaml
+!data/game8/
+!data/game8/skills_index.json
+!data/shinsen_sim/
+!data/shinsen_sim/api_data.json
 !data/cfg/
 data/cfg/cfg_current.json
 !data/.cfg_history/

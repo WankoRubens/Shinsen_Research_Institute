@@ -90,6 +90,7 @@ import { useActiveProfile } from '../composables/useActiveProfile'
 import { useProfiles } from '../composables/useProfiles'
 import { useDialogs } from '../composables/useDialogs'
 import { useChangelog } from '../composables/useChangelog'
+import { useLocale } from '../composables/useLocale'
 import { useData } from '../composables/useData'
 import { useGroupPersistence } from '../composables/useGroupPersistence'
 import { makeSerializer } from '../lib/lineupSerialize'
@@ -101,6 +102,7 @@ const route = useRoute()
 const router = useRouter()
 const sidebarCollapsed = ref(false)
 const sidebarMobileOpen = ref(false)
+const { t } = useLocale()
 
 // Title / description for the shared PageHeader. Routes declare these
 // statically via meta; the coming-soon page picks dynamic values per :topic.
@@ -110,18 +112,29 @@ const COMING_SOON_META: Record<string, { title: string; description: string }> =
     description: '依照雙方陣容自動推演戰鬥流程；老實說目前八字沒半撇，先別期待。',
   },
   'hero-db': {
-    title: '武將資料庫',
-    description: '橫向比較各武將屬性、適性與「精選隊伍」上的人氣度；不做配置建議，純資料呈現。目前仍在開發中。',
+    title: '武将データベース',
+    description: '各武将の属性、適性、おすすめ編成での人気度を横断比較します。編成提案ではなく、データ閲覧用のページです。現在開発中です。',
   },
 }
 const pageTitle = computed<string>(() => {
+  if (route.name === 'battleSim') return t('battleSim')
+  if (route.name === 'mockBattle') return t('mockBattle')
+  if (route.name === 'settings') return t('settings')
+  if (route.name === 'profiles') return t('profiles')
+  if (route.name === 'groups') return t('groups')
+  if (route.name === 'shares') return t('shares')
+  if (route.name === 'proposals') return t('proposals')
   if (route.name === 'comingSoon') {
     const topic = String(route.params.topic ?? '')
+    if (topic === 'hero-db') return t('heroDb')
     return COMING_SOON_META[topic]?.title ?? '即將推出'
   }
   return String(route.meta.title ?? route.name ?? '')
 })
 const pageDescription = computed<string | undefined>(() => {
+  if (route.name === 'battleSim') return t('battleDescription')
+  if (route.name === 'mockBattle') return t('mockBattleDescription')
+  if (route.name === 'settings') return t('settingsDescription')
   if (route.name === 'comingSoon') {
     const topic = String(route.params.topic ?? '')
     return COMING_SOON_META[topic]?.description ?? '此功能尚未上線。'
@@ -157,9 +170,17 @@ const authDialogVisible = dialogs.useDialog('auth')
 // (it just captures the current state, which on those routes is whatever
 // the user last had in the builder).
 const onSignIn = (provider: Parameters<typeof signIn>[0]) => {
-  authDialogVisible.value = false
-  snapshotForRecovery()
-  signIn(provider)
+  try {
+    authDialogVisible.value = false
+    snapshotForRecovery()
+    signIn(provider)
+  } catch (e) {
+    authDialogVisible.value = true
+    const message = (e as Error).message === 'auth not configured'
+      ? 'ログイン設定がありません。.env に VITE_SUPABASE_URL を設定してください。'
+      : `ログイン開始に失敗しました: ${(e as Error).message}`
+    ElMessage.error(message)
+  }
 }
 
 // CHT→JP name lookup so saved profiles stay translation-stable. Uses the
@@ -175,12 +196,12 @@ const inventoryAsJP = (h: string[], s: string[]): { inv_h: string[]; inv_s: stri
 
 const onApplyProfile = (id: string) => {
   if (isEditingInventory.value) {
-    ElMessage.warning('請先儲存或取消庫存編輯')
+    ElMessage.warning('先に所持編集を保存またはキャンセルしてください')
     return
   }
   const p = profiles.value.find(x => x.id === id)
   if (!p) {
-    ElMessage.error('找不到該角色配置，請重新整理頁面')
+    ElMessage.error('対象の設定が見つかりません。ページを再読み込みしてください')
     return
   }
   applyProfile(p)
@@ -189,7 +210,7 @@ const onApplyProfile = (id: string) => {
 
 const onUnloadProfile = () => {
   if (isEditingInventory.value) {
-    ElMessage.warning('請先儲存或取消庫存編輯')
+    ElMessage.warning('先に所持編集を保存またはキャンセルしてください')
     return
   }
   unloadProfile()
@@ -213,7 +234,7 @@ const onSaveInventoryToActive = async () => {
     void refreshProfiles().catch(() => { /* swallow */ })
     ElMessage.success(`已更新「${active.name}」`)
   } catch (e) {
-    ElMessage.error(`儲存失敗：${(e as Error).message}`)
+    ElMessage.error(`保存に失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -228,7 +249,7 @@ const onSaveInventoryToNew = async (name: string) => {
     void refreshProfiles().catch(() => { /* swallow */ })
     ElMessage.success(`已建立並切換到「${name}」`)
   } catch (e) {
-    ElMessage.error(`建立失敗：${(e as Error).message}`)
+    ElMessage.error(`作成に失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -250,7 +271,7 @@ const submitRename = async () => {
     renameDialogVisible.value = false
     ElMessage.success('名稱已更新')
   } catch (e) {
-    ElMessage.error(`更新失敗：${(e as Error).message}`)
+    ElMessage.error(`更新に失敗しました: ${(e as Error).message}`)
   } finally {
     renameSaving.value = false
   }
@@ -267,7 +288,7 @@ const onUserMenu = async (cmd: UserMenuCmd) => {
     await flushPendingCloudPush()
     await signOut()
     clearActiveProfile()
-    ElMessage.success('已登出')
+    ElMessage.success('ログアウトしました')
   } else if (cmd === 'rename') {
     dialogs.open('rename')
   } else if (cmd === 'changelog') {

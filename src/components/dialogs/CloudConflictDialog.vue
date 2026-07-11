@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="編組同步衝突"
+    title="編組の同期競合"
     width="520px"
     :close-on-click-modal="false"
     :show-close="false"
@@ -9,7 +9,7 @@
   >
     <template v-if="ctx">
       <p class="text-sm text-ink-soft mb-4 leading-relaxed">
-        編組「<span class="font-bold text-ink">{{ ctx.serverRow.name }}</span>」在其他裝置已被更新。
+        編組「<span class="font-bold text-ink">{{ ctx.serverRow.name }}</span>」は他の端末で更新されています。
         為避免覆蓋對方的修改，請選擇要保留的版本。
       </p>
 
@@ -30,7 +30,7 @@
       </div>
 
       <p class="text-[11px] text-ink-mute mb-4 leading-relaxed">
-        · 採用雲端 — 用雲端版本取代本地該編組<br />
+        ・クラウド版を採用: この端末の該当編組をクラウド版で置き換えます<br />
         · 以本地覆寫 — 用本地版本覆蓋雲端，捨棄對方裝置的修改<br />
         · 暫不同步 — 本次階段停用雲端同步，繼續本地編輯
       </p>
@@ -111,7 +111,7 @@ const serverTeamCount = computed(() =>
 const serverUpdatedLabel = computed(() => {
   if (!ctx.value) return ''
   try {
-    return new Date(ctx.value.serverRow.updated_at).toLocaleString('zh-TW')
+    return new Date(ctx.value.serverRow.updated_at).toLocaleString('ja-JP')
   } catch {
     return ctx.value.serverRow.updated_at
   }

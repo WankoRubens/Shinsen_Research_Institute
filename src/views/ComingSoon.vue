@@ -1,7 +1,10 @@
 <template>
-  <PageStub description="此功能仍在開發中，敬請期待後續版本上線。" />
+  <PageStub :description="t('developingFeature')" />
 </template>
 
 <script setup lang="ts">
 import PageStub from '../components/layout/PageStub.vue'
+import { useLocale } from '../composables/useLocale'
+
+const { t } = useLocale()
 </script>

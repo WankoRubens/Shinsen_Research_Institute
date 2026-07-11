@@ -1,0 +1,7053 @@
+{
+  "commanders": [
+    {
+      "id": "c1",
+      "name": "織田信長",
+      "uniqueTacticId": "t73",
+      "cost": 7,
+      "politics": 247,
+      "bravery": 162,
+      "strategy": 175,
+      "command": 232,
+      "speed": 110,
+      "charm": 177,
+      "faction": "織田",
+      "transferTacticId": "t36",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "魔王",
+          "content": "自身の行動後、敵軍の各武将の兵力が初めて50%以下になると、ランダムに5%以下の兵力を損失"
+        },
+        {
+          "level": "1",
+          "name": "覇王",
+          "content": "自身が兵力を回復する時、敵軍単体の兵力を回復量の10%分削る（効果上限は自身の兵力の10%）"
+        },
+        {
+          "level": "2",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        },
+        {
+          "level": "4",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "name": "明智光秀",
+      "uniqueTacticId": "t74",
+      "cost": 7,
+      "politics": 227,
+      "bravery": 140,
+      "strategy": 221,
+      "command": 184,
+      "speed": 116,
+      "charm": 209,
+      "faction": "織田",
+      "transferTacticId": "t4",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "連歌百韻",
+          "content": "能動戦法の発動に成功すると、7%の確率で再度発動判定を行う。固有戦法の場合、再判定の確率が35%"
+        },
+        {
+          "level": "1",
+          "name": "波風",
+          "content": "通常攻撃時、80%の確率で対象の知略を2吸収（最大10回まで重ねがけ可能）。低い確率で自軍大将を攻撃"
+        },
+        {
+          "level": "2",
+          "name": "知謀Ⅱ",
+          "content": "計略与ダメージが3.3%増加"
+        },
+        {
+          "level": "4",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "name": "柴田勝家",
+      "uniqueTacticId": "t45",
+      "cost": 6,
+      "politics": 121,
+      "bravery": 209,
+      "strategy": 139,
+      "command": 162,
+      "speed": 168,
+      "charm": 129,
+      "faction": "織田",
+      "transferTacticId": "t39",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "瓶割り",
+          "content": "5ターン目以降、10%の離反を獲得。自身の兵力が50%以下の場合、与ダメージが10%上昇"
+        },
+        {
+          "level": "1",
+          "name": "馬術Ⅲ",
+          "content": "部隊の騎兵レベルが3増加"
+        },
+        {
+          "level": "2",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "血気Ⅱ",
+          "content": "兵刃与ダメージが2.2%増加"
+        }
+      ]
+    },
+    {
+      "id": "c4",
+      "name": "前田利家",
+      "uniqueTacticId": "t79",
+      "cost": 6,
+      "politics": 174,
+      "bravery": 186,
+      "strategy": 121,
+      "command": 159,
+      "speed": 115,
+      "charm": 147,
+      "faction": "織田",
+      "transferTacticId": "t25",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "算盤勘定",
+          "content": "銀銭の産出量に応じて武勇増加（最大+16）"
+        },
+        {
+          "level": "1",
+          "name": "馬槍術Ⅱ",
+          "content": "部隊の騎兵・足軽レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "奮戦Ⅲ",
+          "content": "このターンに通常攻撃を受けていない場合、非固有能動戦法の発動確率が3％増加"
+        },
+        {
+          "level": "4",
+          "name": "武威I",
+          "content": "武勇が2%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c5",
+      "name": "妻木煕子",
+      "uniqueTacticId": "t56",
+      "cost": 6,
+      "politics": 168,
+      "bravery": 55,
+      "strategy": 183,
+      "command": 116,
+      "speed": 60,
+      "charm": 156,
+      "faction": "織田",
+      "transferTacticId": "t18",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "謀攻Ⅲ",
+          "content": "自軍全体の計略与ダメージが3.7%増加"
+        },
+        {
+          "level": "1",
+          "name": "砲術Ⅲ",
+          "content": "部隊の鉄砲レベルが3増加"
+        },
+        {
+          "level": "2",
+          "name": "奮戦Ⅱ",
+          "content": "このターンに通常攻撃を受けていない場合、非固有能動戦法の発動確率が2.5％増加"
+        },
+        {
+          "level": "4",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c6",
+      "name": "帰蝶",
+      "uniqueTacticId": "t68",
+      "cost": 6,
+      "politics": 123,
+      "bravery": 99,
+      "strategy": 178,
+      "command": 162,
+      "speed": 139,
+      "charm": 202,
+      "faction": "織田",
+      "transferTacticId": "t9",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "短刀の契",
+          "content": "戦闘中、自軍男性大将の全属性が2%上昇"
+        },
+        {
+          "level": "1",
+          "name": "忍耐Ⅲ",
+          "content": "自身が通常攻撃を受ける確率が大幅に低下"
+        },
+        {
+          "level": "2",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c7",
+      "name": "佐久間信盛",
+      "uniqueTacticId": "t97",
+      "cost": 6,
+      "politics": 92,
+      "bravery": 95,
+      "strategy": 161,
+      "command": 174,
+      "speed": 86,
+      "charm": 52,
+      "faction": "織田",
+      "transferTacticId": "t37",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "堅固Ⅲ",
+          "content": "自軍全体の計略被ダメージが3.7%減少"
+        },
+        {
+          "level": "1",
+          "name": "固守Ⅱ",
+          "content": "自軍全体の兵刃被ダメージが1.8%減少"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c8",
+      "name": "荒木村重",
+      "uniqueTacticId": "t69",
+      "cost": 6,
+      "politics": 112,
+      "bravery": 91,
+      "strategy": 186,
+      "command": 159,
+      "speed": 64,
+      "charm": 53,
+      "faction": "織田",
+      "transferTacticId": "t20",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        },
+        {
+          "level": "2",
+          "name": "看破Ⅱ",
+          "content": "計略被ダメージが3.3%減少"
+        },
+        {
+          "level": "4",
+          "name": "堅固Ⅱ",
+          "content": "自軍全体の計略被ダメージが3%減少"
+        }
+      ]
+    },
+    {
+      "id": "c9",
+      "name": "森可成",
+      "uniqueTacticId": "t71",
+      "cost": 5,
+      "politics": 71,
+      "bravery": 189,
+      "strategy": 112,
+      "command": 146,
+      "speed": 125,
+      "charm": 78,
+      "faction": "織田",
+      "transferTacticId": "t42",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅲ",
+          "content": "部隊の足軽レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        },
+        {
+          "level": "2",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "4",
+          "name": "器術Ⅲ",
+          "content": "部隊の兵器レベルが3増加"
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "name": "稲葉一鉄",
+      "uniqueTacticId": "t47",
+      "cost": 5,
+      "politics": 102,
+      "bravery": 102,
+      "strategy": 150,
+      "command": 176,
+      "speed": 57,
+      "charm": 105,
+      "faction": "織田",
+      "transferTacticId": "t42",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "防護Ⅲ",
+          "content": "兵刃被ダメージが2.8%減少"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "剛猛I",
+          "content": "自身が通常攻撃を受ける確率小幅上昇"
+        },
+        {
+          "level": "4",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "name": "明智秀満",
+      "uniqueTacticId": "t85",
+      "cost": 5,
+      "politics": 73,
+      "bravery": 130,
+      "strategy": 182,
+      "command": 148,
+      "speed": 61,
+      "charm": 118,
+      "faction": "織田",
+      "transferTacticId": "t24",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "統帥Ⅲ",
+          "content": "統率が3%上昇"
+        },
+        {
+          "level": "1",
+          "name": "看破Ⅰ",
+          "content": "計略被ダメージが2.6%減少"
+        },
+        {
+          "level": "2",
+          "name": "攻勢Ⅲ",
+          "content": "自軍全体の与ダメージが1.6%増加"
+        },
+        {
+          "level": "4",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "name": "お市",
+      "uniqueTacticId": "t65",
+      "cost": 3,
+      "politics": 98,
+      "bravery": 64,
+      "strategy": 157,
+      "command": 129,
+      "speed": 98,
+      "charm": 207,
+      "faction": "織田",
+      "transferTacticId": "t30",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "牢固Ⅲ",
+          "content": "被ダメージが2％減少"
+        },
+        {
+          "level": "2",
+          "name": "槍術Ⅰ",
+          "content": "部隊の足軽レベルが1増加"
+        },
+        {
+          "level": "4",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "name": "前田慶次",
+      "uniqueTacticId": "t66",
+      "cost": 6,
+      "politics": 52,
+      "bravery": 207,
+      "strategy": 132,
+      "command": 127,
+      "speed": 123,
+      "charm": 86,
+      "faction": "織田",
+      "transferTacticId": "t8",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "傾奇者",
+          "content": "12%の確率で制御状態を無効化できる。自身の装備に特技が1あるごとに、この確率は1%上昇"
+        },
+        {
+          "level": "1",
+          "name": "馬槍術Ⅱ",
+          "content": "部隊の騎兵・足軽レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "牢固Ⅱ",
+          "content": "被ダメージが1.6%減少"
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "name": "武田信玄",
+      "uniqueTacticId": "t102",
+      "cost": 7,
+      "politics": 194,
+      "bravery": 191,
+      "strategy": 195,
+      "command": 203,
+      "speed": 139,
+      "charm": 163,
+      "faction": "武田",
+      "transferTacticId": "t19",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "甲斐の虎",
+          "content": "部隊行軍速度が10%上昇し、士気消費が10%低下する。占領、攻城命令の実行中は効果が2倍"
+        },
+        {
+          "level": "1",
+          "name": "人は城",
+          "content": "自軍全体の統率が5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "固守Ⅱ",
+          "content": "自軍全体の兵刃被ダメージが1.8%減少"
+        },
+        {
+          "level": "4",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "name": "馬場信春",
+      "uniqueTacticId": "t104",
+      "cost": 6,
+      "politics": 114,
+      "bravery": 162,
+      "strategy": 171,
+      "command": 203,
+      "speed": 102,
+      "charm": 122,
+      "faction": "武田",
+      "transferTacticId": "t10",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "不死身",
+          "content": "戦闘中の兵力損害が低下する"
+        },
+        {
+          "level": "1",
+          "name": "剛猛Ⅲ",
+          "content": "自身が通常攻撃を受ける確率大幅上昇"
+        },
+        {
+          "level": "2",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "防護Ⅱ",
+          "content": "兵刃被ダメージが2.2%減少"
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "name": "原虎胤",
+      "uniqueTacticId": "t106",
+      "cost": 5,
+      "politics": 38,
+      "bravery": 185,
+      "strategy": 96,
+      "command": 109,
+      "speed": 69,
+      "charm": 62,
+      "faction": "武田",
+      "transferTacticId": "t37",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "統帥Ⅲ",
+          "content": "統率が3%上昇"
+        },
+        {
+          "level": "1",
+          "name": "牢固Ⅱ",
+          "content": "被ダメージが1.6%減少"
+        },
+        {
+          "level": "2",
+          "name": "剛猛I",
+          "content": "自身が通常攻撃を受ける確率小幅上昇"
+        },
+        {
+          "level": "4",
+          "name": "看破Ⅰ",
+          "content": "計略被ダメージが2.6%減少"
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "name": "山本勘助",
+      "uniqueTacticId": "t63",
+      "cost": 6,
+      "politics": 97,
+      "bravery": 103,
+      "strategy": 225,
+      "command": 155,
+      "speed": 117,
+      "charm": 113,
+      "faction": "武田",
+      "transferTacticId": "t38",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "側撃",
+          "content": "通常攻撃は14%の確率で攻撃対象に疲弊を付与、1ターン持続。自身が通常攻撃を受けるとそのターンの間疲弊が無効になる"
+        },
+        {
+          "level": "1",
+          "name": "弓槍術Ⅱ",
+          "content": "部隊の足軽・弓兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "知謀Ⅱ",
+          "content": "計略与ダメージが3.3%増加"
+        },
+        {
+          "level": "4",
+          "name": "攻勢Ⅰ",
+          "content": "自軍全体の与ダメージが1%増加"
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "name": "内藤昌豊",
+      "uniqueTacticId": "t80",
+      "cost": 6,
+      "politics": 104,
+      "bravery": 101,
+      "strategy": 190,
+      "command": 155,
+      "speed": 68,
+      "charm": 83,
+      "faction": "武田",
+      "transferTacticId": "t15",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "牢固Ⅲ",
+          "content": "被ダメージが2％減少"
+        },
+        {
+          "level": "1",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "謀攻Ⅱ",
+          "content": "自軍全体の計略与ダメージが3%増加"
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "name": "飯富虎昌",
+      "uniqueTacticId": "t88",
+      "cost": 6,
+      "politics": 65,
+      "bravery": 203,
+      "strategy": 95,
+      "command": 137,
+      "speed": 109,
+      "charm": 63,
+      "faction": "武田",
+      "transferTacticId": "t40",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "赤備え",
+          "content": "初めて通常攻撃を行った後、攻撃対象の統率が18減少（重ねがけ可能）"
+        },
+        {
+          "level": "1",
+          "name": "馬術Ⅲ",
+          "content": "部隊の騎兵レベルが3増加"
+        },
+        {
+          "level": "2",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "4",
+          "name": "武威I",
+          "content": "武勇が2%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "name": "板垣信方",
+      "uniqueTacticId": "t55",
+      "cost": 5,
+      "politics": 125,
+      "bravery": 89,
+      "strategy": 176,
+      "command": 165,
+      "speed": 47,
+      "charm": 130,
+      "faction": "武田",
+      "transferTacticId": "t17",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        },
+        {
+          "level": "1",
+          "name": "防護Ⅱ",
+          "content": "兵刃被ダメージが2.2%減少"
+        },
+        {
+          "level": "2",
+          "name": "器術Ⅲ",
+          "content": "部隊の兵器レベルが3増加"
+        },
+        {
+          "level": "4",
+          "name": "攻勢Ⅰ",
+          "content": "自軍全体の与ダメージが1%増加"
+        }
+      ]
+    },
+    {
+      "id": "c21",
+      "name": "岡部元信",
+      "uniqueTacticId": "t82",
+      "cost": 5,
+      "politics": 72,
+      "bravery": 134,
+      "strategy": 179,
+      "command": 131,
+      "speed": 63,
+      "charm": 138,
+      "faction": "武田",
+      "transferTacticId": "t28",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "攻勢Ⅲ",
+          "content": "自軍全体の与ダメージが1.6%増加"
+        },
+        {
+          "level": "1",
+          "name": "威勢Ⅱ",
+          "content": "このターンに通常攻撃を受けていない場合、固有能動戦法の発動確率が2.8%増加"
+        },
+        {
+          "level": "2",
+          "name": "剛猛I",
+          "content": "自身が通常攻撃を受ける確率小幅上昇"
+        },
+        {
+          "level": "4",
+          "name": "知恵I",
+          "content": "知略が2%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c22",
+      "name": "一条信龍",
+      "uniqueTacticId": "t52",
+      "cost": 5,
+      "politics": 121,
+      "bravery": 157,
+      "strategy": 125,
+      "command": 153,
+      "speed": 90,
+      "charm": 128,
+      "faction": "武田",
+      "transferTacticId": "t107",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "防護Ⅱ",
+          "content": "兵刃被ダメージが2.2%減少"
+        },
+        {
+          "level": "4",
+          "name": "剛猛I",
+          "content": "自身が通常攻撃を受ける確率小幅上昇"
+        }
+      ]
+    },
+    {
+      "id": "c23",
+      "name": "甘利虎泰",
+      "uniqueTacticId": "t58",
+      "cost": 6,
+      "politics": 84,
+      "bravery": 176,
+      "strategy": 95,
+      "command": 163,
+      "speed": 59,
+      "charm": 79,
+      "faction": "武田",
+      "transferTacticId": "t12",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅲ",
+          "content": "部隊の足軽レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "破敵Ⅱ",
+          "content": "与ダメージが1.6%増加"
+        },
+        {
+          "level": "2",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c24",
+      "name": "徳川家康",
+      "uniqueTacticId": "t51",
+      "cost": 7,
+      "politics": 230,
+      "bravery": 156,
+      "strategy": 169,
+      "command": 232,
+      "speed": 62,
+      "charm": 181,
+      "faction": "徳川",
+      "transferTacticId": "t35",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "三河武士",
+          "content": "自軍全体は通常攻撃後、15%の確率で自身の次回の被ダメージが50%低下"
+        },
+        {
+          "level": "1",
+          "name": "古狸",
+          "content": "同一勢力の武将2人と同部隊の場合、自身の勢力をその2名の勢力に転換"
+        },
+        {
+          "level": "2",
+          "name": "牢固Ⅱ",
+          "content": "被ダメージが1.6%減少"
+        },
+        {
+          "level": "4",
+          "name": "弓槍術Ⅱ",
+          "content": "部隊の足軽・弓兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c25",
+      "name": "本多忠勝",
+      "uniqueTacticId": "t62",
+      "cost": 7,
+      "politics": 101,
+      "bravery": 230,
+      "strategy": 116,
+      "command": 169,
+      "speed": 82,
+      "charm": 115,
+      "faction": "徳川",
+      "transferTacticId": "t39",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "無傷の誇り",
+          "content": "戦闘中の兵力損害が低下する"
+        },
+        {
+          "level": "1",
+          "name": "剛猛Ⅱ",
+          "content": "自身が通常攻撃を受ける確率中幅上昇"
+        },
+        {
+          "level": "2",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c26",
+      "name": "酒井忠次",
+      "uniqueTacticId": "t93",
+      "cost": 7,
+      "politics": 90,
+      "bravery": 187,
+      "strategy": 153,
+      "command": 187,
+      "speed": 119,
+      "charm": 74,
+      "faction": "徳川",
+      "transferTacticId": "t5",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "1",
+          "name": "槍術Ⅲ",
+          "content": "部隊の足軽レベルが3増加"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "守勢Ⅰ",
+          "content": "自軍全体の被ダメージが1%減少"
+        }
+      ]
+    },
+    {
+      "id": "c27",
+      "name": "榊原康政",
+      "uniqueTacticId": "t87",
+      "cost": 6,
+      "politics": 109,
+      "bravery": 182,
+      "strategy": 140,
+      "command": 155,
+      "speed": 151,
+      "charm": 80,
+      "faction": "徳川",
+      "transferTacticId": "t27",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅲ",
+          "content": "部隊の騎兵レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "4",
+          "name": "統帥Ⅰ",
+          "content": "統率が2%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c28",
+      "name": "松平信康",
+      "uniqueTacticId": "t59",
+      "cost": 6,
+      "politics": 82,
+      "bravery": 179,
+      "strategy": 131,
+      "command": 161,
+      "speed": 142,
+      "charm": 162,
+      "faction": "徳川",
+      "transferTacticId": "t1",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "血気Ⅱ",
+          "content": "兵刃与ダメージが2.2%増加"
+        },
+        {
+          "level": "1",
+          "name": "武威Ⅲ",
+          "content": "武勇が3%上昇"
+        },
+        {
+          "level": "2",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c29",
+      "name": "本多正信",
+      "uniqueTacticId": "t99",
+      "cost": 5,
+      "politics": 208,
+      "bravery": 43,
+      "strategy": 192,
+      "command": 84,
+      "speed": 87,
+      "charm": 205,
+      "faction": "徳川",
+      "transferTacticId": "t18",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "看破Ⅲ",
+          "content": "計略被ダメージが4%減少"
+        },
+        {
+          "level": "2",
+          "name": "猛攻Ⅰ",
+          "content": "自軍全体の兵刃与ダメージが1.4%増加"
+        },
+        {
+          "level": "4",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c30",
+      "name": "高力清長",
+      "uniqueTacticId": "t53",
+      "cost": 5,
+      "politics": 128,
+      "bravery": 105,
+      "strategy": 149,
+      "command": 180,
+      "speed": 77,
+      "charm": 133,
+      "faction": "徳川",
+      "transferTacticId": "t14",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "統帥Ⅲ",
+          "content": "統率が3%上昇"
+        },
+        {
+          "level": "1",
+          "name": "看破Ⅱ",
+          "content": "計略被ダメージが3.3%減少"
+        },
+        {
+          "level": "2",
+          "name": "弓槍術Ⅱ",
+          "content": "部隊の足軽・弓兵レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "守勢Ⅰ",
+          "content": "自軍全体の被ダメージが1%減少"
+        }
+      ]
+    },
+    {
+      "id": "c31",
+      "name": "毛利元就",
+      "uniqueTacticId": "t90",
+      "cost": 7,
+      "politics": 210,
+      "bravery": 111,
+      "strategy": 247,
+      "command": 181,
+      "speed": 63,
+      "charm": 181,
+      "faction": "群雄",
+      "transferTacticId": "t41",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "毛利",
+      "traits": [
+        {
+          "level": "0",
+          "name": "謀神",
+          "content": "計略ダメージを与えた際、25%の確率でダメージ量に両者の知略差が反映される（各戦闘につき3回まで発動可能）"
+        },
+        {
+          "level": "1",
+          "name": "三矢家訓",
+          "content": "自軍武将3名のメイン属性が異なる場合、そのメイン属性がそれぞれが8増加"
+        },
+        {
+          "level": "2",
+          "name": "謀攻Ⅱ",
+          "content": "自軍全体の計略与ダメージが3%増加"
+        },
+        {
+          "level": "4",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c32",
+      "name": "今川義元",
+      "uniqueTacticId": "t84",
+      "cost": 7,
+      "politics": 212,
+      "bravery": 175,
+      "strategy": 178,
+      "command": 194,
+      "speed": 133,
+      "charm": 223,
+      "faction": "群雄",
+      "transferTacticId": "t32",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "今川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "公家趣味",
+          "content": "敵軍大将の所持家宝の効果を無効にし、自身がその効果を獲得"
+        },
+        {
+          "level": "1",
+          "name": "弓兵大将",
+          "content": "部隊の弓兵レベルが3、レベル上限が1増加"
+        },
+        {
+          "level": "2",
+          "name": "善戦Ⅱ",
+          "content": "2.9％の会心と奇策を獲得"
+        },
+        {
+          "level": "4",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c33",
+      "name": "長宗我部元親",
+      "uniqueTacticId": "t100",
+      "cost": 7,
+      "politics": 189,
+      "bravery": 188,
+      "strategy": 167,
+      "command": 190,
+      "speed": 97,
+      "charm": 181,
+      "faction": "群雄",
+      "transferTacticId": "t3",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "長宗我部",
+      "traits": [
+        {
+          "level": "0",
+          "name": "四州の雄",
+          "content": "自軍全体の通常攻撃ダメージが6%、駐屯中の場合はが12%増加"
+        },
+        {
+          "level": "1",
+          "name": "足軽大将",
+          "content": "部隊の足軽レベルが3、レベル上限が1増加"
+        },
+        {
+          "level": "2",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        },
+        {
+          "level": "4",
+          "name": "固守Ⅱ",
+          "content": "自軍全体の兵刃被ダメージが1.8%減少"
+        }
+      ]
+    },
+    {
+      "id": "c34",
+      "name": "立花道雪",
+      "uniqueTacticId": "t98",
+      "cost": 7,
+      "politics": 152,
+      "bravery": 194,
+      "strategy": 149,
+      "command": 174,
+      "speed": 121,
+      "charm": 134,
+      "faction": "群雄",
+      "transferTacticId": "t43",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "大友",
+      "traits": [
+        {
+          "level": "0",
+          "name": "雷の化身",
+          "content": "通常攻撃を受けると、低確率で攻撃者に麻痺を付与"
+        },
+        {
+          "level": "1",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "尽力Ⅲ",
+          "content": "5％の会心を獲得"
+        }
+      ]
+    },
+    {
+      "id": "c35",
+      "name": "松永久秀",
+      "uniqueTacticId": "t77",
+      "cost": 7,
+      "politics": 190,
+      "bravery": 114,
+      "strategy": 223,
+      "command": 173,
+      "speed": 111,
+      "charm": 150,
+      "faction": "群雄",
+      "transferTacticId": "t2",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "三好",
+      "traits": [
+        {
+          "level": "0",
+          "name": "清濁併呑",
+          "content": "25%の確率で自身がこれから受ける通常攻撃を無効化"
+        },
+        {
+          "level": "1",
+          "name": "防護Ⅱ",
+          "content": "兵刃被ダメージが2.2%減少"
+        },
+        {
+          "level": "2",
+          "name": "砲術Ⅲ",
+          "content": "部隊の鉄砲レベルが3増加"
+        },
+        {
+          "level": "4",
+          "name": "心尽Ⅰ",
+          "content": "4％の奇策を獲得"
+        }
+      ]
+    },
+    {
+      "id": "c36",
+      "name": "北条綱成",
+      "uniqueTacticId": "t64",
+      "cost": 7,
+      "politics": 119,
+      "bravery": 225,
+      "strategy": 155,
+      "command": 165,
+      "speed": 154,
+      "charm": 136,
+      "faction": "群雄",
+      "transferTacticId": "t13",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "北条",
+      "traits": [
+        {
+          "level": "0",
+          "name": "騎兵大将",
+          "content": "部隊の騎兵レベルが3、レベル上限が1増加"
+        },
+        {
+          "level": "1",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "2",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "牢固Ⅰ",
+          "content": "被ダメージが1.2%減少"
+        }
+      ]
+    },
+    {
+      "id": "c37",
+      "name": "本願寺顕如",
+      "uniqueTacticId": "t46",
+      "cost": 7,
+      "politics": 210,
+      "bravery": 120,
+      "strategy": 181,
+      "command": 183,
+      "speed": 78,
+      "charm": 206,
+      "faction": "群雄",
+      "transferTacticId": "t2",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "本願寺",
+      "traits": [
+        {
+          "level": "0",
+          "name": "求道",
+          "content": "雑賀本願寺以外の友軍1名を雑賀本願寺に変更。変更できなかった場合、自軍全体の計略被ダメージが5%低下"
+        },
+        {
+          "level": "1",
+          "name": "看破Ⅲ",
+          "content": "計略被ダメージが4%減少"
+        },
+        {
+          "level": "2",
+          "name": "知謀Ⅰ",
+          "content": "計略与ダメージが2.6％増加"
+        },
+        {
+          "level": "4",
+          "name": "槍砲術Ⅱ",
+          "content": "部隊の足軽・鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c38",
+      "name": "北条氏康",
+      "uniqueTacticId": "t91",
+      "cost": 6,
+      "politics": 224,
+      "bravery": 137,
+      "strategy": 188,
+      "command": 183,
+      "speed": 100,
+      "charm": 166,
+      "faction": "群雄",
+      "transferTacticId": "t22",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "北条",
+      "traits": [
+        {
+          "level": "0",
+          "name": "禄寿応穏",
+          "content": "部隊士気上限が5、最大レベルの資源建築1つにつき追加でが3増加"
+        },
+        {
+          "level": "1",
+          "name": "上下一心",
+          "content": "自軍複数（2～3名）は1ターン目に制御耐性を獲得し、30%の確率で付与される制御状態を無効化する。この効果は一人につき最大1回まで発動可能"
+        },
+        {
+          "level": "2",
+          "name": "堅固Ⅱ",
+          "content": "自軍全体の計略被ダメージが3%減少"
+        },
+        {
+          "level": "4",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c39",
+      "name": "伊達晴宗",
+      "uniqueTacticId": "t70",
+      "cost": 6,
+      "politics": 167,
+      "bravery": 181,
+      "strategy": 133,
+      "command": 157,
+      "speed": 112,
+      "charm": 145,
+      "faction": "群雄",
+      "transferTacticId": "t1",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "伊達",
+      "traits": [
+        {
+          "level": "0",
+          "name": "看破Ⅲ",
+          "content": "計略被ダメージが4%減少"
+        },
+        {
+          "level": "1",
+          "name": "固守Ⅱ",
+          "content": "自軍全体の兵刃被ダメージが1.8%減少"
+        },
+        {
+          "level": "2",
+          "name": "馬砲術Ⅱ",
+          "content": "部隊の騎兵・鉄砲レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "攻勢Ⅰ",
+          "content": "自軍全体の与ダメージが1%増加"
+        }
+      ]
+    },
+    {
+      "id": "c40",
+      "name": "安東愛季",
+      "uniqueTacticId": "t72",
+      "cost": 6,
+      "politics": 178,
+      "bravery": 111,
+      "strategy": 175,
+      "command": 175,
+      "speed": 71,
+      "charm": 151,
+      "faction": "群雄",
+      "transferTacticId": "t23",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "安東",
+      "traits": [
+        {
+          "level": "0",
+          "name": "牢固Ⅲ",
+          "content": "被ダメージが2％減少"
+        },
+        {
+          "level": "1",
+          "name": "看破Ⅱ",
+          "content": "計略被ダメージが3.3%減少"
+        },
+        {
+          "level": "2",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "器術Ⅰ",
+          "content": "部隊の兵器レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c41",
+      "name": "毛利隆元",
+      "uniqueTacticId": "t48",
+      "cost": 5,
+      "politics": 169,
+      "bravery": 93,
+      "strategy": 166,
+      "command": 166,
+      "speed": 56,
+      "charm": 171,
+      "faction": "群雄",
+      "transferTacticId": "t38",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "毛利",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        },
+        {
+          "level": "2",
+          "name": "固守Ⅱ",
+          "content": "自軍全体の兵刃被ダメージが1.8%減少"
+        },
+        {
+          "level": "4",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        }
+      ]
+    },
+    {
+      "id": "c42",
+      "name": "十河一存",
+      "uniqueTacticId": "t103",
+      "cost": 5,
+      "politics": 55,
+      "bravery": 206,
+      "strategy": 105,
+      "command": 124,
+      "speed": 106,
+      "charm": 48,
+      "faction": "群雄",
+      "transferTacticId": "t11",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "三好",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅲ",
+          "content": "部隊の足軽レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅰ",
+          "content": "統率が2%上昇"
+        },
+        {
+          "level": "4",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        }
+      ]
+    },
+    {
+      "id": "c69",
+      "name": "太田資正",
+      "uniqueTacticId": "t50",
+      "cost": 6,
+      "politics": 83,
+      "bravery": 180,
+      "strategy": 141,
+      "command": 160,
+      "speed": 156,
+      "charm": 62,
+      "faction": "上杉",
+      "transferTacticId": "t34",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "1",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "猛攻Ⅲ",
+          "content": "自軍全体の兵刃与ダメージが2.5％増加"
+        },
+        {
+          "level": "4",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c44",
+      "name": "津田算長",
+      "uniqueTacticId": "t83",
+      "cost": 5,
+      "politics": 106,
+      "bravery": 157,
+      "strategy": 146,
+      "command": 146,
+      "speed": 94,
+      "charm": 146,
+      "faction": "群雄",
+      "transferTacticId": "t108",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "国衆",
+      "traits": [
+        {
+          "level": "0",
+          "name": "鉄砲大将",
+          "content": "部隊の鉄砲レベルが3、レベル上限が1増加"
+        },
+        {
+          "level": "1",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c45",
+      "name": "南部晴政",
+      "uniqueTacticId": "t86",
+      "cost": 5,
+      "politics": 103,
+      "bravery": 169,
+      "strategy": 80,
+      "command": 165,
+      "speed": 152,
+      "charm": 153,
+      "faction": "群雄",
+      "transferTacticId": "t34",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "南部",
+      "traits": [
+        {
+          "level": "0",
+          "name": "武威Ⅲ",
+          "content": "武勇が3%上昇"
+        },
+        {
+          "level": "1",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "牢固Ⅱ",
+          "content": "被ダメージが1.6%減少"
+        },
+        {
+          "level": "4",
+          "name": "攻勢Ⅰ",
+          "content": "自軍全体の与ダメージが1%増加"
+        }
+      ]
+    },
+    {
+      "id": "c46",
+      "name": "尼子晴久",
+      "uniqueTacticId": "t94",
+      "cost": 5,
+      "politics": 136,
+      "bravery": 121,
+      "strategy": 162,
+      "command": 163,
+      "speed": 59,
+      "charm": 111,
+      "faction": "群雄",
+      "transferTacticId": "t28",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "尼子",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        },
+        {
+          "level": "2",
+          "name": "防護Ⅱ",
+          "content": "兵刃被ダメージが2.2%減少"
+        },
+        {
+          "level": "4",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c47",
+      "name": "瑞溪院",
+      "uniqueTacticId": "t101",
+      "cost": 5,
+      "politics": 134,
+      "bravery": 46,
+      "strategy": 144,
+      "command": 139,
+      "speed": 78,
+      "charm": 116,
+      "faction": "群雄",
+      "transferTacticId": "t44",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "北条",
+      "traits": [
+        {
+          "level": "0",
+          "name": "堅固Ⅲ",
+          "content": "自軍全体の計略被ダメージが3.7%減少"
+        },
+        {
+          "level": "1",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        },
+        {
+          "level": "4",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c48",
+      "name": "大内義隆",
+      "uniqueTacticId": "t75",
+      "cost": 6,
+      "politics": 180,
+      "bravery": 79,
+      "strategy": 151,
+      "command": 172,
+      "speed": 74,
+      "charm": 152,
+      "faction": "群雄",
+      "transferTacticId": "t44",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "大内",
+      "traits": [
+        {
+          "level": "0",
+          "name": "統帥Ⅲ",
+          "content": "統率が3%上昇"
+        },
+        {
+          "level": "1",
+          "name": "謀攻Ⅱ",
+          "content": "自軍全体の計略与ダメージが3%増加"
+        },
+        {
+          "level": "2",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "忍耐Ⅰ",
+          "content": "自身が通常攻撃を受ける確率が小幅に低下"
+        }
+      ]
+    },
+    {
+      "id": "c49",
+      "name": "高橋紹運",
+      "uniqueTacticId": "t105",
+      "cost": 6,
+      "politics": 108,
+      "bravery": 224,
+      "strategy": 140,
+      "command": 169,
+      "speed": 162,
+      "charm": 106,
+      "faction": "群雄",
+      "transferTacticId": "t8",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "大友",
+      "traits": [
+        {
+          "level": "0",
+          "name": "雄略絶倫",
+          "content": "通常攻撃を受けた時、攻撃者の属性を2（自身の主要属性と同じ）吸収し、最大8回まで重ねがけ可能"
+        },
+        {
+          "level": "1",
+          "name": "牢固Ⅲ",
+          "content": "被ダメージが2％減少"
+        },
+        {
+          "level": "2",
+          "name": "攻勢Ⅰ",
+          "content": "自軍全体の与ダメージが1%増加"
+        },
+        {
+          "level": "4",
+          "name": "弓槍術Ⅱ",
+          "content": "部隊の足軽・弓兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c50",
+      "name": "陶晴賢",
+      "uniqueTacticId": "t57",
+      "cost": 7,
+      "politics": 123,
+      "bravery": 186,
+      "strategy": 149,
+      "command": 166,
+      "speed": 85,
+      "charm": 112,
+      "faction": "群雄",
+      "transferTacticId": "t33",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "大内",
+      "traits": [
+        {
+          "level": "0",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "1",
+          "name": "看破Ⅱ",
+          "content": "計略被ダメージが3.3%減少"
+        },
+        {
+          "level": "2",
+          "name": "武威Ⅲ",
+          "content": "武勇が3%上昇"
+        },
+        {
+          "level": "4",
+          "name": "馬術Ⅰ",
+          "content": "部隊の騎兵レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c51",
+      "name": "大祝鶴",
+      "uniqueTacticId": "t109",
+      "cost": 6,
+      "politics": 55,
+      "bravery": 171,
+      "strategy": 142,
+      "command": 144,
+      "speed": 75,
+      "charm": 63,
+      "faction": "群雄",
+      "transferTacticId": "t20",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "河野",
+      "traits": [
+        {
+          "level": "0",
+          "name": "破敵Ⅲ",
+          "content": "与ダメージが2%増加"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "忍耐Ⅰ",
+          "content": "自身が通常攻撃を受ける確率が小幅に低下"
+        },
+        {
+          "level": "4",
+          "name": "弓槍術Ⅰ",
+          "content": "部隊の足軽・弓兵レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c52",
+      "name": "朝倉義景",
+      "uniqueTacticId": "t_公家風流",
+      "cost": 4,
+      "politics": 121,
+      "bravery": 54,
+      "strategy": 112,
+      "command": 111,
+      "speed": 159,
+      "charm": 130,
+      "faction": "群雄",
+      "transferTacticId": "t119",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "朝倉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "牢固Ⅲ",
+          "content": "被ダメージが2％減少"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "忍耐Ⅰ",
+          "content": "自身が通常攻撃を受ける確率が小幅に低下"
+        },
+        {
+          "level": "4",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c53",
+      "name": "寿桂尼",
+      "uniqueTacticId": "t110",
+      "cost": 6,
+      "politics": 177,
+      "bravery": 35,
+      "strategy": 183,
+      "command": 149,
+      "speed": 34,
+      "charm": 139,
+      "faction": "群雄",
+      "transferTacticId": "t16",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "今川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        },
+        {
+          "level": "1",
+          "name": "猛攻Ⅱ",
+          "content": "自軍全体の兵刃与ダメージが1.8%増加"
+        },
+        {
+          "level": "2",
+          "name": "謀攻Ⅱ",
+          "content": "自軍全体の計略与ダメージが3%増加"
+        },
+        {
+          "level": "4",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c54",
+      "name": "浅井長政",
+      "uniqueTacticId": "t111",
+      "cost": 6,
+      "politics": 85,
+      "bravery": 184,
+      "strategy": 129,
+      "command": 161,
+      "speed": 124,
+      "charm": 122,
+      "faction": "群雄",
+      "transferTacticId": "t112",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "浅井",
+      "traits": [
+        {
+          "level": "0",
+          "name": "固守Ⅱ",
+          "content": "自軍全体の兵刃被ダメージが1.8%減少"
+        },
+        {
+          "level": "1",
+          "name": "武威Ⅲ",
+          "content": "武勇が3%上昇"
+        },
+        {
+          "level": "2",
+          "name": "血気Ⅰ",
+          "content": "兵刃与ダメージが1.6%増加"
+        }
+      ]
+    },
+    {
+      "id": "c55",
+      "name": "斎藤義龍",
+      "uniqueTacticId": "t113",
+      "cost": 5,
+      "politics": 135,
+      "bravery": 164,
+      "strategy": 143,
+      "command": 165,
+      "speed": 108,
+      "charm": 101,
+      "faction": "群雄",
+      "transferTacticId": "t33",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "斎藤",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "看破Ⅱ",
+          "content": "計略被ダメージが3.3%減少"
+        },
+        {
+          "level": "2",
+          "name": "堅固Ⅲ",
+          "content": "自軍全体の計略被ダメージが3.7%減少"
+        },
+        {
+          "level": "4",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        }
+      ]
+    },
+    {
+      "id": "c56",
+      "name": "豊臣秀吉",
+      "uniqueTacticId": "t61",
+      "cost": 7,
+      "politics": 227,
+      "bravery": 111,
+      "strategy": 229,
+      "command": 181,
+      "speed": 82,
+      "charm": 207,
+      "faction": "豊臣",
+      "transferTacticId": "t29",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "人たらし",
+          "content": "友軍を回復し、回復量が超過した場合、50%の確率で1ターンの間、そのメイン属性が15増加"
+        },
+        {
+          "level": "1",
+          "name": "立身出世",
+          "content": "10回レベルアップするごとに、分配可能な属性ポイントを3獲得"
+        },
+        {
+          "level": "2",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "弓砲術Ⅱ",
+          "content": "部隊の弓兵・鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c57",
+      "name": "加藤清正",
+      "uniqueTacticId": "t92",
+      "cost": 6,
+      "politics": 133,
+      "bravery": 192,
+      "strategy": 125,
+      "command": 159,
+      "speed": 117,
+      "charm": 97,
+      "faction": "豊臣",
+      "transferTacticId": "t21",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "築城名手",
+          "content": "天守レベルが1上がるごとに、統率が2.4増加"
+        },
+        {
+          "level": "1",
+          "name": "気勢Ⅲ",
+          "content": "会心ダメージ率が7.5％増加"
+        },
+        {
+          "level": "2",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c58",
+      "name": "竹中半兵衛",
+      "uniqueTacticId": "t60",
+      "cost": 6,
+      "politics": 95,
+      "bravery": 89,
+      "strategy": 231,
+      "command": 160,
+      "speed": 76,
+      "charm": 158,
+      "faction": "豊臣",
+      "transferTacticId": "t16",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "鳳凰",
+          "content": "自身の被ダメージが1.5%上昇する。戦闘開始から3ターン目以降、自身が初めて致命ダメージを受けた際にそのダメージを無効化する"
+        },
+        {
+          "level": "1",
+          "name": "知謀Ⅲ",
+          "content": "計略与ダメージが4%増加"
+        },
+        {
+          "level": "2",
+          "name": "弓術Ⅲ",
+          "content": "部隊の弓兵レベルが3増加"
+        },
+        {
+          "level": "4",
+          "name": "看破Ⅱ",
+          "content": "計略被ダメージが3.3%減少"
+        }
+      ]
+    },
+    {
+      "id": "c59",
+      "name": "福島正則",
+      "uniqueTacticId": "t49",
+      "cost": 6,
+      "politics": 91,
+      "bravery": 207,
+      "strategy": 121,
+      "command": 151,
+      "speed": 117,
+      "charm": 72,
+      "faction": "豊臣",
+      "transferTacticId": "t21",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "猪武者",
+          "content": "兵刃ダメージを与えると、60%の確率で1%の会心を獲得し、会心ダメージ率が1%上昇（最大6回まで重ねがけ可能）"
+        },
+        {
+          "level": "1",
+          "name": "尽力Ⅱ",
+          "content": "4％の会心を獲得"
+        },
+        {
+          "level": "2",
+          "name": "槍術Ⅲ",
+          "content": "部隊の足軽レベルが3増加"
+        },
+        {
+          "level": "4",
+          "name": "弓術Ⅰ",
+          "content": "部隊の弓兵レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c60",
+      "name": "成田甲斐",
+      "uniqueTacticId": "t76",
+      "cost": 6,
+      "politics": 97,
+      "bravery": 164,
+      "strategy": 118,
+      "command": 146,
+      "speed": 118,
+      "charm": 143,
+      "faction": "豊臣",
+      "transferTacticId": "t11",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "姫武者",
+          "content": "2回攻撃するたびに、自身は2%の会心を獲得（最大8回まで重ねがけ可能）"
+        },
+        {
+          "level": "1",
+          "name": "馬弓術Ⅱ",
+          "content": "部隊の騎兵・弓兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "猛攻Ⅱ",
+          "content": "自軍全体の兵刃与ダメージが1.8%増加"
+        },
+        {
+          "level": "4",
+          "name": "防護Ⅱ",
+          "content": "兵刃被ダメージが2.2%減少"
+        }
+      ]
+    },
+    {
+      "id": "c61",
+      "name": "蜂須賀小六",
+      "uniqueTacticId": "t78",
+      "cost": 5,
+      "politics": 122,
+      "bravery": 166,
+      "strategy": 173,
+      "command": 127,
+      "speed": 80,
+      "charm": 112,
+      "faction": "豊臣",
+      "transferTacticId": "t14",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓砲術Ⅱ",
+          "content": "部隊の弓兵・鉄砲レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "破敵Ⅲ",
+          "content": "与ダメージが2%増加"
+        },
+        {
+          "level": "4",
+          "name": "牢固Ⅰ",
+          "content": "被ダメージが1.2%減少"
+        }
+      ]
+    },
+    {
+      "id": "c62",
+      "name": "ねね",
+      "uniqueTacticId": "t81",
+      "cost": 6,
+      "politics": 152,
+      "bravery": 58,
+      "strategy": 178,
+      "command": 152,
+      "speed": 62,
+      "charm": 151,
+      "faction": "豊臣",
+      "transferTacticId": "t30",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "謀攻Ⅲ",
+          "content": "自軍全体の計略与ダメージが3.7%増加"
+        },
+        {
+          "level": "1",
+          "name": "防護Ⅱ",
+          "content": "兵刃被ダメージが2.2%減少"
+        },
+        {
+          "level": "2",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c63",
+      "name": "宮部継潤",
+      "uniqueTacticId": "t114",
+      "cost": 6,
+      "politics": 108,
+      "bravery": 72,
+      "strategy": 199,
+      "command": 153,
+      "speed": 78,
+      "charm": 117,
+      "faction": "豊臣",
+      "transferTacticId": "t115",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓槍術Ⅱ",
+          "content": "部隊の足軽・弓兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "固守Ⅱ",
+          "content": "自軍全体の兵刃被ダメージが1.8%減少"
+        },
+        {
+          "level": "2",
+          "name": "知謀Ⅱ",
+          "content": "計略与ダメージが3.3%増加"
+        },
+        {
+          "level": "4",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c64",
+      "name": "可児才蔵",
+      "uniqueTacticId": "t116",
+      "cost": 4,
+      "politics": 32,
+      "bravery": 184,
+      "strategy": 105,
+      "command": 98,
+      "speed": 95,
+      "charm": 116,
+      "faction": "豊臣",
+      "transferTacticId": "t24",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "武威Ⅲ",
+          "content": "武勇が3%上昇"
+        },
+        {
+          "level": "1",
+          "name": "血気Ⅱ",
+          "content": "兵刃与ダメージが2.2%増加"
+        },
+        {
+          "level": "2",
+          "name": "攻勢Ⅰ",
+          "content": "自軍全体の与ダメージが1%増加"
+        },
+        {
+          "level": "4",
+          "name": "槍術Ⅲ",
+          "content": "部隊の足軽レベルが3増加"
+        }
+      ]
+    },
+    {
+      "id": "c65",
+      "name": "上杉謙信",
+      "uniqueTacticId": "t96",
+      "cost": 7,
+      "politics": 179,
+      "bravery": 247,
+      "strategy": 124,
+      "command": 187,
+      "speed": 139,
+      "charm": 156,
+      "faction": "上杉",
+      "transferTacticId": "t26",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "義の将",
+          "content": "混乱になる確率低下"
+        },
+        {
+          "level": "1",
+          "name": "越後の龍",
+          "content": "このターンでダメージを与えなかった場合、次の行動時まで自身の被ダメージが22%低下"
+        },
+        {
+          "level": "2",
+          "name": "破敵Ⅱ",
+          "content": "与ダメージが1.6%増加"
+        },
+        {
+          "level": "4",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c66",
+      "name": "樋口兼豊",
+      "uniqueTacticId": "t67",
+      "cost": 5,
+      "politics": 115,
+      "bravery": 90,
+      "strategy": 166,
+      "command": 139,
+      "speed": 123,
+      "charm": 110,
+      "faction": "上杉",
+      "transferTacticId": "t17",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "知謀Ⅲ",
+          "content": "計略与ダメージが4%増加"
+        },
+        {
+          "level": "1",
+          "name": "急速Ⅰ",
+          "content": "速度が2%上昇"
+        },
+        {
+          "level": "2",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "看破Ⅱ",
+          "content": "計略被ダメージが3.3%減少"
+        }
+      ]
+    },
+    {
+      "id": "c67",
+      "name": "河田長親",
+      "uniqueTacticId": "t54",
+      "cost": 4,
+      "politics": 166,
+      "bravery": 70,
+      "strategy": 167,
+      "command": 147,
+      "speed": 127,
+      "charm": 115,
+      "faction": "上杉",
+      "transferTacticId": "t112",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "知謀Ⅲ",
+          "content": "計略与ダメージが4%増加"
+        },
+        {
+          "level": "1",
+          "name": "謀攻Ⅱ",
+          "content": "自軍全体の計略与ダメージが3%増加"
+        },
+        {
+          "level": "2",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "馬術Ⅰ",
+          "content": "部隊の騎兵レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c68",
+      "name": "小島弥太郎",
+      "uniqueTacticId": "t117",
+      "cost": 5,
+      "politics": 35,
+      "bravery": 193,
+      "strategy": 57,
+      "command": 105,
+      "speed": 106,
+      "charm": 88,
+      "faction": "上杉",
+      "transferTacticId": "t12",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "一番槍",
+          "content": "戦闘中に1回のみ、初めのターンに自身がダメージを与えた後、50%の確率でメイン属性が18増加"
+        },
+        {
+          "level": "1",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "血気Ⅱ",
+          "content": "兵刃与ダメージが2.2%増加"
+        },
+        {
+          "level": "4",
+          "name": "牢固Ⅱ",
+          "content": "被ダメージが1.6%減少"
+        }
+      ]
+    },
+    {
+      "id": "c70",
+      "name": "甘粕景持",
+      "uniqueTacticId": "t89",
+      "cost": 6,
+      "politics": 88,
+      "bravery": 186,
+      "strategy": 151,
+      "command": 148,
+      "speed": 95,
+      "charm": 117,
+      "faction": "上杉",
+      "transferTacticId": "t6",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "牢固Ⅲ",
+          "content": "被ダメージが2％減少"
+        },
+        {
+          "level": "1",
+          "name": "気勢Ⅱ",
+          "content": "会心ダメージ率が6％増加"
+        },
+        {
+          "level": "2",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c71",
+      "name": "宇佐美定満",
+      "uniqueTacticId": "t95",
+      "cost": 6,
+      "politics": 132,
+      "bravery": 113,
+      "strategy": 209,
+      "command": 153,
+      "speed": 104,
+      "charm": 126,
+      "faction": "上杉",
+      "transferTacticId": "t31",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "老功古実",
+          "content": "初めて能動戦法ダメージを受けた際、その発動者の知略が15減少"
+        },
+        {
+          "level": "1",
+          "name": "堅固Ⅲ",
+          "content": "自軍全体の計略被ダメージが3.7%減少"
+        },
+        {
+          "level": "2",
+          "name": "弓槍術Ⅱ",
+          "content": "部隊の足軽・弓兵レベルが2増加"
+        },
+        {
+          "level": "4",
+          "name": "馬術Ⅰ",
+          "content": "部隊の騎兵レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c72",
+      "name": "千坂景親",
+      "uniqueTacticId": "t118",
+      "cost": 5,
+      "politics": 116,
+      "bravery": 162,
+      "strategy": 106,
+      "command": 165,
+      "speed": 96,
+      "charm": 121,
+      "faction": "上杉",
+      "transferTacticId": "t119",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "剛猛Ⅱ",
+          "content": "自身が通常攻撃を受ける確率中幅上昇"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "堅固Ⅰ",
+          "content": "自軍全体の計略被ダメージが2.3%減少"
+        }
+      ]
+    },
+    {
+      "id": "c73",
+      "name": "仙桃院",
+      "uniqueTacticId": "t120",
+      "cost": 5,
+      "politics": 127,
+      "bravery": 67,
+      "strategy": 141,
+      "command": 148,
+      "speed": 95,
+      "charm": 134,
+      "faction": "上杉",
+      "transferTacticId": "t121",
+      "rarity": "☆5",
+      "gender": "女",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "猛攻Ⅲ",
+          "content": "自軍全体の兵刃与ダメージが2.5％増加"
+        },
+        {
+          "level": "1",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "忍耐Ⅱ",
+          "content": "自身が通常攻撃を受ける確率が低下"
+        },
+        {
+          "level": "4",
+          "name": "馬術Ⅰ",
+          "content": "部隊の騎兵レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c117",
+      "name": "里見義堯",
+      "uniqueTacticId": "t173",
+      "cost": 4,
+      "politics": 100,
+      "bravery": 107,
+      "strategy": 166,
+      "command": 166,
+      "speed": 81,
+      "charm": 86,
+      "faction": "群雄",
+      "transferTacticId": "t167",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "里見",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓槍術Ⅱ",
+          "content": "部隊の足軽・弓兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "防護Ⅲ",
+          "content": "兵刃被ダメージが2.8%減少"
+        },
+        {
+          "level": "4",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c115",
+      "name": "山県昌景",
+      "uniqueTacticId": "t171",
+      "cost": 7,
+      "politics": 97,
+      "bravery": 190,
+      "strategy": 169,
+      "command": 184,
+      "speed": 108,
+      "charm": 105,
+      "faction": "武田",
+      "transferTacticId": "t172",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "赤備え",
+          "content": "初めて通常攻撃を行った後、攻撃対象の統率が18減少（重ねがけ可能）"
+        },
+        {
+          "level": "1",
+          "name": "勇烈",
+          "content": "毎ターン行動前、武勇が14（会心状態依存）上昇する。1ターン持続"
+        },
+        {
+          "level": "2",
+          "name": "馬術Ⅲ",
+          "content": "部隊の騎兵レベルが3増加"
+        },
+        {
+          "level": "4",
+          "name": "気勢Ⅰ",
+          "content": "会心ダメージ率+4.5%"
+        }
+      ]
+    },
+    {
+      "id": "c113",
+      "name": "黒田官兵衛",
+      "uniqueTacticId": "t168",
+      "cost": 7,
+      "politics": 158,
+      "bravery": 114,
+      "strategy": 229,
+      "command": 167,
+      "speed": 68,
+      "charm": 150,
+      "faction": "豊臣",
+      "transferTacticId": "t169",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "方円の器",
+          "content": "3ターン目から、毎ターン初めて計略ダメージを与えた時、50%の確率で全軍の知略を5増加させる。最大2回まで累積可能"
+        },
+        {
+          "level": "1",
+          "name": "玄謀",
+          "content": "自身が大将の場合、統率の最も高い自軍武将の大将技を有効にする。自軍の大将技を有効にしていない場合、3%の回避状態を獲得する"
+        },
+        {
+          "level": "2",
+          "name": "妙計Ⅱ",
+          "content": "奇策ダメージ率+8.5%"
+        },
+        {
+          "level": "4",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c112",
+      "name": "相馬盛胤",
+      "uniqueTacticId": "t166",
+      "cost": 5,
+      "politics": 106,
+      "bravery": 166,
+      "strategy": 98,
+      "command": 156,
+      "speed": 107,
+      "charm": 96,
+      "faction": "群雄",
+      "transferTacticId": "t167",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "相馬",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅲ",
+          "content": "部隊の騎兵レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "急速Ⅲ",
+          "content": "速度が3％上昇"
+        }
+      ]
+    },
+    {
+      "id": "c110",
+      "name": "小幡景憲",
+      "uniqueTacticId": "t164",
+      "cost": 5,
+      "politics": 97,
+      "bravery": 98,
+      "strategy": 173,
+      "command": 148,
+      "speed": 82,
+      "charm": 113,
+      "faction": "徳川",
+      "transferTacticId": "t164",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "攻勢Ⅲ",
+          "content": "自軍全体の与ダメージが1.6%増加"
+        },
+        {
+          "level": "1",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c109",
+      "name": "磯野員昌",
+      "uniqueTacticId": "t_驍勇善戦",
+      "cost": 5,
+      "politics": 41,
+      "bravery": 165,
+      "strategy": 88,
+      "command": 116,
+      "speed": 115,
+      "charm": 31,
+      "faction": "群雄",
+      "transferTacticId": "t_驍勇善戦",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "浅井",
+      "traits": [
+        {
+          "level": "0",
+          "name": "一番槍",
+          "content": "戦闘中に1回のみ、初めのターンに自身がダメージを与えた後、50%の確率でメイン属性が18増加"
+        },
+        {
+          "level": "1",
+          "name": "牢固Ⅰ",
+          "content": "被ダメージが1.2%減少"
+        },
+        {
+          "level": "2",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c108",
+      "name": "栗山善助",
+      "uniqueTacticId": "t162",
+      "cost": 5,
+      "politics": 122,
+      "bravery": 119,
+      "strategy": 173,
+      "command": 120,
+      "speed": 76,
+      "charm": 106,
+      "faction": "豊臣",
+      "transferTacticId": "t162",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "知謀Ⅱ",
+          "content": "計略与ダメージが3.3%増加"
+        },
+        {
+          "level": "1",
+          "name": "弓術Ⅰ",
+          "content": "部隊の弓兵レベルが1増加"
+        },
+        {
+          "level": "2",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c107",
+      "name": "福原貞俊",
+      "uniqueTacticId": "t161",
+      "cost": 5,
+      "politics": 153,
+      "bravery": 76,
+      "strategy": 166,
+      "command": 127,
+      "speed": 81,
+      "charm": 164,
+      "faction": "群雄",
+      "transferTacticId": "t161",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "毛利",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "謀攻Ⅲ",
+          "content": "自軍全体の計略与ダメージが3.7%増加"
+        },
+        {
+          "level": "2",
+          "name": "堅固Ⅰ",
+          "content": "自軍全体の計略被ダメージが2.3%減少"
+        }
+      ]
+    },
+    {
+      "id": "c106",
+      "name": "国司元相",
+      "uniqueTacticId": "t160",
+      "cost": 5,
+      "politics": 155,
+      "bravery": 157,
+      "strategy": 74,
+      "command": 118,
+      "speed": 101,
+      "charm": 117,
+      "faction": "群雄",
+      "transferTacticId": "t160",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "毛利",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "破敵Ⅲ",
+          "content": "与ダメージが2%増加"
+        },
+        {
+          "level": "2",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c105",
+      "name": "多田三八郎",
+      "uniqueTacticId": "t159",
+      "cost": 5,
+      "politics": 49,
+      "bravery": 159,
+      "strategy": 108,
+      "command": 112,
+      "speed": 108,
+      "charm": 62,
+      "faction": "武田",
+      "transferTacticId": "t159",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "器術Ⅲ",
+          "content": "部隊の兵器レベルが3増加"
+        },
+        {
+          "level": "4",
+          "name": "-",
+          "content": "-"
+        }
+      ]
+    },
+    {
+      "id": "c104",
+      "name": "岩城親隆",
+      "uniqueTacticId": "t157",
+      "cost": 5,
+      "politics": 81,
+      "bravery": 95,
+      "strategy": 163,
+      "command": 147,
+      "speed": 74,
+      "charm": 77,
+      "faction": "群雄",
+      "transferTacticId": "t158",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "伊達",
+      "traits": [
+        {
+          "level": "0",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        },
+        {
+          "level": "1",
+          "name": "弓術Ⅰ",
+          "content": "部隊の弓兵レベルが1増加"
+        },
+        {
+          "level": "2",
+          "name": "守勢Ⅲ",
+          "content": "自軍全体の被ダメージが1.6%減少"
+        }
+      ]
+    },
+    {
+      "id": "c103",
+      "name": "鬼庭左月斎",
+      "uniqueTacticId": "t156",
+      "cost": 6,
+      "politics": 67,
+      "bravery": 117,
+      "strategy": 172,
+      "command": 167,
+      "speed": 68,
+      "charm": 125,
+      "faction": "群雄",
+      "transferTacticId": "t156",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "伊達",
+      "traits": [
+        {
+          "level": "0",
+          "name": "守勢Ⅱ",
+          "content": "自軍全体の被ダメージが1.3%減少"
+        },
+        {
+          "level": "1",
+          "name": "知恵Ⅲ",
+          "content": "知略が3%上昇"
+        },
+        {
+          "level": "2",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c102",
+      "name": "福留親政",
+      "uniqueTacticId": "t155",
+      "cost": 6,
+      "politics": 53,
+      "bravery": 181,
+      "strategy": 107,
+      "command": 128,
+      "speed": 108,
+      "charm": 53,
+      "faction": "群雄",
+      "transferTacticId": "t132",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "長宗我部",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "血気Ⅱ",
+          "content": "兵刃与ダメージが2.2%増加"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c101",
+      "name": "毛利輝元",
+      "uniqueTacticId": "t153",
+      "cost": 6,
+      "politics": 126,
+      "bravery": 102,
+      "strategy": 126,
+      "command": 147,
+      "speed": 47,
+      "charm": 126,
+      "faction": "群雄",
+      "transferTacticId": "t154",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "毛利",
+      "traits": [
+        {
+          "level": "0",
+          "name": "防護Ⅲ",
+          "content": "兵刃被ダメージが2.8%減少"
+        },
+        {
+          "level": "1",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c100",
+      "name": "鈴木重朝",
+      "uniqueTacticId": "t152",
+      "cost": 6,
+      "politics": 54,
+      "bravery": 146,
+      "strategy": 173,
+      "command": 149,
+      "speed": 82,
+      "charm": 65,
+      "faction": "群雄",
+      "transferTacticId": "t152",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "鈴木",
+      "traits": [
+        {
+          "level": "0",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "器術Ⅲ",
+          "content": "部隊の兵器レベルが3増加"
+        },
+        {
+          "level": "2",
+          "name": "謀攻Ⅱ",
+          "content": "自軍全体の計略与ダメージが3%増加"
+        }
+      ]
+    },
+    {
+      "id": "c99",
+      "name": "遠藤直経",
+      "uniqueTacticId": "t151",
+      "cost": 6,
+      "politics": 36,
+      "bravery": 179,
+      "strategy": 134,
+      "command": 129,
+      "speed": 128,
+      "charm": 91,
+      "faction": "群雄",
+      "transferTacticId": "t151",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "浅井",
+      "traits": [
+        {
+          "level": "0",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "1",
+          "name": "急速Ⅲ",
+          "content": "速度が3％上昇"
+        },
+        {
+          "level": "2",
+          "name": "槍術Ⅰ",
+          "content": "部隊の足軽レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c98",
+      "name": "九戸政実",
+      "uniqueTacticId": "t150",
+      "cost": 6,
+      "politics": 68,
+      "bravery": 181,
+      "strategy": 111,
+      "command": 144,
+      "speed": 101,
+      "charm": 95,
+      "faction": "群雄",
+      "transferTacticId": "t150",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "南部",
+      "traits": [
+        {
+          "level": "0",
+          "name": "攻勢Ⅲ",
+          "content": "自軍全体の与ダメージが1.6%増加"
+        },
+        {
+          "level": "1",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "馬槍術Ⅰ",
+          "content": "部隊の騎兵・足軽レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c118",
+      "name": "島津貴久",
+      "uniqueTacticId": "t_旋乾転坤",
+      "cost": 6,
+      "politics": 175,
+      "bravery": 100,
+      "strategy": 178,
+      "command": 161,
+      "speed": 84,
+      "charm": 149,
+      "faction": "群雄",
+      "transferTacticId": "t_薩摩鉄砲兵",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "島津",
+      "traits": [
+        {
+          "level": "0",
+          "name": "砲術Ⅲ",
+          "content": "部隊の鉄砲レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "守勢Ⅱ",
+          "content": "自軍全体の被ダメージが1.3%減少"
+        },
+        {
+          "level": "2",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        },
+        {
+          "level": "4",
+          "name": "急速Ⅰ",
+          "content": "速度が2%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c119",
+      "name": "真柄直隆",
+      "uniqueTacticId": "t_怪力無双",
+      "cost": 6,
+      "politics": 33,
+      "bravery": 202,
+      "strategy": 113,
+      "command": 109,
+      "speed": 70,
+      "charm": 57,
+      "faction": "群雄",
+      "transferTacticId": "t_大太刀力士隊",
+      "rarity": "☆5",
+      "gender": "男",
+      "clan": "朝倉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        },
+        {
+          "level": "2",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "4",
+          "name": "武威I",
+          "content": "武勇が2%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c120",
+      "name": "吉川広家",
+      "uniqueTacticId": "t_魚目混珠",
+      "cost": 4,
+      "politics": 160,
+      "bravery": 73,
+      "strategy": 163,
+      "command": 143,
+      "speed": 73,
+      "charm": 66,
+      "faction": "群雄",
+      "transferTacticId": "t158",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "毛利",
+      "traits": [
+        {
+          "level": "0",
+          "name": "謀攻Ⅲ",
+          "content": "自軍全体の計略与ダメージが3.7%増加"
+        },
+        {
+          "level": "1",
+          "name": "堅固Ⅱ",
+          "content": "自軍全体の計略被ダメージが3%減少"
+        },
+        {
+          "level": "2",
+          "name": "弓術Ⅰ",
+          "content": "部隊の弓兵レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c97",
+      "name": "新発田重家",
+      "uniqueTacticId": "t149",
+      "cost": 5,
+      "politics": 68,
+      "bravery": 120,
+      "strategy": 167,
+      "command": 121,
+      "speed": 91,
+      "charm": 121,
+      "faction": "上杉",
+      "transferTacticId": "t149",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "謀攻Ⅱ",
+          "content": "自軍全体の計略与ダメージが3%増加"
+        },
+        {
+          "level": "1",
+          "name": "牢固Ⅲ",
+          "content": "被ダメージが2％減少"
+        },
+        {
+          "level": "2",
+          "name": "馬術Ⅰ",
+          "content": "部隊の騎兵レベルが1増加"
+        }
+      ]
+    },
+    {
+      "id": "c96",
+      "name": "水原親憲",
+      "uniqueTacticId": "t148",
+      "cost": 5,
+      "politics": 59,
+      "bravery": 151,
+      "strategy": 80,
+      "command": 168,
+      "speed": 108,
+      "charm": 64,
+      "faction": "上杉",
+      "transferTacticId": "t148",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "馬術Ⅰ",
+          "content": "部隊の騎兵レベルが1増加"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅲ",
+          "content": "統率が3%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c95",
+      "name": "甘粕景継",
+      "uniqueTacticId": "t147",
+      "cost": 3,
+      "politics": 58,
+      "bravery": 154,
+      "strategy": 64,
+      "command": 118,
+      "speed": 85,
+      "charm": 34,
+      "faction": "上杉",
+      "transferTacticId": "t147",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "上杉",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅰ",
+          "content": "部隊の足軽レベルが1増加"
+        },
+        {
+          "level": "1",
+          "name": "攻陣Ⅲ",
+          "content": "このターンに通常攻撃を受けていない場合、固有突撃戦法の発動確率が3.5%増加"
+        },
+        {
+          "level": "2",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c94",
+      "name": "諏訪姫",
+      "uniqueTacticId": "t146",
+      "cost": 4,
+      "politics": 62,
+      "bravery": 75,
+      "strategy": 146,
+      "command": 144,
+      "speed": 100,
+      "charm": 82,
+      "faction": "武田",
+      "transferTacticId": "t121",
+      "rarity": "☆4",
+      "gender": "女",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "猛攻Ⅲ",
+          "content": "自軍全体の兵刃与ダメージが2.5％増加"
+        },
+        {
+          "level": "1",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "看破Ⅰ",
+          "content": "計略被ダメージが2.6%減少"
+        },
+        {
+          "level": "4",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        }
+      ]
+    },
+    {
+      "id": "c93",
+      "name": "小山田茂誠",
+      "uniqueTacticId": "t145",
+      "cost": 3,
+      "politics": 60,
+      "bravery": 116,
+      "strategy": 84,
+      "command": 147,
+      "speed": 80,
+      "charm": 75,
+      "faction": "武田",
+      "transferTacticId": "t145",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        },
+        {
+          "level": "2",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c92",
+      "name": "武田義信",
+      "uniqueTacticId": "t144",
+      "cost": 4,
+      "politics": 67,
+      "bravery": 159,
+      "strategy": 87,
+      "command": 112,
+      "speed": 129,
+      "charm": 68,
+      "faction": "武田",
+      "transferTacticId": "t144",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "猛攻Ⅲ",
+          "content": "自軍全体の兵刃与ダメージが2.5％増加"
+        },
+        {
+          "level": "2",
+          "name": "急速Ⅰ",
+          "content": "速度が2%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c91",
+      "name": "三枝昌貞",
+      "uniqueTacticId": "t143",
+      "cost": 4,
+      "politics": 84,
+      "bravery": 132,
+      "strategy": 121,
+      "command": 157,
+      "speed": 100,
+      "charm": 75,
+      "faction": "武田",
+      "transferTacticId": "t143",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "牢固Ⅲ",
+          "content": "被ダメージが2％減少"
+        },
+        {
+          "level": "1",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c90",
+      "name": "小山田信茂",
+      "uniqueTacticId": "t142",
+      "cost": 5,
+      "politics": 74,
+      "bravery": 164,
+      "strategy": 123,
+      "command": 121,
+      "speed": 100,
+      "charm": 104,
+      "faction": "武田",
+      "transferTacticId": "t142",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "器術Ⅲ",
+          "content": "部隊の兵器レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c89",
+      "name": "山内一豊",
+      "uniqueTacticId": "t141",
+      "cost": 4,
+      "politics": 86,
+      "bravery": 155,
+      "strategy": 100,
+      "command": 116,
+      "speed": 115,
+      "charm": 43,
+      "faction": "織田",
+      "transferTacticId": "t141",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "牢固Ⅱ",
+          "content": "被ダメージが1.6%減少"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c88",
+      "name": "池田せん",
+      "uniqueTacticId": "t140",
+      "cost": 4,
+      "politics": 70,
+      "bravery": 135,
+      "strategy": 118,
+      "command": 102,
+      "speed": 111,
+      "charm": 83,
+      "faction": "織田",
+      "transferTacticId": "t140",
+      "rarity": "☆4",
+      "gender": "女",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "堅固Ⅲ",
+          "content": "自軍全体の計略被ダメージが3.7%減少"
+        },
+        {
+          "level": "2",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c87",
+      "name": "氏家卜全",
+      "uniqueTacticId": "t_殿軍反制",
+      "cost": 5,
+      "politics": 71,
+      "bravery": 151,
+      "strategy": 94,
+      "command": 148,
+      "speed": 79,
+      "charm": 103,
+      "faction": "織田",
+      "transferTacticId": "t139",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "牢固Ⅱ",
+          "content": "被ダメージが1.6%減少"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c86",
+      "name": "佐久間盛政",
+      "uniqueTacticId": "t138",
+      "cost": 5,
+      "politics": 60,
+      "bravery": 185,
+      "strategy": 83,
+      "command": 126,
+      "speed": 94,
+      "charm": 103,
+      "faction": "織田",
+      "transferTacticId": "t138",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "血気Ⅱ",
+          "content": "兵刃与ダメージが2.2%増加"
+        },
+        {
+          "level": "2",
+          "name": "防護Ⅱ",
+          "content": "兵刃被ダメージが2.2%減少"
+        }
+      ]
+    },
+    {
+      "id": "c85",
+      "name": "坂井政尚",
+      "uniqueTacticId": "t137",
+      "cost": 5,
+      "politics": 86,
+      "bravery": 175,
+      "strategy": 51,
+      "command": 139,
+      "speed": 89,
+      "charm": 72,
+      "faction": "織田",
+      "transferTacticId": "t137",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "器術Ⅲ",
+          "content": "部隊の兵器レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "武威Ⅲ",
+          "content": "武勇が3%上昇"
+        },
+        {
+          "level": "2",
+          "name": "血気Ⅱ",
+          "content": "兵刃与ダメージが2.2%増加"
+        }
+      ]
+    },
+    {
+      "id": "c84",
+      "name": "池田恒興",
+      "uniqueTacticId": "t136",
+      "cost": 5,
+      "politics": 99,
+      "bravery": 156,
+      "strategy": 107,
+      "command": 123,
+      "speed": 117,
+      "charm": 40,
+      "faction": "織田",
+      "transferTacticId": "t136",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "馬術Ⅱ",
+          "content": "部隊の騎兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "攻陣Ⅲ",
+          "content": "このターンに通常攻撃を受けていない場合、固有突撃戦法の発動確率が3.5%増加"
+        }
+      ]
+    },
+    {
+      "id": "c83",
+      "name": "安藤守就",
+      "uniqueTacticId": "t135",
+      "cost": 5,
+      "politics": 91,
+      "bravery": 63,
+      "strategy": 160,
+      "command": 114,
+      "speed": 82,
+      "charm": 81,
+      "faction": "織田",
+      "transferTacticId": "t135",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "知謀Ⅱ",
+          "content": "計略与ダメージが3.3%増加"
+        },
+        {
+          "level": "1",
+          "name": "堅固Ⅲ",
+          "content": "自軍全体の計略被ダメージが3.7%減少"
+        },
+        {
+          "level": "2",
+          "name": "器術Ⅱ",
+          "content": "部隊の兵器レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c82",
+      "name": "下方貞清",
+      "uniqueTacticId": "t134",
+      "cost": 6,
+      "politics": 33,
+      "bravery": 176,
+      "strategy": 65,
+      "command": 157,
+      "speed": 77,
+      "charm": 55,
+      "faction": "織田",
+      "transferTacticId": "t134",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅲ",
+          "content": "部隊の足軽レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "急速Ⅱ",
+          "content": "速度が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "看破Ⅰ",
+          "content": "計略被ダメージが2.6%減少"
+        }
+      ]
+    },
+    {
+      "id": "c81",
+      "name": "斎藤利三",
+      "uniqueTacticId": "t133",
+      "cost": 6,
+      "politics": 71,
+      "bravery": 167,
+      "strategy": 133,
+      "command": 153,
+      "speed": 85,
+      "charm": 74,
+      "faction": "織田",
+      "transferTacticId": "t133",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "猛闘Ⅲ",
+          "content": "このターンに通常攻撃を受けなかった場合、固有以外の突撃戦法の発動確率が3%増加"
+        },
+        {
+          "level": "2",
+          "name": "牢固Ⅰ",
+          "content": "被ダメージが1.2%減少"
+        }
+      ]
+    },
+    {
+      "id": "c80",
+      "name": "太田牛一",
+      "uniqueTacticId": "t131",
+      "cost": 6,
+      "politics": 130,
+      "bravery": 178,
+      "strategy": 119,
+      "command": 112,
+      "speed": 63,
+      "charm": 146,
+      "faction": "織田",
+      "transferTacticId": "t132",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "弓術Ⅲ",
+          "content": "部隊の弓兵レベルが3増加"
+        },
+        {
+          "level": "1",
+          "name": "固守Ⅱ",
+          "content": "自軍全体の兵刃被ダメージが1.8%減少"
+        },
+        {
+          "level": "2",
+          "name": "猛攻Ⅰ",
+          "content": "自軍全体の兵刃与ダメージが1.4%増加"
+        }
+      ]
+    },
+    {
+      "id": "c79",
+      "name": "池田輝政",
+      "uniqueTacticId": "t130",
+      "cost": 6,
+      "politics": 129,
+      "bravery": 160,
+      "strategy": 160,
+      "command": 119,
+      "speed": 100,
+      "charm": 58,
+      "faction": "織田",
+      "transferTacticId": "t130",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "織田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "破敵Ⅱ",
+          "content": "与ダメージが1.6%増加"
+        },
+        {
+          "level": "1",
+          "name": "威勢Ⅱ",
+          "content": "このターンに通常攻撃を受けていない場合、固有能動戦法の発動確率が2.8%増加"
+        },
+        {
+          "level": "2",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c78",
+      "name": "大久保忠世",
+      "uniqueTacticId": "t129",
+      "cost": 4,
+      "politics": 56,
+      "bravery": 170,
+      "strategy": 110,
+      "command": 134,
+      "speed": 104,
+      "charm": 53,
+      "faction": "徳川",
+      "transferTacticId": "t129",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c77",
+      "name": "鳥居元忠",
+      "uniqueTacticId": "t127",
+      "cost": 5,
+      "politics": 52,
+      "bravery": 142,
+      "strategy": 133,
+      "command": 152,
+      "speed": 108,
+      "charm": 69,
+      "faction": "徳川",
+      "transferTacticId": "t128",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "死守",
+          "content": "戦闘中、自身の兵力が初めて50%以下に低下すると兵力を大量に回復"
+        },
+        {
+          "level": "1",
+          "name": "弓術Ⅱ",
+          "content": "部隊の弓兵レベルが2増加"
+        },
+        {
+          "level": "2",
+          "name": "統帥Ⅰ",
+          "content": "統率が2%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c121",
+      "name": "結城秀康",
+      "uniqueTacticId": "t_腹中鱗甲",
+      "cost": 5,
+      "politics": 93,
+      "bravery": 175,
+      "strategy": 67,
+      "command": 157,
+      "speed": 104,
+      "charm": 36,
+      "faction": "徳川",
+      "transferTacticId": "t_腹中鱗甲",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "徳川",
+      "traits": [
+        {
+          "level": "0",
+          "name": "馬砲術Ⅰ",
+          "content": "部隊の騎兵・鉄砲レベルが1増加"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅰ",
+          "content": "統率が2%上昇"
+        },
+        {
+          "level": "2",
+          "name": "血気Ⅲ",
+          "content": "兵刃与ダメージが2.8%増加"
+        }
+      ]
+    },
+    {
+      "id": "c76",
+      "name": "脇坂安治",
+      "uniqueTacticId": "t125",
+      "cost": 3,
+      "politics": 66,
+      "bravery": 142,
+      "strategy": 126,
+      "command": 106,
+      "speed": 94,
+      "charm": 61,
+      "faction": "豊臣",
+      "transferTacticId": "t126",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "破敵Ⅱ",
+          "content": "与ダメージが1.6%増加"
+        },
+        {
+          "level": "2",
+          "name": "看破Ⅱ",
+          "content": "計略被ダメージが3.3%減少"
+        }
+      ]
+    },
+    {
+      "id": "c75",
+      "name": "蜂須賀家政",
+      "uniqueTacticId": "t124",
+      "cost": 4,
+      "politics": 130,
+      "bravery": 61,
+      "strategy": 159,
+      "command": 111,
+      "speed": 66,
+      "charm": 126,
+      "faction": "豊臣",
+      "transferTacticId": "t124",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "堅固Ⅲ",
+          "content": "自軍全体の計略被ダメージが3.7%減少"
+        },
+        {
+          "level": "1",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "砲術Ⅱ",
+          "content": "部隊の鉄砲レベルが2増加"
+        }
+      ]
+    },
+    {
+      "id": "c74",
+      "name": "仙石権兵衛",
+      "uniqueTacticId": "t122",
+      "cost": 6,
+      "politics": 49,
+      "bravery": 181,
+      "strategy": 104,
+      "command": 107,
+      "speed": 166,
+      "charm": 70,
+      "faction": "豊臣",
+      "transferTacticId": "t123",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "血気Ⅱ",
+          "content": "兵刃与ダメージが2.2%増加"
+        },
+        {
+          "level": "2",
+          "name": "急速Ⅲ",
+          "content": "速度が3％上昇"
+        }
+      ]
+    },
+    {
+      "id": "c122",
+      "name": "保科正俊",
+      "uniqueTacticId": "t_槍弾正",
+      "cost": 5,
+      "politics": 69,
+      "bravery": 164,
+      "strategy": 106,
+      "command": 113,
+      "speed": 99,
+      "charm": 73,
+      "faction": "武田",
+      "transferTacticId": "t_槍弾正",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "武田",
+      "traits": [
+        {
+          "level": "0",
+          "name": "槍術Ⅱ",
+          "content": "部隊の足軽レベルが2増加"
+        },
+        {
+          "level": "1",
+          "name": "統帥Ⅱ",
+          "content": "統率が2.5%上昇"
+        },
+        {
+          "level": "2",
+          "name": "武威Ⅱ",
+          "content": "武勇が2.5%上昇"
+        }
+      ]
+    },
+    {
+      "id": "c123",
+      "name": "横山喜内",
+      "uniqueTacticId": "t_一六勝負",
+      "cost": 4,
+      "politics": 93,
+      "bravery": 120,
+      "strategy": 163,
+      "command": 99,
+      "speed": 79,
+      "charm": 51,
+      "faction": "豊臣",
+      "transferTacticId": "t_一六勝負",
+      "rarity": "☆4",
+      "gender": "男",
+      "clan": "豊臣",
+      "traits": [
+        {
+          "level": "0",
+          "name": "牢固Ⅱ",
+          "content": "被ダメージが1.6%減少"
+        },
+        {
+          "level": "1",
+          "name": "攻勢Ⅱ",
+          "content": "自軍全体の与ダメージが1.3%増加"
+        },
+        {
+          "level": "2",
+          "name": "知恵Ⅱ",
+          "content": "知略が2.5%上昇"
+        }
+      ]
+    }
+  ],
+  "tactics": [
+    {
+      "id": "t1",
+      "name": "一力当先",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "乱舞/通常攻撃UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "2ターンの間、自身の通常攻撃ダメージが50%上昇、乱舞（通常攻撃時、対象部隊の他武将へもダメージ。ダメージ率70%）を獲得",
+      "effectValue": "50/-"
+    },
+    {
+      "id": "t2",
+      "name": "一行三昧",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "発動確率UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "自身の能動戦法の発動確率が14%増加",
+      "effectValue": "14"
+    },
+    {
+      "id": "t3",
+      "name": "一領具足",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "buffTypes": "傭兵/兵力損害減",
+      "tags": "buff",
+      "target": "自軍全体（3名）",
+      "description": "最初の2ターンの間、自軍全体の兵力損害が12%（武勇依存）低下。3～4ターン目、自身の行動前に、自軍全体が3ターン持続の傭兵（追加の部隊兵力。獲得率96%、統率依存）を獲得",
+      "effectValue": "12/96"
+    },
+    {
+      "id": "t4",
+      "name": "七十二の計",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "計略",
+      "damageRateMax": 50,
+      "buffTypes": "奇策",
+      "tags": "damage/buff",
+      "target": "自分",
+      "description": "戦闘中、自身は50%の奇策（発動時に計略ダメージが50%増加）を獲得し、奇策ダメージ率が30%増加。奇策ダメージを7回与えた後、追加で敵軍全体に計略ダメージ（ダメージ率120%、知略依存）",
+      "effectValue": "50"
+    },
+    {
+      "id": "t5",
+      "name": "三河弓兵隊",
+      "probability": 1,
+      "type": "bravery",
+      "category": "troop",
+      "healRateMax": 65,
+      "buffTypes": "回生/統率UP",
+      "tags": "heal/buff",
+      "target": "自軍全体（3名）",
+      "description": "弓兵が、百発百中の三河弓兵隊に進化。自軍全体の統率が20増加。3ターン目まで、自軍は回生を獲得し、ダメージを受けるたびに35%の確率で兵力が一定量回復（回復率65%、統率依存）。酒井忠次が装備時、発動確率はさらに統率依存で増加",
+      "effectValue": "65/20"
+    },
+    {
+      "id": "t6",
+      "name": "乗勝追撃",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 136,
+      "tags": "damage",
+      "target": "敵軍全体（3名）",
+      "description": "通常攻撃後、敵軍全体にもう一度兵刃ダメージ（ダメージ率136%）"
+    },
+    {
+      "id": "t8",
+      "name": "乱世の華",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃+計略",
+      "damageRateMax": 158,
+      "tags": "damage",
+      "description": "通常攻撃後、攻撃対象にもう一度兵刃ダメージ （ダメージ率158%）と計略ダメージ（ダメージ率158%、知略依存）を与える、このダメージは双方の属性差の影響を受ける（兵力ダメージは武勇・統率、計略ダメージは知略・速度が影響）"
+    },
+    {
+      "id": "t9",
+      "name": "五里霧中",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "controlType": "混乱",
+      "controlTurns": 1,
+      "debuffTypes": "被ダメ増",
+      "tags": "control/debuff/prepare",
+      "target": "敵軍複数（2名）",
+      "description": "1ターンの準備後、2ターンの間、敵軍複数（2名）に混乱（攻撃と戦法の発動対象をランダムに選択）を付与。自身が女性の場合、2ターンの間、追加でその対象の被ダメージが6%上昇",
+      "effectValue": "-/6"
+    },
+    {
+      "id": "t10",
+      "name": "以戦養戦",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 25,
+      "buffTypes": "会心/離反",
+      "tags": "damage/heal/buff",
+      "target": "自分",
+      "description": "戦闘中、自身は25%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得。5ターン目にもう1回25%の離反を獲得。自身の兵力が50%以下の場合、追加で25%の会心を獲得",
+      "effectValue": "25/25"
+    },
+    {
+      "id": "t11",
+      "name": "前後挟撃",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "連撃",
+      "tags": "buff",
+      "target": "自軍複数（2名）",
+      "description": "1ターンの間、自身と友軍単体は連撃（1ターンに2回通常攻撃）を獲得"
+    },
+    {
+      "id": "t12",
+      "name": "剛毅果断",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "与ダメ増/被ダメ減",
+      "tags": "buff/reactivate",
+      "target": "自分",
+      "description": "3ターンの間、突撃与ダメージが35%上昇し能動被ダメージが20%低下。1ターン後に再発動可",
+      "effectValue": "35/20"
+    },
+    {
+      "id": "t13",
+      "name": "千軍辟易",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 106,
+      "controlType": "威圧/封撃/無策",
+      "tags": "damage/control",
+      "target": "敵軍全体（3名）",
+      "description": "1ターンの間、敵軍全体に106%の兵刃ダメージ。対象が封撃または無策状態中の場合、35%の確率で威圧（行動不能）を付与"
+    },
+    {
+      "id": "t14",
+      "name": "嚢沙之計",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "active",
+      "dotName": "水攻め",
+      "dotRateMax": 102,
+      "dotTurns": 2,
+      "debuffTypes": "被ダメ増",
+      "tags": "dot/debuff",
+      "target": "敵軍複数（2名）",
+      "description": "2ターンの間、敵軍複数（2名）に水攻めを付与し、毎ターン持続ダメージ（ダメージ率102%、知略依存）を与え、さらに対象の計略被ダメージが30%上昇",
+      "effectValue": "-/30"
+    },
+    {
+      "id": "t15",
+      "name": "回天転運",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "healRateMax": 260,
+      "tags": "heal/cleanse",
+      "target": "自軍単体",
+      "description": "兵力損失が最も多い自軍単体の弱体化効果を2個浄化し、その兵力を回復（回復率260%、知略依存）"
+    },
+    {
+      "id": "t16",
+      "name": "大智不智",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "active",
+      "dotName": "消沈",
+      "dotRateMax": 104,
+      "dotTurns": 2,
+      "debuffTypes": "被ダメ増",
+      "tags": "dot/debuff",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に消沈を付与し、2ターンの間、毎ターン持続ダメージ（ダメージ率104%、知略依存）を与え、さらに対象の兵刃被ダメージが20%上昇",
+      "effectValue": "-/20"
+    },
+    {
+      "id": "t17",
+      "name": "奇謀独断",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "controlType": "無策",
+      "controlTurns": 1,
+      "tags": "control/prepare",
+      "target": "敵軍複数（2名）",
+      "description": "1ターンの準備後、2ターンの間、敵軍複数（2名）に無策（能動戦法発動不可）を付与"
+    },
+    {
+      "id": "t18",
+      "name": "帰還の凱歌",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "healRateMax": 152,
+      "tags": "heal",
+      "target": "自軍複数（2名）",
+      "description": "自軍複数（2名）の兵力を一定量回復（回復率132%、知略依存）。対象の兵力が50%以下の場合、基本回復率が172%に増加"
+    },
+    {
+      "id": "t19",
+      "name": "御旗楯無",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 40,
+      "buffTypes": "被ダメ減",
+      "tags": "damage/buff",
+      "target": "自分",
+      "description": "戦闘中、自身がダメージを受けると40%の確率（武勇依存）で、今回の被ダメージが40%（知略依存）低下。また、自身が通常攻撃を受けると40%の確率（統率依存）で、友軍単体が攻撃者に兵刃ダメージ（ダメージ率94%）",
+      "effectValue": "40"
+    },
+    {
+      "id": "t20",
+      "name": "戦意消沈",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "controlType": "疲弊",
+      "controlTurns": 1,
+      "tags": "control",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に対し、1ターン目に1名へ、3ターン目にもう1名へ、疲弊を付与（2ターンの間、与ダメージを50％の確率で無効）"
+    },
+    {
+      "id": "t21",
+      "name": "所向無敵",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 254,
+      "tags": "damage/prepare",
+      "target": "敵軍全体（3名）",
+      "description": "1ターンの準備後、敵軍全体に兵刃ダメージ（ダメージ率254%）"
+    },
+    {
+      "id": "t22",
+      "name": "所領役帳",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "healRateMax": 212,
+      "buffTypes": "回生",
+      "tags": "heal/buff",
+      "target": "自軍単体",
+      "description": "ランダムな自軍単体を回復し（回復率212%、知略依存）、2ターンの間、最も兵力が少ない自軍単体に回生を付与し、ダメージを受けるたびに50%の確率で兵力を一定量回復（回復率66%、知略依存）",
+      "effectValue": "66"
+    },
+    {
+      "id": "t23",
+      "name": "文武両道",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "武勇UP/知略UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "戦闘中、自身は計略ダメージを与えるたびに武勇が30増加（最大5回まで重ねがけ可能）、兵刃ダメージを与えるたびに知略が30増加（最大5回まで重ねがけ可能）",
+      "effectValue": "30/30"
+    },
+    {
+      "id": "t24",
+      "name": "死中求活",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 125,
+      "tags": "damage",
+      "target": "友軍複数（2名）",
+      "description": "戦闘中、自身は兵刃ダメージを受けるたびに武勇が5増加（最大10回まで重ねがけ可能）。5ターン目に、敵軍全体に兵刃ダメージ（ダメージ率125%、1回重ねがけにつきダメージが追加で12%増加"
+    },
+    {
+      "id": "t25",
+      "name": "母衣武者",
+      "probability": 1,
+      "type": "bravery",
+      "category": "troop",
+      "buffTypes": "速度UP",
+      "tags": "buff",
+      "target": "自軍全体（3名）",
+      "description": "騎兵が、剛勇無双の母衣武者に進化。自軍全体の速度が20増加し、通常攻撃を与えるたびに、対象の被ダメージが3%上昇（速度依存）（最大5回まで重ねがけ可能）。前田利家が装備時、被ダメージの基本増加率が3.5%に増加",
+      "effectValue": "20"
+    },
+    {
+      "id": "t26",
+      "name": "毘沙門天",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "healRateMax": 54,
+      "tags": "heal",
+      "target": "自軍複数（2〜3名）",
+      "description": "戦闘中、自身の行動が終了するたびに40%の確率（武勇依存）で自軍複数（2～3名）を回復（回復率54%、武勇依存）。さらに1ターンの間、敵軍複数（2～3名）の与ダメージが9%低下（双方の武勇の差に依存）"
+    },
+    {
+      "id": "t27",
+      "name": "気勢衝天",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "debuffTypes": "与ダメ減",
+      "tags": "debuff",
+      "target": "敵軍複数（2名）",
+      "description": "4ターン目まで、自身の行動時に80%の確率で1ターンの間、武勇が最も高い敵軍武将の兵刃与ダメージが30%低下（武勇依存）、知略が最も高い敵軍武将の計略与ダメージが30%低下（武勇依存）",
+      "effectValue": "-/30"
+    },
+    {
+      "id": "t28",
+      "name": "気炎万丈",
+      "probability": 0.5,
+      "type": "bravery",
+      "category": "active",
+      "controlType": "封撃",
+      "controlTurns": 2,
+      "tags": "control",
+      "target": "敵軍複数（2名）",
+      "description": "3ターン目まで、敵軍複数（2名）に封撃を付与し、毎ターン70%の確率で通常攻撃不可（毎ターン発動確率が14%減少）"
+    },
+    {
+      "id": "t29",
+      "name": "水攻干計",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "active",
+      "dotName": "水攻め",
+      "dotRateMax": 98,
+      "dotTurns": 1,
+      "debuffTypes": "回復不可",
+      "tags": "dot/debuff/prepare",
+      "target": "敵軍全体（3名）",
+      "description": "1ターンの準備後、2ターンの間、敵軍全体に水攻め（毎ターン持続ダメージ。ダメージ率98%、知略依存）と回復不可（兵力を回復不能）を付与"
+    },
+    {
+      "id": "t30",
+      "name": "沈魚落雁",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "controlType": "混乱/無策/疲弊",
+      "tags": "control",
+      "target": "自分",
+      "description": "自身が通常攻撃を受けた際、36%の確率で1ターンの間、攻撃者に以下の状態を1つ付与：混乱（攻撃と戦法の目標ランダムに選択）、無策（能動戦法が発動不能）、疲弊（与ダメージが無効）。自身が女性の場合、発動確率は追加で魅力依存"
+    },
+    {
+      "id": "t31",
+      "name": "深慮遠謀",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "debuffTypes": "与ダメ減",
+      "tags": "debuff",
+      "target": "敵軍複数（2名）",
+      "description": "3ターン目まで、敵軍複数（2名）の与ダメージが28%低下（知略依存）",
+      "effectValue": "-/28"
+    },
+    {
+      "id": "t32",
+      "name": "独立独歩",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "発動確率UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "戦闘中、自身の突撃戦法の発動確率が17%増加",
+      "effectValue": "17"
+    },
+    {
+      "id": "t33",
+      "name": "理非曲直",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 192,
+      "controlType": "混乱",
+      "controlTurns": 1,
+      "tags": "damage/control",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、対象にもう一度兵刃ダメージ（ダメージ率192%）を与え、1ターンの間混乱を付与（攻撃と戦法の発動対象をランダムに選択）"
+    },
+    {
+      "id": "t34",
+      "name": "百戦錬磨",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "速度UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "戦闘中、自身の武勇・知略・統率・速度が42増加",
+      "effectValue": "42"
+    },
+    {
+      "id": "t35",
+      "name": "盤石耽々",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "被ダメ減",
+      "tags": "buff",
+      "target": "自分",
+      "description": "戦闘中、自身の被ダメージが（9%、統率依存）低下。毎ターン、効果増加（4%、統率依存、重ねがけ可能）",
+      "effectValue": "9"
+    },
+    {
+      "id": "t36",
+      "name": "紅蓮の炎",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 104,
+      "dotName": "火傷",
+      "dotRateMax": 74,
+      "dotTurns": 1,
+      "tags": "damage/dot/prepare",
+      "target": "敵軍全体（3名）",
+      "description": "1ターンの準備後、敵軍全体に計略ダメージ（ダメージ率104%、知略依存）を与え、2ターンの間、対象に火傷状態を付与し、毎ターン持続ダメージを与える（ダメージ率74%、知略依存）"
+    },
+    {
+      "id": "t37",
+      "name": "罵詈雑言",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "controlType": "挑発",
+      "tags": "control",
+      "target": "敵軍複数（2〜3名）",
+      "description": "3ターン目まで、敵軍複数（2～3名）に挑発（毎ターン90%の確率で強制的に自身を通常攻撃の対象に固定）を付与。さらに自身が受ける通常攻撃と突撃戦法のダメージが50%低下。自身が大将の場合、挑発は付与しない"
+    },
+    {
+      "id": "t38",
+      "name": "草木皆兵",
+      "probability": 0.5,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 142,
+      "healRateMax": 106,
+      "tags": "damage/heal/prepare",
+      "target": "敵軍複数（2名）",
+      "description": "1ターンの準備後、敵軍複数（2名）に計略ダメージ（ダメージ率142%）を与え、自軍複数（2名）の兵力を回復（回復率106%、知略依存）"
+    },
+    {
+      "id": "t39",
+      "name": "血戦奮闘",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "healRateMax": 60,
+      "buffTypes": "会心",
+      "tags": "heal/buff",
+      "target": "自分",
+      "description": "自身の被回復効果が60%上昇し・さらに40%の会心を獲得",
+      "effectValue": "60/40"
+    },
+    {
+      "id": "t40",
+      "name": "赤備え隊",
+      "probability": 1,
+      "type": "bravery",
+      "category": "troop",
+      "damageType": "兵刃",
+      "damageRateMax": 35,
+      "buffTypes": "会心",
+      "tags": "damage/buff",
+      "target": "自軍全体（3名）",
+      "description": "騎兵が、横掃千軍の赤備え隊に進化。自軍全体が35%の会心（発動時、兵刃ダメージが50%増加）を獲得。飯富虎昌が装備時、自軍全体が会心ダメージを計10回与えると全軍出撃（自軍全体がそれぞれランダムな敵軍単体に兵刃ダメージ、ダメージ率88%）を発動",
+      "effectValue": "35"
+    },
+    {
+      "id": "t41",
+      "name": "運勝の鼻",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "tags": "prepare",
+      "target": "自分",
+      "description": "戦闘中、準備ターンが必要な固有能動戦法発動時、75%の確率で準備時間を1ターンスキップ。スキップに失敗した場合、3ターンの間発動確率が10%増加"
+    },
+    {
+      "id": "t42",
+      "name": "陣形崩し",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 102,
+      "tags": "damage/prepare",
+      "target": "敵軍複数（2名）",
+      "description": "1ターンの準備後、2ターンの間、敵軍複数（2～3名）の統率と知略が48（武勇依存）減少、さらに対象に兵刃ダメージ（ダメージ率102%）"
+    },
+    {
+      "id": "t43",
+      "name": "霹靂一撃",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 228,
+      "controlType": "麻痺",
+      "controlTurns": 2,
+      "buffTypes": "会心",
+      "tags": "damage/control/buff",
+      "target": "敵軍単体",
+      "description": "敵軍単体に228%の兵刃ダメージを与え、2ターンの間麻痺（毎ターン30%の確率で行動不能）を付与。対象が麻痺状態中の場合、2ターンの間、自身が50%の会心を獲得",
+      "effectValue": "50"
+    },
+    {
+      "id": "t44",
+      "name": "静動自在",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "洞察/先攻",
+      "tags": "buff",
+      "target": "友軍単体",
+      "description": "自身より行動順が遅い自軍単体を選択し、洞察と先攻状態を付与し、2ターン持続。自身の行動順が最も遅い場合は、自身に洞察と先攻状態を付与し、2ターン持続",
+      "effectValue": "-/-"
+    },
+    {
+      "id": "t45",
+      "name": "かかれ柴田",
+      "probability": 0.5,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 154,
+      "tags": "damage/cleanse/leader_skill/reactivate",
+      "target": "敵軍全体（3名）",
+      "description": "自身の弱体化効果を2個浄化し、敵軍全体に兵刃ダメージ（ダメージ率154%）。1ターン後に再発動可能 大将技：5ターン目以降、追加で友軍1名の弱体化効果を2個浄化"
+    },
+    {
+      "id": "t46",
+      "name": "一切皆空",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "healRateMax": 72,
+      "tags": "heal/ignore_defense",
+      "target": "敵軍複数（2〜3名）",
+      "description": "2ターン目以降、30%の確率（毎ターン発動の確率が40%増加）で一揆を発動。一揆発動後の1ターン、自身は毎ターン行動時に80%～90%の確率（発動時のターン数依存）で敵軍複数（2～3名）に一揆（ダメージ率72%、武勇と知略の高い方に依存、防御無視）を付与し、ダメージ量の25%分だけ自軍雑賀本願寺を均等回復 大将技：友軍雑賀本願寺1名につき、一揆のダメージ率がさらに12%増加"
+    },
+    {
+      "id": "t47",
+      "name": "一徹の意志",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "controlType": "挑発/牽制",
+      "buffTypes": "鉄壁/統率UP",
+      "tags": "control/buff/reactivate",
+      "target": "敵軍単体",
+      "description": "2ターンの間、自身の統率が150上昇し、武勇が最も高い敵軍単体に挑発・牽制を付与し強制的に敵軍の通常攻撃と戦法の発動対象を自身に固定。自身が弱体化効果中の場合、追加で2ターンの間2回分の鉄壁を獲得（1ターン後に再発動可能）",
+      "effectValue": "150/-"
+    },
+    {
+      "id": "t48",
+      "name": "一心一徳",
+      "probability": 0.5,
+      "type": "strategy",
+      "category": "active",
+      "healRateMax": 60,
+      "tags": "heal",
+      "target": "自軍複数（2〜3名）",
+      "description": "自軍複数（2～3名）を回復し（回復率60%、知略依存）、1ターンの間休養（毎ターン兵力回復）を付与（回復率76%、知略依存）"
+    },
+    {
+      "id": "t49",
+      "name": "七本槍筆頭",
+      "probability": 1,
+      "type": "bravery",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 92,
+      "buffTypes": "乱舞/発動確率UP",
+      "tags": "damage/buff/leader_skill",
+      "target": "自分",
+      "description": "戦闘中、自身は92%の乱舞（通常攻撃時、対象部隊の他武将へもダメージ）を獲得。毎ターン30%の確率で自身の通常攻撃を統率が最も低い敵軍単体にロック、発動すると1ターンの間に持続。兵刃ダメージを5回与えるたびに、発動確率が13%増加（最大3回まで増加可能） 大将技：ロックの発動確率は最大5回まで増加可能",
+      "effectValue": "92/-"
+    },
+    {
+      "id": "t50",
+      "name": "三楽犬",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "buffTypes": "先攻/必中",
+      "tags": "damage/buff/reactivate",
+      "target": "自軍複数（2〜3名）",
+      "description": "1ターンの間、自軍複数（2～3名）が先攻・必中を獲得し、速度が最も高い敵軍単体に標記を付与。付与された対象が行動すると、強化された自軍がその対象に兵刃ダメージ（ダメージ率146%）。1ターン後に再発動可能"
+    },
+    {
+      "id": "t51",
+      "name": "三河魂",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "debuffTypes": "全属性DOWN",
+      "tags": "debuff/leader_skill",
+      "target": "敵軍全体（3名）",
+      "description": "友軍複数（2名）が通常攻撃を受けると、攻撃者の全属性に2.5%（統率依存）の低下効果を付与（最大8回まで重ねがけ可能） 大将技：自身が通常攻撃を受けると1ターンの間、80%の確率で武勇が最も高い友軍単体が自身を援護"
+    },
+    {
+      "id": "t52",
+      "name": "不屈の精神",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "反撃/武勇UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "2ターンの間、自身は反撃を獲得し通常攻撃を受けると攻撃者に1回反撃（ダメージ率148%）を付与。反撃の持続期間中に通常攻撃を2回受けると武勇が36増加（重ねがけ可能、戦闘終了まで持続）",
+      "effectValue": "-/36"
+    },
+    {
+      "id": "t53",
+      "name": "仏の高力",
+      "probability": 0.4,
+      "type": "strategy",
+      "category": "active",
+      "target": "友軍単体",
+      "description": "2ターンの間、友軍単体の能動戦法の発動率が9%（統率依存）増加。対象が次に能動戦法を発動した後、統率が30%増加"
+    },
+    {
+      "id": "t54",
+      "name": "先制攻撃",
+      "probability": 0.35,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 132,
+      "debuffTypes": "被ダメ増",
+      "tags": "damage/debuff/prepare",
+      "target": "敵軍複数（2〜3名）",
+      "description": "1ターンの準備後、敵軍複数（2～3名）に計略ダメージ（ダメージ率132%、知略依存）を与え、2ターンの間対象の能動戦法の被ダメージが30%上昇",
+      "effectValue": "-/30"
+    },
+    {
+      "id": "t55",
+      "name": "先手必勝",
+      "probability": 0.35,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 134,
+      "tags": "damage",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に計略ダメージ（ダメージ率134%、知略依存）を与え2ターンの間、対象が次に受ける能動戦法のダメージが52%上昇"
+    },
+    {
+      "id": "t56",
+      "name": "内助の賢",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "healRateMax": 92,
+      "tags": "heal",
+      "target": "友軍複数（2名）",
+      "description": "戦闘中、友軍複数（2名）が継続状態を付与する際その継続時間が48%の確率（知略依存）で1ターン増加。偶数ターンに敵軍全体が継続状態中の場合、自軍全体の兵力を回復（回復率92%、知略依存）"
+    },
+    {
+      "id": "t57",
+      "name": "冷徹無情",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 142,
+      "buffTypes": "発動確率UP",
+      "tags": "damage/buff/leader_skill",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に兵刃ダメージ（ダメージ率142%、追加で対象の兵力の損害にも依存、最大50%増加）。対象の兵力が50%以下の場合、2ターンの間、自身の能動戦法の発動確率が10%増加（最大2回まで重ねがけ可能） 大将技：発動確率増加効果は4ターン持続",
+      "effectValue": "10"
+    },
+    {
+      "id": "t58",
+      "name": "剛の武者",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 246,
+      "debuffTypes": "与ダメ減",
+      "tags": "damage/debuff",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、対象に兵刃ダメージ（ダメージ率246%）を与え、2ターンの間、次に受ける計略与ダメージが75%低下",
+      "effectValue": "-/75"
+    },
+    {
+      "id": "t59",
+      "name": "勇志不抜",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "離反/武勇UP",
+      "tags": "buff/substitute",
+      "target": "自分",
+      "description": "2ターンの間、友軍複数（2名）の被ダメージの20%を肩代りし、自身の武勇が75増加し、24%の離反を獲得。自身の兵力が50%以下の場合は武勇が100増加し、32%の離反を獲得",
+      "effectValue": "75/24"
+    },
+    {
+      "id": "t60",
+      "name": "十面埋伏",
+      "probability": 0.35,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 18,
+      "debuffTypes": "被ダメ増",
+      "tags": "damage/debuff/prepare/leader_skill",
+      "target": "敵軍全体（3名）",
+      "description": "1ターンの準備後、2ターンの間、敵軍全体の被ダメージが18%（知略依存）上昇。その後、対象全体に計略ダメージ（ダメージ率138%、知略依存） 大将技：5ターン目以降に発動する場合、被ダメージ上昇効果は解除不可",
+      "effectValue": "-/18"
+    },
+    {
+      "id": "t61",
+      "name": "千成瓢箪",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "healRateMax": 76,
+      "tags": "heal/leader_skill",
+      "target": "自軍複数（2〜3名）",
+      "description": "毎ターン自軍複数（2名）を回復し（回復率76%、知略依存）、35%の確率で自軍全体を回復。 大将技：自軍全体の回復確率が70%に増加"
+    },
+    {
+      "id": "t62",
+      "name": "古今独歩",
+      "probability": 1,
+      "type": "bravery",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 48,
+      "buffTypes": "離反",
+      "tags": "damage/buff/leader_skill",
+      "target": "敵軍単体",
+      "description": "通常攻撃を受けると48%の確率で攻撃者に兵刃ダメージ（ダメージ率70%、通常攻撃効果と突撃を発動可能）を与え、4%の離反を獲得（最大8回まで重ねがけ可能） 大将技：重ねがけ可能回数が10回に増加",
+      "effectValue": "4"
+    },
+    {
+      "id": "t63",
+      "name": "啄木鳥",
+      "probability": 0.4,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "兵刃+計略",
+      "damageRateMax": 156,
+      "controlType": "威圧",
+      "controlTurns": 1,
+      "tags": "damage/control/leader_skill",
+      "target": "敵軍単体",
+      "description": "敵軍単体に計略ダメージ（ダメージ率156%、知略依存）を与え、武勇が最も高い自軍単体が同じ対象に兵刃ダメージ（ダメージ率160%、武勇と速度依存）。さらに1ターンの間35%の確率（速度依存）で威圧を付与。 大将技：10%の確率で啄木鳥の戦法をもう1回発動"
+    },
+    {
+      "id": "t64",
+      "name": "地黄八幡",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 174,
+      "controlType": "封撃/無策",
+      "controlTurns": 1,
+      "tags": "damage/control/prepare/leader_skill",
+      "target": "敵軍全体（3名）",
+      "description": "1ターンの準備後、敵軍全体に兵刃ダメージ（ダメージ率174%）。36%の確率（武勇依存）で対象に1ターンの間封撃・無策を付与（対象ごとに判定） 大将技：制御状態の基本付与確率が44%に増加"
+    },
+    {
+      "id": "t65",
+      "name": "夢幻泡影",
+      "probability": 0.5,
+      "type": "strategy",
+      "category": "active",
+      "healRateMax": 118,
+      "buffTypes": "与ダメ増",
+      "tags": "heal/buff",
+      "target": "自軍複数（2名）",
+      "description": "自軍複数（2名）を回復し（回復率118%、知略依存）、2ターンの間、対象の与ダメージが15%上昇（知略依存）",
+      "effectValue": "15"
+    },
+    {
+      "id": "t66",
+      "name": "天下御免",
+      "probability": 0.65,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 188,
+      "controlType": "混乱",
+      "tags": "damage/control",
+      "target": "?",
+      "description": "通常攻撃後、対象に追加で兵刃ダメージ（ダメージ率188%）を与える。敵軍の大将に命中した場合、対象に混乱状態（攻撃や戦法の対象を無差別化）を付与し、2ターン持続。敵軍の大将が既に混乱状態の場合、その主要属性を30（武勇依存）吸収する。戦闘終了まで重ねがけ可能"
+    },
+    {
+      "id": "t67",
+      "name": "密報通暁",
+      "probability": 0.5,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "controlType": "撹乱",
+      "buffTypes": "洞察",
+      "tags": "damage/control/buff/prepare",
+      "target": "敵軍単体",
+      "description": "1ターンの準備後、2ターンの間、友軍単体が洞察を獲得し、敵軍単体に撹乱（能動戦法発動時に計略ダメージ、ダメージ率152%、知略依存）を付与"
+    },
+    {
+      "id": "t68",
+      "name": "帰蝶の舞",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "controlType": "混乱",
+      "tags": "control",
+      "target": "敵軍複数（2名）",
+      "description": "戦闘中、奇数ターンに40%の確率（知略依存）で1ターンの間、敵軍複数（2名）の統率と知略が22%（知略依存）低下。偶数ターンに38%の確率（知略依存）で1ターンの間、敵軍複数（2名）に混乱を付与"
+    },
+    {
+      "id": "t69",
+      "name": "形影相弔",
+      "probability": 0.45,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 192,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "自身と知略最高の敵武将が同時にランダム敵単体に計略ダメージ（ダメージ率192%）。6ターン目以降は知略最高の敵武将の対象が友軍単体に変更"
+    },
+    {
+      "id": "t70",
+      "name": "掃疑平乱",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "乱舞",
+      "tags": "buff",
+      "target": "自軍複数（2名）",
+      "description": "2ターンの間、自身と友軍単体が78%の乱舞を獲得。5ターン目以降は、追加で2ターンの間、双方の速度が20%上昇 大将技：武勇のより高い友軍単体優先",
+      "effectValue": "78"
+    },
+    {
+      "id": "t71",
+      "name": "攻めの三左",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 142,
+      "healRateMax": 68,
+      "dotName": "潰走",
+      "dotRateMax": 72,
+      "dotTurns": 3,
+      "tags": "damage/heal/dot",
+      "target": "敵軍単体",
+      "description": "敵軍単体に兵刃ダメージ（ダメージ率142%）。3ターンの間、対象に潰走（ダメージ率72%）を付与。対象がすでに潰走状態中の場合、自身の兵力を回復（回復率70%、武勇依存）"
+    },
+    {
+      "id": "t72",
+      "name": "斗星北天",
+      "probability": 0.45,
+      "type": "strategy",
+      "category": "active",
+      "controlType": "牽制",
+      "buffTypes": "洞察/知略UP",
+      "tags": "control/buff",
+      "target": "敵軍複数（2〜3名）",
+      "description": "2ターンの間、自身は洞察を獲得し、統率と知略が50増加し、敵軍複数（2～3名）に牽制（75%の確率で自身を敵軍戦法の発動対象に固定、知略依存）を付与",
+      "effectValue": "-/50"
+    },
+    {
+      "id": "t73",
+      "name": "新生",
+      "probability": 1,
+      "type": "bravery",
+      "category": "command",
+      "healRateMax": 14,
+      "buffTypes": "与ダメ増",
+      "tags": "heal/buff/leader_skill",
+      "target": "自軍全体（3名）",
+      "description": "戦闘中、友軍複数（2名）の与ダメージが14%（統率依存）上昇 大将技：ターン終了時に敵軍部隊の総兵力が初めて70%以下になる場合、自身は毎ターン行動時に兵力を回復（回復率65%、知略依存）",
+      "effectValue": "14"
+    },
+    {
+      "id": "t74",
+      "name": "時は今",
+      "probability": 0.7,
+      "type": "strategy",
+      "category": "active",
+      "dotName": "火傷/水攻め/中毒/消沈/潰走",
+      "dotRateMax": 56,
+      "dotTurns": 3,
+      "tags": "dot/cleanse/leader_skill",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に、以下のいずれか1種を付与（既存と異なる状態を優先、ダメージ率56%）。 火傷（知略依存）、水攻め（知略依存）、中毒（知略依存）、消沈（知略依存）、潰走（武勇依存）。 付与状態の持続期間は3ターン。 大将技：上記すべての継続状態を所持する対象への状態を浄化不可。"
+    },
+    {
+      "id": "t75",
+      "name": "末世の道者",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "damageType": "計略",
+      "damageRateMax": 14,
+      "tags": "damage",
+      "target": "自軍全体（3名）",
+      "description": "戦闘中、知略の最も高い自軍武将の計略ダメージを14%（統率依存）増加させ、14%の心攻状態を付与する。ただし、武勇の最も高い自軍武将の武勇を10%低下させる 大将技：武勇低下効果の持続時間が4ターンまで短縮"
+    },
+    {
+      "id": "t76",
+      "name": "東国無双の麗",
+      "probability": 1,
+      "type": "bravery",
+      "category": "passive",
+      "buffTypes": "連撃/武勇UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "戦闘中、自身は連撃（1ターンに2回通常攻撃）を獲得し、自身の武勇が30増加",
+      "effectValue": "-/30"
+    },
+    {
+      "id": "t77",
+      "name": "梟雄の計",
+      "probability": 0.35,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 128,
+      "dotName": "火傷/中毒",
+      "dotRateMax": 96,
+      "dotTurns": 1,
+      "controlType": "混乱",
+      "controlTurns": 5,
+      "tags": "damage/dot/control/prepare",
+      "target": "敵軍複数（2〜3名）",
+      "description": "1ターンの準備後、敵軍複数（2～3名）に計略ダメージ（ダメージ率128%、知略依存）。55%の確率で2ターンの間、対象に中毒（中毒状態中の場合は疲弊に変更）・火傷を付与（ダメージ率96%、知略依存、状態ごとに個別判定）。5ターン目以降に発動した場合、50%の確率で自身は知略が25%上昇するが、戦闘終了まで混乱を獲得 大将技：発動後、自身は混乱を獲得せずに終了"
+    },
+    {
+      "id": "t78",
+      "name": "楼岸一番",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "assault",
+      "damageRateMax": 168,
+      "buffTypes": "与ダメ増",
+      "debuffTypes": "与ダメ減",
+      "tags": "buff/debuff",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、攻撃対象にダメージ（ダメージ率168%、ダメージタイプは武勇と知略の高い方）。1ターンの間、対象の与ダメージが30%低下（武勇と知略の高い方に依存）。対象の兵力が50%超過の場合、与ダメージ低下効果の持続時間は2ターンに増加"
+    },
+    {
+      "id": "t79",
+      "name": "槍の又左",
+      "probability": 1,
+      "type": "bravery",
+      "category": "passive",
+      "buffTypes": "鉄壁/与ダメ増",
+      "tags": "buff/leader_skill",
+      "target": "自分",
+      "description": "戦闘中、能動戦法を発動するたびに、90%の確率で、次のターンの行動時までに自身が1回分の鉄壁を獲得（すでにこの戦法で付与された場合は回数増加）。鉄壁の獲得判定が2回行われるたびに、自身の次の通常攻撃を強化：通常攻撃与ダメージが50%上昇し、攻撃対象が敵軍全体に変更 大将技：通常攻撃の与ダメージが70%に増加"
+    },
+    {
+      "id": "t80",
+      "name": "死灰復然",
+      "probability": 0.45,
+      "type": "strategy",
+      "category": "active",
+      "healRateMax": 276,
+      "buffTypes": "被ダメ減",
+      "tags": "heal/buff",
+      "target": "自軍単体",
+      "description": "最も兵力が少ない自軍単体を回復（回復率276%、知略依存）。1ターンの間、対象の被ダメージが18%低下（知略依存）。回復量が超過した場合、追加で自身を回復（回復率108%、知略依存）",
+      "effectValue": "18"
+    },
+    {
+      "id": "t81",
+      "name": "比翼連理",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "damageType": "計略",
+      "damageRateMax": 80,
+      "healRateMax": 80,
+      "tags": "damage/heal",
+      "target": "自軍全体（3名）",
+      "description": "戦闘中、自軍全体が戦法で回復を付与するたびに、回復量の75%を蓄積。大将の行動が終了するたびに80%の確率で敵軍複数（1～2名）に計略ダメージ（ダメージ率92%、知略と回復の蓄積量依存）を与え、蓄積された回復量をリセット"
+    },
+    {
+      "id": "t82",
+      "name": "洞察反撃",
+      "probability": 0.35,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 304,
+      "buffTypes": "洞察",
+      "tags": "damage/buff/prepare",
+      "target": "自軍複数（2名）",
+      "description": "1ターンの準備後、2ターンの間、自軍複数（2名）に洞察を付与。自身は2ターンの間、次に通常攻撃を受けた際に攻撃者に計略ダメージ（ダメージ率304%、知略依存）"
+    },
+    {
+      "id": "t83",
+      "name": "津田流砲術",
+      "probability": 0.3,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 188,
+      "controlType": "混乱/威圧/封撃/無策",
+      "controlTurns": 2,
+      "tags": "damage/control",
+      "target": "敵軍単体",
+      "description": "敵軍単体に計略ダメージ（ダメージ率188%、知略依存）。2ターンの間、対象にランダムで以下の状態の1つを付与：封撃、無策、威圧、混乱"
+    },
+    {
+      "id": "t84",
+      "name": "海道一",
+      "probability": 0.7,
+      "type": "bravery",
+      "category": "assault",
+      "damageRateMax": 134,
+      "buffTypes": "会心/奇策",
+      "tags": "buff/leader_skill",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、射撃を2回行い、それぞれランダムな敵軍単体への兵刃ダメージ（ダメージ率134%）と計略ダメージ（ダメージ率134%・知略依存）。射撃後、自身の統率6%低下。統率低下した分だけ武勇と知略が増加（最大8回重ねがけ、解除不可）。 大将技：5ターン目に会心（兵刃ダメージ50%増加）と奇策（計略ダメージ50%増加）を12%獲得"
+    },
+    {
+      "id": "t85",
+      "name": "湖水渡り",
+      "probability": 0.65,
+      "type": "strategy",
+      "category": "active",
+      "buffTypes": "奇策",
+      "tags": "buff",
+      "target": "自軍複数（2名）",
+      "description": "2ターンの間、自身と友軍単体が奇策を65%獲得。期間中、奇策ダメージを1回与えるたびに奇策ダメージ率が15%増加（最大4回重ねがけ可能、戦闘終了まで持続）",
+      "effectValue": "65"
+    },
+    {
+      "id": "t86",
+      "name": "満ちゆく月",
+      "probability": 0.5,
+      "type": "strategy",
+      "category": "active",
+      "dotName": "潰走",
+      "dotTurns": 1,
+      "buffTypes": "与ダメ増",
+      "debuffTypes": "与ダメ減",
+      "tags": "dot/buff/debuff/prepare/leader_skill",
+      "target": "敵軍単体",
+      "description": "1ターンの準備後、4ターンの間、敵軍単体に潰走（ダメージ率108%、潰走を持っていない敵軍単体が優先）を付与。さらに2ターンの間、潰走状態中の敵軍の次2回の与ダメージが40%低下 大将技：潰走の持続時間が戦闘終了までに増加",
+      "effectValue": "-/40"
+    },
+    {
+      "id": "t87",
+      "name": "無想掃射",
+      "probability": 0.6,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 102,
+      "buffTypes": "与ダメ増",
+      "tags": "damage/buff/leader_skill",
+      "target": "敵軍複数（1〜2名）",
+      "description": "敵軍複数（1～2名）に兵刃ダメージ（ダメージ率102%）。2ターンの間、自身の兵刃与ダメージが50%上昇。自身より先に行動した武将1名につき、兵刃与ダメージ上昇効果が10%減少 大将技：与ダメージ上昇効果は最大2回まで減少可能",
+      "effectValue": "50"
+    },
+    {
+      "id": "t88",
+      "name": "甲山猛虎",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 96,
+      "controlType": "封撃",
+      "controlTurns": 1,
+      "tags": "damage/control",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に兵刃ダメージ（ダメージ率96%）を与え、1ターンの間封撃を付与"
+    },
+    {
+      "id": "t89",
+      "name": "疾風怒濤",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 45,
+      "buffTypes": "会心",
+      "tags": "damage/buff",
+      "target": "敵軍複数（2名）",
+      "description": "2ターンの間、自身と友軍単体が45%の会心を獲得し、敵軍複数（2名）に兵刃ダメージ（ダメージ率102%）",
+      "effectValue": "45"
+    },
+    {
+      "id": "t90",
+      "name": "百万一心",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "damageType": "計略",
+      "damageRateMax": 15,
+      "tags": "damage/leader_skill",
+      "target": "敵軍複数（2名）",
+      "description": "戦闘中、敵軍複数（2名。15%の確率で敵軍全体を選択）が能動戦法発動するたびに、30%の確率で発動を阻止し、計略ダメージ（ダメージ率100%、知略依存） 大将技：敵軍全体を選択する確率が35%まで増加"
+    },
+    {
+      "id": "t91",
+      "name": "相模の獅子",
+      "probability": 0.45,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 85,
+      "buffTypes": "鉄壁",
+      "tags": "damage/buff",
+      "target": "自軍複数（2〜3名）",
+      "description": "2ターンの間、自軍複数（2～3名）に85%の鉄壁（ダメージを無効化）を2回分付与。対象が鉄壁状態中の場合、代わりに敵軍単体に計略ダメージ（ダメージ率178%、知略依存） 大将技：鉄壁の発動に失敗時、兵力を回復（回復率40%、知略依存）",
+      "effectValue": "85"
+    },
+    {
+      "id": "t92",
+      "name": "破竹の勢い",
+      "probability": 1,
+      "type": "bravery",
+      "category": "passive",
+      "buffTypes": "会心",
+      "tags": "buff/leader_skill",
+      "target": "自分",
+      "description": "戦闘中、自身が70%の会心を獲得し、会心ダメージ率が30%増加。会心ダメージを与えると、自身の会心ダメージが5%増加（最初の1回を除き最大10回重ねがけ可能）。 大将技：重ねがけ可能回数が15回に増加",
+      "effectValue": "70"
+    },
+    {
+      "id": "t93",
+      "name": "破陣乱舞",
+      "probability": 0.5,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 44,
+      "buffTypes": "破陣",
+      "tags": "damage/buff/reactivate",
+      "target": "自軍複数（2名）",
+      "description": "1ターンの間、自身と武勇が最も高い友軍単体が44%（武勇依存）の破陣を獲得。さらに自身はこのターンの間、通常攻撃時に対象に追加で1回兵刃ダメージ（ダメージ率202%）。1ターン後に再発動可能 大将技：強化通常攻撃発動時、35%の確率で追加で敵軍単体にダメージ",
+      "effectValue": "44"
+    },
+    {
+      "id": "t94",
+      "name": "綱紀粛正",
+      "probability": 0.5,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "controlType": "威圧/疲弊",
+      "controlTurns": 2,
+      "tags": "damage/control/prepare/leader_skill",
+      "target": "敵軍単体",
+      "description": "1ターンの準備後、敵軍単体に計略ダメージ（ダメージ率196%、知略依存）。2ターンの間、対象に威圧を付与 大将技：発動時に対象が威圧状態中の場合、代わりに2ターンの間、対象に疲弊を付与"
+    },
+    {
+      "id": "t95",
+      "name": "越後流軍学",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "controlType": "威圧/封撃/無策/疲弊",
+      "tags": "control",
+      "target": "自分",
+      "description": "戦闘中、自身の能動戦法の発動確率が20%増加。能動戦法を発動するたびに、50%の確率（知略依存）で自軍全体に2ターンの間、封撃、無策、威圧、疲弊のいずれかの状態に対する耐性をランダムに付与（未獲得状態優先） 大将技：持続ターン数が3ターンに増加"
+    },
+    {
+      "id": "t96",
+      "name": "軍神",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "乱舞/溜め",
+      "tags": "buff",
+      "target": "自分",
+      "description": "戦闘中、乱舞獲得不可。 友軍複数（2名）が通常攻撃・能動戦法・突撃戦法発動時、60%の確率（武勇依存）で溜め獲得：自身の通常攻撃ダメージ10%上昇（武勇依存）。溜めは12回まで重ねがけ可能。最大重ねがけ時、通常攻撃の与ダメージ140%上昇（武勇依存）。通常攻撃後、溜めリセット。 大将技：毎ターン行動前、追加で1回溜め獲得。"
+    },
+    {
+      "id": "t97",
+      "name": "陣前無我",
+      "probability": 0.55,
+      "type": "bravery",
+      "category": "active",
+      "controlType": "挑発/牽制",
+      "tags": "heal/control",
+      "target": "敵軍複数（2〜3名）",
+      "description": "自身の兵力が自軍の最低値でない場合、1ターンの間、敵軍複数（2～3名）に挑発と牽制（強制的に敵軍の通常攻撃と戦法の発動対象を自身に固定）を付与。そうでない場合、自身の兵力を回復（回復率258%、統率依存）"
+    },
+    {
+      "id": "t98",
+      "name": "電光雷轟",
+      "probability": 0.65,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 60,
+      "controlType": "麻痺/威圧",
+      "controlTurns": 2,
+      "tags": "damage/control",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、対象とランダムな敵単体に麻痺付与（2ターン、毎ターン30%で行動不能）。対象が麻痺中の場合、雷鳴発動（敵軍全体への兵刃ダメージ、ダメージ率52%）。さらに麻痺でない敵軍単体に麻痺付与 この戦法は1ターンに最大1回発動可 大将技：雷鳴ダメージ60%に増加"
+    },
+    {
+      "id": "t99",
+      "name": "非常の器",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "healRateMax": 66,
+      "tags": "heal",
+      "target": "自軍全体（3名）",
+      "description": "2ターン目まで、自軍全体が35%の回避（ダメージを無効化）を獲得。さらに3ターン目開始時から3ターンの間、自軍全体が休養（毎ターン兵力が1回回復、回復率66%、知略依存）を獲得"
+    },
+    {
+      "id": "t100",
+      "name": "鬼若子",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "buffTypes": "連撃/統率UP",
+      "tags": "buff/leader_skill",
+      "target": "自軍複数（2〜3名）",
+      "description": "4ターン目まで、自軍複数（2～3名）は50%の連撃を獲得し、統率が18（統率依存）増加 大将技：対象人数増加の確率が25%増加",
+      "effectValue": "50/18"
+    },
+    {
+      "id": "t101",
+      "name": "諸行無常",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "buffTypes": "与ダメ増",
+      "tags": "buff",
+      "target": "自軍全体",
+      "description": "戦闘開始後の3ターンの間、自軍全体の与ダメージを24%（知略依存）上昇させる。4ターン目以降、自身及び敵軍単体が毎ターン周囲に与えるダメージを56%（知略依存）低下させる。",
+      "effectValue": "24"
+    },
+    {
+      "id": "t102",
+      "name": "風林火山",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "tags": "furinkazan/leader_skill",
+      "target": "自軍複数（2〜3名）",
+      "description": "戦闘中、2ターンごとに風・林・火・山の順でで旗効果発動。 最初のターンの旗は自身の最も高い属性で決定（速度＝風、知略＝林、武勇＝火、統率＝山）。 風：自軍複数（2～3名）の兵刃与ダメージが22%増加（速度依存） 林：敵軍複数（2～3名）に計略ダメージ（ダメージ率92%、知略依存） 火：敵軍単体への兵刃攻撃1～2回（156%） 山：自軍複数（2～3名）の兵刃被ダメージ22%低下（統率依存） 大将技：対象人数増加の確率が25%上昇。"
+    },
+    {
+      "id": "t103",
+      "name": "鬼十河",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 188,
+      "controlType": "威圧",
+      "controlTurns": 1,
+      "tags": "damage/control",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、対象に兵刃ダメージ（ダメージ率188%）。さらに1ターンの間威圧を付与"
+    },
+    {
+      "id": "t104",
+      "name": "鬼美濃",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "healRateMax": 112,
+      "tags": "heal/cleanse",
+      "target": "自分",
+      "description": "ダメージを受けると35%の確率で自身の弱体化効果を浄化し兵力を回復（112%・統率依存）"
+    },
+    {
+      "id": "t105",
+      "name": "豊後の戦陣",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "兵刃+計略",
+      "damageRateMax": 12,
+      "buffTypes": "洞察",
+      "tags": "damage/buff",
+      "target": "自分",
+      "description": "戦闘中、自身が洞察状態を獲得し、自身の最も高い属性に応じた強化効果を獲得する（その属性に依存） 武勇：兵刃ダメージが12%上昇。 知略：計略ダメージが12%上昇。 統率：能動戦法の発動率が6%上昇 大将技：自身の主要属性を20増加させる",
+      "effectValue": "-"
+    },
+    {
+      "id": "t106",
+      "name": "夜叉美濃",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "被ダメ減",
+      "tags": "buff",
+      "target": "自分",
+      "description": "戦闘中、自身の被ダメージが35%低下（敵軍が騎兵・鉄砲部隊の場合は50%）",
+      "effectValue": "35"
+    },
+    {
+      "id": "t107",
+      "name": "甲斐弓騎兵",
+      "probability": 1,
+      "type": "bravery",
+      "category": "troop",
+      "buffTypes": "速度UP/発動確率UP",
+      "tags": "buff",
+      "target": "自軍全体（3名）",
+      "description": "弓兵が、精妙な射術を誇る甲斐弓騎兵に進化。部隊行軍速度が50%増加。自軍全体の配置順が一番目となる能動戦法発動率8%上昇（準備が必要な戦法は12%上昇）。一条信龍が装備時、発動率増加値は速度依存",
+      "effectValue": "-/8"
+    },
+    {
+      "id": "t108",
+      "name": "鉄砲僧兵",
+      "probability": 1,
+      "type": "bravery",
+      "category": "troop",
+      "healRateMax": 48,
+      "tags": "heal",
+      "target": "自軍全体",
+      "description": "鉄砲が、破邪顕正の鉄砲僧兵に進化。自軍全体の統率と知略が12増加し、1/2/5/6ターン目に休養（毎ターン兵力を1回回復、回復率48%、統率依存）を獲得。津田算長が装備時、属性増加値は統率依存でさらに増加"
+    },
+    {
+      "id": "t109",
+      "name": "月華鶴影",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "damageType": "兵刃",
+      "damageRateMax": 102,
+      "buffTypes": "会心",
+      "tags": "damage/buff",
+      "target": "敵軍複数（2名）",
+      "description": "戦闘中、友軍複数（2名）が通常攻撃を受けると35%の確率で敵軍複数に兵刃ダメージ（ダメージ率102%）。友軍が通常攻撃を累計4回受けるたび、自身は25%の会心を獲得、2回まで重ねがけ可能",
+      "effectValue": "25"
+    },
+    {
+      "id": "t110",
+      "name": "尼御台",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "buffTypes": "洞察/離反/心攻",
+      "tags": "buff",
+      "target": "自軍大将",
+      "description": "2ターン目まで、自軍大将は洞察を獲得し、被ダメージが18%（知略依存）低下。効果終了後、4ターンの間、24%（知略依存）の離反・心攻を獲得",
+      "effectValue": "-/24/24"
+    },
+    {
+      "id": "t111",
+      "name": "湖北仁義",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 156,
+      "buffTypes": "離反",
+      "tags": "damage/heal/buff",
+      "target": "敵軍複数（2名）",
+      "description": "1ターンの間、15%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得し、敵軍複数（2名）に兵刃ダメージ（ダメージ率156%） 大将技：追加で友軍単体に離反を付与",
+      "effectValue": "15"
+    },
+    {
+      "id": "t112",
+      "name": "金鼓連天",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "debuffTypes": "与ダメ減",
+      "tags": "buff/debuff",
+      "target": "自分",
+      "description": "3ターンの間、自身の能動戦法与ダメージが48%上昇、突撃戦法被ダメージが25%低下（1ターン後に再発動可能）"
+    },
+    {
+      "id": "t113",
+      "name": "傲岸不遜",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 118,
+      "controlType": "挑発",
+      "controlTurns": 2,
+      "debuffTypes": "与ダメ減",
+      "tags": "damage/control/debuff",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に兵刃ダメージ（ダメージ率118%）を与え、2ターンの間、挑発（敵軍の突撃戦法ダメージが30%減少、統率依存）を付与 大将技：追加で敵軍の通常攻撃の与ダメージが30%低下（統率依存）"
+    },
+    {
+      "id": "t114",
+      "name": "積水成淵",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "dotName": "水攻め",
+      "dotTurns": 2,
+      "buffTypes": "心攻",
+      "tags": "dot/buff/prepare",
+      "target": "敵軍複数（2〜3名）",
+      "description": "1ターンの準備後、自軍複数（2～3名）に22%の心攻（計略ダメージを与えた際にダメージ量に応じて兵力回復）を付与。さらに2ターンの間、敵軍複数（2～3名）に水攻めを付与し、毎ターン持続ダメージを与える（ダメージ率88%、知略依存）",
+      "effectValue": "22"
+    },
+    {
+      "id": "t115",
+      "name": "僧兵",
+      "probability": 1,
+      "type": "bravery",
+      "category": "troop",
+      "damageType": "兵刃",
+      "damageRateMax": 60,
+      "dotName": "火傷",
+      "debuffTypes": "被ダメ増",
+      "tags": "damage/dot/debuff",
+      "target": "自軍全体（3名）",
+      "description": "足軽が、不退転の僧兵に進化。自軍全体の兵刃被ダメージが20%（統率依存）低下。ただし、弱体化効果継続中の場合は追加で毎ターン兵力が損失（ダメージ率60%、火傷状態中は240%に増加）。宮部継潤が装備時、火傷以外の継続状態は無効"
+    },
+    {
+      "id": "t116",
+      "name": "笹の才蔵",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 522,
+      "buffTypes": "発動確率UP",
+      "debuffTypes": "回復不可",
+      "tags": "damage/buff/debuff/prepare",
+      "target": "敵軍単体",
+      "description": "1ターンの準備後、敵軍単体に大量の兵刃ダメージ（ダメージ率522%）を与え、3ターンの間回復不可（兵力を回復不能）を付与。この攻撃で対象を倒した場合、次のターンにこの戦法の発動確率が100%増加し、準備ターンは不要"
+    },
+    {
+      "id": "t117",
+      "name": "鬼小島",
+      "probability": 0.55,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 304,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、対象に兵刃ダメージ（ダメージ率304%）。この戦法が発動するたびに、発動率が5%減少（最大4回まで）"
+    },
+    {
+      "id": "t118",
+      "name": "耐苦鍛錬",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "damageType": "兵刃",
+      "damageRateMax": 160,
+      "tags": "damage",
+      "target": "自分",
+      "description": "戦闘中、自身が通常攻撃を受けた際に自身の武勇と統率が14増加（5回まで重ねがけ可能）。最大重ねがけ数に達すると、敵軍全体に兵刃ダメージ（ダメージ率160%）。3ターン目まで、自軍大将を援護"
+    },
+    {
+      "id": "t119",
+      "name": "按甲休兵",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "healRateMax": 140,
+      "tags": "heal",
+      "target": "自分",
+      "description": "戦闘中、自身は休養（毎ターン兵力回復、回復率140%）を獲得",
+      "effectValue": "140"
+    },
+    {
+      "id": "t120",
+      "name": "献身",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "damageType": "兵刃",
+      "damageRateMax": 262,
+      "tags": "damage",
+      "target": "自軍単体",
+      "description": "戦闘中、自身の行動時に44%の確率（知略依存）で自軍異性が次の攻撃で追加でランダムな敵軍単体に兵刃ダメージ（ダメージ率262%）。そのターン中、自身への被ダメージが20%上昇"
+    },
+    {
+      "id": "t121",
+      "name": "戦意崩壊",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "assault",
+      "buffTypes": "鉄壁",
+      "debuffTypes": "統率DOWN/知略DOWN",
+      "tags": "buff/debuff",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、2ターンの間、対象の統率と知略が65低下し、自軍大将に2回分の鉄壁（被ダメージ無効）を付与。自身が大将の場合は1回分の鉄壁しか獲得不可"
+    },
+    {
+      "id": "t122",
+      "name": "鈴鳴り",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 210,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "自身は毎ターン66%の確率で敵軍単体に兵刃ダメージ（ダメージ率210%）。自軍の兵力が50%以下かつ敵軍より低い場合、発動確率は元の50%に低下"
+    },
+    {
+      "id": "t123",
+      "name": "奪気",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）の強化効果を2個「強化解除」し、3ターンの間、自身の知略が28上昇"
+    },
+    {
+      "id": "t124",
+      "name": "有備無患",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "healRateMax": 108,
+      "tags": "heal",
+      "target": "自軍複数（2名）",
+      "description": "自軍複数（2名）の兵力を回復（回復率108%・知略依存）"
+    },
+    {
+      "id": "t125",
+      "name": "趨利避害",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 184,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "敵軍単体にダメージ（ダメージ率184%、ダメージタイプは武勇と知略の高い方）。また、毎ターン最初に受ける異なるタイプの被ダメージが40%低下、1ターン持続"
+    },
+    {
+      "id": "t126",
+      "name": "攻守兼備",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 184,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "敵軍単体にダメージ（ダメージ率184%、ダメージタイプは武勇と知略の高い方）。また、毎ターン最初に受ける異なるタイプの被ダメージが40%低下、1ターン持続"
+    },
+    {
+      "id": "t127",
+      "name": "捨て身の義",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "buffTypes": "武勇UP",
+      "debuffTypes": "統率DOWN/知略DOWN",
+      "tags": "buff/debuff",
+      "target": "自軍全体（3名）",
+      "description": "戦闘中、自身の統率が40増加し、友軍複数の武勇と知略が20増加。自身の兵力が20%低下するたびに、再度効果を発動（効果は元の60%、重ねがけ可能）",
+      "effectValue": "20/-/-"
+    },
+    {
+      "id": "t128",
+      "name": "百錬成鋼",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "速度UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "自身の武勇・知略・統率・速度が35増加",
+      "effectValue": "35"
+    },
+    {
+      "id": "t129",
+      "name": "忠勤励行",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 296,
+      "buffTypes": "与ダメ増",
+      "tags": "damage/buff/prepare",
+      "target": "自軍複数（2名）",
+      "description": "1ターンの準備後、2ターンの間、自軍複数（2名）の兵刃与ダメージが15%上昇。その後、自身が敵軍単体に兵刃ダメージ（ダメージ率296%）",
+      "effectValue": "15"
+    },
+    {
+      "id": "t130",
+      "name": "岐阜侍従",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃+計略",
+      "damageRateMax": 148,
+      "buffTypes": "武勇UP",
+      "tags": "damage/buff",
+      "target": "敵軍単体",
+      "description": "敵軍単体に兵刃ダメージ（ダメージ率148%）と計略ダメージ（ダメージ率148%、知略依存）。自身の武勇と知略ともに対象より高い場合は強化効果を獲得し、ダメージ率が170%に増加"
+    },
+    {
+      "id": "t131",
+      "name": "覇王の右筆",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "damageType": "兵刃",
+      "damageRateMax": 120,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "友軍複数（2名）が通常攻撃を行った後、自身は40%の確率でその対象に兵刃ダメージ（ダメージ率120%）"
+    },
+    {
+      "id": "t132",
+      "name": "奮戦",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "連撃",
+      "debuffTypes": "与ダメ減",
+      "tags": "buff/debuff",
+      "target": "自分",
+      "description": "自身に連撃（1ターンに2回通常攻撃）を付与するが、1ターンの間与ダメージが15%低下"
+    },
+    {
+      "id": "t133",
+      "name": "全力戦闘",
+      "probability": 0.7,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "連撃",
+      "debuffTypes": "与ダメ減",
+      "tags": "buff/debuff",
+      "target": "自分",
+      "description": "5ターン目以降、戦闘終了まで自身が70%の連撃（1ターンに2回通常攻撃）を獲得"
+    },
+    {
+      "id": "t134",
+      "name": "先陣の勇",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 154,
+      "controlType": "威圧",
+      "buffTypes": "速度UP",
+      "tags": "damage/control/buff",
+      "target": "敵軍単体",
+      "description": "敵軍単体に兵刃ダメージ（ダメージ率154%）を与え、35%の確率（速度差依存）で1ターンの間威圧（行動不能）を付与。2ターンの間、自身の速度が20増加",
+      "effectValue": "20"
+    },
+    {
+      "id": "t135",
+      "name": "一上一下",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "buffTypes": "発動確率UP",
+      "tags": "buff",
+      "target": "自分",
+      "description": "戦闘中、自身の能動戦法の発動確率が12%増加",
+      "effectValue": "12"
+    },
+    {
+      "id": "t136",
+      "name": "一刀両断",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 316,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、攻撃対象にもう一度兵刃ダメージ（ダメージ率316%）"
+    },
+    {
+      "id": "t137",
+      "name": "先制先登",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 122,
+      "buffTypes": "先攻",
+      "tags": "damage/buff",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に兵刃ダメージ（ダメージ率122%）を与え、1ターンの間、先攻（優先行動）を獲得"
+    },
+    {
+      "id": "t138",
+      "name": "鬼玄蕃",
+      "probability": 0.3,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 118,
+      "buffTypes": "離反",
+      "tags": "damage/buff",
+      "target": "敵軍複数（2〜3名）",
+      "description": "自身の次に受けるダメージが30%上昇する代わりに、2ターンの間、18%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得。さらに敵軍複数（2～3名）に兵刃ダメージ（ダメージ率118%）",
+      "effectValue": "18"
+    },
+    {
+      "id": "t139",
+      "name": "殿軍奮戦",
+      "probability": 0.55,
+      "type": "bravery",
+      "category": "active",
+      "controlType": "挑発/牽制",
+      "controlTurns": 2,
+      "tags": "control",
+      "target": "自分",
+      "description": "2ターンの間、敵軍単体に挑発（強制的に自身を通常攻撃の対象に固定）または牽制（強制的に自身を戦法の対象に固定）を付与。敵軍がすでに挑発または牽制状態中の場合、2ターンの間、追加で与ダメージが25%低下。両状態同時存在の場合、与ダメージ低下効果が45%に増加"
+    },
+    {
+      "id": "t140",
+      "name": "不意打ち",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "controlType": "無策/封撃",
+      "controlTurns": 2,
+      "tags": "control/prepare",
+      "target": "敵軍複数（2名）",
+      "description": "1ターンの準備後、1～2ターンの間（65%の確率で2ターンの間）、敵軍複数（2名）にランダムに無策（能動戦法発動不可）と封撃（通常攻撃不可）のいずれかを付与"
+    },
+    {
+      "id": "t141",
+      "name": "弓調馬服",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "debuffTypes": "最高統計DOWN",
+      "tags": "debuff",
+      "target": "敵軍単体",
+      "description": "2ターンの間、敵軍単体の武勇と知略の高い方が100減少。20%の確率（武勇依存）で双方減少"
+    },
+    {
+      "id": "t142",
+      "name": "矢石飛交",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 84,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "敵軍単体にランダムで2〜4回の兵刃ダメージ（ダメージ率84%）"
+    },
+    {
+      "id": "t143",
+      "name": "警戒周到",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "buffTypes": "被ダメ減",
+      "tags": "buff",
+      "target": "自軍複数（2名）",
+      "description": "4ターン目まで自軍複数（2名）の被ダメージが22%低下",
+      "effectValue": "22"
+    },
+    {
+      "id": "t144",
+      "name": "一触即発",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "assault",
+      "controlType": "無策",
+      "controlTurns": 1,
+      "tags": "control",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、1ターンの間攻撃対象の統率が140減少、無策（能動戦法発動不可）を付与"
+    },
+    {
+      "id": "t145",
+      "name": "参謀の助言",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "buffTypes": "武勇UP",
+      "tags": "buff",
+      "target": "自軍全体（3名）",
+      "description": "自軍全体の武勇と知略が28増加",
+      "effectValue": "28"
+    },
+    {
+      "id": "t146",
+      "name": "諏訪の光",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "tags": "cleanse",
+      "target": "自軍複数（2名）",
+      "description": "自軍複数（2名）の弱体化効果を2個浄化し・2ターンの間対象の武勇と統率が36増加"
+    },
+    {
+      "id": "t147",
+      "name": "回山倒海",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 104,
+      "dotName": "潰走",
+      "dotRateMax": 94,
+      "tags": "damage/dot",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率104%）を与え、さらに対象に2ターンの間潰走（毎ターン持続ダメージ、ダメージ率94%、武勇依存）を付与"
+    },
+    {
+      "id": "t148",
+      "name": "援護射撃",
+      "probability": 0.4,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 162,
+      "buffTypes": "回避",
+      "tags": "damage/buff",
+      "target": "自軍単体",
+      "description": "1ターンの間、友軍単体が30%の回避を獲得。また、対象が初めてダメージを受けた際に自身が攻撃者に兵刃ダメージ（ダメージ率162%、武勇と統率依存）",
+      "effectValue": "30"
+    },
+    {
+      "id": "t149",
+      "name": "敵陣攪乱",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 146,
+      "controlType": "混乱",
+      "controlTurns": 1,
+      "tags": "damage/control",
+      "target": "敵軍単体",
+      "description": "敵軍単体に計略ダメージ（ダメージ率146%、知略依存）。1ターンの間、対象に混乱（攻撃と戦法の発動対象をランダムに選択）を付与"
+    },
+    {
+      "id": "t150",
+      "name": "一念乱志",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 178,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "3ターン目以降、自身は70%の確率で敵軍単体に兵刃ダメージ（ダメージ率178%）を与え、35%の確率で武勇が最も高い友軍単体も同じ対象に兵刃ダメージ（ダメージ率178%）。自身の発動確率は毎ターン5%減少"
+    },
+    {
+      "id": "t151",
+      "name": "闇討ち",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 332,
+      "tags": "damage/prepare",
+      "target": "敵軍大将",
+      "description": "1ターンの準備後、敵軍大将に兵刃ダメージ（ダメージ率332%）"
+    },
+    {
+      "id": "t152",
+      "name": "鉄砲猛撃",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 102,
+      "debuffTypes": "与ダメ減",
+      "tags": "damage/debuff",
+      "target": "敵軍複数（2名）",
+      "description": "敵軍複数（2名）に計略ダメージ（ダメージ率102%、知略依存）。2ターンの間、対象の与ダメージが12%低下",
+      "effectValue": "-/12"
+    },
+    {
+      "id": "t153",
+      "name": "後方支援",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "buffTypes": "与ダメ増",
+      "tags": "buff",
+      "target": "自軍複数（2名）",
+      "description": "戦闘中、自身の能動戦法の発動確率が10%減少するが、友軍複数（2名）に18%の与ダメージ上昇効果を付与。この効果は毎ターン40%の確率で2%減少",
+      "effectValue": "18"
+    },
+    {
+      "id": "t154",
+      "name": "祓除",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "tags": "cleanse",
+      "target": "自軍複数（2名）",
+      "description": "2ターンの間、自軍複数（2名）の武勇・知略・速度が24増加、弱体化効果を2個浄化",
+      "effectValue": "24"
+    },
+    {
+      "id": "t155",
+      "name": "荒切",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "assault",
+      "buffTypes": "連撃",
+      "tags": "buff",
+      "target": "自分",
+      "description": "通常攻撃後、1ターンの間連撃（1ターンに2回通常攻撃）を獲得"
+    },
+    {
+      "id": "t156",
+      "name": "生死一顧",
+      "probability": 0.5,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 56,
+      "controlType": "挑発",
+      "controlTurns": 1,
+      "tags": "damage/control",
+      "target": "敵軍全体",
+      "description": "敵軍全体に計略ダメージ（ダメージ率56%、知略依存）を与え、1ターンの間挑発（強制的に自身を通常攻撃の対象に固定）を付与"
+    },
+    {
+      "id": "t157",
+      "name": "懐柔",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "healRateMax": 84,
+      "tags": "heal",
+      "target": "自軍複数（2〜3名）",
+      "description": "2ターン目から3ターンの間、自軍複数（2～3名）が休養（毎ターン兵力回復）を獲得（回復率84%、知略依存）",
+      "effectValue": "84"
+    },
+    {
+      "id": "t158",
+      "name": "休養",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "healRateMax": 100,
+      "tags": "heal",
+      "target": "自分",
+      "description": "戦闘中、自身は休養（毎ターン兵力回復、回復率100%）を獲得",
+      "effectValue": "100"
+    },
+    {
+      "id": "t159",
+      "name": "妖怪退治",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 256,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "敵軍単体の強化効果を1個「強化解除」し、その後兵刃ダメージ（ダメージ率256%）"
+    },
+    {
+      "id": "t160",
+      "name": "槍の鈴",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "damageRateMax": 232,
+      "healRateMax": 54,
+      "tags": "damage/heal",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率232%）。3ターン目以降、追加で自身の兵力を回復（回復率54%、武勇依存）"
+    },
+    {
+      "id": "t161",
+      "name": "融通自在",
+      "probability": 0.45,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "発動確率UP",
+      "tags": "buff",
+      "target": "自軍単体",
+      "description": "2ターンの間、友軍単体の能動戦法の発動確率が12%増加（最大2回重ねがけ可能）",
+      "effectValue": "12"
+    },
+    {
+      "id": "t162",
+      "name": "秋水一色",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 148,
+      "buffTypes": "与ダメ増",
+      "tags": "damage/buff/prepare",
+      "target": "自軍複数（2名）",
+      "description": "1ターンの準備後・2ターンの間自身と友軍単体の計略与ダメージが20%上昇。その後・敵軍複数（2名）に計略ダメージ（ダメージ率148%・知略依存）",
+      "effectValue": "20"
+    },
+    {
+      "id": "t164",
+      "name": "甲州流軍学",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 186,
+      "buffTypes": "鉄壁",
+      "tags": "damage/buff",
+      "target": "敵軍単体",
+      "description": "敵軍単体に計略ダメージ（ダメージ率186%、知略依存）を与え、1ターンの間、友軍単体に1回分の鉄壁（被ダメージ無効）を付与"
+    },
+    {
+      "id": "t166",
+      "name": "先陣鼓舞",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 242,
+      "buffTypes": "発動確率UP",
+      "tags": "damage/buff",
+      "target": "敵軍単体",
+      "description": "敵軍単体に兵刃ダメージ （ダメージ率242%）を与え、さらに自軍単体の固有戦法発動確率を16%増加させる。2ターン持続 大将技：発動確率がさらに4%上昇",
+      "effectValue": "16"
+    },
+    {
+      "id": "t167",
+      "name": "境目奮戦",
+      "probability": 0.35,
+      "type": "strategy",
+      "category": "assault",
+      "damageType": "計略",
+      "damageRateMax": 260,
+      "debuffTypes": "回復不可",
+      "tags": "damage/debuff",
+      "target": "兵力最低の敵軍単体",
+      "description": "通常攻撃後、兵力の最も低い敵軍単体に計略ダメージ（ダメージ率260%、知略依存）を与え、その敵軍が受ける回復効果を30%低下させる。1ターン持続"
+    },
+    {
+      "id": "t168",
+      "name": "水の如し",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "計略",
+      "damageRateMax": 88,
+      "buffTypes": "奇策",
+      "tags": "damage/buff",
+      "target": "敵軍単体",
+      "description": "毎ターン行動前、及び初めて戦法による回復を受けた時、48%の確率（知略依存）で5%の奇策状態を獲得する。最大8回まで重ねがけ可能。毎ターン行動前、60%の確率で敵軍単体に計略ダメージ （1〜2回実行、ダメージ率88%、知略依存）を与える 大将技：ダメージを与える確率が15%上昇",
+      "effectValue": "5"
+    },
+    {
+      "id": "t169",
+      "name": "知者楽水",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "tags": "buff",
+      "target": "自軍複数（2名）",
+      "description": "戦闘開始後の3ターンの間、自軍複数（2人）が受ける兵刃及び計略ダメージを18%から24%（統率依存。武勇より知略の方が高い味方武将が多い場合は兵刃ダメージ軽減率が上がり、そうでない場合は計略ダメージ軽減率が上がる） 軽減させる。ただし、その与ダメージも5%軽減される 大将技：自軍全体が初めのターンに受けるダメージの30%を分担"
+    },
+    {
+      "id": "t171",
+      "name": "武田之赤備",
+      "probability": 1,
+      "type": "bravery",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 138,
+      "buffTypes": "会心",
+      "tags": "damage/buff",
+      "target": "自身・敵軍単体",
+      "description": "戦闘中、20%の会心を獲得。毎ターン行動後、25%の確率（武勇依存。このターンで会心ダメージを与えた場合、追加で25%増加）で赤備え突撃を発動：敵軍単体に兵刃ダメージ（ダメージ率138%）を与え、2ターンの間、次のターンの通常攻撃後に対象の統率が15%低下 大将技：赤備え突撃の発動確率が追加で10%増加",
+      "effectValue": "20"
+    },
+    {
+      "id": "t172",
+      "name": "縦横馳突",
+      "probability": 0.2,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "連撃",
+      "tags": "buff",
+      "target": "自身",
+      "description": "自身に連撃（1ターンに2回通常攻撃が可能）を付与し、さらに封撃（通常攻撃不可）耐性を獲得する。1ターン持続"
+    },
+    {
+      "id": "t173",
+      "name": "仁者の沈勇",
+      "probability": 0.55,
+      "type": "strategy",
+      "category": "assault",
+      "damageType": "計略",
+      "damageRateMax": 184,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "通常攻撃後、敵軍単体に計略ダメージ（ダメージ率184%、知略依存）を与え、70%の確率で友軍単体にも同時に同対象への計略ダメージ（ダメージ率154%、その友軍の知略依存）を与える。 大将技：友軍がダメージを与える確率が20%上昇"
+    },
+    {
+      "id": "t_一六勝負",
+      "name": "一六勝負",
+      "probability": 0.4,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 240,
+      "healRateMax": 240,
+      "tags": "damage/heal",
+      "target": "敵軍単体",
+      "description": "ランダムにいずれか1つの効果を発動：敵軍単体に計略ダメージ（ダメージ率240%、知略依存）を与えるか、自軍単体の兵力を回復（回復率240%、知略依存）"
+    },
+    {
+      "id": "t_公家風流",
+      "name": "公家風流",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "tags": "buff",
+      "target": "友軍複数（2名）",
+      "description": "1ターンの準備後、友軍複数（2名）が先攻を獲得し、能動戦法与ダメージが75%上昇する（2ターン持続） 大将技：与ダメージ基本増加量が85%に上昇する"
+    },
+    {
+      "id": "t_大太刀力士隊",
+      "name": "大太刀力士隊",
+      "probability": 1,
+      "type": "bravery",
+      "category": "troop",
+      "damageType": "兵刃",
+      "damageRateMax": 100,
+      "tags": "damage",
+      "target": "自軍全体（3名）",
+      "description": "足軽が、臨戦態勢の大太刀力士隊に進化。自軍全体は通常攻撃ダメージを受けた際に30%の確率で攻撃者に反撃（ダメージ率100%）を付与。2ターン目まで、通常攻撃と突撃戦法による被ダメージが18%（武勇依存）低下。真柄直隆が装備時、反撃時に自身は25%の確率で対象に追加の兵刃ダメージ（ダメージ率120%）"
+    },
+    {
+      "id": "t_怪力無双",
+      "name": "怪力無双",
+      "probability": 0.75,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 333,
+      "tags": "damage",
+      "target": "敵軍複数（2〜3名）",
+      "description": "2ターンの準備後、敵軍複数（2～3名）に大量の兵刃ダメージ（ダメージ率333%）。この攻撃で対象を倒した場合、2ターンの間、自身が破陣を獲得 大将技：攻撃対象は敵軍3名"
+    },
+    {
+      "id": "t_旋乾転坤",
+      "name": "旋乾転坤",
+      "probability": 0.3,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 126,
+      "tags": "damage/dot",
+      "target": "敵軍複数（2〜3名）",
+      "description": "敵軍複数（2～3名）に計略ダメージ（ダメージ率126%、知略依存）を与え、恐慌を付与。対象が指揮・受動戦法を所持している場合、2ターンの間、毎ターン対象に計略ダメージ（ダメージ率64%、所持している指揮・受動戦法が1つ増加するたびにダメージ率が34%増加、知略依存）。1ターン後に再発動可能大将技：発動時の計略ダメージのダメージ率が146%に増加"
+    },
+    {
+      "id": "t_槍弾正",
+      "name": "槍弾正",
+      "probability": 0.35,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 172,
+      "controlType": "無策",
+      "controlTurns": 1,
+      "tags": "damage/control",
+      "target": "敵軍単体",
+      "description": "敵軍単体に兵刃ダメージ（ダメージ率172%）。1ターンの間、無策（能動戦法発動不可）を付与"
+    },
+    {
+      "id": "t_殿軍反制",
+      "name": "殿軍反制",
+      "probability": 0.55,
+      "type": "bravery",
+      "category": "active",
+      "controlType": "挑発/牽制",
+      "controlTurns": 2,
+      "debuffTypes": "与ダメ減",
+      "tags": "control/debuff",
+      "target": "敵軍単体",
+      "description": "2ターンの間、敵軍単体に挑発（強制的に自身を通常攻撃の対象に固定）または牽制（強制的に自身を戦法の対象に固定）を付与。敵軍がすでに挑発または牽制状態中の場合、2ターンの間、追加で与ダメージが25%低下。両状態同時存在の場合、与ダメージ低下効果が45%に増加"
+    },
+    {
+      "id": "t_腹中鱗甲",
+      "name": "腹中鱗甲",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "damageType": "兵刃",
+      "damageRateMax": 52,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "自身が反撃（通常攻撃を受けると、敵軍に兵刃ダメージ。ダメージ率52%）を獲得。自身が大将でない場合、ダメージ率は62%に上昇"
+    },
+    {
+      "id": "t_薩摩鉄砲兵",
+      "name": "薩摩鉄砲兵",
+      "probability": 1,
+      "type": "bravery",
+      "category": "troop",
+      "tags": "buff",
+      "target": "自軍全体（3名）",
+      "description": "鉄砲が、鉄火烈襲の薩摩鉄砲兵に進化。自軍全体の通常攻撃が計略攻撃へ転換。基本ダメージ率が40%増加するが、攻撃した後、1ターン後に再発動可能。島津貴久が装備時、基本ダメージ率は60%まで増加"
+    },
+    {
+      "id": "t_驍勇善戦",
+      "name": "驍勇善戦",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 312,
+      "tags": "damage",
+      "target": "敵軍単体",
+      "description": "1ターンの準備後、2ターンの間自身が40%の会心（発動時、兵刃ダメージが50%上昇）を獲得し、敵軍単体に兵刃ダメージ（ダメージ率312%）"
+    },
+    {
+      "id": "t_魚目混珠",
+      "name": "魚目混珠",
+      "probability": 1,
+      "type": "strategy",
+      "category": "passive",
+      "healRateMax": 212,
+      "tags": "heal",
+      "target": "自分",
+      "description": "自身は通常攻撃ができず、与ダメージが50%低下するが、毎ターン食事で自身の兵力を回復（回復率212%）"
+    },
+    {
+      "id": "t_i1",
+      "name": "雷神斬り",
+      "probability": 1,
+      "type": "bravery",
+      "category": "passive",
+      "target": "自分",
+      "description": "毎ターン蓄勢を1獲得し、2以上蓄積かつ威圧未付与のターンに蓄勢をリセットして会心50%・武勇+120を1T付与（蓄勢3以上時は追加で会心25%・武勇+60）",
+      "kind": "incident",
+      "effectValue": "50/120"
+    },
+    {
+      "id": "t_i2",
+      "name": "機に乗ず",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "assault",
+      "damageType": "兵刃",
+      "controlType": "挑発/牽制",
+      "controlTurns": 1,
+      "debuffTypes": "武勇DOWN/知略DOWN",
+      "tags": "damage/debuff/control",
+      "target": "敵軍単体",
+      "description": "通常攻撃後に攻撃対象の武勇と知略を140低下。対象が挑発または牽制状態なら自身に回避35%、そうでなければ挑発と牽制を付与（1T）",
+      "kind": "incident",
+      "effectValue": "-/140/140"
+    },
+    {
+      "id": "t_i3",
+      "name": "自立の志",
+      "probability": 0.4,
+      "type": "strategy",
+      "category": "active",
+      "controlType": "挑発",
+      "controlTurns": 2,
+      "buffTypes": "統率大UP",
+      "tags": "control/buff",
+      "target": "敵軍全体（3名）",
+      "description": "敵軍全体を挑発状態にし（2T）、自身の統率を55%増加（2T）",
+      "kind": "incident",
+      "effectValue": "-/55"
+    },
+    {
+      "id": "t_i4",
+      "name": "専横専断",
+      "probability": 0.4,
+      "type": "strategy",
+      "category": "active",
+      "tags": "buff",
+      "target": "自分",
+      "description": "自身の次の能動戦法ダメ+48%。発動毎に+12%増加（スタック可）",
+      "kind": "incident",
+      "effectValue": "48"
+    },
+    {
+      "id": "t_i5",
+      "name": "城盗り",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "buffTypes": "知略大UP",
+      "debuffTypes": "被ダメ増",
+      "tags": "buff/debuff",
+      "target": "敵軍複数（2〜3名）",
+      "description": "自身の知略を33%増加（2T）。敵2-3名に次の計略ダメ受時追加ダメ（106%）を2T付与",
+      "kind": "incident",
+      "effectValue": "33"
+    },
+    {
+      "id": "t_i6",
+      "name": "離心の計",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "damageType": "兵刃",
+      "damageRateMax": 252,
+      "debuffTypes": "与ダメ減",
+      "tags": "damage/debuff",
+      "target": "敵軍大将",
+      "description": "1ターン準備後、敵大将に兵刃ダメ（252%）を与え、与ダメを50%低下（2T）",
+      "kind": "incident",
+      "effectValue": "-/50"
+    },
+    {
+      "id": "t_i7",
+      "name": "姻戚同盟",
+      "probability": 0.4,
+      "type": "strategy",
+      "category": "active",
+      "buffTypes": "被ダメ大減",
+      "tags": "buff",
+      "target": "自軍複数（2名）",
+      "description": "自身と異性の友軍単体の被ダメを20%低下（2T）",
+      "kind": "incident",
+      "effectValue": "20"
+    },
+    {
+      "id": "t_i8",
+      "name": "大器の萌芽",
+      "probability": 1,
+      "type": "strategy",
+      "category": "command",
+      "healRateMax": 108,
+      "tags": "heal",
+      "target": "自軍複数（2名）",
+      "description": "5ターン目以降、毎ターン自軍複数（2名）の兵力を回復（回復率108%、知略依存）",
+      "kind": "incident",
+      "effectValue": "108"
+    },
+    {
+      "id": "t_i9",
+      "name": "破天の轟",
+      "probability": 0.35,
+      "type": "bravery",
+      "category": "active",
+      "dotName": "火傷",
+      "dotRateMax": 105,
+      "dotTurns": 2,
+      "debuffTypes": "統率DOWN",
+      "tags": "dot/debuff",
+      "target": "敵軍複数（2名）",
+      "description": "1T準備後に敵2名に火傷効果（105%）を2T付与し統率を20低下（2T）",
+      "kind": "incident",
+      "effectValue": "-/20"
+    },
+    {
+      "id": "t_i10",
+      "name": "家中整序",
+      "probability": 0.35,
+      "type": "strategy",
+      "category": "active",
+      "damageType": "計略",
+      "damageRateMax": 136,
+      "controlType": "次回封撃",
+      "controlTurns": 2,
+      "tags": "damage/control",
+      "target": "敵軍単体",
+      "description": "敵軍単体に計略ダメ（136%）を与え封撃（次回攻撃無効）を2T付与",
+      "kind": "incident"
+    }
+  ],
+  "enemyFormations": [
+    {
+      "id": "enemy-1",
+      "name": "徳川家康・本多忠勝・本多正信（God Tier／徳川家）",
+      "members": [
+        {
+          "commanderId": "c24",
+          "selectedTactic1Id": "t38",
+          "selectedTactic2Id": "t31",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c25",
+          "selectedTactic1Id": "t6",
+          "selectedTactic2Id": "t8",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c29",
+          "selectedTactic1Id": "t14",
+          "selectedTactic2Id": "t37",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        }
+      ]
+    },
+    {
+      "id": "enemy-2",
+      "name": "北条綱成・立花道雪・北条氏康（God Tier／群雄武勇）",
+      "members": [
+        {
+          "commanderId": "c36",
+          "selectedTactic1Id": "t6",
+          "selectedTactic2Id": "t13",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c34",
+          "selectedTactic1Id": "t21",
+          "selectedTactic2Id": "t43",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c38",
+          "selectedTactic1Id": "t38",
+          "selectedTactic2Id": "t14",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        }
+      ]
+    },
+    {
+      "id": "enemy-3",
+      "name": "本願寺顕如・毛利元就・北条氏康（God Tier／群雄計略）",
+      "members": [
+        {
+          "commanderId": "c37",
+          "selectedTactic1Id": "t4",
+          "selectedTactic2Id": "t36",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c31",
+          "selectedTactic1Id": "t37",
+          "selectedTactic2Id": "t20",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c38",
+          "selectedTactic1Id": "t38",
+          "selectedTactic2Id": "t14",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        }
+      ]
+    },
+    {
+      "id": "enemy-4",
+      "name": "柴田勝家・織田信長・明智光秀（Tier1／織田家）",
+      "members": [
+        {
+          "commanderId": "c3",
+          "selectedTactic1Id": "t39",
+          "selectedTactic2Id": "t21",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c1",
+          "selectedTactic1Id": "t37",
+          "selectedTactic2Id": "t28",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c2",
+          "selectedTactic1Id": "t14",
+          "selectedTactic2Id": "t18",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        }
+      ]
+    },
+    {
+      "id": "enemy-5",
+      "name": "豊臣秀吉・成田甲斐・ねね（Tier1／豊臣家）",
+      "members": [
+        {
+          "commanderId": "c56",
+          "selectedTactic1Id": "t37",
+          "selectedTactic2Id": "t38",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c60",
+          "selectedTactic1Id": "t6",
+          "selectedTactic2Id": "t8",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c62",
+          "selectedTactic1Id": "t14",
+          "selectedTactic2Id": "t56",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        }
+      ]
+    },
+    {
+      "id": "enemy-6",
+      "name": "武田信玄・飯富虎昌・甘利虎泰（Tier2／武田家）",
+      "members": [
+        {
+          "commanderId": "c14",
+          "selectedTactic1Id": "t38",
+          "selectedTactic2Id": "t27",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c19",
+          "selectedTactic1Id": "t6",
+          "selectedTactic2Id": "t13",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c23",
+          "selectedTactic1Id": "t21",
+          "selectedTactic2Id": "t8",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        }
+      ]
+    },
+    {
+      "id": "enemy-7",
+      "name": "上杉謙信・小島弥太郎・甘粕景持（Tier2／上杉家）",
+      "members": [
+        {
+          "commanderId": "c65",
+          "selectedTactic1Id": "t26",
+          "selectedTactic2Id": "t13",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c68",
+          "selectedTactic1Id": "t8",
+          "selectedTactic2Id": "t21",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c70",
+          "selectedTactic1Id": "t43",
+          "selectedTactic2Id": "t44",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        }
+      ]
+    },
+    {
+      "id": "enemy-8",
+      "name": "長宗我部元親・福島正則・伊達晴宗（Tier2／混合）",
+      "members": [
+        {
+          "commanderId": "c33",
+          "selectedTactic1Id": "t38",
+          "selectedTactic2Id": "t14",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c59",
+          "selectedTactic1Id": "t1",
+          "selectedTactic2Id": "t52",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        },
+        {
+          "commanderId": "c39",
+          "selectedTactic1Id": "t13",
+          "selectedTactic2Id": "t28",
+          "troops": 10000,
+          "breakthroughLevel": "0"
+        }
+      ]
+    }
+  ]
+}

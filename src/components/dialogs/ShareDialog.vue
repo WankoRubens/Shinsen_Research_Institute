@@ -2,7 +2,7 @@
   <el-dialog
     :model-value="modelValue"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
-    title="分享配置"
+    title="編成を共有"
     width="360px"
     align-center
   >
@@ -16,7 +16,7 @@
           clearable
         />
         <p class="text-[11px] text-gray-400 leading-snug">
-          此名稱僅顯示於「我的分享」列表，不會出現在分享連結或對方畫面
+          この名前は「共有」一覧にだけ表示され、共有リンクや相手の画面には表示されません
         </p>
       </div>
 
@@ -26,10 +26,10 @@
       >
         <div class="flex flex-col gap-0.5 min-w-0">
           <span class="text-sm">
-            以「<span class="font-bold">{{ displayName || '我' }}</span> · <span class="font-bold">{{ groupName }}</span>」公開分享
+            「<span class="font-bold">{{ displayName || '自分' }}</span> · <span class="font-bold">{{ groupName }}</span>」として公開共有
           </span>
           <span class="text-[11px] text-ink-mute leading-snug">
-            僅 <span class="font-bold">分享當前隊伍</span> 適用；勾選後會同時加入公開「精選隊伍」庫
+            <span class="font-bold">現在の部隊を共有</span> の場合のみ有効です。チェックすると公開「おすすめ編成」にも追加されます
           </span>
         </div>
         <el-switch v-model="asPublic" class="flex-shrink-0 mt-0.5" />
@@ -37,19 +37,19 @@
 
       <el-button type="primary" plain size="large" @click="$emit('share', { scope: 'all', asPublic: false })" class="w-full !m-0">
         <div class="flex flex-col items-center">
-          <span class="font-bold">分享全部</span>
-          <span class="text-xs opacity-80">所有隊伍 + 庫存 (備份用)</span>
+          <span class="font-bold">すべて共有</span>
+          <span class="text-xs opacity-80">全ての部隊 + 所持（バックアップ用）</span>
         </div>
       </el-button>
       <el-button type="success" plain size="large" @click="$emit('share', { scope: 'current', asPublic })" class="w-full !m-0">
         <div class="flex flex-col items-center">
-          <span class="font-bold">分享當前隊伍</span>
-          <span class="text-xs opacity-80">僅分享目前編輯的隊伍 1 隊</span>
+          <span class="font-bold">現在の部隊を共有</span>
+          <span class="text-xs opacity-80">現在編集中の1部隊のみ共有</span>
         </div>
       </el-button>
       <el-button type="warning" plain size="large" @click="$emit('share', { scope: 'inventory', asPublic: false })" class="w-full !m-0">
         <div class="flex flex-col items-center">
-          <span class="font-bold">僅分享庫存</span>
+          <span class="font-bold">所持のみ共有</span>
           <span class="text-xs opacity-80">請教他人配將用</span>
         </div>
       </el-button>

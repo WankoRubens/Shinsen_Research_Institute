@@ -11,7 +11,7 @@
     <div class="flex-1 h-5 md:h-7 bg-purple-400/70 group-hover:bg-purple-500"></div>
     <div class="flex-1 h-5 md:h-7 bg-emerald-400/70 group-hover:bg-emerald-500"></div>
     <div class="absolute inset-0 pointer-events-none flex items-center justify-center font-bold text-white text-[9px] md:text-xs tracking-wider" style="text-shadow: 0 1px 2px rgba(0,0,0,0.5)">
-      兵學 配置
+      兵学 配置
     </div>
   </button>
 
@@ -45,7 +45,7 @@
             type="button"
             class="flex-shrink-0 opacity-70 hover:opacity-100 leading-none"
             @click.stop="clearSelection"
-            title="清除兵學"
+            title="兵学を解除"
           >
             <el-icon :size="11"><Close /></el-icon>
           </button>
@@ -90,7 +90,7 @@
 
       <!-- Minor list -->
       <div v-if="modelValue.minors.length" class="border-t pt-2 space-y-2">
-        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">副戰法 · {{ modelValue.minors.length }} 項</div>
+        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">副兵法 · {{ modelValue.minors.length }}項目</div>
         <div
           v-for="(minor, idx) in modelValue.minors"
           :key="minor.name + idx"
@@ -117,14 +117,14 @@
   <!-- Selection dialog -->
   <el-dialog
     v-model="dialogVisible"
-    :title="`兵學配置 — ${hero?.name || ''}`"
+    :title="`兵学配置 — ${hero?.name || ''}`"
     width="820px"
     class="bingxue-dialog"
     append-to-body
     align-center
   >
-    <div v-if="!hero?.bingxue" class="text-center text-gray-500 text-sm md:text-base py-6 md:py-10">
-      此武將尚未開放兵學系統
+    <div v-if="!availableBingxue" class="text-center text-gray-500 text-sm md:text-base py-6 md:py-10">
+      この武将は兵学を設定できません
     </div>
     <template v-else>
       <!-- Direction tabs -->
@@ -137,19 +137,19 @@
           <template #label>
             <span :class="colorTextClassFor(dir)">{{ dir }}</span>
           </template>
-          <div v-if="!hero?.bingxue?.[dir]" class="text-sm md:text-base text-gray-400 py-4 md:py-6 text-center">
-            此方向未開放
+          <div v-if="!availableBingxue?.[dir]" class="text-sm md:text-base text-gray-400 py-4 md:py-6 text-center">
+            この系統は未開放です
           </div>
           <template v-else>
             <!-- Major selection -->
             <div class="mb-3 md:mb-4">
               <div class="text-xs md:text-sm font-bold mb-1 md:mb-2 flex items-center justify-between">
-                <span :class="colorTextClassFor(dir)">主戰法（擇一）</span>
-                <span class="text-[10px] md:text-xs text-gray-400">1 點</span>
+                <span :class="colorTextClassFor(dir)">主兵法（1つ選択）</span>
+                <span class="text-[10px] md:text-xs text-gray-400">1点</span>
               </div>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-1.5 md:gap-2">
                 <div
-                  v-for="jp in hero.bingxue[dir].major"
+                  v-for="jp in availableBingxue[dir].major"
                   :key="jp"
                   class="relative rounded border p-1.5 md:p-2.5 cursor-pointer transition-all"
                   :class="draftMajor === jp
@@ -171,14 +171,14 @@
                  The × button in the corner resets back to unselected. -->
             <div>
               <div class="text-xs md:text-sm font-bold mb-1 md:mb-2 flex items-center justify-between">
-                <span :class="colorTextClassFor(dir)">副戰法（點卡片升級，總共 5 點）</span>
+                <span :class="colorTextClassFor(dir)">副兵法（カードを押すとLv IIまで強化、合計5点）</span>
                 <span class="text-[10px] md:text-xs" :class="pointsOverflow ? 'text-red-500' : 'text-gray-400'">
-                  {{ draftPoints }} / {{ MAX_POINTS }} 點
+                  {{ draftPoints }} / {{ MAX_POINTS }}点
                 </span>
               </div>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-1.5 md:gap-2">
                 <div
-                  v-for="jp in hero.bingxue[dir].minor"
+                  v-for="jp in availableBingxue[dir].minor"
                   :key="jp"
                   class="relative rounded border p-1.5 md:p-2.5 pb-3.5 md:pb-4 transition-all select-none"
                   :class="minorLevel(jp) > 0
@@ -193,7 +193,7 @@
                     v-if="minorLevel(jp) > 0"
                     type="button"
                     class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-red-500 transition-colors"
-                    title="取消此項"
+                    title="この項目を解除"
                     @click.stop="resetMinor(jp)"
                   >
                     <el-icon :size="12"><Close /></el-icon>
@@ -217,11 +217,11 @@
                   <span
                     v-if="minorLevel(jp) === 0 && canAdvanceMinor(jp)"
                     class="absolute bottom-0.5 right-1.5 text-[9px] md:text-[10px] italic text-gray-400"
-                  >點擊選取</span>
+                  >クリックで選択</span>
                   <span
                     v-else-if="minorLevel(jp) === 1 && canAdvanceMinor(jp)"
                     class="absolute bottom-0.5 right-1.5 text-[9px] md:text-[10px] italic text-gray-500"
-                  >再點 → Lv II</span>
+                  >もう一度 → Lv II</span>
                 </div>
               </div>
             </div>
@@ -232,11 +232,11 @@
 
     <template #footer>
       <div class="flex items-center justify-between">
-        <el-button v-if="modelValue.direction" link type="danger" @click="resetAll">清除</el-button>
+        <el-button v-if="modelValue.direction" link type="danger" @click="resetAll">解除</el-button>
         <div v-else></div>
         <div class="flex gap-1 md:gap-2">
           <el-button size="small" @click="dialogVisible = false">取消</el-button>
-          <el-button size="small" type="primary" :disabled="!canApply" @click="applyDraft">套用</el-button>
+          <el-button size="small" type="primary" :disabled="!canApply" @click="applyDraft">適用</el-button>
         </div>
       </div>
     </template>
@@ -262,7 +262,46 @@ const emit = defineEmits<{
 const MAX_MINORS = 5     // display cap (also 5 slots max even if you only spent 3 pts)
 const MAX_POINTS = 5     // minor skill-point budget
 
-const { bingxue: bingxueCatalog } = useData()
+const { heroes, bingxue: bingxueCatalog } = useData()
+
+// 武将別の兵学データが無い場合でも設定できるよう、カタログと他武将の候補を共通候補として集める。
+const fallbackBingxue = computed(() => {
+  const out = Object.fromEntries(
+    BINGXUE_DIRECTIONS.map((direction) => [direction, { major: [] as string[], minor: [] as string[] }]),
+  ) as NonNullable<Hero['bingxue']>
+
+  Object.values(bingxueCatalog.value).forEach((option) => {
+    const direction = option.direction as BingxueDirection
+    const bucket = option.tier === 'major' ? out[direction]?.major : out[direction]?.minor
+    const name = option.name_jp || option.name
+    if (bucket && name && !bucket.includes(name)) bucket.push(name)
+  })
+
+  heroes.value.forEach((heroItem) => {
+    if (!heroItem.bingxue) return
+    BINGXUE_DIRECTIONS.forEach((direction) => {
+      const source = heroItem.bingxue?.[direction]
+      if (!source) return
+      source.major.forEach((name) => {
+        if (name && !out[direction].major.includes(name)) out[direction].major.push(name)
+      })
+      source.minor.forEach((name) => {
+        if (name && !out[direction].minor.includes(name)) out[direction].minor.push(name)
+      })
+    })
+  })
+
+  return out
+})
+
+// 個別候補がある武将はそれを優先し、未整備の武将は共通候補で設定画面を開ける。
+const availableBingxue = computed(() => {
+  if (props.hero?.bingxue) return props.hero.bingxue
+  const fallback = fallbackBingxue.value
+  return BINGXUE_DIRECTIONS.some((direction) => fallback[direction].major.length || fallback[direction].minor.length)
+    ? fallback
+    : null
+})
 
 // Track viewport so filled-state behavior can differ: desktop click opens
 // the edit dialog; mobile click shows the description popover (trigger=click)
@@ -289,9 +328,10 @@ const draftMinors = ref<BingxueMinor[]>([])
 
 const cloneMinors = (src: BingxueMinor[]): BingxueMinor[] => src.map(m => ({ ...m }))
 
+// ダイアログ内の編集は draft に閉じ込め、適用ボタンを押すまで親の編成データを変更しない。
 const openDialog = () => {
   const startDir = props.modelValue.direction
-    ?? BINGXUE_DIRECTIONS.find(d => props.hero?.bingxue?.[d])
+    ?? BINGXUE_DIRECTIONS.find(d => availableBingxue.value?.[d])
     ?? '武略'
   draftDirection.value = startDir
   draftMajor.value = props.modelValue.direction === startDir ? props.modelValue.major : null
@@ -301,6 +341,7 @@ const openDialog = () => {
 
 watch(draftDirection, (newDir, oldDir) => {
   if (newDir === oldDir) return
+  // タブを戻した時だけ既存選択を復元し、別系統へ移った時は選び直しにする。
   if (newDir === props.modelValue.direction) {
     draftMajor.value = props.modelValue.major
     draftMinors.value = cloneMinors(props.modelValue.minors)
@@ -335,6 +376,7 @@ const canAdvanceMinor = (jp: string): boolean => {
   return true
 }
 
+// 副兵法カードは 0 -> I -> II と進め、5ポイント上限を超えない範囲で選択する。
 const advanceMinor = (jp: string) => {
   if (!canAdvanceMinor(jp)) return
   const i = draftMinors.value.findIndex(m => m.name === jp)
@@ -354,6 +396,7 @@ const canApply = computed(() =>
   !!draftMajor.value && !pointsOverflow.value
 )
 
+// 親コンポーネントへ渡す値は常に新しいオブジェクトにし、Vue の変更検知を安定させる。
 const applyDraft = () => {
   emit('update:modelValue', {
     direction: draftDirection.value,
@@ -377,7 +420,7 @@ const lookup = (jp: string) => bingxueCatalog.value[jp]
 const optionName = (jp: string) => lookup(jp)?.name ?? jp
 const optionDescription = (jp: string) => lookup(jp)?.description ?? ''
 const optionVars = (jp: string) => lookup(jp)?.vars ?? {}
-const majorDisplay = computed(() => (props.modelValue.major ? optionName(props.modelValue.major) : '未選擇主戰法'))
+const majorDisplay = computed(() => (props.modelValue.major ? optionName(props.modelValue.major) : '主兵法未選択'))
 
 // Roman numerals — only need 1 and 2 for now (extends trivially if a 5th level ever arrives)
 const roman = (n: number): string => ['', 'I', 'II', 'III', 'IV', 'V'][n] ?? String(n)

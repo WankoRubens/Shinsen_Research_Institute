@@ -9,10 +9,44 @@ export interface Segment {
 const PLACEHOLDER_REGEX = /\{(\w+):([^\}]+)\}/g
 const RANGE_REGEX = /(\d+(?:\.\d+)?%?)\s*(?:->|to|→)\s*(\d+(?:\.\d+)?%?)/g
 
-/**
- * 模板解析器 - 將技能描述中的 {type:content} 模板轉換為可渲染的segments
- * 支持的模板：{status:id}, {dmg:type}, {scale:stat}, {stat:id}, {var:name}
- */
+const JP_STATUS_NAMES: Record<string, string> = {
+  麻痺: '麻痺',
+  混亂: '混乱',
+  混乱: '混乱',
+  無策: '無策',
+  封擊: '封撃',
+  封撃: '封撃',
+  火傷: '火傷',
+  水攻: '水攻',
+  中毒: '中毒',
+  消沉: '消沈',
+  疲弊: '疲弊',
+  威壓: '威圧',
+  威圧: '威圧',
+  挑釁: '挑発',
+  牽制: '牽制',
+  鐵壁: '鉄壁',
+  閃避: '回避',
+  會心: '会心',
+  奇謀: '奇謀',
+  攻心: '攻心',
+}
+
+const JP_STAT_NAMES: Record<string, string> = {
+  lea: '統率',
+  val: '武勇',
+  int: '智略',
+  pol: '政務',
+  cha: '魅力',
+  spd: '速度',
+  統率: '統率',
+  武勇: '武勇',
+  智略: '智略',
+  政務: '政務',
+  魅力: '魅力',
+  速度: '速度',
+}
+
 export function useTemplateParser() {
   const { statuses } = useData()
 
@@ -23,7 +57,6 @@ export function useTemplateParser() {
 
   const formatVarValue = (v: any, isMax: boolean, asPercent: boolean = false): string => {
     if (typeof v === 'number') {
-      // Static number — if followed by '%' in template or value < 1, format as percent
       if (asPercent || (v > 0 && v < 1)) return formatAsPercent(v)
       return String(v)
     }
@@ -35,20 +68,20 @@ export function useTemplateParser() {
     return String(v)
   }
 
+  const statusName = (content: string, fallback?: string): string =>
+    JP_STATUS_NAMES[content] || fallback || content
+
+  const statName = (content: string, fallback?: string): string =>
+    JP_STAT_NAMES[content] || fallback || content
+
   const parseText = (inputText: string, isMaxLevel: boolean = false, vars?: Record<string, any>): Segment[] => {
     if (!inputText) return []
 
-    // 1. Level toggling (處理範圍值如 64% → 128%)
-    let text = inputText.replace(RANGE_REGEX, (match, min, max) => {
-      return isMaxLevel ? max : min
-    })
-
-    // 2. Parse placeholders
+    const text = inputText.replace(RANGE_REGEX, (_match, min, max) => isMaxLevel ? max : min)
     const segments: Segment[] = []
     let lastIndex = 0
     let match
 
-    // Reset regex lastIndex
     PLACEHOLDER_REGEX.lastIndex = 0
 
     while ((match = PLACEHOLDER_REGEX.exec(text)) !== null) {
@@ -63,13 +96,17 @@ export function useTemplateParser() {
         const statusData = statuses.value[content]
         segments.push({
           type: 'status',
-          data: statusData || { name: content, description: '未知狀態' }
+          data: {
+            ...(statusData || {}),
+            name: statusName(content, statusData?.name),
+            description: statusData?.description || '説明はまだありません',
+          },
         })
       } else if (type === 'dmg') {
         const dmgData = statuses.value._damage_types?.[content]
         segments.push({
           type: 'dmg',
-          data: dmgData || { name: content }
+          data: dmgData || { name: content },
         })
       } else if (type === 'scale') {
         const parts = content.split(':')
@@ -80,26 +117,25 @@ export function useTemplateParser() {
         segments.push({
           type: 'scale',
           data: {
-            value: value,
-            statInfo: statData?.name || statKey
-          }
+            value,
+            statInfo: statName(statKey, statData?.name),
+          },
         })
       } else if (type === 'stat') {
-        // Direct stat reference
         const statData = statuses.value._stats?.[content]
         segments.push({
           type: 'stat',
-          data: statData || { name: content }
+          data: {
+            ...(statData || {}),
+            name: statName(content, statData?.name),
+          },
         })
       } else if (type === 'var') {
         if (vars && vars[content] !== undefined) {
           const v = vars[content]
-          // Check if next char is '%' — if so, LLM expects raw*100 display, consume the '%'
           const nextCharIdx = PLACEHOLDER_REGEX.lastIndex
           const hasTrailingPercent = text[nextCharIdx] === '%'
-          if (hasTrailingPercent) {
-            PLACEHOLDER_REGEX.lastIndex = nextCharIdx + 1
-          }
+          if (hasTrailingPercent) PLACEHOLDER_REGEX.lastIndex = nextCharIdx + 1
           segments.push({ type: 'text', value: formatVarValue(v, isMaxLevel, hasTrailingPercent) })
         } else {
           segments.push({ type: 'text', value: content })
@@ -115,33 +151,32 @@ export function useTemplateParser() {
       segments.push({ type: 'text', value: text.substring(lastIndex) })
     }
 
-    // Add spacing between CJK characters and numbers/percentages
-    return segments.map(seg => {
+    return segments.map((seg) => {
       if (seg.type !== 'text' || !seg.value) return seg
       return {
         ...seg,
         value: seg.value
           .replace(/([\u4e00-\u9fff])(\d)/g, '$1 $2')
-          .replace(/(\d(?:%)?)([\u4e00-\u9fff])/g, '$1 $2')
+          .replace(/(\d(?:%)?)([\u4e00-\u9fff])/g, '$1 $2'),
       }
     })
   }
 
-  /**
-   * 將text轉換為純文字，去除所有HTML標籤（用於brief description）
-   */
+  const scaleText = (statInfo: string, value?: string): string => {
+    const prefix = value || ''
+    return `${prefix}${statInfo}の影響`
+  }
+
   const parseTextToPlain = (inputText: string, isMaxLevel: boolean = false, vars?: Record<string, any>): string => {
     const segments = parseText(inputText, isMaxLevel, vars)
     return segments
-      .map(seg => {
+      .map((seg) => {
         if (seg.type === 'text') return seg.value
         if (seg.type === 'status') return seg.data?.name || ''
         if (seg.type === 'dmg') return seg.data?.name || ''
         if (seg.type === 'scale') {
-          let result = ''
-          if (seg.data?.value) result += seg.data.value
-          if (seg.data?.statInfo) result += (result ? '受' : '') + seg.data.statInfo + '影響'
-          return result
+          if (!seg.data?.statInfo) return seg.data?.value || ''
+          return scaleText(seg.data.statInfo, seg.data.value)
         }
         if (seg.type === 'stat') return seg.data?.name || ''
         return ''
@@ -152,5 +187,6 @@ export function useTemplateParser() {
   return {
     parseText,
     parseTextToPlain,
+    scaleText,
   }
 }

@@ -9,7 +9,7 @@
   >
     <MobileSlotDetail
       v-if="role && roleData"
-      :role-name="role === 'main' ? '大將' : '副將'"
+      :role-name="role === 'main' ? '大将' : '副将'"
       :hero="roleData.hero"
       :stats="roleData.stats"
     />

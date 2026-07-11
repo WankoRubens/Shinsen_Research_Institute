@@ -1,8 +1,8 @@
 <template>
   <div v-loading="loading" class="min-h-[120px]">
     <p v-if="!loading && shares.length === 0" class="text-center text-gray-400 py-8 text-sm">
-      還沒有任何已建立的分享。<br>
-      在登入狀態下用「分享」按鈕建立的連結會自動顯示在這裡。
+      まだ作成した共有はありません。<br>
+      ログイン状態で「共有」ボタンから作成したリンクがここに表示されます。
     </p>
     <el-table v-else-if="shares.length > 0" :data="sortedShares" size="default" style="width: 100%">
       <el-table-column label="" width="44" align="center">
@@ -24,7 +24,7 @@
               v-model="editingDraft"
               size="small"
               maxlength="50"
-              placeholder="輸入名稱"
+              placeholder="名前を入力"
               @keyup.enter="saveName(row)"
               @keyup.esc="cancelEdit"
               autofocus
@@ -46,7 +46,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="類型" width="110">
+      <el-table-column label="種類" width="110">
         <template #default="{ row }">
           <span class="kind-tag" :class="`kind-tag--${row.kind}`">
             {{ SHARE_KIND_LABELS[row.kind as ShareKind] ?? row.kind }}
@@ -58,7 +58,7 @@
           <button
             @click="copyUrl(row.slug)"
             class="text-xs text-indigo-600 hover:text-indigo-800 hover:underline font-mono"
-            title="點擊複製分享連結"
+            title="クリックして共有リンクをコピー"
           >
             #s/{{ row.slug }}
           </button>
@@ -84,7 +84,7 @@
       <el-table-column label="" width="60" align="center">
         <template #default="{ row }">
           <el-popconfirm
-            title="確定刪除這個分享？刪除後連結會立刻失效。"
+            title="この共有を削除しますか？削除するとリンクはすぐ無効になります。"
             confirm-button-text="刪除"
             cancel-button-text="取消"
             confirm-button-type="danger"
@@ -152,7 +152,7 @@ const sortedShares = computed(() =>
     const bName = b.display_name?.trim() ?? ''
     if (!!aName !== !!bName) return aName ? -1 : 1
     if (aName && bName) {
-      const cmp = aName.localeCompare(bName, 'zh-Hant')
+      const cmp = aName.localeCompare(bName, 'ja-JP')
       if (cmp !== 0) return cmp
     }
     return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
@@ -260,7 +260,7 @@ const openPreview = async (s: MyShare) => {
     const blob = (await loadShare(s.slug)) as ShareableData
     preview.value = hydrateShare(blob, { heroes: heroes.value, skills: skills.value })
     if (!preview.value.team && !preview.value.group) {
-      previewError.value = '此分享沒有可預覽的隊伍內容'
+      previewError.value = 'この共有にはプレビューできる部隊内容がありません'
     }
   } catch (e) {
     previewError.value = `載入失敗：${(e as Error).message}`
@@ -311,5 +311,4 @@ const openPreview = async (s: MyShare) => {
 .kind-tag--group     { background: #faf5ff; color: #6d28d9; border-color: #ddd6fe; }
 .kind-tag--inventory { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
 .kind-tag--profile   { background: #fef3c7; color: #b45309; border-color: #fcd34d; }
-.kind-tag--gacha_log { background: #fdf2f8; color: #be185d; border-color: #fbcfe8; }
 </style>

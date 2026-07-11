@@ -1,13 +1,13 @@
 <template>
   <div class="flex items-center gap-1">
-    <el-button text class="help-btn !rounded-sm !px-2" title="更新紀錄" @click="$emit('open-changelog')">
+    <el-button text class="help-btn !rounded-sm !px-2" title="更新履歴" @click="$emit('open-changelog')">
       <el-icon><Bell /></el-icon>
       <span v-if="hasUnseenChangelog" class="help-btn-dot" />
     </el-button>
 
     <template v-if="!isLoggedIn">
       <el-button text @click="$emit('open-auth')" class="hidden sm:inline-flex !rounded-sm">
-        <el-icon class="mr-1"><User /></el-icon> 登入
+        <el-icon class="mr-1"><User /></el-icon> ログイン
       </el-button>
       <el-button text @click="$emit('open-auth')" class="sm:hidden !rounded-sm !px-2">
         <el-icon><User /></el-icon>
@@ -28,17 +28,17 @@
         <el-dropdown-menu class="min-w-[220px]">
           <el-dropdown-item command="changelog">
             <el-icon class="mr-1"><Notebook /></el-icon>
-            <span>更新紀錄</span>
+            <span>更新履歴</span>
             <span
               v-if="hasUnseenChangelog"
               class="ml-auto pl-2 text-[10px] font-bold text-emerald-600"
             >NEW</span>
           </el-dropdown-item>
           <el-dropdown-item command="rename" divided>
-            <el-icon class="mr-1"><Edit /></el-icon> 編輯名稱
+            <el-icon class="mr-1"><Edit /></el-icon> 名前を編集
           </el-dropdown-item>
           <el-dropdown-item command="signout">
-            <el-icon class="mr-1"><Close /></el-icon> 登出
+            <el-icon class="mr-1"><Close /></el-icon> ログアウト
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>

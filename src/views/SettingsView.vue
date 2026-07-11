@@ -1,15 +1,14 @@
 <template>
   <div class="flex-1 overflow-y-auto px-3 md:px-5 py-4">
     <div class="max-w-3xl flex flex-col gap-6">
-      <!-- Cloud sync (Phase C) -->
       <section class="settings-card">
         <header class="settings-card__head">
-          <h2 class="font-brand text-xl font-bold text-ink">雲端同步</h2>
-          <span class="text-sm text-ink-mute">編組變更會自動同步到此帳號，可在其他裝置繼續編輯</span>
+          <h2 class="font-brand text-xl font-bold text-ink">{{ t('cloudSync') }}</h2>
+          <span class="text-sm text-ink-mute">{{ t('cloudSyncHelp') }}</span>
         </header>
 
         <div v-if="!isLoggedIn" class="text-base text-ink-mute">
-          登入後可開啟雲端同步，編組會在裝置間同步。
+          {{ t('cloudSignInHelp') }}
         </div>
 
         <template v-else>
@@ -22,25 +21,35 @@
               :loading="cloudStatus === 'syncing'"
               size="large"
               inline-prompt
-              active-text="開啟"
-              inactive-text="關閉"
+              :active-text="t('enabled')"
+              :inactive-text="t('disabled')"
             />
           </div>
 
           <ul class="settings-card__notes">
-            <li>關閉後本地仍會自動存檔，但不會推到雲端</li>
-            <li>多裝置同時編輯若發生衝突，將彈出對話框讓你選擇</li>
-            <li>衝突 / 合併時若選擇「捨棄」會自動建立備份分享連結</li>
+            <li>{{ t('cloudNoteLocal') }}</li>
+            <li>{{ t('cloudNoteConflict') }}</li>
+            <li>{{ t('cloudNoteShare') }}</li>
           </ul>
         </template>
       </section>
 
       <section class="settings-card">
         <header class="settings-card__head">
-          <h2 class="font-brand text-xl font-bold text-ink">其他設定</h2>
-          <span class="text-sm text-ink-mute">語系 / 配色 / 帳號 — 尚未實作</span>
+          <h2 class="font-brand text-xl font-bold text-ink">{{ t('otherSettings') }}</h2>
+          <span class="text-sm text-ink-mute">{{ t('otherSettingsHelp') }}</span>
         </header>
-        <p class="text-base text-ink-mute">將陸續上線。</p>
+        <p class="text-base text-ink-mute">{{ t('comingLater') }}</p>
+      </section>
+
+      <section class="settings-card">
+        <header class="settings-card__head">
+          <h2 class="font-brand text-xl font-bold text-ink">参考情報</h2>
+          <span class="text-sm text-ink-mute">データ・ロジックの参照元</span>
+        </header>
+        <p class="text-base text-ink-mute">
+          戦闘シミュレーションのロジック検討では nobunaga-shinsen-sim.jp を参考にしています。
+        </p>
       </section>
     </div>
   </div>
@@ -50,9 +59,11 @@
 import { computed } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { useGroupPersistence } from '../composables/useGroupPersistence'
+import { useLocale } from '../composables/useLocale'
 
 const { isLoggedIn } = useAuth()
 const { cloudSyncEnabled, cloudStatus, setCloudSyncEnabled } = useGroupPersistence()
+const { t } = useLocale()
 
 const syncOn = computed({
   get: () => cloudSyncEnabled.value,
@@ -60,14 +71,14 @@ const syncOn = computed({
 })
 
 const statusLabel = computed(() => {
-  if (!cloudSyncEnabled.value) return '目前狀態：已關閉'
+  if (!cloudSyncEnabled.value) return t('cloudOff')
   switch (cloudStatus.value) {
-    case 'syncing': return '目前狀態：同步中…'
-    case 'conflict': return '目前狀態：發生衝突，請於對話框處理'
-    case 'offline': return '目前狀態：雲端連線異常（會在下次編輯重試）'
-    case 'error': return '目前狀態：寫入失敗，請稍後再試'
+    case 'syncing': return t('cloudSyncing')
+    case 'conflict': return t('cloudConflict')
+    case 'offline': return t('cloudOffline')
+    case 'error': return t('cloudError')
     case 'idle':
-    default:       return '目前狀態：閒置'
+    default: return t('cloudIdle')
   }
 })
 
@@ -76,9 +87,9 @@ const statusClass = computed(() => {
   switch (cloudStatus.value) {
     case 'syncing': return 'text-focus'
     case 'conflict':
-    case 'error':   return 'text-red-600'
+    case 'error': return 'text-red-600'
     case 'offline': return 'text-amber-700'
-    default:        return 'text-ink-mute'
+    default: return 'text-ink-mute'
   }
 })
 </script>
@@ -87,7 +98,7 @@ const statusClass = computed(() => {
 .settings-card {
   background: #ffffff;
   border: 1px solid rgb(var(--color-divider));
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 20px 22px;
 }
 .settings-card__head {

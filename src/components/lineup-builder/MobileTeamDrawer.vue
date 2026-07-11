@@ -37,7 +37,7 @@
                 :class="{ '!font-bold !text-focus': !activeProfileId }"
               >
                 <el-icon class="mr-1"><CircleClose /></el-icon>
-                <span>不使用（可用全部武將/戰法）</span>
+                <span>使用しない（すべての武将/戦法を使用可能）</span>
               </el-dropdown-item>
               <el-dropdown-item
                 v-for="p in profiles"
@@ -86,13 +86,13 @@
                 {{ g.name }}
               </el-dropdown-item>
               <el-dropdown-item command="add" divided>
-                <el-icon class="mr-1"><Plus /></el-icon> 新增編組
+                <el-icon class="mr-1"><Plus /></el-icon> 編組を追加
               </el-dropdown-item>
               <el-dropdown-item command="rename">
-                <el-icon class="mr-1"><Edit /></el-icon> 重新命名
+                <el-icon class="mr-1"><Edit /></el-icon> 名前を変更
               </el-dropdown-item>
               <el-dropdown-item command="import-from-link">
-                <el-icon class="mr-1"><Link /></el-icon> 由分享連結匯入…
+                <el-icon class="mr-1"><Link /></el-icon> 共有リンクから取り込む…
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -132,14 +132,14 @@
               @keydown.space.stop.prevent="$emit('remove-team', idx)"
               role="button"
               tabindex="0"
-              :aria-label="`刪除 ${team.name}`"
+              :aria-label="`${team.name} を削除`"
             >
               <el-icon :size="14"><Delete /></el-icon>
             </span>
             <el-popconfirm
               v-else
-              :title="`刪除「${team.name}」？無法復原`"
-              confirm-button-text="刪除"
+              :title="`「${team.name}」を削除しますか？元に戻せません`"
+              confirm-button-text="削除"
               cancel-button-text="取消"
               confirm-button-type="danger"
               :width="220"
@@ -151,7 +151,7 @@
                   @click.stop
                   role="button"
                   tabindex="0"
-                  :aria-label="`刪除 ${team.name}`"
+                  :aria-label="`${team.name} を削除`"
                 >
                   <el-icon :size="14"><Delete /></el-icon>
                 </span>
@@ -174,11 +174,11 @@
       <div class="border-t border-divider px-3 py-3 flex flex-col gap-1.5">
         <button class="action-row" @click="$emit('share')">
           <el-icon :size="14"><Share /></el-icon>
-          <span>分享</span>
+          <span>共有</span>
         </button>
         <button class="action-row" @click="$emit('export-to-group')">
           <el-icon :size="14"><Position /></el-icon>
-          <span>導出到其他編組</span>
+          <span>他の編組へ書き出す</span>
         </button>
       </div>
     </div>
@@ -246,7 +246,7 @@ const onProfileCommand = (cmd: string) => {
     const id = cmd.slice(6)
     const p = profiles.value.find(x => x.id === id)
     if (!p) {
-      ElMessage.error('找不到該角色配置，請重新整理頁面')
+      ElMessage.error('対象の設定が見つかりません。ページを再読み込みしてください')
       return
     }
     applyProfile(p)
@@ -266,7 +266,7 @@ const onGroupCommand = async (cmd: string) => {
     emit('import-from-link')
   } else if (cmd === 'rename') {
     try {
-      const { value } = await ElMessageBox.prompt('輸入新名稱', '重新命名編組', {
+      const { value } = await ElMessageBox.prompt('新しい名前を入力', '編組名を変更', {
         confirmButtonText: '儲存',
         cancelButtonText: '取消',
         inputValue: currentGroup.value.name,
@@ -280,7 +280,7 @@ const onGroupCommand = async (cmd: string) => {
       const next = value.trim()
       if (next === currentGroup.value.name) return
       renameGroup(currentGroupIndex.value, next)
-      ElMessage.success('編組已重新命名')
+      ElMessage.success('編組名を変更しました')
     } catch {
       // cancel = no-op
     }

@@ -33,7 +33,7 @@
               :class="{ '!font-bold !text-focus': !activeProfileId }"
             >
               <el-icon class="mr-1"><CircleClose /></el-icon>
-              <span>不使用（可用全部武將/戰法）</span>
+              <span>使用しない（すべての武将/戦法を使用可能）</span>
             </el-dropdown-item>
             <el-dropdown-item
               v-for="p in profiles"
@@ -87,13 +87,13 @@
               {{ g.name }}
             </el-dropdown-item>
             <el-dropdown-item command="add" divided>
-              <el-icon class="mr-1"><Plus /></el-icon> 新增編組
+              <el-icon class="mr-1"><Plus /></el-icon> 編組を追加
             </el-dropdown-item>
             <el-dropdown-item command="rename">
-              <el-icon class="mr-1"><Edit /></el-icon> 重新命名
+              <el-icon class="mr-1"><Edit /></el-icon> 名前を変更
             </el-dropdown-item>
             <el-dropdown-item command="import-from-link">
-              <el-icon class="mr-1"><Link /></el-icon> 由分享連結匯入…
+              <el-icon class="mr-1"><Link /></el-icon> 共有リンクから取り込む…
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -104,7 +104,7 @@
           <el-input
             :model-value="teamName"
             @update:model-value="(v: string) => $emit('update:teamName', v)"
-            placeholder="輸入隊伍名稱"
+            placeholder="部隊名を入力"
             class="w-32 sm:w-48 font-bold"
             size="default"
           >
@@ -148,7 +148,7 @@
         </template>
 
         <el-button type="primary" plain @click="$emit('open-share')" class="hidden sm:inline-flex !rounded-sm">
-          <el-icon class="mr-1"><Share /></el-icon> 分享
+          <el-icon class="mr-1"><Share /></el-icon> 共有
         </el-button>
         <el-button type="primary" plain @click="$emit('open-share')" class="sm:hidden !rounded-sm !w-9 !h-9 !p-0">
           <el-icon><Share /></el-icon>
@@ -314,7 +314,7 @@ const onGroupCommand = async (cmd: string) => {
     // and MyProfilesPanel.vue. Validates non-empty + length cap; ESC / cancel
     // is a soft no-op.
     try {
-      const { value } = await ElMessageBox.prompt('輸入新名稱', '重新命名編組', {
+      const { value } = await ElMessageBox.prompt('新しい名前を入力', '編組名を変更', {
         confirmButtonText: '儲存',
         cancelButtonText: '取消',
         inputValue: currentGroup.value.name,
@@ -328,7 +328,7 @@ const onGroupCommand = async (cmd: string) => {
       const next = value.trim()
       if (next === currentGroup.value.name) return
       renameGroup(currentGroupIndex.value, next)
-      ElMessage.success('編組已重新命名')
+      ElMessage.success('編組名を変更しました')
     } catch {
       // ElMessageBox rejects on cancel; treat as a no-op.
     }

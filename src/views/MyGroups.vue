@@ -4,21 +4,21 @@
       <!-- Toolbar -->
       <div class="flex items-center gap-3 mb-4 flex-wrap">
         <el-button type="primary" plain :icon="Plus" class="!rounded-sm" @click="onAddGroup">
-          新增編組
+          編成を追加
         </el-button>
         <el-button plain :icon="Link" class="!rounded-sm" @click="onImportFromLink">
-          由分享連結匯入…
+          共有リンクから取り込む…
         </el-button>
         <span class="text-xs text-ink-mute tabular-nums">
-          共 <span class="font-bold text-ink">{{ groups.length }}</span> 個編組
+          合計 <span class="font-bold text-ink">{{ groups.length }}</span> 個の編組
         </span>
         <span class="text-xs text-ink-mute hidden sm:inline">·</span>
         <span class="text-xs text-ink-mute hidden sm:inline">
-          每組最多 {{ MAX_TEAMS_PER_GROUP }} 支隊伍
+          每組最多 {{ MAX_TEAMS_PER_GROUP }} 編成伍
         </span>
 
         <el-tooltip
-          content="編組僅暫存於本機；如需備份請從配將模擬建立分享連結。"
+          content="編成はこの端末に保存されます。バックアップする場合は編成シミュレータから共有リンクを作成してください。"
           placement="top"
         >
           <span class="ml-auto inline-flex items-center gap-1 text-[11px] text-ink-mute cursor-help">
@@ -76,14 +76,14 @@
               </button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="rename" :icon="Edit">重新命名</el-dropdown-item>
+                  <el-dropdown-item command="rename" :icon="Edit">名前を変更</el-dropdown-item>
                   <el-dropdown-item
                     command="delete"
                     :icon="Delete"
                     :disabled="groups.length <= 1"
                     divided
                   >
-                    <span class="text-red-600">刪除編組</span>
+                    <span class="text-red-600">編成を削除</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -111,7 +111,7 @@
               :key="`e-${i}`"
               type="button"
               class="empty-slot"
-              :title="idx === currentGroupIndex ? '前往配將模擬建立新隊伍' : '切換到此編組以建立隊伍'"
+              :title="idx === currentGroupIndex ? '編成シミュレータで新しい部隊を作成' : 'この編成に切り替えて部隊を作成'"
               @click="onAddTeamHere(idx)"
             >
               <el-icon :size="22" class="empty-slot__icon"><Plus /></el-icon>
@@ -123,17 +123,17 @@
     </div>
 
     <!-- Rename dialog -->
-    <el-dialog v-model="renameDialog.visible" title="重新命名編組" width="360px">
+    <el-dialog v-model="renameDialog.visible" title="編成名を変更" width="360px">
       <el-input
         v-model="renameDialog.draft"
         maxlength="20"
         show-word-limit
-        placeholder="輸入新名稱"
+        placeholder="新しい名前を入力"
         @keyup.enter="submitRename"
       />
       <template #footer>
         <el-button class="!rounded-sm" @click="renameDialog.visible = false">取消</el-button>
-        <el-button type="primary" class="!rounded-sm" @click="submitRename">儲存</el-button>
+        <el-button type="primary" class="!rounded-sm" @click="submitRename">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -240,7 +240,7 @@ const submitRename = () => {
   }
   renameGroup(renameDialog.idx, name)
   renameDialog.visible = false
-  ElMessage.success('編組已重新命名')
+  ElMessage.success('編成名を変更しました')
 }
 
 const onMenu = async (cmd: string, idx: number) => {
@@ -251,16 +251,16 @@ const onMenu = async (cmd: string, idx: number) => {
   if (cmd === 'delete') {
     try {
       await ElMessageBox.confirm(
-        `確定要刪除「${groups[idx].name}」這個編組嗎？此操作無法復原。`,
-        '刪除編組',
-        { confirmButtonText: '刪除', cancelButtonText: '取消', type: 'warning' },
+        `「${groups[idx].name}」を削除しますか？この操作は元に戻せません。`,
+        '編成を削除',
+        { confirmButtonText: '削除', cancelButtonText: '取消', type: 'warning' },
       )
     } catch {
       return
     }
     const ok = removeGroup(idx)
-    if (ok) ElMessage.success('編組已刪除')
-    else ElMessage.error('至少要保留一個編組')
+    if (ok) ElMessage.success('編成を削除しました')
+    else ElMessage.error('少なくとも1つの編成を残してください')
   }
 }
 </script>

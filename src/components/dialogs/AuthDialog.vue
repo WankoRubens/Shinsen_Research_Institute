@@ -2,13 +2,13 @@
   <el-dialog
     :model-value="modelValue"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
-    title="登入帳號"
+    title="アカウントにログイン"
     width="340px"
     align-center
   >
     <div class="flex flex-col gap-3 pb-1">
       <p class="text-xs text-gray-500 text-center -mt-1 mb-1 leading-relaxed">
-        選擇方式登入，將帳號與你建立的分享連結綁定
+        ログイン方法を選択すると、作成した共有リンクをアカウントに紐付けられます
       </p>
       <button
         @click="$emit('sign-in', 'google')"
@@ -32,7 +32,7 @@
         <span>使用 GitHub 帳號繼續</span>
       </button>
       <p class="text-xs text-gray-400 text-center mt-3 leading-relaxed">
-        登入是選用的；不登入也能完整使用所有功能
+        ログインは任意です。ログインしなくても基本機能は利用できます
       </p>
     </div>
   </el-dialog>

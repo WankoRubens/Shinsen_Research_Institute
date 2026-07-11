@@ -5,26 +5,12 @@
       <div class="flex justify-between items-center px-1 md:px-0 pt-1 md:pt-0">
         <el-input
           v-model="searchQuery"
-          placeholder="搜尋武將..."
+          placeholder="武将を検索..."
           clearable
           prefix-icon="Search"
           class="flex-1 mr-1 md:mr-2"
           size="small"
         />
-        <button
-          class="relative px-2 py-1 text-xs rounded border mr-2 transition-colors flex-shrink-0"
-          :class="showFilters
-            ? 'bg-gray-700 text-white border-gray-700'
-            : 'bg-white text-gray-500 border-gray-300 hover:border-gray-500'"
-          @click="showFilters = !showFilters"
-          :title="showFilters ? '隱藏篩選' : '顯示篩選'"
-        >
-          篩選
-          <span
-            v-if="activeFilterCount > 0"
-            class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold"
-          >{{ activeFilterCount }}</span>
-        </button>
         <button
           v-if="mode === 'manage'"
           class="px-2 py-1 text-xs rounded border mr-2 transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -50,7 +36,43 @@
          </div>
       </div>
 
-      <div v-show="showFilters" class="space-y-1 pb-1 px-1 md:px-0">
+      <div class="space-y-1 pb-1 px-1 md:px-0">
+        <div v-if="showLabelFilter && availableLabels.length" class="flex items-start gap-1">
+          <span class="text-xs text-gray-400 w-8 flex-shrink-0 mt-1">ラベル</span>
+          <div class="flex-1 space-y-1">
+            <div class="flex items-center gap-1 flex-wrap">
+              <button
+                class="px-2 py-0.5 text-xs rounded border transition-colors"
+                :class="showLabelOptions
+                  ? 'bg-slate-700 text-white border-slate-700'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-slate-400'"
+                @click="showLabelOptions = !showLabelOptions"
+              >
+                ラベル
+              </button>
+              <button
+                v-if="selectedLabelValue"
+                class="px-2 py-0.5 text-xs rounded border border-amber-200 bg-amber-50 text-amber-700 font-bold hover:bg-amber-100"
+                @click="clearLabel"
+              >
+                {{ selectedLabelValue }} ✕
+              </button>
+            </div>
+            <div v-if="showLabelOptions" class="flex gap-1 flex-wrap rounded border border-gray-100 bg-slate-50 p-1">
+              <button
+                v-for="label in availableLabels"
+                :key="'label-' + label"
+                class="px-2 py-0.5 text-xs rounded border transition-colors"
+                :class="selectedLabelValue === label
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-amber-300'"
+                @click="toggleLabel(label)"
+              >
+                {{ label }}
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="flex items-center gap-1">
           <span class="text-xs text-gray-400 w-8 flex-shrink-0">Cost</span>
           <div class="flex gap-1 flex-wrap flex-1">
@@ -58,7 +80,7 @@
               v-for="c in availableCosts"
               :key="'cost-' + c"
               class="px-2 py-0.5 text-xs rounded border transition-colors"
-              :class="selectedCosts.has(c)
+              :class="selectedCost === c
                 ? 'bg-blue-500 text-white border-blue-500'
                 : 'bg-white text-gray-500 border-gray-300 hover:border-blue-300'"
               @click="toggleCost(c)"
@@ -77,7 +99,7 @@
               v-for="f in factions"
               :key="'fac-' + f"
               class="px-2 py-0.5 text-xs rounded border transition-colors"
-              :class="selectedFactions.has(f)
+              :class="selectedFaction === f
                 ? 'bg-amber-500 text-white border-amber-500'
                 : 'bg-white text-gray-500 border-gray-300 hover:border-amber-300'"
               @click="toggleFaction(f)"
@@ -91,14 +113,14 @@
               v-for="c in clans"
               :key="'clan-' + c"
               class="px-2 py-0.5 text-xs rounded border transition-colors"
-              :class="selectedClans.has(c)
+              :class="selectedClan === c
                 ? 'bg-emerald-500 text-white border-emerald-500'
                 : 'bg-white text-gray-500 border-gray-300 hover:border-emerald-300'"
               @click="toggleClan(c)"
             >{{ c }}</button>
           </div>
         </div>
-        <div class="flex items-center gap-1">
+        <div v-if="showTroopFilter" class="flex items-center gap-1">
           <span class="text-xs text-gray-400 w-8 flex-shrink-0">兵種</span>
           <div class="flex gap-1 flex-wrap">
             <button
@@ -118,7 +140,7 @@
     <!-- Grid -->
     <div class="flex-1 overflow-y-auto p-0 md:p-2">
       <div v-if="filteredHeroes.length === 0" class="text-center py-10 text-gray-400">
-        無符合條件的武將
+        条件に合う武将がありません
       </div>
       <div
         class="grid gap-1 md:gap-2"
@@ -132,7 +154,7 @@
             'opacity-50 grayscale cursor-not-allowed': mode === 'select' && isUsed(hero.name),
             'opacity-40': mode === 'select' && filterOwned && !props.ownedHeroes.includes(hero.name),
             'grayscale opacity-60': mode === 'manage' && !props.ownedHeroes.includes(hero.name),
-            'cursor-pointer hover:scale-105': (mode === 'manage') || (mode === 'select' && !isUsed(hero.name))
+            'cursor-pointer hover:scale-105': (mode === 'manage') || mode === 'browse' || (mode === 'select' && !isUsed(hero.name))
           }"
           @click="handleClick(hero)"
         >
@@ -161,15 +183,21 @@ import { Close } from '@element-plus/icons-vue'
 import { useData, Hero } from '../composables/useData'
 import { TROOP_TYPES } from '../constants/traits'
 import HeroCard from './HeroCard.vue'
+import { allHeroLabels, heroLabels } from '../lib/heroLabels'
 
 const { heroes } = useData()
-const emit = defineEmits(['select', 'update:ownedHeroes', 'update:filterOwned'])
+const emit = defineEmits(['select', 'browse', 'update:ownedHeroes', 'update:filterOwned', 'update:selectedLabel'])
 
 const props = defineProps({
   usedHeroes: { type: Object as PropType<Set<string> | string[]>, default: () => [] },
-  mode: { type: String as PropType<'select' | 'manage'>, default: 'select' },
+  mode: { type: String as PropType<'browse' | 'select' | 'manage'>, default: 'select' },
   ownedHeroes: { type: Array as PropType<string[]>, default: () => [] },
-  filterOwned: { type: Boolean, default: false }
+  filterOwned: { type: Boolean, default: false },
+  allowedRarities: { type: Array as PropType<Array<number | string>>, default: () => [] },
+  showTroopFilter: { type: Boolean, default: true },
+  showLabelFilter: { type: Boolean, default: false },
+  selectedLabel: { type: String, default: '' },
+  labelOptions: { type: Array as PropType<string[]>, default: () => [] },
 })
 
 const searchQuery = ref('')
@@ -184,18 +212,25 @@ watch(searchQuery, (newVal) => {
 })
 
 const showFilters = ref(false)
-const selectedCosts = ref<Set<number>>(new Set())
-const selectedFactions = ref<Set<string>>(new Set())
-const selectedClans = ref<Set<string>>(new Set())
+const selectedCost = ref<number | null>(null)
+const selectedFaction = ref<string | null>(null)
+const selectedClan = ref<string | null>(null)
 const selectedTroopTypes = ref<Set<string>>(new Set())
+const showLabelOptions = ref(false)
+
+const allowedRaritySet = computed(() => new Set(props.allowedRarities.map((rarity) => Number(rarity))))
+const libraryHeroes = computed(() => heroes.value.filter((hero) => {
+  if (allowedRaritySet.value.size === 0) return true
+  return allowedRaritySet.value.has(Number(hero.rarity))
+}))
 
 const factions = computed(() => {
-  return [...new Set(heroes.value.map(h => h.faction))].filter(Boolean).sort()
+  return [...new Set(libraryHeroes.value.map(h => h.faction))].filter(Boolean).sort()
 })
 
 const clans = computed(() => {
   const counts = new Map<string, number>()
-  for (const h of heroes.value) {
+  for (const h of libraryHeroes.value) {
     if (!h.clan) continue
     counts.set(h.clan, (counts.get(h.clan) ?? 0) + 1)
   }
@@ -203,25 +238,22 @@ const clans = computed(() => {
 })
 
 const availableCosts = computed(() => {
-  return [...new Set(heroes.value.map(h => h.cost))].sort((a, b) => b - a)
+  return [...new Set(libraryHeroes.value.map(h => h.cost))].sort((a, b) => b - a)
 })
 
+const availableLabels = computed(() => props.labelOptions.length ? props.labelOptions : allHeroLabels())
+const selectedLabelValue = computed(() => props.selectedLabel)
+
 const toggleCost = (cost: number) => {
-  const next = new Set(selectedCosts.value)
-  next.has(cost) ? next.delete(cost) : next.add(cost)
-  selectedCosts.value = next
+  selectedCost.value = selectedCost.value === cost ? null : cost
 }
 
 const toggleFaction = (faction: string) => {
-  const next = new Set(selectedFactions.value)
-  next.has(faction) ? next.delete(faction) : next.add(faction)
-  selectedFactions.value = next
+  selectedFaction.value = selectedFaction.value === faction ? null : faction
 }
 
 const toggleClan = (clan: string) => {
-  const next = new Set(selectedClans.value)
-  next.has(clan) ? next.delete(clan) : next.add(clan)
-  selectedClans.value = next
+  selectedClan.value = selectedClan.value === clan ? null : clan
 }
 
 const toggleTroopType = (tt: string) => {
@@ -230,29 +262,45 @@ const toggleTroopType = (tt: string) => {
   selectedTroopTypes.value = next
 }
 
+const toggleLabel = (label: string) => {
+  emit('update:selectedLabel', selectedLabelValue.value === label ? '' : label)
+}
+
+const clearLabel = () => {
+  emit('update:selectedLabel', '')
+}
+
 const heroHasTroopType = (h: Hero, types: Set<string>): boolean => {
   return (h.traits || []).some(t =>
     t.affinity?.troop_types?.some(tt => types.has(tt))
   )
 }
 
-const activeFilterCount = computed(() => selectedCosts.value.size + selectedFactions.value.size + selectedClans.value.size + selectedTroopTypes.value.size)
+const activeFilterCount = computed(() =>
+  (selectedCost.value == null ? 0 : 1) +
+  (selectedFaction.value == null ? 0 : 1) +
+  (selectedClan.value == null ? 0 : 1) +
+  (props.showTroopFilter ? selectedTroopTypes.value.size : 0) +
+  (props.showLabelFilter && selectedLabelValue.value ? 1 : 0)
+)
 const hasActiveFilters = computed(() => activeFilterCount.value > 0)
 
 const resetFilters = () => {
-  selectedCosts.value = new Set()
-  selectedFactions.value = new Set()
-  selectedClans.value = new Set()
+  selectedCost.value = null
+  selectedFaction.value = null
+  selectedClan.value = null
   selectedTroopTypes.value = new Set()
+  clearLabel()
 }
 
 const filteredHeroes = computed(() => {
-  return heroes.value.filter(h => {
+  return libraryHeroes.value.filter(h => {
     if (debouncedSearchQuery.value && !h.name.includes(debouncedSearchQuery.value)) return false
-    if (selectedFactions.value.size > 0 && !selectedFactions.value.has(h.faction)) return false
-    if (selectedCosts.value.size > 0 && !selectedCosts.value.has(h.cost)) return false
-    if (selectedClans.value.size > 0 && (!h.clan || !selectedClans.value.has(h.clan))) return false
-    if (selectedTroopTypes.value.size > 0 && !heroHasTroopType(h, selectedTroopTypes.value)) return false
+    if (selectedFaction.value && h.faction !== selectedFaction.value) return false
+    if (selectedCost.value !== null && h.cost !== selectedCost.value) return false
+    if (selectedClan.value && h.clan !== selectedClan.value) return false
+    if (props.showTroopFilter && selectedTroopTypes.value.size > 0 && !heroHasTroopType(h, selectedTroopTypes.value)) return false
+    if (props.showLabelFilter && selectedLabelValue.value && !heroLabels(h).includes(selectedLabelValue.value)) return false
     if (props.mode === 'select' && props.filterOwned && !props.ownedHeroes.includes(h.name)) return false
     return true
   })
@@ -300,6 +348,8 @@ const toggleSelectAllFiltered = () => {
 const handleClick = (hero: Hero) => {
   if (props.mode === 'manage') {
     toggleOwned(hero.name)
+  } else if (props.mode === 'browse') {
+    emit('browse', hero)
   } else {
     // Select mode
     // Check if used

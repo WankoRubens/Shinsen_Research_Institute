@@ -7,7 +7,7 @@
         class="inventory-tabs flex-1 flex flex-col"
         type="border-card"
       >
-        <el-tab-pane label="武將庫存" name="heroes" class="h-full flex flex-col overflow-hidden">
+        <el-tab-pane :label="t('heroInventory')" name="heroes" class="h-full flex flex-col overflow-hidden">
           <HeroLibrary
             mode="manage"
             :used-heroes="[]"
@@ -15,7 +15,7 @@
             @update:ownedHeroes="(val: string[]) => $emit('update:ownedHeroes', val)"
           />
         </el-tab-pane>
-        <el-tab-pane label="戰法庫存" name="skills" class="h-full flex flex-col overflow-hidden">
+        <el-tab-pane :label="t('skillInventory')" name="skills" class="h-full flex flex-col overflow-hidden">
           <SkillLibrary
             mode="manage"
             :used-skills="new Set()"
@@ -31,6 +31,9 @@
 <script setup lang="ts">
 import HeroLibrary from '../HeroLibrary.vue'
 import SkillLibrary from '../SkillLibrary.vue'
+import { useLocale } from '../../composables/useLocale'
+
+const { t } = useLocale()
 
 defineProps<{
   activeTab: string

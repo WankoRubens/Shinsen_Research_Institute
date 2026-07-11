@@ -6,12 +6,20 @@ export type SkillType = 'Assault' | 'Command' | 'Active' | 'Passive' | string;
 
 export type TriggerEvent =
   | 'battleStart'
+  | 'preparationTurn'
   | 'turnStart'
   | 'beforeAction'
+  | 'beforeNormalAttack'
   | 'afterAction'
   | 'afterAttack'
+  | 'afterNormalAttack'
+  | 'onNormalAttackReceived'
   | 'onDamaged'
+  | 'onPhysicalDamageReceived'
+  | 'onStrategyDamageReceived'
   | 'onHeal'
+  | 'onHealed'
+  | 'beforeUniqueSkill'
   | 'always'
   | string;
 
@@ -93,8 +101,29 @@ export interface Skill {
   rarity: string;
   icon: string;
   description: string;
+  description_jp?: string;
   commander_description?: string;
+  commander_description_jp?: string;
   activation_rate?: string;
+  probability?: number;
+  category?: 'active' | 'passive' | 'command' | 'assault' | 'troop' | string;
+  category_jp?: string;
+  game8_kind?: string;
+  game8_source_url?: string;
+  battle_type?: 'bravery' | 'strategy' | string;
+  damage_type?: string;
+  damage_rate_max?: number;
+  heal_rate_max?: number;
+  dot_name?: string;
+  dot_rate_max?: number;
+  dot_turns?: number;
+  control_type?: string;
+  control_turns?: number;
+  buff_types?: string;
+  debuff_types?: string;
+  battle_tags?: string[];
+  effect_value?: string;
+  target_jp?: string;
   target?: string;
   vars?: Record<string, SkillVar | number>;
   source_hero?: string;
@@ -104,16 +133,19 @@ export interface Skill {
   is_fixed?: boolean;
   is_event_skill?: boolean;
   brief_description?: string;
+  brief_description_jp?: string;
   related_stats?: string[];
   rate?: [number, number];
   cooldown?: number;
   maxPerTurn?: number;
   trigger?: TriggerEvent;
+  triggers?: TriggerEvent[];
   do?: Action[];
   bonus?: {
     commander?: Action[];
     characters?: Record<string, Action[]>;
   };
+  sim_id?: string;
 }
 
 export interface TroopAffinity {
@@ -124,9 +156,11 @@ export interface TroopAffinity {
 
 export interface Trait {
   name: string
+  name_jp?: string | null
   rank: 'S' | 'A' | 'B' | 'C'
   active: boolean
   description?: string
+  description_jp?: string
   vars?: Record<string, any>
   affinity?: TroopAffinity | null
 }
@@ -172,14 +206,34 @@ export interface Hero {
     cha: number
     spd: number
   }
+  sim_id?: string
+  faction_jp?: string
+  clan_jp?: string
   traits?: Trait[]
   bingxue?: HeroBingxue | null
+}
+
+export interface EnemyFormationMember {
+  commander_id: string
+  skill1_id?: string
+  skill2_id?: string
+  troops?: number
+  breakthrough?: string
+  stat_focus?: string
+}
+
+export interface EnemyFormation {
+  id: string
+  name: string
+  members: EnemyFormationMember[]
 }
 
 import heroesData from '../../.build/heroes.json'
 import skillsData from '../../.build/skills.json'
 import statusesData from '../../.build/statuses.json'
 import bingxueData from '../../.build/bingxue.json'
+import enemyFormationsData from '../../.build/enemy_formations.json'
+import { withHeroLevel50Stats } from '../lib/heroStats'
 
 const DEFAULT_ICONS: Record<string, string> = {
   '指揮': 'https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1765785439101/res/ui/icon/skill/icon_skill_zh_kongzhi.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_164&t=1',
@@ -192,7 +246,7 @@ const DEFAULT_ICONS: Record<string, string> = {
   '兵種': 'https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1765785439101/res/ui/icon/skill/icon_skill_tsbz_chibeidui.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_164&t=1',
 };
 
-const heroes = ref<Hero[]>(heroesData && Array.isArray(heroesData) ? (heroesData as unknown as Hero[]) : [])
+const heroes = ref<Hero[]>(heroesData && Array.isArray(heroesData) ? (heroesData as unknown as Hero[]).map(withHeroLevel50Stats) : [])
 const skills = ref<Skill[]>(skillsData && Array.isArray(skillsData) ? (skillsData as unknown as Skill[]).map(s => ({
   ...s,
   icon: s.icon || DEFAULT_ICONS[s.type] || ''
@@ -201,7 +255,10 @@ const statuses = ref<Record<string, any>>(statusesData || {})
 const bingxue = ref<Record<string, BingxueOption>>(
   (bingxueData as Record<string, BingxueOption>) || {}
 )
+const enemyFormations = ref<EnemyFormation[]>(
+  Array.isArray(enemyFormationsData) ? (enemyFormationsData as EnemyFormation[]) : []
+)
 
 export function useData() {
-  return { heroes, skills, statuses, bingxue }
+  return { heroes, skills, statuses, bingxue, enemyFormations }
 }

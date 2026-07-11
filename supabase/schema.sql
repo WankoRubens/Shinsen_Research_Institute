@@ -516,48 +516,11 @@ CREATE TABLE IF NOT EXISTS "public"."character_profiles" (
 ALTER TABLE "public"."character_profiles" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."gacha_banners" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "is_active" boolean DEFAULT true NOT NULL,
-    "sort_order" integer DEFAULT 0 NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "hero_pool" "text"[] DEFAULT ARRAY[]::"text"[] NOT NULL,
-    "rare_heroes" "text"[] DEFAULT ARRAY[]::"text"[] NOT NULL
-);
 
 
-ALTER TABLE "public"."gacha_banners" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."gacha_draws" (
-    "id" bigint NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "banner_id" "uuid" NOT NULL,
-    "hero_jp" "text" NOT NULL,
-    "rarity" smallint DEFAULT 3 NOT NULL,
-    "note" "text",
-    "drawn_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
 
-
-ALTER TABLE "public"."gacha_draws" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."gacha_draws_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."gacha_draws_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."gacha_draws_id_seq" OWNED BY "public"."gacha_draws"."id";
 
 
 
@@ -627,7 +590,7 @@ CREATE TABLE IF NOT EXISTS "public"."shares" (
     "pinned" boolean DEFAULT false NOT NULL,
     "kind" "text" DEFAULT 'lineup'::"text" NOT NULL,
     CONSTRAINT "blob_size_limit" CHECK (("octet_length"(("blob")::"text") < 100000)),
-    CONSTRAINT "shares_kind_check" CHECK (("kind" = ANY (ARRAY['lineup'::"text", 'group'::"text", 'inventory'::"text", 'profile'::"text", 'gacha_log'::"text"])))
+    CONSTRAINT "shares_kind_check" CHECK (("kind" = ANY (ARRAY['lineup'::"text", 'group'::"text", 'inventory'::"text", 'profile'::"text"])))
 );
 
 
@@ -678,8 +641,6 @@ CREATE TABLE IF NOT EXISTS "public"."variant_votes" (
 ALTER TABLE "public"."variant_votes" OWNER TO "postgres";
 
 
-ALTER TABLE ONLY "public"."gacha_draws" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."gacha_draws_id_seq"'::"regclass");
-
 
 
 ALTER TABLE ONLY "public"."character_profiles"
@@ -687,13 +648,7 @@ ALTER TABLE ONLY "public"."character_profiles"
 
 
 
-ALTER TABLE ONLY "public"."gacha_banners"
-    ADD CONSTRAINT "gacha_banners_pkey" PRIMARY KEY ("id");
 
-
-
-ALTER TABLE ONLY "public"."gacha_draws"
-    ADD CONSTRAINT "gacha_draws_pkey" PRIMARY KEY ("id");
 
 
 
@@ -741,11 +696,7 @@ CREATE INDEX "character_profiles_user_id_idx" ON "public"."character_profiles" U
 
 
 
-CREATE INDEX "gacha_banners_user_idx" ON "public"."gacha_banners" USING "btree" ("user_id", "is_active", "sort_order");
 
-
-
-CREATE INDEX "gacha_draws_user_banner_drawn_idx" ON "public"."gacha_draws" USING "btree" ("user_id", "banner_id", "drawn_at" DESC);
 
 
 
@@ -838,18 +789,9 @@ ALTER TABLE ONLY "public"."character_profiles"
 
 
 
-ALTER TABLE ONLY "public"."gacha_banners"
-    ADD CONSTRAINT "gacha_banners_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."gacha_draws"
-    ADD CONSTRAINT "gacha_draws_banner_id_fkey" FOREIGN KEY ("banner_id") REFERENCES "public"."gacha_banners"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "public"."gacha_draws"
-    ADD CONSTRAINT "gacha_draws_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -911,41 +853,21 @@ ALTER TABLE ONLY "public"."variant_votes"
 ALTER TABLE "public"."character_profiles" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."gacha_banners" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "gacha_banners_owner_delete" ON "public"."gacha_banners" FOR DELETE USING (("user_id" = "auth"."uid"()));
 
 
 
-CREATE POLICY "gacha_banners_owner_insert" ON "public"."gacha_banners" FOR INSERT WITH CHECK (("user_id" = "auth"."uid"()));
 
 
 
-CREATE POLICY "gacha_banners_owner_select" ON "public"."gacha_banners" FOR SELECT USING (("user_id" = "auth"."uid"()));
 
 
 
-CREATE POLICY "gacha_banners_owner_update" ON "public"."gacha_banners" FOR UPDATE USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
 
 
 
-ALTER TABLE "public"."gacha_draws" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "gacha_draws_owner_delete" ON "public"."gacha_draws" FOR DELETE USING (("user_id" = "auth"."uid"()));
 
 
 
-CREATE POLICY "gacha_draws_owner_insert" ON "public"."gacha_draws" FOR INSERT WITH CHECK (("user_id" = "auth"."uid"()));
-
-
-
-CREATE POLICY "gacha_draws_owner_select" ON "public"."gacha_draws" FOR SELECT USING (("user_id" = "auth"."uid"()));
-
-
-
-CREATE POLICY "gacha_draws_owner_update" ON "public"."gacha_draws" FOR UPDATE USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
 
 
 
@@ -1160,21 +1082,12 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."character_profiles
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gacha_banners" TO "anon";
-GRANT ALL ON TABLE "public"."gacha_banners" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gacha_banners" TO "service_role";
 
 
 
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gacha_draws" TO "anon";
-GRANT ALL ON TABLE "public"."gacha_draws" TO "authenticated";
-GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."gacha_draws" TO "service_role";
 
 
 
-GRANT UPDATE ON SEQUENCE "public"."gacha_draws_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."gacha_draws_id_seq" TO "authenticated";
-GRANT UPDATE ON SEQUENCE "public"."gacha_draws_id_seq" TO "service_role";
 
 
 

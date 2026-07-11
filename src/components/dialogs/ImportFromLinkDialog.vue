@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="由分享連結匯入"
+    title="共有リンクから取り込む"
     width="600px"
     align-center
     @opened="onDialogOpened"
@@ -10,18 +10,18 @@
     <!-- Step 1: paste link / slug -->
     <div v-if="phase === 'input'" class="flex flex-col gap-3">
       <p class="text-sm text-ink-soft">
-        貼上分享連結（例如 <code class="text-xs px-1 bg-surface-muted rounded">…/#s/abc123</code>）或 slug。
+        共有リンク（例: <code class="text-xs px-1 bg-surface-muted rounded">…/#s/abc123</code>）または slug を貼り付けてください。
       </p>
       <el-input
         ref="inputRef"
         v-model="rawInput"
-        placeholder="貼上分享連結或 slug"
+        placeholder="共有リンクまたは slug を貼り付け"
         clearable
         :disabled="!isShareEnabled()"
         @keyup.enter="onLoad"
       />
       <p v-if="!isShareEnabled()" class="text-xs text-red-500">
-        分享後端未配置，無法從連結匯入。
+        共有バックエンドが未設定のため、リンクから取り込めません。
       </p>
     </div>
 
@@ -34,26 +34,14 @@
     <!-- Step 3a: error -->
     <div v-else-if="phase === 'error'" class="flex flex-col gap-3">
       <el-alert :title="errorMessage" type="error" :closable="false" show-icon />
-      <el-button @click="resetToInput" plain>重新輸入</el-button>
+      <el-button @click="resetToInput" plain>入力し直す</el-button>
     </div>
 
-    <!-- Step 3b: gacha rejection -->
-    <div v-else-if="phase === 'gacha-reject'" class="flex flex-col gap-3">
-      <el-alert
-        title="此分享為抽卡紀錄"
-        description="請至「抽卡紀錄」頁面開啟此分享連結。編組匯入只接受編組／隊伍類型的分享。"
-        type="warning"
-        :closable="false"
-        show-icon
-      />
-      <el-button @click="resetToInput" plain>重新輸入</el-button>
-    </div>
-
-    <!-- Step 3c: ready to import -->
+    <!-- Step 3b: ready to import -->
     <div v-else-if="phase === 'ready'" class="flex flex-col gap-4">
       <p class="text-sm text-ink-soft leading-relaxed">
-        此分享含 <strong class="text-ink">{{ totalTeams }}</strong> 支隊伍，分布於
-        <strong class="text-ink">{{ hydratedGroups.length }}</strong> 個編組。請選擇匯入方式。
+        この共有には <strong class="text-ink">{{ totalTeams }}</strong> 部隊が含まれ、
+        <strong class="text-ink">{{ hydratedGroups.length }}</strong> 個の編組に分かれています。取り込み方法を選択してください。
       </p>
 
       <!-- Mode picker — option-card pattern mirrors MergeOnSignInDialog so
@@ -69,7 +57,7 @@
           <div class="option-card__content">
             <span class="option-card__title">整組匯入</span>
             <span class="option-card__hint">
-              新增為 {{ hydratedGroups.length }} 個編組
+              {{ hydratedGroups.length }} 個の編組として追加
             </span>
           </div>
         </label>
@@ -81,7 +69,7 @@
           <div class="option-card__content">
             <span class="option-card__title">挑選隊伍</span>
             <span class="option-card__hint">
-              從分享內容挑出隊伍加入當前編組或覆寫當前隊伍
+              共有内容から部隊を選び、現在の編組へ追加または現在の部隊を上書き
             </span>
           </div>
         </label>
@@ -111,7 +99,7 @@
            dialog and the set-mode preview above. -->
       <div v-else class="flex flex-col gap-3">
         <div class="text-xs text-ink-mute">
-          當前編組剩餘空位：
+          現在の編組の空き枠:
           <strong class="tabular-nums" :class="capacityLeft <= 0 ? 'text-red-500' : 'text-ink'">
             {{ capacityLeft }}
           </strong>
@@ -142,11 +130,11 @@
         </div>
         <!-- Append vs overwrite: only meaningful when exactly 1 selected. -->
         <el-radio-group v-if="pickedKeys.length === 1" v-model="pickAction" class="!flex gap-4">
-          <el-radio value="append">加入當前編組</el-radio>
+          <el-radio value="append">現在の編組に追加</el-radio>
           <el-radio value="overwrite">覆寫當前顯示的隊伍</el-radio>
         </el-radio-group>
         <p v-else-if="pickedKeys.length >= 2" class="text-xs text-ink-mute">
-          已選 {{ pickedKeys.length }} 支，將全部加入當前編組（多選不能覆寫單一隊伍）。
+          {{ pickedKeys.length }} 部隊を選択中です。すべて現在の編組へ追加します（複数選択時は単一部隊の上書きはできません）。
         </p>
 
         <!-- Conflict preview against the destination (current) group. Same
@@ -155,12 +143,12 @@
           v-if="hasPickConflict"
           class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 leading-snug"
         >
-          <p class="font-bold mb-1">與當前編組其它隊伍重複</p>
+          <p class="font-bold mb-1">現在の編組内の他部隊と重複しています</p>
           <p v-if="pickConflicts.heroes.length > 0">
-            武將：<span class="font-mono">{{ pickConflicts.heroes.join('、') }}</span>
+            武将: <span class="font-mono">{{ pickConflicts.heroes.join('、') }}</span>
           </p>
           <p v-if="pickConflicts.skills.length > 0">
-            戰法：<span class="font-mono">{{ pickConflicts.skills.join('、') }}</span>
+            戦法: <span class="font-mono">{{ pickConflicts.skills.join('、') }}</span>
           </p>
         </div>
       </div>
@@ -244,7 +232,7 @@ const visible = computed({
   set: (v: boolean) => emit('update:modelValue', v),
 })
 
-type Phase = 'input' | 'loading' | 'error' | 'gacha-reject' | 'ready'
+type Phase = 'input' | 'loading' | 'error' | 'ready'
 
 const phase = ref<Phase>('input')
 const rawInput = ref('')
@@ -366,11 +354,6 @@ const extractSlug = (input: string): string => {
   return trimmed.split(/[?#]/)[0]
 }
 
-const isGachaLogBlob = (blob: unknown): boolean => {
-  const b = blob as { kind?: string } | null
-  return !!b && b.kind === 'gacha_log'
-}
-
 const resetToInput = () => {
   phase.value = 'input'
   errorMessage.value = ''
@@ -414,7 +397,7 @@ const onLoad = async () => {
   if (!canLoad.value) return
   const slug = extractSlug(rawInput.value)
   if (!slug) {
-    errorMessage.value = '請輸入有效的連結或 slug'
+    errorMessage.value = '有効なリンクまたは slug を入力してください'
     phase.value = 'error'
     return
   }
@@ -424,28 +407,21 @@ const onLoad = async () => {
     blob = await loadShare(slug)
   } catch (e) {
     const msg = (e as Error).message
-    if (/not found/i.test(msg)) errorMessage.value = '找不到此分享內容（可能已被刪除）'
+    if (/not found/i.test(msg)) errorMessage.value = '共有内容が見つかりません（削除された可能性があります）'
     else if (/invalid share slug/i.test(msg)) errorMessage.value = '連結格式錯誤'
     else errorMessage.value = `載入失敗：${msg}`
     phase.value = 'error'
     return
   }
 
-  // Reject gacha-log shares — they're a separate spectator flow and don't
-  // map to lineup-builder semantics.
-  if (isGachaLogBlob(blob)) {
-    phase.value = 'gacha-reject'
-    return
-  }
-
   const data = blob as ShareableData
   if (typeof data !== 'object' || data === null) {
-    errorMessage.value = '此分享格式無法識別'
+    errorMessage.value = '共有形式を識別できません'
     phase.value = 'error'
     return
   }
   if (data.v !== undefined && (data.v < 1 || data.v > 4)) {
-    errorMessage.value = `不支援的分享格式（版本 ${data.v}）`
+    errorMessage.value = `対応していない共有形式です（バージョン ${data.v}）`
     phase.value = 'error'
     return
   }
@@ -464,7 +440,7 @@ const onLoad = async () => {
         allHealed.push(...r.healed)
         return r.team
       })
-      const name = (g.name ?? '').trim() || `分享編組 ${gi + 1}`
+      const name = (g.name ?? '').trim() || `共有編組 ${gi + 1}`
       resultGroups.push({
         key: `g${gi}`,
         displayName: name,
@@ -478,7 +454,7 @@ const onLoad = async () => {
       allHealed.push(...r.healed)
       return r.team
     })
-    const name = '匯入的編組'
+    const name = '取り込んだ編組'
     resultGroups.push({
       key: 'g0',
       displayName: name,
@@ -486,7 +462,7 @@ const onLoad = async () => {
       teams,
     })
   } else {
-    errorMessage.value = '此分享不包含任何隊伍資料'
+    errorMessage.value = 'この共有には部隊データが含まれていません'
     phase.value = 'error'
     return
   }

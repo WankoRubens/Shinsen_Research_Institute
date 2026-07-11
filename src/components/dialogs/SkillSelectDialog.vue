@@ -2,7 +2,7 @@
   <el-dialog
     :model-value="modelValue"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
-    title="選擇戰法"
+    title="戦法を選択"
     width="90%"
     class="max-w-md skill-select-dialog"
     align-center

@@ -43,14 +43,13 @@
       >
         {{ hero.name }}
       </div>
-
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PropType } from 'vue'
-import { Hero } from '../composables/useData'
+import type { Hero } from '../composables/useData'
 
 const props = defineProps({
   hero: {

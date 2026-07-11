@@ -1,21 +1,20 @@
 <template>
   <div class="h-full flex flex-col py-3 px-2">
-    <!-- Brand -->
     <RouterLink
       to="/"
       class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-highlight"
       :class="collapsed && 'justify-center'"
       @click="$emit('nav')"
     >
-      <div class="w-8 h-8 rounded-full border border-brand text-brand flex items-center justify-center font-brand font-bold text-[15.4px] leading-none shrink-0">猫</div>
+      <div class="w-8 h-8 rounded-full border border-brand text-brand flex items-center justify-center font-brand font-bold text-[15.4px] leading-none shrink-0">項</div>
       <div v-if="!collapsed" class="flex flex-col justify-center h-8 leading-none">
-        <div class="font-brand font-bold text-ink text-[15.4px]">真戰配將</div>
-        <div class="text-[11px] text-ink-mute tracking-wide mt-1">SHINSEI · v1.0</div>
+        <div class="font-brand font-bold text-ink text-[15.4px]">{{ t('brandName') }}</div>
+        <div class="text-[11px] text-ink-mute tracking-wide mt-1"> SRI · v0.1</div>
       </div>
     </RouterLink>
 
     <div class="mt-4 flex-1 overflow-y-auto">
-      <SidebarSection v-if="!collapsed" label="主要功能" />
+      <SidebarSection v-if="!collapsed" :label="t('primaryNav')" />
       <SidebarLink
         v-for="item in primaryNav"
         :key="item.name"
@@ -28,20 +27,22 @@
         @click="$emit('nav')"
       />
 
-      <SidebarSection v-if="!collapsed" label="即將推出" class="mt-4" />
-      <SidebarLink
-        v-for="item in soonNav"
-        :key="item.name"
-        :to="item.to"
-        :icon="item.icon"
-        :label="item.label"
-        badge="SOON"
-        :collapsed="collapsed"
-        :active="activeRoute === item.name"
-        @click="$emit('nav')"
-      />
+      <template v-if="soonNav.length">
+        <SidebarSection v-if="!collapsed" :label="t('comingSoon')" class="mt-4" />
+        <SidebarLink
+          v-for="item in soonNav"
+          :key="item.name"
+          :to="item.to"
+          :icon="item.icon"
+          :label="item.label"
+          badge="SOON"
+          :collapsed="collapsed"
+          :active="activeRoute === item.name"
+          @click="$emit('nav')"
+        />
+      </template>
 
-      <SidebarSection v-if="!collapsed" label="八字沒半撇" class="mt-4" />
+      <SidebarSection v-if="!collapsed" :label="t('unlikely')" class="mt-4" />
       <SidebarLink
         v-for="item in wishNav"
         :key="item.name"
@@ -55,34 +56,11 @@
       />
     </div>
 
-    <!-- Footer: contact panel above, settings/collapse below -->
     <div class="border-t border-divider pt-2 mt-2">
-      <div v-if="!collapsed" class="px-1 mb-2 flex items-center gap-1">
-        <el-tooltip content="yt.neko.vision@gmail.com" placement="top" :show-after="200">
-          <a href="mailto:yt.neko.vision@gmail.com" class="footer-icon" aria-label="Email">
-            <el-icon :size="13"><Message /></el-icon>
-          </a>
-        </el-tooltip>
-        <el-tooltip content="Discord：neko.vision（點擊複製）" placement="top" :show-after="200">
-          <button type="button" class="footer-icon" @click="copyDiscord" aria-label="Discord">
-            <el-icon :size="13"><ChatDotRound /></el-icon>
-          </button>
-        </el-tooltip>
-        <a
-          href="https://forms.gle/mnMAqAzP595ygCrJ9"
-          target="_blank"
-          rel="noopener"
-          class="footer-link"
-        >
-          <el-icon :size="12"><EditPen /></el-icon>
-          <span>建議/回報</span>
-        </a>
-      </div>
-
       <SidebarLink
         :to="{ name: 'settings' }"
         :icon="Setting"
-        label="設定"
+        :label="t('settings')"
         :collapsed="collapsed"
         :active="activeRoute === 'settings'"
         @click="$emit('nav')"
@@ -93,22 +71,23 @@
         @click="$emit('toggle-collapse')"
       >
         <el-icon :size="14"><Fold v-if="!collapsed" /><Expand v-else /></el-icon>
-        <span v-if="!collapsed">收合</span>
+        <span v-if="!collapsed">{{ t('collapse') }}</span>
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Component } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import {
   Grid, Flag, Document, Aim, Reading, Setting, Fold, Expand,
-  Message, ChatDotRound, EditPen, User, Share, MagicStick,
+  User, Share,
 } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import SidebarLink from './SidebarLink.vue'
 import SidebarSection from './SidebarSection.vue'
+import { useLocale } from '../../composables/useLocale'
 
 defineProps<{ collapsed: boolean; activeRoute?: string }>()
 defineEmits<{
@@ -116,14 +95,7 @@ defineEmits<{
   (e: 'toggle-collapse'): void
 }>()
 
-const copyDiscord = async () => {
-  try {
-    await navigator.clipboard.writeText('neko.vision')
-    ElMessage.success('已複製 Discord：neko.vision')
-  } catch {
-    ElMessage.warning('無法存取剪貼簿，請手動複製：neko.vision')
-  }
-}
+const { t } = useLocale()
 
 type NavItem = {
   name: string
@@ -133,59 +105,19 @@ type NavItem = {
   badge?: string
 }
 
-const primaryNav: readonly NavItem[] = [
-  { name: 'lineup', to: { name: 'lineup' }, icon: Grid, label: '配將模擬', badge: '工作台' },
-  { name: 'profiles', to: { name: 'profiles' }, icon: User, label: '角色管理' },
-  { name: 'groups', to: { name: 'groups' }, icon: Flag, label: '我的編組' },
-  { name: 'shares', to: { name: 'shares' }, icon: Share, label: '我的分享' },
-  { name: 'proposals', to: { name: 'proposals' }, icon: Document, label: '精選隊伍' },
-  { name: 'gachaLog', to: { name: 'gachaLog' }, icon: MagicStick, label: '抽卡紀錄' },
-]
+const primaryNav = computed<readonly NavItem[]>(() => [
+  { name: 'lineup', to: { name: 'lineup' }, icon: Grid, label: t('lineup'), badge: t('workbench') },
+  { name: 'profiles', to: { name: 'profiles' }, icon: User, label: t('profiles') },
+  { name: 'groups', to: { name: 'groups' }, icon: Flag, label: t('groups') },
+  { name: 'shares', to: { name: 'shares' }, icon: Share, label: t('shares') },
+  { name: 'proposals', to: { name: 'proposals' }, icon: Document, label: t('proposals') },
+  { name: 'battleSim', to: { name: 'battleSim' }, icon: Aim, label: t('battleSim'), badge: 'NEW' },
+  { name: 'mockBattle', to: { name: 'mockBattle' }, icon: Aim, label: t('mockBattle'), badge: 'NEW' },
+  { name: 'aiLineup', to: { name: 'aiLineup' }, icon: Aim, label: t('aiLineup'), badge: 'NEW' },
+  { name: 'heroDb', to: { name: 'heroDb' }, icon: Reading, label: t('heroDb') },
+])
 
-const soonNav: readonly NavItem[] = [
-  { name: 'heroDb', to: { name: 'comingSoon', params: { topic: 'hero-db' } }, icon: Reading, label: '武將資料庫' },
-]
+const soonNav = computed<readonly NavItem[]>(() => [])
 
-// 八字沒半撇 — features that are nominally planned but realistically unlikely
-// to ship. Kept reachable so curious users can still see the description page.
-const wishNav: readonly NavItem[] = [
-  { name: 'battleSim', to: { name: 'comingSoon', params: { topic: 'battle-sim' } }, icon: Aim, label: '戰鬥模擬' },
-]
+const wishNav = computed<readonly NavItem[]>(() => [])
 </script>
-
-<style scoped>
-.footer-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  border-radius: 6px;
-  font-size: 11px;
-  color: #94A3B8;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-.footer-link:hover {
-  color: rgb(var(--color-focus));
-  background: rgb(var(--color-highlight));
-}
-
-.footer-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  color: #94A3B8;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-.footer-icon:hover {
-  color: rgb(var(--color-focus));
-  background: rgb(var(--color-highlight));
-}
-</style>

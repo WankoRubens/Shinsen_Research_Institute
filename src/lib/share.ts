@@ -22,15 +22,14 @@ const SLUG_PATTERN = /^[A-Za-z0-9]{12,14}$/
 
 export const isShareEnabled = isSupabaseConfigured
 
-export const SHARE_KINDS = ['lineup', 'group', 'inventory', 'profile', 'gacha_log'] as const
+export const SHARE_KINDS = ['lineup', 'group', 'inventory', 'profile'] as const
 export type ShareKind = typeof SHARE_KINDS[number]
 
 export const SHARE_KIND_LABELS: Record<ShareKind, string> = {
-  lineup: '單隊',
+  lineup: '単隊',
   group: '編組',
-  inventory: '庫存',
-  profile: '角色配置',
-  gacha_log: '抽卡紀錄',
+  inventory: '所持',
+  profile: '所持設定',
 }
 
 export interface CreateShareOptions {
@@ -38,7 +37,7 @@ export interface CreateShareOptions {
    *  are unlisted so a name has nowhere to surface). */
   displayName?: string
   /** Required discriminator written to shares.kind. Drives the type column
-   *  in 我的分享 without needing to inspect blob shape on the list side. */
+   *  in the share list without needing to inspect blob shape on the list side. */
   kind: ShareKind
 }
 

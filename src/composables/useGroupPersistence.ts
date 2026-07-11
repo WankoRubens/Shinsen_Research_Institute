@@ -667,7 +667,7 @@ const applyCloudRowsToLocal = (rows: CloudLineupGroup[]): void => {
 // so the user never silently loses data. Returns the slug or null on failure.
 const createBackupShareLink = async (blob: ShareableData): Promise<string | null> => {
   try {
-    return await createShare(blob, { kind: 'group', displayName: `編組備份 ${new Date().toLocaleString('zh-TW')}` })
+    return await createShare(blob, { kind: 'group', displayName: `編組バックアップ ${new Date().toLocaleString('ja-JP')}` })
   } catch (e) {
     console.warn('[cloud-sync] backup share failed:', e)
     return null

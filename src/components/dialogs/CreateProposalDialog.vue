@@ -2,13 +2,13 @@
   <el-dialog
     :model-value="modelValue"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
-    title="另存為精選隊伍"
+    title="おすすめ編成として保存"
     width="380px"
     align-center
   >
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1">
-        <label class="text-xs text-ink-mute">隊伍名稱</label>
+        <label class="text-xs text-ink-mute">部隊名</label>
         <el-input
           v-model="name"
           maxlength="50"
@@ -23,15 +23,15 @@
         class="flex items-center justify-between pt-1 border-t border-divider"
       >
         <div class="flex flex-col gap-0.5">
-          <span class="text-sm">公開分享</span>
+          <span class="text-sm">公開共有</span>
           <span class="text-[11px] text-ink-mute leading-snug">
-            開啟後將出現在「精選隊伍」公開列表
+            有効にすると「おすすめ編成」の公開一覧に表示されます
           </span>
         </div>
         <el-switch v-model="isPublic" />
       </div>
       <p v-else class="text-[11px] text-ink-mute leading-snug">
-        未登入只能存為本機草稿；登入後可選公開分享。
+        未ログイン時はローカル下書きとして保存されます。ログイン後は公開共有を選べます。
       </p>
 
       <div class="flex justify-end gap-2 pt-1">

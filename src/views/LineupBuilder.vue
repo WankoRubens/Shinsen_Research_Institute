@@ -1,6 +1,5 @@
 <template>
-  <GachaSpectatorView v-if="gachaSpectatorBlob" :blob="gachaSpectatorBlob" />
-  <el-container v-else direction="vertical" class="w-full bg-slate-50 flex-1 min-h-0">
+  <el-container direction="vertical" class="w-full bg-slate-50 flex-1 min-h-0">
     <el-main class="app-main p-0 overflow-hidden">
 
       <!-- View 1: Lineup Builder (Default) -->
@@ -137,7 +136,6 @@ import LineupWorkspace, { type Role } from '../components/lineup-builder/LineupW
 import type { ResetTarget } from '../components/dialogs/ResetDialog.vue'
 import type { ShareScope, ShareEventPayload } from '../components/dialogs/ShareDialog.vue'
 import TeamListPanel from '../components/lineup-builder/TeamListPanel.vue'
-import GachaSpectatorView from '../components/GachaSpectatorView.vue'
 
 import { useData, Hero, Skill } from '../composables/useData'
 
@@ -152,7 +150,6 @@ import {
   createShare, loadShare, isShareEnabled, type ShareKind,
 } from '../lib/share'
 import { handleAuthCallback } from '../lib/auth'
-import type { SpectatorBlob } from '../lib/gachaLog'
 import { useAuth } from '../composables/useAuth'
 import { useActiveProfile } from '../composables/useActiveProfile'
 import { useDialogs } from '../composables/useDialogs'
@@ -162,6 +159,7 @@ import type { ImportConflictResolution } from '../types/group'
 import { useChangelog } from '../composables/useChangelog'
 import { useProfiles } from '../composables/useProfiles'
 import { consumeInitialHash } from '../lib/initial-hash'
+import { heroLevel50Stats } from '../lib/heroStats'
 
 const router = useRouter()
 
@@ -329,7 +327,7 @@ const assignHeroToRole = (role: Role, hero: Hero) => {
   slot.hero = hero
   // Fall back to defaultStats for any key the hero data is missing, so the
   // single source of truth lives in useLineups (no divergent literals).
-  slot.stats = { ...defaultStats, ...hero.stats }
+  slot.stats = { ...defaultStats, ...heroLevel50Stats(hero) }
   slot.breakthrough = 0
 }
 
@@ -832,9 +830,6 @@ const onImportFromLink = (payload: ImportFromLinkPayload) => {
   }
 }
 
-// Set by initFromHash when an incoming share is a v3 gacha-log snapshot.
-// Non-null switches the whole UI to spectator mode (no edit affordances).
-const gachaSpectatorBlob = ref<SpectatorBlob | null>(null)
 const { clearActiveProfile } = useActiveProfile()
 const { tryAutoApplyDefault } = useProfiles()
 
@@ -847,7 +842,7 @@ const { tryAutoApplyDefault } = useProfiles()
 watch(sessionExpiredCount, () => {
   dialogs.close()
   clearActiveProfile()
-  ElMessage.warning('登入已過期，請重新登入以同步雲端資料')
+  ElMessage.warning('ログイン期限が切れました。クラウド同期するには再ログインしてください')
 })
 
 // Returns true if a competing UI was shown (toast / rename dialog) — caller
@@ -867,7 +862,7 @@ const initFromHash = async (): Promise<boolean> => {
     if (handleAuthCallback(initialHash)) {
       refreshFromStorage()
       const recovered = consumeRecovery()
-      ElMessage.success(recovered ? '登入成功，已還原配置' : '登入成功')
+      ElMessage.success(recovered ? 'ログインしました。設定を復元しました' : 'ログインしました')
       // First-time prompt: ask new users to pick a display name. AppLayout
       // owns the rename dialog and prefills the input when it opens.
       if (needsDisplayName.value) dialogs.open('rename')
@@ -875,7 +870,7 @@ const initFromHash = async (): Promise<boolean> => {
       return true
     }
   } catch (e) {
-    ElMessage.error(`登入失敗：${(e as Error).message}`)
+    ElMessage.error(`ログインに失敗しました: ${(e as Error).message}`)
     router.replace('/')
     return true
   }
@@ -890,19 +885,11 @@ const initFromHash = async (): Promise<boolean> => {
         const json = decodeURIComponent(escape(atob(rawHash)))
         data = JSON.parse(json) as ShareableData
       }
-      // v3 = gacha-log snapshot — render spectator UI instead of restoring
-      // into the lineup builder. Anything that v3 doesn't carry (lineups,
-      // inventory) stays untouched, so the URL is purely a viewer experience.
-      const maybeBlob = data as Partial<SpectatorBlob>
-      if (maybeBlob?.v === 3 && maybeBlob?.kind === 'gacha_log') {
-        gachaSpectatorBlob.value = maybeBlob as SpectatorBlob
-        return true
-      }
       restoreFromBlob(data)
-      ElMessage.success('已載入分享的配置')
+      ElMessage.success('共有された設定を読み込みました')
       router.replace('/')
     } catch (e) {
-      ElMessage.error('無效的分享連結')
+      ElMessage.error('無効な共有リンクです')
       router.replace('/')
     }
     return true

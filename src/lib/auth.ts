@@ -7,6 +7,10 @@ import { SUPABASE_URL, SUPABASE_KEY, fetchWithTimeout } from './supabase'
 
 export type OAuthProvider = 'google' | 'github'
 
+// OAuth の開始先は必ず .env の VITE_SUPABASE_URL で指定する。
+// 固定のフォールバックURLを持つと、意図しない Supabase プロジェクトへログインしてしまう。
+const AUTH_SUPABASE_URL = SUPABASE_URL
+
 export interface Session {
   access_token: string
   refresh_token: string
@@ -87,10 +91,14 @@ export const getSession = (): Session | null => {
 // Provider returns to ${origin}${pathname} with tokens in the hash; we capture
 // them via handleAuthCallback on the next page load.
 export const signInWithProvider = (provider: OAuthProvider): void => {
-  if (!SUPABASE_URL) throw new Error('auth not configured')
+  if (!AUTH_SUPABASE_URL) throw new Error('auth not configured')
   const redirectTo = `${location.origin}${location.pathname}`
-  const url = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${encodeURIComponent(redirectTo)}`
-  location.assign(url)
+  const params = new URLSearchParams({
+    provider,
+    redirect_to: redirectTo,
+  })
+  const url = `${AUTH_SUPABASE_URL}/auth/v1/authorize?${params.toString()}`
+  window.location.href = url
 }
 
 // Returns true if the hash was an auth callback we consumed (and cleared).
@@ -256,7 +264,7 @@ export const getValidAccessToken = async (): Promise<string | null> => {
 }
 
 // Throw-on-failure auth gate for backend modules that always require a logged-in
-// user (profiles, gachaLog). Returns the user id + a refreshed access token.
+// user (profiles, shares). Returns the user id + a refreshed access token.
 export const requireAuth = async (): Promise<{ userId: string; token: string }> => {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('supabase backend not configured')
   const session = getSession()

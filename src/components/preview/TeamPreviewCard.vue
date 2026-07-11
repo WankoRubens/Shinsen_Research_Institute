@@ -159,8 +159,8 @@ const portraitSize = computed(() => props.density === 'compact' ? 104 : 166)
 
 const roles = computed(() => [
   { key: 'main', label: '主將', data: props.team.main },
-  { key: 'vice1', label: '副將', data: props.team.vice1 },
-  { key: 'vice2', label: '副將', data: props.team.vice2 },
+  { key: 'vice1', label: '副将', data: props.team.vice1 },
+  { key: 'vice2', label: '副将', data: props.team.vice2 },
 ])
 
 const totalCost = computed(() => computeTeamCost(props.team))

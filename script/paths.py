@@ -22,6 +22,9 @@ PROTOTYPE_DIR = DATA_DIR / "prototype"
 CFG_CURRENT_JSON = CFG_DIR / "cfg_current.json"
 CFG_LAST_DIFF_SUMMARY = CFG_DIR / "last_diff_summary.txt"
 CFG_DIFF_REPORT = BUILD_DIR / "cfg_diff_report.md"
+SHINSEN_SIM_DIR = DATA_DIR / "shinsen_sim"
+SHINSEN_SIM_API_JSON = SHINSEN_SIM_DIR / "api_data.json"
+GAME8_SKILLS_INDEX_JSON = GAME8_DIR / "skills_index.json"
 
 # Manual files for the three-layer override system.
 CFG_ALIASES_PATH = DATA_DIR / "cfg_aliases.yaml"
@@ -52,6 +55,7 @@ HEROES_JSON = BUILD_DIR / "heroes.json"
 SKILLS_JSON = BUILD_DIR / "skills.json"
 STATUSES_JSON = BUILD_DIR / "statuses.json"
 BINGXUE_JSON = BUILD_DIR / "bingxue.json"
+ENEMY_FORMATIONS_JSON = BUILD_DIR / "enemy_formations.json"
 TRANSLATION_FAILURES_JSON = BUILD_DIR / "translation_failures.json"
 
 # Crawl cache

@@ -12,9 +12,12 @@ import ProfilesView from '../views/ProfilesView.vue'
 import MyGroups from '../views/MyGroups.vue'
 import SharesView from '../views/SharesView.vue'
 import ProposalsView from '../views/ProposalsView.vue'
-import GachaLogPage from '../views/GachaLogPage.vue'
+import BattleSimulator from '../views/BattleSimulator.vue'
+import MockBattle from '../views/MockBattle.vue'
+import AiLineupOptimizer from '../views/AiLineupOptimizer.vue'
 import SettingsView from '../views/SettingsView.vue'
 import ComingSoon from '../views/ComingSoon.vue'
+import HeroDatabaseView from '../views/HeroDatabaseView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -27,8 +30,8 @@ const routes: RouteRecordRaw[] = [
         name: 'profiles',
         component: ProfilesView,
         meta: {
-          title: '角色管理',
-          description: '每個角色配置是一份具名的庫存（武將 + 戰法）。可建立多份用於主帳 / 小號 / 朋友的庫存，套用後配將模擬會以該庫存為準。',
+          title: '所持武将',
+          description: '各設定は名前付きの所持データ（武将 + 戦法）です。メイン / サブ / 友人用など複数作成でき、適用後は編成シミュレータがその所持データを基準にします。',
         },
       },
       {
@@ -36,9 +39,9 @@ const routes: RouteRecordRaw[] = [
         name: 'groups',
         component: MyGroups,
         meta: {
-          title: '我的編組',
+          title: '保存した編成',
           // Cap mirrors MAX_TEAMS_PER_GROUP in types/group.ts — update both if changed.
-          description: '每個編組可放最多 10 支隊伍，展開查看預覽，方便截圖分享給朋友。',
+          description: '各編成には最大10部隊まで保存できます。展開してプレビューを確認し、共有やスクリーンショットに使えます。',
         },
       },
       {
@@ -46,8 +49,8 @@ const routes: RouteRecordRaw[] = [
         name: 'shares',
         component: SharesView,
         meta: {
-          title: '我的分享',
-          description: '所有已建立的分享連結。可釘選到頂端、命名、複製連結、刪除。',
+          title: '共有',
+          description: '作成済みの共有リンクを管理します。固定、命名、コピー、削除ができます。',
         },
       },
       {
@@ -55,17 +58,35 @@ const routes: RouteRecordRaw[] = [
         name: 'proposals',
         component: ProposalsView,
         meta: {
-          title: '精選隊伍',
-          description: '玩家公開分享的單隊提案。可投票、加入自己的編組，或檢視預覽。',
+          title: 'おすすめ編成',
+          description: '公開された部隊の提案です。投票、編成への追加、プレビュー確認ができます。',
         },
       },
       {
-        path: 'gacha-log',
-        name: 'gachaLog',
-        component: GachaLogPage,
+        path: 'battle-sim',
+        name: 'battleSim',
+        component: BattleSimulator,
         meta: {
-          title: '抽卡紀錄',
-          description: '為每個祈願池逐抽記錄，自動計算保底進度與稀有間隔；可分享給朋友檢視。',
+          title: '戦闘シミュレータ',
+          description: '保存した編成を使って、ターン制戦闘・ダメージ計算・戦法発動を試算します。',
+        },
+      },
+      {
+        path: 'mock-battle',
+        name: 'mockBattle',
+        component: MockBattle,
+        meta: {
+          title: '模擬対戦',
+          description: '自軍編成と敵軍編成を作成し、1戦分のターンログを確認します。',
+        },
+      },
+      {
+        path: 'ai-lineup',
+        name: 'aiLineup',
+        component: AiLineupOptimizer,
+        meta: {
+          title: 'AI編成',
+          description: '固定した武将・戦法をもとに、空き枠の組み合わせを総当たりで探索します。',
         },
       },
       {
@@ -73,6 +94,15 @@ const routes: RouteRecordRaw[] = [
         name: 'settings',
         component: SettingsView,
         meta: { title: '設定', description: '語系、外觀、帳號設定。' },
+      },
+      {
+        path: 'heroes',
+        name: 'heroDb',
+        component: HeroDatabaseView,
+        meta: {
+          title: '武将データベース',
+          description: '編成時に使っている武将データを一覧表示します。',
+        },
       },
       {
         path: 'coming-soon/:topic?',

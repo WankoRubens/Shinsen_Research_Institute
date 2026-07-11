@@ -55,17 +55,18 @@
         class="library-tabs flex-1 flex flex-col px-0 pt-0 md:px-4 md:pt-2"
         stretch
       >
-        <el-tab-pane label="武將庫" name="heroes" class="h-full flex flex-col overflow-hidden">
+        <el-tab-pane label="武将庫" name="heroes" class="h-full flex flex-col overflow-hidden">
           <HeroLibrary
             mode="select"
             :used-heroes="allUsedHeroNames"
             :owned-heroes="ownedHeroes"
             :filter-owned="showOwnedOnly"
+            :allowed-rarities="[5, 4]"
             @update:filterOwned="(val: boolean) => $emit('update:showOwnedOnly', val)"
             @select="(hero: Hero) => $emit('select-hero-from-library', hero)"
           />
         </el-tab-pane>
-        <el-tab-pane label="戰法庫" name="skills" class="h-full flex flex-col overflow-hidden">
+        <el-tab-pane label="戦法庫" name="skills" class="h-full flex flex-col overflow-hidden">
           <SkillLibrary
             mode="select"
             :used-skills="allUsedSkillNames"
@@ -93,9 +94,9 @@ export type Role = 'main' | 'vice1' | 'vice2'
 export type LibraryTab = 'heroes' | 'skills'
 
 const SLOTS: Array<{ role: Role; title: string }> = [
-  { role: 'main', title: '大將' },
-  { role: 'vice1', title: '副將' },
-  { role: 'vice2', title: '副將' },
+  { role: 'main', title: '大将' },
+  { role: 'vice1', title: '副将' },
+  { role: 'vice2', title: '副将' },
 ]
 
 defineProps<{

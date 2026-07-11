@@ -12,8 +12,7 @@
       </span>
 
       <span v-else-if="segment.type === 'scale'" class="text-purple-600 font-bold">
-        <span v-if="segment.data?.value">{{ segment.data.value }}</span>
-        <span v-if="segment.data?.statInfo">受{{ segment.data.statInfo }}影響</span>
+        {{ scaleText(segment.data?.statInfo, segment.data?.value) }}
       </span>
 
       <span v-else-if="segment.type === 'stat'" class="text-emerald-600 font-bold">
@@ -30,10 +29,10 @@ import { useTemplateParser } from '../composables/useTemplateParser'
 const props = defineProps({
   text: { type: String, default: '' },
   isMaxLevel: { type: Boolean, default: false },
-  vars: { type: Object, default: () => ({}) }
+  vars: { type: Object, default: () => ({}) },
 })
 
-const { parseText } = useTemplateParser()
+const { parseText, scaleText } = useTemplateParser()
 
 const parsedText = computed(() => parseText(props.text, props.isMaxLevel, props.vars))
 </script>

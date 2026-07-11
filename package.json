@@ -12,8 +12,7 @@
     "build": "npm run data && vite build",
     "deploy:alt": "npm run build && cp -r dist/* ../nobunaga-deploy/ && cd ../nobunaga-deploy && git add . && git commit -m \"Update site\" && git push",
     "preview": "vite preview",
-    "db:link:dev": "supabase link --project-ref pptoljoymqbflmucyxzo",
-    "db:link:prod": "supabase link --project-ref ebmamfpeffgkmhpyoyul",
+    "db:link": "supabase link --project-ref bncsamqesqxtymbuhess",
     "db:push": "echo '→ Pushing to:' && grep '\"name\"' supabase/.temp/linked-project.json && supabase db push && supabase db dump --linked --schema public -f supabase/schema.sql"
   },
   "devDependencies": {

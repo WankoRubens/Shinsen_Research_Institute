@@ -7,15 +7,13 @@ ALTER TABLE public.shares
 
 ALTER TABLE public.shares
   ADD CONSTRAINT shares_kind_check
-  CHECK (kind IN ('lineup', 'group', 'inventory', 'profile', 'gacha_log'));
+  CHECK (kind IN ('lineup', 'group', 'inventory', 'profile'));
 
--- Backfill existing rows. Order matters: gacha_log is the only blob with an
--- explicit kind marker; profile is identified by display_name prefix (the
+-- Backfill existing rows. Profile is identified by display_name prefix (the
 -- only signal we have, since blob shape is identical to inventory shares);
 -- v3 groups → group; v2 lineups[N>1] → group, lineups[1] → lineup;
 -- inventory-only when no teams present; everything else falls back to lineup.
 UPDATE public.shares SET kind = CASE
-  WHEN blob->>'kind' = 'gacha_log' THEN 'gacha_log'
   WHEN display_name LIKE '角色配置：%' THEN 'profile'
   WHEN blob ? 'groups' THEN 'group'
   WHEN jsonb_typeof(blob->'lineups') = 'array' AND jsonb_array_length(blob->'lineups') > 1 THEN 'group'

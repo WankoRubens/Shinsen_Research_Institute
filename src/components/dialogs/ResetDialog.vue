@@ -9,26 +9,26 @@
     <div class="flex flex-col gap-3">
       <el-button type="danger" plain size="large" @click="$emit('confirm', 'team')" class="w-full !m-0">
         <div class="flex flex-col items-center">
-          <span class="font-bold">重置當前隊伍</span>
-          <span class="text-xs opacity-80">僅清空目前顯示的隊伍</span>
+          <span class="font-bold">現在の部隊をリセット</span>
+          <span class="text-xs opacity-80">現在表示中の部隊だけを空にします</span>
         </div>
       </el-button>
       <el-button type="danger" plain size="large" @click="$emit('confirm', 'group')" class="w-full !m-0">
         <div class="flex flex-col items-center">
-          <span class="font-bold">重置當前編組</span>
-          <span class="text-xs opacity-80">清空目前編組內所有隊伍</span>
+          <span class="font-bold">現在の編組をリセット</span>
+          <span class="text-xs opacity-80">現在の編組内の全ての部隊を空にします</span>
         </div>
       </el-button>
       <el-button type="warning" plain size="large" @click="$emit('confirm', 'inventory')" class="w-full !m-0">
         <div class="flex flex-col items-center">
           <span class="font-bold">清空庫存</span>
-          <span class="text-xs opacity-80">移除本機標記的擁有武將與戰法</span>
+          <span class="text-xs opacity-80">この端末で所持済みにした武将と戦法を解除します</span>
         </div>
       </el-button>
       <el-button type="danger" size="large" @click="$emit('confirm', 'all')" class="w-full !m-0">
         <div class="flex flex-col items-center">
           <span class="font-bold">全部重置</span>
-          <span class="text-xs opacity-80">清空所有編組與庫存 (慎用)</span>
+          <span class="text-xs opacity-80">全ての編組と所持を空にします（注意）</span>
         </div>
       </el-button>
     </div>

@@ -1,0 +1,2 @@
+$env:Path = 'C:\Users\owner\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;' + $env:Path
+C:\Users\owner\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\pnpm.cmd exec vite --host 127.0.0.1

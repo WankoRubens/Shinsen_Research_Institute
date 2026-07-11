@@ -39,14 +39,14 @@
             @keydown.space.stop.prevent="$emit('remove-team', idx)"
             role="button"
             tabindex="0"
-            :aria-label="`刪除 ${team.name}`"
+            :aria-label="`${team.name} を削除`"
           >
             <el-icon :size="13"><Delete /></el-icon>
           </span>
           <el-popconfirm
             v-else
-            :title="`刪除「${team.name}」？無法復原`"
-            confirm-button-text="刪除"
+            :title="`「${team.name}」を削除しますか？元に戻せません`"
+            confirm-button-text="削除"
             cancel-button-text="取消"
             confirm-button-type="danger"
             :width="220"
@@ -58,7 +58,7 @@
                 @click.stop
                 role="button"
                 tabindex="0"
-                :aria-label="`刪除 ${team.name}`"
+                  :aria-label="`${team.name} を削除`"
               >
                 <el-icon :size="13"><Delete /></el-icon>
               </span>
@@ -83,15 +83,15 @@
     <div class="border-t border-divider px-3 py-3 flex flex-col gap-1.5">
       <button class="action-row" @click="$emit('share')">
         <el-icon :size="14"><Share /></el-icon>
-        <span>分享</span>
+        <span>共有</span>
       </button>
       <button class="action-row" @click="$emit('save-as-proposal')">
         <el-icon :size="14"><Document /></el-icon>
-        <span>另存為精選隊伍</span>
+        <span>おすすめ編成として保存</span>
       </button>
       <button class="action-row" @click="$emit('export-to-group')">
         <el-icon :size="14"><Position /></el-icon>
-        <span>導出到其他編組</span>
+        <span>他の編組へ書き出す</span>
       </button>
     </div>
   </aside>
