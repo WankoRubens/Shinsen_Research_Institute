@@ -39,7 +39,7 @@ jobs:
           enable-cache: true
 
       - name: Install Node dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Build
         run: npm run build
