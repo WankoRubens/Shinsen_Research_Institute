@@ -37,6 +37,9 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Fetch cfg data
+        run: uv run script/fetch_cfg.py
+
       - name: Enable pnpm
         run: |
           corepack enable
