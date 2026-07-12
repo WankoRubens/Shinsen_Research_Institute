@@ -27,19 +27,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-
-      - name: Fetch cfg data
-        run: uv run script/fetch_cfg.py
-
       - name: Enable pnpm
         run: |
           corepack enable
@@ -49,7 +36,7 @@ jobs:
         run: pnpm install --ignore-scripts --no-frozen-lockfile
 
       - name: Build
-        run: pnpm run build
+        run: pnpm exec vite build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}

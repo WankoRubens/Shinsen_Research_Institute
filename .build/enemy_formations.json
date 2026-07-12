@@ -1,0 +1,759 @@
+[
+  {
+    "id": "s3-tier-01",
+    "name": "Tier0 豊臣家 弓 黒田官兵衛",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c113",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c56",
+        "skill1_id": "t169",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c62",
+        "skill1_id": "t107",
+        "skill2_id": "t44",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-02",
+    "name": "Tier0 豊臣家 弓/足/鉄 黒田官兵衛・ねね制御",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c113",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c56",
+        "skill1_id": "t169",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c62",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-03",
+    "name": "Tier0 豊臣家 弓/足/鉄 黒田官兵衛・ねね回復",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c113",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c56",
+        "skill1_id": "t169",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c62",
+        "skill1_id": "惠風和雨",
+        "skill2_id": "t38",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-04",
+    "name": "Tier0 群雄 足 立花誾千代",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "skill1_id": "t_i1",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "commander_id": "c34",
+        "skill1_id": "勇猛無前",
+        "skill2_id": "t43",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t28",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-05",
+    "name": "Tier0 徳川家 足 徳川家康・本多忠勝・本多正信",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c24",
+        "skill1_id": "t3",
+        "skill2_id": "t169",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率"
+      },
+      {
+        "commander_id": "c25",
+        "skill1_id": "t6",
+        "skill2_id": "t33",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "commander_id": "c29",
+        "skill1_id": "t_i8",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-06",
+    "name": "Tier0 武田家 弓 武田信玄・馬場信春・真田昌幸",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c14",
+        "skill1_id": "t8",
+        "skill2_id": "t23",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c15",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率"
+      },
+      {
+        "skill1_id": "t15",
+        "skill2_id": "瞬息萬變",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-07",
+    "name": "Tier0 武田家 騎 武田信玄・山県昌景・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c14",
+        "skill1_id": "t8",
+        "skill2_id": "t23",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c115",
+        "skill1_id": "勇猛無前",
+        "skill2_id": "t39",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t31",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+知"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-08",
+    "name": "Tier0.5 織田家 鉄 明智光秀・真田昌幸・帰蝶",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c2",
+        "skill1_id": "t4",
+        "skill2_id": "t_i5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "skill1_id": "瞬息萬變",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c6",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-09",
+    "name": "Tier0.5 織田家 騎 前田利家・柴田勝家・まつ",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c4",
+        "skill1_id": "勇猛無前",
+        "skill2_id": "t1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "commander_id": "c3",
+        "skill1_id": "t40",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "skill1_id": "t28",
+        "skill2_id": "惠風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-10",
+    "name": "Tier0.5 徳川家 足 徳川家康・本多忠勝・お江",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c24",
+        "skill1_id": "t3",
+        "skill2_id": "t169",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率"
+      },
+      {
+        "commander_id": "c25",
+        "skill1_id": "t6",
+        "skill2_id": "t33",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "skill1_id": "惠風和雨",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-11",
+    "name": "Tier0.5 豊臣家 弓 黒田官兵衛・豊臣秀吉・お初",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c113",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c56",
+        "skill1_id": "t169",
+        "skill2_id": "t29",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "skill1_id": "t107",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-12",
+    "name": "Tier0.5 群雄 弓 北条綱成・立花道雪・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "commander_id": "c34",
+        "skill1_id": "勇猛無前",
+        "skill2_id": "t43",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t107",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+知"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-13",
+    "name": "Tier0.5 群雄 弓 本願寺顕如・毛利元就・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c37",
+        "skill1_id": "t4",
+        "skill2_id": "t14",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c31",
+        "skill1_id": "t107",
+        "skill2_id": "t38",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+知"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-14",
+    "name": "Tier0.5 群雄 足 立花誾千代・立花道雪・安宅冬康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "skill1_id": "t_i1",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "commander_id": "c34",
+        "skill1_id": "勇猛無前",
+        "skill2_id": "t43",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "skill1_id": "t28",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-15",
+    "name": "Tier0.5 混合 騎 北条綱成・柿崎景家・お江",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t2",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "skill1_id": "t172",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "skill1_id": "合盟之陣",
+        "skill2_id": "惠風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-16",
+    "name": "Tier0.5 混合 騎 北条綱成・柿崎景家・本多正信",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t2",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "skill1_id": "t172",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "commander_id": "c29",
+        "skill1_id": "合盟之陣",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-17",
+    "name": "Tier0.5 混合 騎 北条綱成・柿崎景家・お初",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t2",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "skill1_id": "t172",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "skill1_id": "合盟之陣",
+        "skill2_id": "惠風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-18",
+    "name": "Tier0.5 豊臣家 弓 豊臣秀吉・福島正則・ねね",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c56",
+        "skill1_id": "t5",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c59",
+        "skill1_id": "t172",
+        "skill2_id": "t1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "commander_id": "c62",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-19",
+    "name": "Tier0.5 武田家 騎 武田信玄・真田昌幸・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c14",
+        "skill1_id": "t8",
+        "skill2_id": "t23",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "skill1_id": "t31",
+        "skill2_id": "瞬息萬變",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+知"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-20",
+    "name": "Tier0.5 武田家 騎 武田信玄・馬場信春・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c14",
+        "skill1_id": "t8",
+        "skill2_id": "t23",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c15",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率"
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+知"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-21",
+    "name": "Tier0.5 武田家 騎 山県昌景・馬場信春・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c115",
+        "skill1_id": "勇猛無前",
+        "skill2_id": "t39",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇"
+      },
+      {
+        "commander_id": "c15",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率"
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+知"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-22",
+    "name": "Tier0.5 織田家 鉄 織田信長・明智光秀・帰蝶",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c1",
+        "skill1_id": "t169",
+        "skill2_id": "t108",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率"
+      },
+      {
+        "commander_id": "c2",
+        "skill1_id": "t4",
+        "skill2_id": "t_i5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c6",
+        "skill1_id": "t38",
+        "skill2_id": "惠風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-23",
+    "name": "Tier0.5 豊臣家 弓 豊臣秀吉・真田昌幸・ねね",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c56",
+        "skill1_id": "t31",
+        "skill2_id": "奇策縱橫",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "skill1_id": "t107",
+        "skill2_id": "瞬息萬變",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c62",
+        "skill1_id": "惠風和雨",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-24",
+    "name": "Tier0.5 豊臣家 弓 黒田官兵衛・真田昌幸・お初",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c113",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "skill1_id": "t107",
+        "skill2_id": "瞬息萬變",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "skill1_id": "惠風和雨",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      }
+    ]
+  },
+  {
+    "id": "s3-tier-25",
+    "name": "Tier0.5 群雄 弓 北条綱成・真田昌幸・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+武"
+      },
+      {
+        "skill1_id": "瞬息萬變",
+        "skill2_id": "t2",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略"
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t107",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度+知"
+      }
+    ]
+  }
+]
