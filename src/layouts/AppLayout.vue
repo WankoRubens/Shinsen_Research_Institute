@@ -109,7 +109,7 @@ const { t } = useLocale()
 const COMING_SOON_META: Record<string, { title: string; description: string }> = {
   'battle-sim': {
     title: '戰鬥模擬',
-    description: '依照雙方陣容自動推演戰鬥流程；老實說目前八字沒半撇，先別期待。',
+    description: '両軍の編成から戦闘の流れを自動で推演します。',
   },
   'hero-db': {
     title: '武将データベース',
@@ -205,7 +205,7 @@ const onApplyProfile = (id: string) => {
     return
   }
   applyProfile(p)
-  ElMessage.success(`已套用「${p.name}」`)
+  ElMessage.success(`「${p.name}」を適用しました`)
 }
 
 const onUnloadProfile = () => {
@@ -214,7 +214,7 @@ const onUnloadProfile = () => {
     return
   }
   unloadProfile()
-  ElMessage.info('已切換為不使用任何角色配置')
+  ElMessage.info('所持設定を使用しない状態に切り替えました')
 }
 
 // Commit the temp inventory to the active profile. saveInventory() copies
@@ -223,7 +223,7 @@ const onUnloadProfile = () => {
 const onSaveInventoryToActive = async () => {
   const active = activeProfile.value
   if (!active) {
-    ElMessage.error('沒有作用中的角色配置')
+    ElMessage.error('有効な所持設定がありません')
     return
   }
   saveInventory()
@@ -232,7 +232,7 @@ const onSaveInventoryToActive = async () => {
     await updateProfileInventory(active.id, inv_h, inv_s)
     syncActiveProfile({ ...active, inv_h, inv_s, updated_at: new Date().toISOString() })
     void refreshProfiles().catch(() => { /* swallow */ })
-    ElMessage.success(`已更新「${active.name}」`)
+    ElMessage.success(`「${active.name}」を更新しました`)
   } catch (e) {
     ElMessage.error(`保存に失敗しました: ${(e as Error).message}`)
   }
@@ -247,7 +247,7 @@ const onSaveInventoryToNew = async (name: string) => {
     const created: Profile = await createProfile({ name, inv_h, inv_s })
     applyProfile(created)
     void refreshProfiles().catch(() => { /* swallow */ })
-    ElMessage.success(`已建立並切換到「${name}」`)
+    ElMessage.success(`「${name}」を作成して切り替えました`)
   } catch (e) {
     ElMessage.error(`作成に失敗しました: ${(e as Error).message}`)
   }
@@ -262,14 +262,14 @@ watch(renameDialogVisible, (now) => {
 const submitRename = async () => {
   const name = renameInput.value.trim()
   if (!name) {
-    ElMessage.warning('名稱不可為空')
+    ElMessage.warning('名前は空にできません')
     return
   }
   renameSaving.value = true
   try {
     await updateDisplayName(name)
     renameDialogVisible.value = false
-    ElMessage.success('名稱已更新')
+    ElMessage.success('名前を更新しました')
   } catch (e) {
     ElMessage.error(`更新に失敗しました: ${(e as Error).message}`)
   } finally {

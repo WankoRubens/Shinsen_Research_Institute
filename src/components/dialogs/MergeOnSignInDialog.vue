@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="偵測到尚未同步的編組變更"
+    title="未同期の編成変更があります"
     width="600px"
     :close-on-click-modal="false"
     :show-close="false"
@@ -9,7 +9,7 @@
   >
     <template v-if="ctx">
       <p class="text-sm text-ink-soft mb-4 leading-relaxed">
-        這台裝置上有尚未同步的編組，與此帳號上次保存的編組不同。請選擇要如何整合：
+        この端末には未同期の編成があり、このアカウントに前回保存された編成と異なります。統合方法を選択してください。
       </p>
 
       <!-- Local vs cloud side cards. Each side has a 預覽 button that opens
@@ -18,9 +18,9 @@
       <div class="grid grid-cols-2 gap-3 mb-5">
         <section class="side-card">
           <header class="side-card__head">
-            <span class="side-card__tag">此裝置</span>
+            <span class="side-card__tag">この端末</span>
             <span class="side-card__count tabular-nums">
-              <strong>{{ localCount }}</strong> 編組
+              <strong>{{ localCount }}</strong> 編成
             </span>
           </header>
           <ul class="side-card__list">
@@ -28,7 +28,7 @@
               {{ g.name }} <span class="text-ink-mute">· {{ nonEmptyCount(g.teams) }} 隊</span>
             </li>
             <li v-if="localOverflow > 0" class="text-ink-mute italic">
-              … 以及其他 {{ localOverflow }} 個
+              … ほか {{ localOverflow }} 件
             </li>
           </ul>
           <el-button
@@ -37,14 +37,14 @@
             :icon="View"
             class="!rounded-sm side-card__preview"
             @click="openLocalPreview"
-          >預覽此裝置編組</el-button>
+          >この端末の編成をプレビュー</el-button>
         </section>
 
         <section class="side-card">
           <header class="side-card__head">
-            <span class="side-card__tag side-card__tag--cloud">帳號保存</span>
+            <span class="side-card__tag side-card__tag--cloud">アカウント保存</span>
             <span class="side-card__count tabular-nums">
-              <strong>{{ cloudCount }}</strong> 編組
+              <strong>{{ cloudCount }}</strong> 編成
             </span>
           </header>
           <ul class="side-card__list">
@@ -52,7 +52,7 @@
               {{ r.name }} <span class="text-ink-mute">· {{ nonEmptyCount(r.teams) }} 隊</span>
             </li>
             <li v-if="cloudOverflow > 0" class="text-ink-mute italic">
-              … 以及其他 {{ cloudOverflow }} 個
+              … ほか {{ cloudOverflow }} 件
             </li>
           </ul>
           <el-button
@@ -61,7 +61,7 @@
             :icon="View"
             class="!rounded-sm side-card__preview"
             @click="openCloudPreview"
-          >預覽帳號保存的編組</el-button>
+          >アカウント保存の編成をプレビュー</el-button>
         </section>
       </div>
 
@@ -108,13 +108,13 @@
        cascade into closing the merge dialog. -->
   <el-dialog
     v-model="localPreviewOpen"
-    title="此裝置編組預覽"
+    title="この端末の編成プレビュー"
     width="720px"
     append-to-body
     align-center
   >
     <div v-if="localGroupsHydrated.length === 0" class="text-center text-ink-mute py-6 text-sm">
-      此裝置沒有可預覽的編組。
+      この端末にプレビューできる編成はありません。
     </div>
     <div v-else class="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
       <GroupPreviewCard
@@ -129,13 +129,13 @@
 
   <el-dialog
     v-model="cloudPreviewOpen"
-    title="帳號保存的編組預覽"
+    title="アカウント保存の編成プレビュー"
     width="720px"
     append-to-body
     align-center
   >
     <div v-if="cloudGroupsHydrated.length === 0" class="text-center text-ink-mute py-6 text-sm">
-      此帳號之前沒有保存的編組。
+      このアカウントには以前保存した編成がありません。
     </div>
     <div v-else class="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
       <GroupPreviewCard
@@ -167,17 +167,17 @@ const OPTIONS = [
   {
     value: 'append',
     label: '兩邊都保留（合併）',
-    hint: `此裝置上的編組保持不動，帳號之前保存的編組接在後面（總計最多 ${APPEND_MAX_TOTAL} 個）。`,
+    hint: `この端末の編成はそのまま残し、アカウントに保存済みの編成を後ろへ追加します（合計最大 ${APPEND_MAX_TOTAL} 件）。`,
   },
   {
     value: 'keep-cloud',
-    label: '採用帳號之前保存的編組（捨棄這台裝置上的變更）',
-    hint: '此裝置上的變更會自動建立備份分享連結後再被取代，可在「我的分享」找回。',
+    label: 'アカウントに保存済みの編成を採用（この端末の変更は破棄）',
+    hint: 'この端末の変更はバックアップ共有リンクを自動作成してから置き換えます。「共有」から復元できます。',
   },
   {
     value: 'keep-local',
-    label: '採用這台裝置目前的編組（覆寫帳號之前保存的）',
-    hint: '帳號之前保存的編組會先建立備份分享連結再被覆寫，可在「我的分享」找回。',
+    label: 'この端末の現在の編成を採用（アカウント保存を上書き）',
+    hint: 'アカウントに保存済みの編成はバックアップ共有リンクを自動作成してから上書きします。「共有」から復元できます。',
   },
 ] as const
 
@@ -270,12 +270,12 @@ const openCloudPreview = () => { cloudPreviewOpen.value = true }
 const showBackupToast = (slug: string | null | undefined, label: string): void => {
   if (slug) {
     ElMessage.success({
-      message: `${label}，已建立備份分享連結（在「我的分享」可找到）`,
+      message: `${label}。バックアップ共有リンクを作成しました（「共有」から確認できます）`,
       duration: 5000,
     })
   } else {
     ElMessage.warning(
-      `${label}，但備份分享連結建立失敗，請手動分享後再決定`,
+      `${label}。ただしバックアップ共有リンクの作成に失敗しました。手動で共有してから判断してください`,
     )
   }
 }
@@ -285,13 +285,13 @@ const onConfirm = async () => {
   try {
     if (choice.value === 'append') {
       await resolveMergeAppend()
-      ElMessage.success('已合併兩邊的編組')
+      ElMessage.success('両方の編成を統合しました')
     } else if (choice.value === 'keep-cloud') {
       const res = await resolveMergeKeepCloud()
-      showBackupToast(res.backupSlug, '已採用帳號之前保存的編組')
+      showBackupToast(res.backupSlug, 'アカウントに保存済みの編成を採用しました')
     } else if (choice.value === 'keep-local') {
       const res = await resolveMergeKeepLocal()
-      showBackupToast(res.backupSlug, '已用此裝置的編組覆寫帳號保存版本')
+      showBackupToast(res.backupSlug, 'この端末の編成でアカウント保存版を上書きしました')
     }
   } finally {
     busy.value = false
@@ -300,7 +300,7 @@ const onConfirm = async () => {
 
 const onCancel = () => {
   resolveMergeCancel()
-  ElMessage.info('已暫不同步，下次登入會再詢問')
+  ElMessage.info('今回は同期しません。次回ログイン時に再確認します')
 }
 </script>
 

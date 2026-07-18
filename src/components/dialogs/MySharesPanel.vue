@@ -9,7 +9,7 @@
         <template #default="{ row }">
           <button
             @click="togglePin(row)"
-            :title="row.pinned ? '取消釘選' : '釘選到頂端'"
+            :title="row.pinned ? '固定を解除' : '上部に固定'"
             class="pin-btn"
             :class="{ 'pin-btn-on': row.pinned }"
           >
@@ -17,7 +17,7 @@
           </button>
         </template>
       </el-table-column>
-      <el-table-column label="名稱" min-width="180">
+      <el-table-column label="名前" min-width="180">
         <template #default="{ row }">
           <div v-if="editingSlug === row.slug" class="flex items-center gap-1">
             <el-input
@@ -53,7 +53,7 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="連結" width="160">
+      <el-table-column label="リンク" width="160">
         <template #default="{ row }">
           <button
             @click="copyUrl(row.slug)"
@@ -85,8 +85,8 @@
         <template #default="{ row }">
           <el-popconfirm
             title="この共有を削除しますか？削除するとリンクはすぐ無効になります。"
-            confirm-button-text="刪除"
-            cancel-button-text="取消"
+            confirm-button-text="削除"
+            cancel-button-text="キャンセル"
             confirm-button-type="danger"
             @confirm="remove(row)"
           >
@@ -193,7 +193,7 @@ const saveName = async (s: MyShare) => {
     s.display_name = next || null
     s.updated_at = new Date().toISOString()
     cancelEdit()
-    ElMessage.success('已更新')
+    ElMessage.success('更新しました')
   } catch (e) {
     ElMessage.error(`更新失敗：${(e as Error).message}`)
   }
@@ -203,9 +203,9 @@ const remove = async (s: MyShare) => {
   try {
     await deleteMyShare(s.slug)
     shares.value = shares.value.filter(x => x.slug !== s.slug)
-    ElMessage.success('已刪除')
+    ElMessage.success('削除しました')
   } catch (e) {
-    ElMessage.error(`刪除失敗：${(e as Error).message}`)
+    ElMessage.error(`削除に失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -216,14 +216,14 @@ const togglePin = async (s: MyShare) => {
     s.pinned = next
     s.updated_at = new Date().toISOString()
   } catch (e) {
-    ElMessage.error(`${next ? '釘選' : '取消釘選'}失敗：${(e as Error).message}`)
+    ElMessage.error(`${next ? '固定' : '固定解除'}に失敗しました: ${(e as Error).message}`)
   }
 }
 
 const copyUrl = (slug: string) => {
   const url = `${window.location.origin}${window.location.pathname}#s/${slug}`
   navigator.clipboard.writeText(url).then(() => {
-    ElMessage.success('連結已複製')
+    ElMessage.success('リンクをコピーしました')
   }).catch(() => {
     ElMessage.error('複製失敗')
   })

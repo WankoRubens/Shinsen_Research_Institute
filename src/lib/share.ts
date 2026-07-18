@@ -27,7 +27,7 @@ export type ShareKind = typeof SHARE_KINDS[number]
 
 export const SHARE_KIND_LABELS: Record<ShareKind, string> = {
   lineup: '単隊',
-  group: '編組',
+  group: '編成',
   inventory: '所持',
   profile: '所持設定',
 }

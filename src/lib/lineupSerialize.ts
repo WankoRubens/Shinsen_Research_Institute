@@ -311,7 +311,7 @@ export const applyBlobToState = (
         .slice(0, MAX_TEAMS_PER_GROUP)
         .map((l, i) => buildTeamFromShareable(l, i, deps, report))
       if (teams.length === 0) teams.push(makeTeam(0))
-      return { id: g.id, name: g.name || '預設', teams }
+      return { id: g.id, name: g.name || 'デフォルト', teams }
     })
     deps.replaceGroups(incoming)
   } else if (data.lineups && data.lineups.length > 0) {

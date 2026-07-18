@@ -9,7 +9,7 @@
     <template v-if="source">
       <p class="text-sm text-ink-soft mb-4 leading-relaxed">
         將「<span class="font-bold text-ink">{{ source.displayName }}</span>」
-        匯入到目標編組。容量已滿的編組會被停用。
+        目標の編成へ取り込みます。容量が上限に達している編成は選択できません。
       </p>
 
       <!-- Destination picker — one VersionCard row per group. -->
@@ -31,7 +31,7 @@
         >
           <VersionCard
             :name="opt.name"
-            :tag="opt.isFull ? '已滿' : '編組'"
+            :tag="opt.isFull ? '満員' : '編成'"
             :tag-variant="selectedIdx === opt.idx ? 'highlight' : 'default'"
           >
             <template #meta>
@@ -45,7 +45,7 @@
       </div>
 
       <p v-else class="text-sm text-ink-mute py-6 text-center">
-        尚無其他編組可作為匯入目標。請先在「我的編組」建立新編組。
+        取り込み先にできる他の編成がありません。先に「保存した編成」で新しい編成を作成してください。
       </p>
 
       <!-- Conflict resolution radio — only when the selected destination has
@@ -56,37 +56,37 @@
         v-if="hasAnyConflict"
         class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 leading-snug mb-2"
       >
-        <p class="font-bold mb-1">與「{{ selectedGroupName }}」其它隊伍重複</p>
+        <p class="font-bold mb-1">「{{ selectedGroupName }}」内の他部隊と重複しています</p>
         <p v-if="collisionPreview.heroes.length > 0">
-          武將：<span class="font-mono">{{ collisionPreview.heroes.join('、') }}</span>
+          武将：<span class="font-mono">{{ collisionPreview.heroes.join('、') }}</span>
         </p>
         <p v-if="collisionPreview.skills.length > 0">
-          戰法：<span class="font-mono">{{ collisionPreview.skills.join('、') }}</span>
+          戦法：<span class="font-mono">{{ collisionPreview.skills.join('、') }}</span>
         </p>
       </div>
     </template>
 
     <template #footer>
       <div class="flex justify-end gap-2 flex-wrap">
-        <el-button class="!rounded-sm" @click="onCancel">取消</el-button>
+        <el-button class="!rounded-sm" @click="onCancel">キャンセル</el-button>
         <template v-if="!hasAnyConflict">
           <el-button
             type="primary"
             class="!rounded-sm"
             :disabled="!canConfirm"
             @click="onConfirm('overwrite')"
-          >匯入到「{{ selectedGroupName || '—' }}」</el-button>
+          >「{{ selectedGroupName || '—' }}」へ取り込む</el-button>
         </template>
         <template v-else>
           <el-button class="!rounded-sm" :disabled="!canConfirm" @click="onConfirm('leave-empty')">
-            留空匯入
+            空のまま取り込む
           </el-button>
           <el-button
             type="primary"
             class="!rounded-sm"
             :disabled="!canConfirm"
             @click="onConfirm('overwrite')"
-          >從原隊移除</el-button>
+          >元の部隊から外す</el-button>
         </template>
       </div>
     </template>
@@ -211,15 +211,15 @@ const hasAnyConflict = computed(
 const collisionSummary = computed(() => {
   const { heroes, skills } = collisionPreview.value
   const parts: string[] = []
-  if (heroes.length > 0) parts.push(`武將×${heroes.length}`)
-  if (skills.length > 0) parts.push(`戰法×${skills.length}`)
+  if (heroes.length > 0) parts.push(`武将×${heroes.length}`)
+  if (skills.length > 0) parts.push(`戦法×${skills.length}`)
   return parts.length > 0 ? `衝突 ${parts.join(' / ')}` : ''
 })
 
 // Title shifts copy slightly depending on caller intent — same dialog,
 // different mental model. Lineup builder = "export out"; proposals = "import in".
 const dialogTitle = computed(() =>
-  props.variant === 'import' ? '匯入到編組' : '導出到其他編組',
+  props.variant === 'import' ? '編成へ取り込む' : '他の編成へ書き出す',
 )
 
 const canConfirm = computed(() => {

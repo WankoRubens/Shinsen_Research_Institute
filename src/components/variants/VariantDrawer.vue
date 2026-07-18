@@ -35,7 +35,7 @@
         <div class="set-stats">
           <span class="stat">
             <span class="stat-num">{{ heroSet.variantCount }}</span>
-            <span class="stat-label">變體</span>
+            <span class="stat-label">派生案</span>
           </span>
           <span class="stat-divider" />
           <span class="stat stat--up">
@@ -57,7 +57,7 @@
            visual rhythm. -->
       <div class="controls">
         <span class="controls-label">排序</span>
-        <div class="sort-pills" role="radiogroup" aria-label="變體排序方式">
+        <div class="sort-pills" role="radiogroup" aria-label="派生案の並び順">
           <button
             type="button"
             class="sort-pill"
@@ -89,7 +89,7 @@
 
       <div class="variant-list" v-loading="loading">
         <p v-if="!loading && variants.length === 0" class="empty">
-          這個英雄組合還沒有變體。
+          この武将組み合わせにはまだ派生案がありません。
         </p>
         <VariantCard
           v-for="v in variants"
@@ -189,13 +189,13 @@ const consensusInfo = computed<{ label: string; tooltip: string } | null>(() => 
   if (share >= 0.6) {
     return {
       label: '共識型',
-      tooltip: `頂部變體佔 ${Math.round(share * 100)}% 贊數 — 玩家普遍認同單一配法`,
+      tooltip: `上位の派生案が ${Math.round(share * 100)}% の賛成を集めています。単一の組み方が広く支持されています`,
     }
   }
   if (share < 0.4) {
     return {
       label: '分歧型',
-      tooltip: '贊數分散於多個變體 — 仍在被積極研究的活躍 meta',
+      tooltip: '賛成が複数の派生案に分散しています。まだ研究が進んでいる編成です',
     }
   }
   return null

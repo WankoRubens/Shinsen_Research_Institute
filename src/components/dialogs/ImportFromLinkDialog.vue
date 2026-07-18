@@ -41,7 +41,7 @@
     <div v-else-if="phase === 'ready'" class="flex flex-col gap-4">
       <p class="text-sm text-ink-soft leading-relaxed">
         この共有には <strong class="text-ink">{{ totalTeams }}</strong> 部隊が含まれ、
-        <strong class="text-ink">{{ hydratedGroups.length }}</strong> 個の編組に分かれています。取り込み方法を選択してください。
+        <strong class="text-ink">{{ hydratedGroups.length }}</strong> 個の編成に分かれています。取り込み方法を選択してください。
       </p>
 
       <!-- Mode picker — option-card pattern mirrors MergeOnSignInDialog so
@@ -55,9 +55,9 @@
         >
           <input type="radio" class="option-card__radio" value="set" v-model="mode" />
           <div class="option-card__content">
-            <span class="option-card__title">整組匯入</span>
+            <span class="option-card__title">編成ごと取り込む</span>
             <span class="option-card__hint">
-              {{ hydratedGroups.length }} 個の編組として追加
+              {{ hydratedGroups.length }} 個の編成として追加
             </span>
           </div>
         </label>
@@ -67,9 +67,9 @@
         >
           <input type="radio" class="option-card__radio" value="pick" v-model="mode" />
           <div class="option-card__content">
-            <span class="option-card__title">挑選隊伍</span>
+            <span class="option-card__title">部隊を選ぶ</span>
             <span class="option-card__hint">
-              共有内容から部隊を選び、現在の編組へ追加または現在の部隊を上書き
+              共有内容から部隊を選び、現在の編成へ追加または現在の部隊を上書き
             </span>
           </div>
         </label>
@@ -81,9 +81,9 @@
           v-for="g in hydratedGroups"
           :key="g.key"
           :name="g.displayName"
-          tag="匯入"
+          tag="取り込み"
           tag-variant="highlight"
-          :warning="g.collidesWithExisting ? '將自動加上「匯入-」前綴' : undefined"
+          :warning="g.collidesWithExisting ? '自動で「取り込み-」を先頭に付けます' : undefined"
         >
           <template #meta>
             <span><strong>{{ g.teams.length }}</strong> 隊</span>
@@ -99,7 +99,7 @@
            dialog and the set-mode preview above. -->
       <div v-else class="flex flex-col gap-3">
         <div class="text-xs text-ink-mute">
-          現在の編組の空き枠:
+          現在の編成の空き枠:
           <strong class="tabular-nums" :class="capacityLeft <= 0 ? 'text-red-500' : 'text-ink'">
             {{ capacityLeft }}
           </strong>
@@ -109,7 +109,7 @@
             v-for="g in hydratedGroups"
             :key="g.key"
             :name="g.displayName"
-            tag="編組"
+            tag="編成"
           >
             <template #meta>
               <span><strong>{{ g.teams.length }}</strong> 隊</span>
@@ -123,18 +123,18 @@
                 @update:model-value="(v: string | number | boolean) => togglePick(`${g.key}::t${i}`, !!v)"
               >
                 <span class="text-sm text-ink">{{ t.name }}</span>
-                <span v-if="isEmptyTeam(t)" class="text-[10px] ml-1.5 text-ink-mute">（空隊伍）</span>
+                <span v-if="isEmptyTeam(t)" class="text-[10px] ml-1.5 text-ink-mute">（空の部隊）</span>
               </el-checkbox>
             </div>
           </VersionCard>
         </div>
         <!-- Append vs overwrite: only meaningful when exactly 1 selected. -->
         <el-radio-group v-if="pickedKeys.length === 1" v-model="pickAction" class="!flex gap-4">
-          <el-radio value="append">現在の編組に追加</el-radio>
-          <el-radio value="overwrite">覆寫當前顯示的隊伍</el-radio>
+          <el-radio value="append">現在の編成に追加</el-radio>
+          <el-radio value="overwrite">現在表示中の部隊を上書き</el-radio>
         </el-radio-group>
         <p v-else-if="pickedKeys.length >= 2" class="text-xs text-ink-mute">
-          {{ pickedKeys.length }} 部隊を選択中です。すべて現在の編組へ追加します（複数選択時は単一部隊の上書きはできません）。
+          {{ pickedKeys.length }} 部隊を選択中です。すべて現在の編成へ追加します（複数選択時は単一部隊の上書きはできません）。
         </p>
 
         <!-- Conflict preview against the destination (current) group. Same
@@ -143,7 +143,7 @@
           v-if="hasPickConflict"
           class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 leading-snug"
         >
-          <p class="font-bold mb-1">現在の編組内の他部隊と重複しています</p>
+          <p class="font-bold mb-1">現在の編成内の他部隊と重複しています</p>
           <p v-if="pickConflicts.heroes.length > 0">
             武将: <span class="font-mono">{{ pickConflicts.heroes.join('、') }}</span>
           </p>
@@ -156,7 +156,7 @@
 
     <template #footer>
       <div class="flex justify-end gap-2 flex-wrap">
-        <el-button class="!rounded-sm" @click="visible = false">取消</el-button>
+        <el-button class="!rounded-sm" @click="visible = false">キャンセル</el-button>
         <el-button
           v-if="phase === 'input'"
           type="primary"
@@ -169,13 +169,13 @@
             class="!rounded-sm"
             :disabled="!canImport"
             @click="onConfirm('leave-empty')"
-          >留空匯入</el-button>
+          >空のまま取り込む</el-button>
           <el-button
             type="primary"
             class="!rounded-sm"
             :disabled="!canImport"
             @click="onConfirm('overwrite')"
-          >從原隊移除</el-button>
+          >元の部隊から外す</el-button>
         </template>
         <el-button
           v-else-if="phase === 'ready'"
@@ -183,7 +183,7 @@
           class="!rounded-sm"
           :disabled="!canImport"
           @click="onConfirm('leave-empty')"
-        >匯入</el-button>
+        >取り込む</el-button>
       </div>
     </template>
   </el-dialog>
@@ -408,7 +408,7 @@ const onLoad = async () => {
   } catch (e) {
     const msg = (e as Error).message
     if (/not found/i.test(msg)) errorMessage.value = '共有内容が見つかりません（削除された可能性があります）'
-    else if (/invalid share slug/i.test(msg)) errorMessage.value = '連結格式錯誤'
+    else if (/invalid share slug/i.test(msg)) errorMessage.value = 'リンク形式が正しくありません'
     else errorMessage.value = `載入失敗：${msg}`
     phase.value = 'error'
     return
@@ -440,7 +440,7 @@ const onLoad = async () => {
         allHealed.push(...r.healed)
         return r.team
       })
-      const name = (g.name ?? '').trim() || `共有編組 ${gi + 1}`
+      const name = (g.name ?? '').trim() || `共有編成 ${gi + 1}`
       resultGroups.push({
         key: `g${gi}`,
         displayName: name,
@@ -454,7 +454,7 @@ const onLoad = async () => {
       allHealed.push(...r.healed)
       return r.team
     })
-    const name = '取り込んだ編組'
+    const name = '取り込んだ編成'
     resultGroups.push({
       key: 'g0',
       displayName: name,

@@ -14,7 +14,7 @@ const loading = ref(false)
 
 // Sticky per-session flag: true once the user has manually applied, unloaded,
 // or saved an inventory state. tryAutoApplyDefault bails when set so a manual
-// "不使用" click before listMyProfiles resolves doesn't get clobbered.
+// Preserve an explicit "do not use" click before listMyProfiles resolves.
 const userTouchedInventory = ref(false)
 
 const refresh = async (): Promise<void> => {
@@ -57,7 +57,7 @@ const tryAutoApplyDefault = async (): Promise<void> => {
     const def = profiles.value.find(p => p.is_default)
     if (def) {
       applyProfile(def)
-      ElMessage.info(`已載入預設角色配置：${def.name}`)
+      ElMessage.info(`デフォルトの所持設定を読み込みました: ${def.name}`)
     }
   } catch (e) {
     // First-time users without grants/profiles shouldn't see an error toast.
@@ -92,7 +92,7 @@ export const getOrCreateProfileShareSlug = async (p: Profile): Promise<string> =
 
   const slug = await createShare(
     { inv_h: p.inv_h, inv_s: p.inv_s },
-    { kind: 'profile', displayName: `角色配置：${p.name}` },
+    { kind: 'profile', displayName: `所持設定: ${p.name}` },
   )
   shareSlugCache.set(p.id, { slug, fingerprint: fp })
   return slug

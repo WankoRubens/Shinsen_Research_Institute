@@ -18,7 +18,7 @@
             ? '確定設為私人？其他人將無法看見此提案'
             : '確定公開此提案？所有人都能看見和投票'"
           confirm-button-text="確定"
-          cancel-button-text="取消"
+          cancel-button-text="キャンセル"
           :width="260"
           @confirm="$emit('toggle-public')"
         >
@@ -53,10 +53,10 @@
         <el-popconfirm
           v-if="canEdit"
           :title="proposal.isPublic
-            ? '確定刪除此提案？公開的變體也會一併撤回'
-            : '確定刪除此提案？此動作無法復原'"
-          confirm-button-text="刪除"
-          cancel-button-text="取消"
+            ? 'この提案を削除しますか？公開中の派生案も取り下げられます'
+            : 'この提案を削除しますか？この操作は元に戻せません'"
+          confirm-button-text="削除"
+          cancel-button-text="キャンセル"
           confirm-button-type="danger"
           :width="260"
           @confirm="$emit('delete')"
@@ -65,8 +65,8 @@
             <button
               type="button"
               class="delete-chip"
-              title="刪除提案"
-              aria-label="刪除提案"
+              title="提案を削除"
+              aria-label="提案を削除"
               @click.stop
             >
               <el-icon :size="13"><Delete /></el-icon>

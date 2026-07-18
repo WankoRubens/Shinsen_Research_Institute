@@ -3,7 +3,7 @@
     type="button"
     class="hero-set-card"
     :class="{ 'hero-set-card--active': active }"
-    :aria-label="`${heroNames.join(' + ')}：${summary.variantCount} 個變體`"
+    :aria-label="`${heroNames.join(' + ')}：${summary.variantCount} 件の派生案`"
     @click="$emit('open')"
   >
     <div class="portraits">
@@ -27,7 +27,7 @@
     <div class="stats">
       <span class="stat">
         <span class="stat-num">{{ summary.variantCount }}</span>
-        <span class="stat-label">變體</span>
+        <span class="stat-label">派生案</span>
       </span>
       <span class="stat-divider" />
       <span class="stat">

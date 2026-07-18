@@ -35,9 +35,9 @@
       </p>
 
       <div class="flex justify-end gap-2 pt-1">
-        <el-button @click="onCancel">取消</el-button>
+        <el-button @click="onCancel">キャンセル</el-button>
         <el-button type="primary" :disabled="!nameValid" :loading="submitting" @click="onSubmit">
-          儲存
+          保存
         </el-button>
       </div>
     </div>

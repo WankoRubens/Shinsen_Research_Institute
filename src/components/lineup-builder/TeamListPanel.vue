@@ -47,7 +47,7 @@
             v-else
             :title="`「${team.name}」を削除しますか？元に戻せません`"
             confirm-button-text="削除"
-            cancel-button-text="取消"
+            cancel-button-text="キャンセル"
             confirm-button-type="danger"
             :width="220"
             @confirm="$emit('remove-team', idx)"
@@ -76,7 +76,7 @@
         <span class="w-4 text-right">
           <el-icon :size="12"><Plus /></el-icon>
         </span>
-        <span>新增配將</span>
+        <span>新しい部隊を追加</span>
       </button>
     </div>
 
@@ -91,7 +91,7 @@
       </button>
       <button class="action-row" @click="$emit('export-to-group')">
         <el-icon :size="14"><Position /></el-icon>
-        <span>他の編組へ書き出す</span>
+        <span>他の編成へ書き出す</span>
       </button>
     </div>
   </aside>

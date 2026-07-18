@@ -18,21 +18,21 @@
             ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
             : 'bg-white text-gray-600 border-gray-300 hover:border-amber-500 hover:text-amber-600'"
           :disabled="filteredHeroes.length === 0"
-          :title="allFilteredOwned ? '取消勾選所有篩選結果' : '勾選所有篩選結果為已擁有'"
+          :title="allFilteredOwned ? '絞り込み結果の所持チェックをすべて外す' : '絞り込み結果をすべて所持済みにする'"
           @click="toggleSelectAllFiltered"
         >
-          {{ allFilteredOwned ? '取消全選' : '全選' }}
+          {{ allFilteredOwned ? '全選択解除' : '全選択' }}
         </button>
         <el-switch
           :model-value="filterOwned"
           @update:model-value="val => $emit('update:filterOwned', val)"
           inline-prompt
-          active-text="已擁有"
-          inactive-text="全部"
+          active-text="所持済み"
+          inactive-text="すべて"
           v-if="mode === 'select'"
         />
          <div v-else class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
-           庫存編輯模式
+           所持編集モード
          </div>
       </div>
 
@@ -162,7 +162,7 @@
           
           <!-- Used Label (Select Mode) -->
           <div v-if="mode === 'select' && isUsed(hero.name)" class="absolute inset-0 flex items-center justify-center z-20">
-             <span class="bg-black/70 text-white text-xs px-2 py-1 rounded font-bold">已上陣</span>
+             <span class="bg-black/70 text-white text-xs px-2 py-1 rounded font-bold">編成中</span>
           </div>
 
           <!-- Unowned Label (Manage Mode) -->

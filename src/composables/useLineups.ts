@@ -61,7 +61,7 @@ export const emptyRole = (): RoleData => ({
 })
 
 export const makeTeam = (idx: number): Lineup => ({
-  name: `隊伍 ${idx + 1}`,
+  name: `部隊 ${idx + 1}`,
   main: emptyRole(),
   vice1: emptyRole(),
   vice2: emptyRole(),

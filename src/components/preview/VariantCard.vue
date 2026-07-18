@@ -17,7 +17,7 @@
         >
           <span class="chip chip--contrib">+{{ contributorCount - 1 }} 貢獻者</span>
         </el-tooltip>
-        <span v-if="isMyContribution" class="chip chip--mine" title="你曾提交此配置">
+        <span v-if="isMyContribution" class="chip chip--mine" title="あなたが投稿した派生案">
           我的
         </span>
         <span class="time" :title="`首次提交：${variant.firstSubmittedAt}`">
@@ -27,9 +27,9 @@
       <div class="head-right">
         <el-popconfirm
           v-if="isMyContribution"
-          title="撤回你對此配置的提交？若你是最後一位貢獻者，整個變體將被刪除"
+          title="この派生案への投稿を取り下げますか？最後の投稿者の場合、この派生案全体が削除されます"
           confirm-button-text="撤回"
-          cancel-button-text="取消"
+          cancel-button-text="キャンセル"
           confirm-button-type="danger"
           :width="280"
           @confirm="$emit('withdraw')"
@@ -48,8 +48,8 @@
         <button
           type="button"
           class="action-btn action-btn--icon"
-          title="匯入到編組"
-          aria-label="匯入到編組"
+          title="編成へ取り込む"
+          aria-label="編成へ取り込む"
           @click="$emit('import-to-group')"
         >
           <el-icon :size="14"><Position /></el-icon>
@@ -129,7 +129,7 @@ const contributorTooltip = computed(() => {
 const canVote = computed(() => props.isLoggedIn && !props.isMyContribution)
 const voteTooltip = computed(() => {
   if (canVote.value) return ''
-  if (props.isMyContribution) return '無法為自己參與的變體投票'
+  if (props.isMyContribution) return '自分が参加している派生案には投票できません'
   return '登入後可投票'
 })
 </script>

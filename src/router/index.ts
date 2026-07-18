@@ -93,7 +93,7 @@ const routes: RouteRecordRaw[] = [
         path: 'settings',
         name: 'settings',
         component: SettingsView,
-        meta: { title: '設定', description: '語系、外觀、帳號設定。' },
+        meta: { title: '設定', description: '表示、外観、アカウント設定。' },
       },
       {
         path: 'heroes',

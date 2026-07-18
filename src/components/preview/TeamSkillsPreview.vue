@@ -27,7 +27,7 @@
       <span class="wm-line" />
       <span class="wm-stamp">
         <span class="wm-icon font-brand">猫</span>
-        <span class="wm-text font-brand">真戰配將</span>
+        <span class="wm-text font-brand">真戦編成</span>
       </span>
       <span class="wm-line wm-line--right" />
     </div>

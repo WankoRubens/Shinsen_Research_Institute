@@ -443,7 +443,7 @@
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="statsDialogVisible = false">取消</el-button>
+          <el-button @click="statsDialogVisible = false">キャンセル</el-button>
           <el-button type="primary" @click="saveStats">確認修改</el-button>
         </span>
       </template>

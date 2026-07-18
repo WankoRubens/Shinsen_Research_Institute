@@ -3,11 +3,11 @@
     <!-- Header actions -->
     <div class="flex items-center gap-2 mb-3 flex-wrap">
       <el-button type="primary" plain :icon="Plus" @click="openCreateDialog">
-        儲存目前庫存為新配置
+        現在の所持を新規設定として保存
       </el-button>
-      <el-button :icon="Link" @click="openImportDialog">從分享連結匯入</el-button>
+      <el-button :icon="Link" @click="openImportDialog">共有リンクから取り込む</el-button>
       <span v-if="!compact" class="ml-auto text-[11px] text-gray-400">
-        配置只存庫存（武將/戰法），不含隊伍配置
+        所持設定には武将/戦法だけを保存します。部隊編成は含みません
       </span>
     </div>
 
@@ -15,8 +15,8 @@
       v-if="!loading && profiles.length === 0"
       class="text-center text-gray-400 py-8 text-sm"
     >
-      還沒有任何角色配置。<br>
-      在主畫面編輯庫存後，點上方按鈕儲存為配置。
+      まだ所持設定がありません。<br>
+      メイン画面で所持を編集してから、上のボタンで設定として保存してください。
     </p>
 
     <el-table v-else-if="profiles.length > 0" :data="profiles" size="default" style="width: 100%">
@@ -24,7 +24,7 @@
         <template #default="{ row }">
           <button
             @click="toggleDefault(row)"
-            :title="row.is_default ? '取消預設' : '設為預設'"
+            :title="row.is_default ? 'デフォルトを解除' : 'デフォルトに設定'"
             class="default-btn"
             :class="{ 'default-btn-on': row.is_default }"
           >
@@ -33,14 +33,14 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="名稱" min-width="160">
+      <el-table-column label="名前" min-width="160">
         <template #default="{ row }">
           <div v-if="editingId === row.id" class="flex items-center gap-1">
             <el-input
               v-model="editingDraft"
               size="small"
               maxlength="50"
-              placeholder="輸入名稱"
+              placeholder="名前を入力"
               @keyup.enter="saveRename(row)"
               @keyup.esc="cancelRename"
               autofocus
@@ -65,11 +65,11 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="庫存" width="120" align="center">
+      <el-table-column label="所持" width="120" align="center">
         <template #default="{ row }">
           <div class="text-xs text-gray-500 leading-tight">
-            <div>{{ row.inv_h.length }} 武將</div>
-            <div>{{ row.inv_s.length }} 戰法</div>
+            <div>{{ row.inv_h.length }} 武将</div>
+            <div>{{ row.inv_s.length }} 戦法</div>
           </div>
         </template>
       </el-table-column>
@@ -88,15 +88,15 @@
               type="primary"
               @click="onApplyClick(row)"
             >
-              套用
+              適用
             </el-button>
-            <el-tooltip content="複製此配置的分享連結" placement="top">
+            <el-tooltip content="この設定の共有リンクをコピー" placement="top">
               <el-button size="small" :icon="Share" @click="shareProfileLink(row)" />
             </el-tooltip>
             <el-popconfirm
-              title="確定刪除這個配置？刪除後無法復原。"
-              confirm-button-text="刪除"
-              cancel-button-text="取消"
+              title="この設定を削除しますか？削除後は元に戻せません。"
+              confirm-button-text="削除"
+              cancel-button-text="キャンセル"
               confirm-button-type="danger"
               @confirm="removeProfile(row)"
             >
@@ -112,31 +112,31 @@
     <!-- Create-profile sub-dialog (asks for name) -->
     <el-dialog
       v-model="createDialogVisible"
-      title="儲存目前庫存"
+      title="現在の所持を保存"
       width="340px"
       align-center
       append-to-body
     >
       <div class="flex flex-col gap-3 pb-1">
         <p class="text-xs text-gray-500 -mt-1 leading-relaxed">
-          將目前庫存（{{ ownedHeroes.length }} 武將, {{ ownedSkills.length }} 戰法）儲存為新配置
+          現在の所持（{{ ownedHeroes.length }} 武将, {{ ownedSkills.length }} 戦法）を新規設定として保存します
         </p>
         <el-input
           v-model="createName"
           maxlength="50"
           show-word-limit
-          placeholder="例：主帳、小號、朋友A"
+          placeholder="例：メイン、サブ、友人A"
           @keyup.enter="submitCreate"
           autofocus
         />
-        <el-checkbox v-model="createAsDefault">設為預設配置</el-checkbox>
+        <el-checkbox v-model="createAsDefault">デフォルト設定にする</el-checkbox>
         <el-button
           type="primary"
           :loading="createSaving"
           @click="submitCreate"
           class="w-full !m-0"
         >
-          儲存
+          保存
         </el-button>
       </div>
     </el-dialog>
@@ -144,14 +144,14 @@
     <!-- Import-from-share-link sub-dialog -->
     <el-dialog
       v-model="importDialogVisible"
-      title="從分享連結匯入配置"
+      title="共有リンクから所持設定を取り込む"
       width="380px"
       align-center
       append-to-body
     >
       <div class="flex flex-col gap-3 pb-1">
         <p class="text-xs text-gray-500 -mt-1 leading-relaxed">
-          貼上對方分享給你的連結（必須包含庫存資訊）。匯入後成為你的角色配置。
+          相手から共有されたリンクを貼り付けてください（所持情報を含むリンクのみ）。取り込み後、あなたの所持設定として保存されます。
         </p>
         <el-input
           v-model="importUrl"
@@ -163,7 +163,7 @@
           v-model="importName"
           maxlength="50"
           show-word-limit
-          placeholder="為這個配置取名（必填）"
+          placeholder="この設定の名前（必須）"
           @keyup.enter="submitImport"
         />
         <el-button
@@ -172,7 +172,7 @@
           @click="submitImport"
           class="w-full !m-0"
         >
-          匯入
+          取り込む
         </el-button>
       </div>
     </el-dialog>
@@ -239,7 +239,7 @@ const safeRefresh = async () => {
   try {
     await refresh()
   } catch (e) {
-    ElMessage.error(`載入失敗：${(e as Error).message}`)
+    ElMessage.error(`読み込みに失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -247,7 +247,7 @@ onMounted(safeRefresh)
 
 const openCreateDialog = () => {
   if (isEditingInventory.value) {
-    ElMessage.warning('請先儲存或取消庫存編輯')
+    ElMessage.warning('先に所持編集を保存またはキャンセルしてください')
     return
   }
   createName.value = ''
@@ -258,7 +258,7 @@ const openCreateDialog = () => {
 const submitCreate = async () => {
   const name = createName.value.trim()
   if (!name) {
-    ElMessage.warning('名稱不可為空')
+    ElMessage.warning('名前は空にできません')
     return
   }
   createSaving.value = true
@@ -276,13 +276,13 @@ const submitCreate = async () => {
     }
     createDialogVisible.value = false
     if (defaultMarkFailed) {
-      ElMessage.warning(`「${name}」已儲存，但設為預設失敗，請手動點擊星號`)
+      ElMessage.warning(`「${name}」は保存しましたが、デフォルト設定にできませんでした。手動で星をクリックしてください`)
     } else {
-      ElMessage.success(`「${name}」已儲存`)
+      ElMessage.success(`「${name}」を保存しました`)
     }
     safeRefresh()
   } catch (e) {
-    ElMessage.error(`儲存失敗：${(e as Error).message}`)
+    ElMessage.error(`保存に失敗しました: ${(e as Error).message}`)
   } finally {
     createSaving.value = false
   }
@@ -290,7 +290,7 @@ const submitCreate = async () => {
 
 const onApplyClick = async (p: Profile) => {
   if (isEditingInventory.value) {
-    ElMessage.warning('請先儲存或取消庫存編輯')
+    ElMessage.warning('先に所持編集を保存またはキャンセルしてください')
     return
   }
   const wouldOverwriteData = activeProfileId.value !== p.id &&
@@ -298,16 +298,16 @@ const onApplyClick = async (p: Profile) => {
   if (wouldOverwriteData) {
     try {
       await ElMessageBox.confirm(
-        `將以「${p.name}」覆寫目前庫存（${p.inv_h.length} 武將, ${p.inv_s.length} 戰法）？目前庫存若未儲存為配置會遺失。`,
-        '套用配置',
-        { confirmButtonText: '套用', cancelButtonText: '取消', type: 'warning' },
+        `「${p.name}」で現在の所持（${p.inv_h.length} 武将, ${p.inv_s.length} 戦法）を上書きしますか？現在の所持を設定として保存していない場合は失われます。`,
+        '所持設定を適用',
+        { confirmButtonText: '適用', cancelButtonText: 'キャンセル', type: 'warning' },
       )
     } catch {
       return
     }
   }
   applyProfile(p)
-  ElMessage.success(`已套用「${p.name}」`)
+  ElMessage.success(`「${p.name}」を適用しました`)
   emit('close-request')
 }
 
@@ -319,9 +319,9 @@ const shareProfileLink = async (p: Profile) => {
     const slug = await getOrCreateProfileShareSlug(p)
     const url = `${location.origin}${location.pathname}#s/${slug}`
     await navigator.clipboard.writeText(url)
-    ElMessage.success(`已複製「${p.name}」的分享連結`)
+    ElMessage.success(`「${p.name}」の共有リンクをコピーしました`)
   } catch (e) {
-    ElMessage.error(`分享失敗：${(e as Error).message}`)
+    ElMessage.error(`共有に失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -330,9 +330,9 @@ const removeProfile = async (p: Profile) => {
     await deleteProfile(p.id)
     profiles.value = profiles.value.filter(x => x.id !== p.id)
     if (activeProfile.value?.id === p.id) syncActiveProfile(null)
-    ElMessage.success('已刪除')
+    ElMessage.success('削除しました')
   } catch (e) {
-    ElMessage.error(`刪除失敗：${(e as Error).message}`)
+    ElMessage.error(`削除に失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -341,7 +341,7 @@ const toggleDefault = async (p: Profile) => {
     await setDefaultProfile(p.is_default ? null : p.id)
     safeRefresh()
   } catch (e) {
-    ElMessage.error(`設定失敗：${(e as Error).message}`)
+    ElMessage.error(`設定に失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -356,7 +356,7 @@ const cancelRename = () => {
 const saveRename = async (p: Profile) => {
   const next = editingDraft.value.trim()
   if (!next) {
-    ElMessage.warning('名稱不可為空')
+    ElMessage.warning('名前は空にできません')
     return
   }
   if (next === p.name) {
@@ -369,7 +369,7 @@ const saveRename = async (p: Profile) => {
     p.updated_at = new Date().toISOString()
     if (activeProfile.value?.id === p.id) syncActiveProfile({ ...p })
     cancelRename()
-    ElMessage.success('已更新')
+    ElMessage.success('更新しました')
   } catch (e) {
     ElMessage.error(`更新失敗：${(e as Error).message}`)
   }
@@ -377,7 +377,7 @@ const saveRename = async (p: Profile) => {
 
 const openImportDialog = () => {
   if (isEditingInventory.value) {
-    ElMessage.warning('請先儲存或取消庫存編輯')
+    ElMessage.warning('先に所持編集を保存またはキャンセルしてください')
     return
   }
   importUrl.value = ''
@@ -390,7 +390,7 @@ const parseShareInput = (input: string): { slug?: string; base64?: string } => {
   const hashIdx = payload.indexOf('#')
   if (hashIdx >= 0) payload = payload.slice(hashIdx + 1)
   payload = payload.replace(/^\//, '')
-  if (!payload) throw new Error('連結為空')
+  if (!payload) throw new Error('リンクが空です')
   if (payload.startsWith('s/')) return { slug: payload.slice(2) }
   return { base64: payload }
 }
@@ -405,11 +405,11 @@ const submitImport = async () => {
   const url = importUrl.value.trim()
   const name = importName.value.trim()
   if (!url) {
-    ElMessage.warning('請貼上分享連結')
+    ElMessage.warning('共有リンクを貼り付けてください')
     return
   }
   if (!name) {
-    ElMessage.warning('請為配置取名')
+    ElMessage.warning('設定名を入力してください')
     return
   }
   importLoading.value = true
@@ -427,14 +427,14 @@ const submitImport = async () => {
       : []
     const inv_s = Array.isArray(blob.inv_s) ? blob.inv_s.filter((x): x is string => typeof x === 'string') : []
     if (inv_h.length === 0 && inv_s.length === 0) {
-      throw new Error('連結中沒有庫存資料')
+      throw new Error('リンク内に所持データがありません')
     }
     await createProfile({ name, inv_h, inv_s })
     importDialogVisible.value = false
-    ElMessage.success(`已匯入「${name}」（${inv_h.length} 武將, ${inv_s.length} 戰法）`)
+    ElMessage.success(`「${name}」を取り込みました（${inv_h.length} 武将, ${inv_s.length} 戦法）`)
     safeRefresh()
   } catch (e) {
-    ElMessage.error(`匯入失敗：${(e as Error).message}`)
+    ElMessage.error(`取り込みに失敗しました: ${(e as Error).message}`)
   } finally {
     importLoading.value = false
   }

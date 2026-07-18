@@ -2,7 +2,7 @@
   <div class="flex-1 overflow-y-auto p-4 md:p-6">
     <div class="max-w-7xl">
       <el-tabs v-model="activeTab" class="mt-1">
-        <el-tab-pane label="公開精選" name="public">
+        <el-tab-pane label="公開おすすめ" name="public">
           <!-- Toolbar: just the hero filter + page-level sort. Filter has no
                leading label — its placeholder carries the intent. Sort lives
                here when no HeroSet is open; once the split view opens, the
@@ -15,7 +15,7 @@
               collapse-tags
               collapse-tags-tooltip
               filterable
-              placeholder="武將篩選"
+              placeholder="武将で絞り込み"
               class="hero-filter"
               clearable
             >
@@ -43,8 +43,8 @@
               class="empty-state"
             >
               {{ heroSets.length === 0
-                ? '目前還沒有公開的精選隊伍。'
-                : '篩選後沒有符合的英雄組合。' }}
+                ? '公開中のおすすめ編成はまだありません。'
+                : '条件に一致する武将組み合わせがありません。' }}
             </p>
             <div v-else class="hero-set-grid">
               <HeroSetCard
@@ -83,7 +83,7 @@
                   </div>
                   <div class="sidebar-stats">
                     <span class="sidebar-stat">
-                      <strong>{{ s.variantCount }}</strong> 變體
+                      <strong>{{ s.variantCount }}</strong> 派生案
                     </span>
                     <span class="sidebar-stat sidebar-stat--up">
                       <el-icon :size="10"><CaretTop /></el-icon>
@@ -128,7 +128,7 @@
                   <div class="head-stats">
                     <span class="head-stat">
                       <strong>{{ activeHeroSet.variantCount }}</strong>
-                      <span class="head-stat-label">變體</span>
+                      <span class="head-stat-label">派生案</span>
                     </span>
                     <span class="head-stat-divider" />
                     <span class="head-stat head-stat--up">
@@ -150,7 +150,7 @@
                   <SortPills
                     v-model="variantSort"
                     :options="variantSortOptions"
-                    aria-label="變體排序"
+                    aria-label="派生案の並び順"
                   />
                   <span v-if="consensusInfo" class="consensus-chip" :title="consensusInfo.tooltip">
                     {{ consensusInfo.label }}
@@ -160,7 +160,7 @@
 
               <div v-loading="loadingVariants" class="variants-grid">
                 <p v-if="!loadingVariants && activeVariants.length === 0" class="empty-state empty-state--inline">
-                  這個英雄組合還沒有變體。
+                  この武将組み合わせにはまだ派生案がありません。
                 </p>
                 <VariantCard
                   v-for="v in activeVariants"
@@ -190,7 +190,7 @@
               v-if="!loadingMine && myProposals.length === 0"
               class="empty-state"
             >
-              還沒有任何提案。在配將模擬完成隊伍後，從側欄「另存為精選隊伍」建立。
+              提案はまだありません。編成シミュレーションで部隊を完成させたあと、サイドバーの「おすすめ編成として保存」から作成できます。
             </p>
             <div v-else class="proposal-grid">
               <ProposalCard
@@ -272,7 +272,7 @@ const heroSetSortOptions: Array<{ value: HeroSetSort; label: string; icon?: Comp
   { value: 'total',  label: '綜合分', icon: markRaw(TrendCharts) },
   { value: 'recent', label: '近30天', icon: markRaw(Calendar) },
   { value: 'latest', label: '最新',   icon: markRaw(Clock) },
-  { value: 'count',  label: '變體數', icon: markRaw(Tickets) },
+  { value: 'count',  label: '派生案数', icon: markRaw(Tickets) },
 ]
 const variantSortOptions: Array<{ value: VariantSort; label: string; icon?: Component }> = [
   { value: 'votes',  label: '投票', icon: markRaw(CaretTop) },
@@ -353,13 +353,13 @@ const consensusInfo = computed<{ label: string; tooltip: string } | null>(() => 
   if (share >= 0.6) {
     return {
       label: '共識型',
-      tooltip: `頂部變體佔 ${Math.round(share * 100)}% 贊數 — 玩家普遍認同單一配法`,
+      tooltip: `上位の派生案が ${Math.round(share * 100)}% の賛成を集めています。単一の組み方が広く支持されています`,
     }
   }
   if (share < 0.4) {
     return {
       label: '分歧型',
-      tooltip: '贊數分散於多個變體 — 仍在被積極研究的活躍 meta',
+      tooltip: '賛成が複数の派生案に分散しています。まだ研究が進んでいる編成です',
     }
   }
   return null
@@ -394,7 +394,7 @@ const closeHeroSet = (): void => {
 
 const onVariantVote = async (id: string, direction: VoteDirection): Promise<void> => {
   if (!isLoggedIn.value) {
-    ElMessage.warning('請先登入')
+    ElMessage.warning('先にログインしてください')
     return
   }
   try { await vote(id, direction) }
@@ -404,7 +404,7 @@ const onVariantVote = async (id: string, direction: VoteDirection): Promise<void
 const onWithdrawVariant = async (variant: Variant): Promise<void> => {
   try {
     const { deleted } = await withdraw(variant.id)
-    ElMessage.success(deleted ? '已撤回，變體已刪除' : '已撤回你的提交')
+    ElMessage.success(deleted ? '取り下げました。派生案も削除しました' : '投稿を取り下げました')
   } catch (e) {
     ElMessage.error(`撤回失敗：${(e as Error).message}`)
   }
@@ -432,7 +432,7 @@ const exportSource = ref<ExportSource | null>(null)
 const onImportVariantToGroup = (variant: Variant): void => {
   const t = variant.team
   const name = [t.main?.hero?.name, t.vice1?.hero?.name, t.vice2?.hero?.name]
-    .filter(Boolean).join(' + ') || '精選變體'
+    .filter(Boolean).join(' + ') || 'おすすめ派生案'
   exportSource.value = {
     team: snapshotTeam(t),
     displayName: name,
@@ -468,12 +468,12 @@ const onExported = ({
     ? addTeamFromSnapshot(src.team)
     : appendTeamToGroup(destGroupIdx, src.team)
   if (!ok) {
-    ElMessage.error('該編組已滿，無法加入')
+    ElMessage.error('その編成は上限に達しているため追加できません')
     return
   }
   flushLocalAutosave()
   exportSource.value = null
-  ElMessage.success(`已將「${src.displayName}」匯入到「${destGroup.name}」`)
+  ElMessage.success(`「${src.displayName}」を「${destGroup.name}」へ取り込みました`)
 }
 
 // ---------------------------------------------------------------------------
@@ -483,7 +483,7 @@ const onTogglePublic = async (p: Proposal): Promise<void> => {
   const wasPublic = p.isPublic
   try {
     await togglePublic(p.id, !wasPublic)
-    ElMessage.success(wasPublic ? '已設為私人' : '已公開')
+    ElMessage.success(wasPublic ? '非公開にしました' : '公開しました')
     void refreshHeroSets()
   } catch (e) { ElMessage.error(`切換失敗：${(e as Error).message}`) }
 }
@@ -491,10 +491,10 @@ const onTogglePublic = async (p: Proposal): Promise<void> => {
 const onDelete = async (p: Proposal): Promise<void> => {
   try {
     await remove(p.id)
-    ElMessage.success('已刪除提案')
+    ElMessage.success('提案を削除しました')
     // A public proposal's variant may have been withdrawn — refresh the feed.
     if (p.isPublic) void refreshHeroSets()
-  } catch (e) { ElMessage.error(`刪除失敗：${(e as Error).message}`) }
+  } catch (e) { ElMessage.error(`削除に失敗しました: ${(e as Error).message}`) }
 }
 </script>
 

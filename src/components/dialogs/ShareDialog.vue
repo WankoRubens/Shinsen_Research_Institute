@@ -12,7 +12,7 @@
           :model-value="name"
           @update:model-value="(v: string) => $emit('update:name', v)"
           maxlength="50"
-          placeholder="名稱（可選）"
+          placeholder="名前（任意）"
           clearable
         />
         <p class="text-[11px] text-gray-400 leading-snug">
@@ -50,7 +50,7 @@
       <el-button type="warning" plain size="large" @click="$emit('share', { scope: 'inventory', asPublic: false })" class="w-full !m-0">
         <div class="flex flex-col items-center">
           <span class="font-bold">所持のみ共有</span>
-          <span class="text-xs opacity-80">請教他人配將用</span>
+          <span class="text-xs opacity-80">他の人に編成相談するときに使います</span>
         </div>
       </el-button>
     </div>

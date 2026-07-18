@@ -11,7 +11,7 @@
     <div class="flex-1 h-5 md:h-7 bg-purple-400/70 group-hover:bg-purple-500"></div>
     <div class="flex-1 h-5 md:h-7 bg-emerald-400/70 group-hover:bg-emerald-500"></div>
     <div class="absolute inset-0 pointer-events-none flex items-center justify-center font-bold text-white text-[9px] md:text-xs tracking-wider" style="text-shadow: 0 1px 2px rgba(0,0,0,0.5)">
-      兵学 配置
+      兵学設定
     </div>
   </button>
 
@@ -117,7 +117,7 @@
   <!-- Selection dialog -->
   <el-dialog
     v-model="dialogVisible"
-    :title="`兵学配置 — ${hero?.name || ''}`"
+    :title="`兵学設定 — ${hero?.name || ''}`"
     width="820px"
     class="bingxue-dialog"
     append-to-body
@@ -235,7 +235,7 @@
         <el-button v-if="modelValue.direction" link type="danger" @click="resetAll">解除</el-button>
         <div v-else></div>
         <div class="flex gap-1 md:gap-2">
-          <el-button size="small" @click="dialogVisible = false">取消</el-button>
+          <el-button size="small" @click="dialogVisible = false">キャンセル</el-button>
           <el-button size="small" type="primary" :disabled="!canApply" @click="applyDraft">適用</el-button>
         </div>
       </div>

@@ -10,7 +10,7 @@
           共有リンクから取り込む…
         </el-button>
         <span class="text-xs text-ink-mute tabular-nums">
-          合計 <span class="font-bold text-ink">{{ groups.length }}</span> 個の編組
+          合計 <span class="font-bold text-ink">{{ groups.length }}</span> 個の編成
         </span>
         <span class="text-xs text-ink-mute hidden sm:inline">·</span>
         <span class="text-xs text-ink-mute hidden sm:inline">
@@ -51,7 +51,7 @@
 
             <div class="group-header__stats">
               <span class="stat">
-                <span class="stat__label">隊伍</span>
+                <span class="stat__label">部隊</span>
                 <span class="stat__value">
                   {{ visibleTeams(g).length }}<span class="stat__sub">/{{ MAX_TEAMS_PER_GROUP }}</span>
                 </span>
@@ -115,7 +115,7 @@
               @click="onAddTeamHere(idx)"
             >
               <el-icon :size="22" class="empty-slot__icon"><Plus /></el-icon>
-              <span class="empty-slot__label">建立第一支隊伍</span>
+              <span class="empty-slot__label">最初の部隊を作成</span>
             </button>
           </div>
         </section>
@@ -132,7 +132,7 @@
         @keyup.enter="submitRename"
       />
       <template #footer>
-        <el-button class="!rounded-sm" @click="renameDialog.visible = false">取消</el-button>
+        <el-button class="!rounded-sm" @click="renameDialog.visible = false">キャンセル</el-button>
         <el-button type="primary" class="!rounded-sm" @click="submitRename">保存</el-button>
       </template>
     </el-dialog>
@@ -193,7 +193,7 @@ const groupCost = (g: Group): number =>
 const onAddGroup = () => {
   const idx = addGroup()
   setCurrentGroup(idx)
-  ElMessage.success(`已建立並切換到「${groups[idx].name}」`)
+  ElMessage.success(`「${groups[idx].name}」を作成して切り替えました`)
 }
 
 const onImportFromLink = () => {
@@ -209,7 +209,7 @@ const onImportFromLink = () => {
 const onSwitch = (idx: number) => {
   if (idx === currentGroupIndex.value) return
   setCurrentGroup(idx)
-  ElMessage.success(`已切換到「${groups[idx].name}」`)
+  ElMessage.success(`「${groups[idx].name}」に切り替えました`)
 }
 
 // Clicking an empty slot: if the target group is already active, jump
@@ -235,7 +235,7 @@ const startRename = (idx: number) => {
 const submitRename = () => {
   const name = renameDialog.draft.trim()
   if (!name) {
-    ElMessage.warning('名稱不可為空')
+    ElMessage.warning('名前は空にできません')
     return
   }
   renameGroup(renameDialog.idx, name)
@@ -253,7 +253,7 @@ const onMenu = async (cmd: string, idx: number) => {
       await ElMessageBox.confirm(
         `「${groups[idx].name}」を削除しますか？この操作は元に戻せません。`,
         '編成を削除',
-        { confirmButtonText: '削除', cancelButtonText: '取消', type: 'warning' },
+        { confirmButtonText: '削除', cancelButtonText: 'キャンセル', type: 'warning' },
       )
     } catch {
       return

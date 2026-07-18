@@ -64,12 +64,12 @@ export const hydrateShare = (data: ShareableData, inputs: HydrateInputs): Hydrat
   if (data.groups && data.groups.length > 0) {
     const g = data.groups[0]
     const teams = (g.teams ?? []).map((l, i) => hydrateTeam(l, i, inputs))
-    return { group: { name: g.name || '預設', teams } }
+    return { group: { name: g.name || 'デフォルト', teams } }
   }
   if (data.lineups && data.lineups.length > 0) {
     const teams = data.lineups.map((l, i) => hydrateTeam(l, i, inputs))
     if (teams.length === 1) return { team: teams[0] }
-    return { group: { name: '分享編組', teams } }
+    return { group: { name: '共有編成', teams } }
   }
   return {}
 }

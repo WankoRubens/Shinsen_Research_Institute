@@ -30,7 +30,7 @@
           @update:model-value="val => $emit('update:filterOwned', val)"
           inline-prompt
           active-text="所持"
-          inactive-text="全部"
+          inactive-text="すべて"
         />
         <div v-else class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
            所持編集モード

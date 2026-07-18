@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="編組の同期競合"
+    title="編成の同期競合"
     width="520px"
     :close-on-click-modal="false"
     :show-close="false"
@@ -9,8 +9,8 @@
   >
     <template v-if="ctx">
       <p class="text-sm text-ink-soft mb-4 leading-relaxed">
-        編組「<span class="font-bold text-ink">{{ ctx.serverRow.name }}</span>」は他の端末で更新されています。
-        為避免覆蓋對方的修改，請選擇要保留的版本。
+        編成「<span class="font-bold text-ink">{{ ctx.serverRow.name }}</span>」は他の端末で更新されています。
+        変更を上書きしないように、残すバージョンを選択してください。
       </p>
 
       <div class="grid grid-cols-2 gap-3 mb-4">
@@ -21,7 +21,7 @@
           </template>
         </VersionCard>
 
-        <VersionCard :name="ctx.serverRow.name" tag="雲端" tag-variant="highlight">
+        <VersionCard :name="ctx.serverRow.name" tag="クラウド" tag-variant="highlight">
           <template #meta>
             <span><strong>{{ serverTeamCount }}</strong> 隊</span>
             <span>更新於 {{ serverUpdatedLabel }}</span>
@@ -30,18 +30,18 @@
       </div>
 
       <p class="text-[11px] text-ink-mute mb-4 leading-relaxed">
-        ・クラウド版を採用: この端末の該当編組をクラウド版で置き換えます<br />
-        · 以本地覆寫 — 用本地版本覆蓋雲端，捨棄對方裝置的修改<br />
-        · 暫不同步 — 本次階段停用雲端同步，繼續本地編輯
+        ・クラウド版を採用: この端末の該当編成をクラウド版で置き換えます<br />
+        ・ローカル版で上書き: ローカル版でクラウドを上書きします<br />
+        ・今回は同期しない: このセッションではクラウド同期を止め、ローカル編集を続けます
       </p>
     </template>
 
     <template #footer>
       <div class="flex justify-end gap-2 flex-wrap">
-        <el-button class="!rounded-sm" :disabled="busy" @click="onDefer">暫不同步</el-button>
-        <el-button class="!rounded-sm" :disabled="busy" @click="onUseServer">採用雲端</el-button>
+        <el-button class="!rounded-sm" :disabled="busy" @click="onDefer">今回は同期しない</el-button>
+        <el-button class="!rounded-sm" :disabled="busy" @click="onUseServer">クラウド版を採用</el-button>
         <el-button type="primary" class="!rounded-sm" :loading="busy" @click="onForceOverwrite">
-          以本地覆寫
+          ローカル版で上書き
         </el-button>
       </div>
     </template>
@@ -121,7 +121,7 @@ const onUseServer = async () => {
   busy.value = true
   try {
     await resolveConflictUseServer()
-    ElMessage.success('已採用雲端版本')
+    ElMessage.success('クラウド版を採用しました')
   } finally {
     busy.value = false
   }
@@ -131,7 +131,7 @@ const onForceOverwrite = async () => {
   busy.value = true
   try {
     await resolveConflictForceOverwrite()
-    ElMessage.success('已以本地版本覆寫雲端')
+    ElMessage.success('ローカル版でクラウドを上書きしました')
   } finally {
     busy.value = false
   }
@@ -139,7 +139,7 @@ const onForceOverwrite = async () => {
 
 const onDefer = () => {
   resolveConflictDefer()
-  ElMessage.info('本次階段已停用雲端同步')
+  ElMessage.info('このセッションではクラウド同期を停止しました')
 }
 </script>
 

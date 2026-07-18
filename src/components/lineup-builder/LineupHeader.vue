@@ -19,11 +19,11 @@
       >
         <button class="profile-pill group-pill" type="button">
           <el-icon :size="13" class="opacity-70"><User /></el-icon>
-          <span class="font-bold text-ink">角色</span>
+          <span class="font-bold text-ink">所持</span>
           <span
             class="font-bold truncate max-w-[100px]"
             :class="activeProfileName ? 'text-focus' : 'text-ink-mute'"
-          >{{ activeProfileName ?? '不使用' }}</span>
+          >{{ activeProfileName ?? '使用しない' }}</span>
           <el-icon :size="12" class="opacity-60"><ArrowDown /></el-icon>
         </button>
         <template #dropdown>
@@ -51,10 +51,10 @@
               </span>
             </el-dropdown-item>
             <el-dropdown-item command="edit-inventory" divided>
-              <el-icon class="mr-1"><Edit /></el-icon> 編輯目前庫存…
+              <el-icon class="mr-1"><Edit /></el-icon> 現在の所持を編集…
             </el-dropdown-item>
             <el-dropdown-item command="goto-profiles">
-              <el-icon class="mr-1"><Setting /></el-icon> 管理角色配置…
+              <el-icon class="mr-1"><Setting /></el-icon> 所持設定を管理…
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -71,7 +71,7 @@
         class="hidden md:inline-flex"
       >
         <button class="group-pill" type="button">
-          <span class="font-bold text-ink">編組</span>
+          <span class="font-bold text-ink">編成</span>
           <span class="font-bold text-focus truncate max-w-[100px]">{{ currentGroup.name }}</span>
           <el-icon :size="12" class="opacity-60"><ArrowDown /></el-icon>
         </button>
@@ -87,7 +87,7 @@
               {{ g.name }}
             </el-dropdown-item>
             <el-dropdown-item command="add" divided>
-              <el-icon class="mr-1"><Plus /></el-icon> 編組を追加
+              <el-icon class="mr-1"><Plus /></el-icon> 編成を追加
             </el-dropdown-item>
             <el-dropdown-item command="rename">
               <el-icon class="mr-1"><Edit /></el-icon> 名前を変更
@@ -114,7 +114,7 @@
           </el-input>
         </div>
         <div v-else class="font-bold text-gray-800 text-lg">
-          庫存編輯模式
+          所持編集モード
         </div>
       </div>
 
@@ -136,11 +136,11 @@
     <div class="flex items-center gap-1 md:gap-1 pr-1 md:pr-0">
       <template v-if="!isEditingInventory">
         <!-- Anonymous fallback: no profile pill exists for them, so keep an
-             explicit 編輯庫存 button. Logged-in users access editing via the
-             profile dropdown's 編輯目前庫存…項. -->
+             explicit inventory edit button. Logged-in users access editing via the
+             profile dropdown's current-inventory edit item. -->
         <template v-if="!isLoggedIn">
           <el-button type="info" plain @click="$emit('start-editing-inventory')" class="hidden sm:inline-flex !rounded-sm">
-            <el-icon class="mr-1"><Edit /></el-icon> 編輯庫存
+            <el-icon class="mr-1"><Edit /></el-icon> 所持を編集
           </el-button>
           <el-button type="info" plain @click="$emit('start-editing-inventory')" class="sm:hidden !rounded-sm !w-9 !h-9 !p-0">
             <el-icon><Edit /></el-icon>
@@ -155,7 +155,7 @@
         </el-button>
 
         <el-button type="danger" plain @click="$emit('open-reset')" class="hidden sm:inline-flex !rounded-sm">
-          <el-icon class="mr-1"><Delete /></el-icon> 重置
+          <el-icon class="mr-1"><Delete /></el-icon> リセット
         </el-button>
         <el-button type="danger" plain @click="$emit('open-reset')" class="sm:hidden !rounded-sm !w-9 !h-9 !p-0">
           <el-icon><Delete /></el-icon>
@@ -172,7 +172,7 @@
       </template>
       <template v-else>
         <el-button @click="$emit('cancel-editing-inventory')" class="!rounded-sm">
-          <el-icon class="mr-1"><Close /></el-icon> <span class="hidden sm:inline">取消</span>
+          <el-icon class="mr-1"><Close /></el-icon> <span class="hidden sm:inline">キャンセル</span>
         </el-button>
 
         <!-- Anonymous: single in-memory save button (preserves the no-login UX). -->
@@ -183,7 +183,7 @@
           class="!rounded-sm"
         >
           <el-icon class="mr-1"><Check /></el-icon>
-          <span class="hidden sm:inline">儲存（本次階段）</span>
+          <span class="hidden sm:inline">保存（この端末のみ）</span>
         </el-button>
 
         <!-- Logged in: save to active profile (if any) -->
@@ -194,8 +194,8 @@
           class="!rounded-sm"
         >
           <el-icon class="mr-1"><Check /></el-icon>
-          <span class="hidden sm:inline">儲存到「{{ activeProfileName }}」</span>
-          <span class="sm:hidden">儲存</span>
+          <span class="hidden sm:inline">「{{ activeProfileName }}」に保存</span>
+          <span class="sm:hidden">保存</span>
         </el-button>
 
         <!-- Logged in: save as new profile. Active state: separate inline input;
@@ -206,7 +206,7 @@
             v-model="newProfileName"
             size="default"
             maxlength="50"
-            :placeholder="activeProfileName ? '另存為新庫存…' : '儲存為新庫存…'"
+            :placeholder="activeProfileName ? '新しい所持設定として保存…' : '所持設定名を入力…'"
             class="!w-40 sm:!w-48"
             @keyup.enter="onSaveAsNew"
           />
@@ -306,7 +306,7 @@ const onGroupCommand = async (cmd: string) => {
   } else if (cmd === 'add') {
     const newIdx = addGroup()
     setCurrentGroup(newIdx)
-    ElMessage.success(`已建立並切換到 ${groups[newIdx].name}`)
+    ElMessage.success(`${groups[newIdx].name}を作成して切り替えました`)
   } else if (cmd === 'import-from-link') {
     emit('import-from-link')
   } else if (cmd === 'rename') {
@@ -314,21 +314,21 @@ const onGroupCommand = async (cmd: string) => {
     // and MyProfilesPanel.vue. Validates non-empty + length cap; ESC / cancel
     // is a soft no-op.
     try {
-      const { value } = await ElMessageBox.prompt('新しい名前を入力', '編組名を変更', {
-        confirmButtonText: '儲存',
-        cancelButtonText: '取消',
+      const { value } = await ElMessageBox.prompt('新しい名前を入力', '編成名を変更', {
+        confirmButtonText: '保存',
+        cancelButtonText: 'キャンセル',
         inputValue: currentGroup.value.name,
         inputValidator: (v: string) => {
           const trimmed = (v ?? '').trim()
-          if (!trimmed) return '名稱不可為空'
-          if (trimmed.length > 20) return '名稱最多 20 字'
+          if (!trimmed) return '名前は空にできません'
+          if (trimmed.length > 20) return '名前は20文字以内にしてください'
           return true
         },
       })
       const next = value.trim()
       if (next === currentGroup.value.name) return
       renameGroup(currentGroupIndex.value, next)
-      ElMessage.success('編組名を変更しました')
+      ElMessage.success('編成名を変更しました')
     } catch {
       // ElMessageBox rejects on cancel; treat as a no-op.
     }

@@ -2,9 +2,9 @@ import { reactive, ref, computed } from 'vue'
 import type { Group, Team } from '../types/group'
 import { MAX_TEAMS_PER_GROUP } from '../types/group'
 
-// One 編組 holds up to MAX_TEAMS_PER_GROUP teams. Phase 3d only ships the
+// One group holds up to MAX_TEAMS_PER_GROUP teams. Phase 3d only ships the
 // single-group case; addGroup/removeGroup wire the multi-group machinery so
-// Phase 3e/6 (group selector dropdown, "加入編組") can build on top.
+// Phase 3e/6 (group selector dropdown) can build on top.
 
 const makeGroupId = () =>
   `g_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
@@ -13,13 +13,13 @@ const groups = reactive<Group[]>([
   // Seeded empty — useLineups inserts the first default team on first init,
   // so Group ↔ Team ownership stays one-way (groups owns teams, useLineups
   // mirrors).
-  { id: makeGroupId(), name: '預設', teams: [] },
+  { id: makeGroupId(), name: 'デフォルト', teams: [] },
 ])
 
 const currentGroupIndex = ref(0)
 const currentGroup = computed(() => groups[currentGroupIndex.value])
 
-const addGroup = (name = '新編組'): number => {
+const addGroup = (name = '新しい編成'): number => {
   groups.push({ id: makeGroupId(), name, teams: [] })
   return groups.length - 1
 }
@@ -99,7 +99,7 @@ const appendTeamToGroup = (groupIdx: number, team: Team): boolean => {
 const resetToDefault = (): void => {
   groups.splice(0, groups.length, {
     id: makeGroupId(),
-    name: '預設',
+    name: 'デフォルト',
     teams: [],
   })
   currentGroupIndex.value = 0

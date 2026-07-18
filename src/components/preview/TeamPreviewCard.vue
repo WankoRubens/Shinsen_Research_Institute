@@ -21,7 +21,7 @@
       <span class="watermark-line" />
       <span class="watermark-stamp">
         <span class="watermark-icon font-brand">猫</span>
-        <span class="watermark-text font-brand">真戰配將</span>
+        <span class="watermark-text font-brand">真戦編成</span>
       </span>
     </div>
 
@@ -169,7 +169,7 @@ const uniqueSkills = computed(() =>
   roles.value.map(r => findSkillByName(r.data.hero?.unique_skill)),
 )
 
-const resolvedTitle = computed(() => props.title ?? props.team.name ?? '未命名隊伍')
+const resolvedTitle = computed(() => props.title ?? props.team.name ?? '名前なしの部隊')
 
 // Team-level troop affinity aggregated across heroes (respects breakthrough
 // gates via useTroopLevels). Only show chips for levels > 0 to keep the

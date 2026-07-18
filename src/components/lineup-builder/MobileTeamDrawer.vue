@@ -9,7 +9,7 @@
   >
     <div class="h-full bg-white text-ink flex flex-col">
       <header class="px-4 py-3 border-b border-divider">
-        <h2 class="text-sm font-bold tracking-wide">配將模擬</h2>
+        <h2 class="text-sm font-bold tracking-wide">編成シミュレーション</h2>
       </header>
 
       <!-- Profile + Group selectors (moved from LineupHeader on mobile). -->
@@ -23,11 +23,11 @@
         >
           <button class="drawer-pill" type="button">
             <el-icon :size="13" class="opacity-70"><User /></el-icon>
-            <span class="font-bold text-ink">角色</span>
+            <span class="font-bold text-ink">所持</span>
             <span
               class="flex-1 font-bold truncate text-left"
               :class="activeProfileName ? 'text-focus' : 'text-ink-mute'"
-            >{{ activeProfileName ?? '不使用' }}</span>
+            >{{ activeProfileName ?? '使用しない' }}</span>
             <el-icon :size="12" class="opacity-60"><ArrowDown /></el-icon>
           </button>
           <template #dropdown>
@@ -55,10 +55,10 @@
                 </span>
               </el-dropdown-item>
               <el-dropdown-item command="edit-inventory" divided>
-                <el-icon class="mr-1"><Edit /></el-icon> 編輯目前庫存…
+                <el-icon class="mr-1"><Edit /></el-icon> 現在の所持を編集…
               </el-dropdown-item>
               <el-dropdown-item command="goto-profiles">
-                <el-icon class="mr-1"><Setting /></el-icon> 管理角色配置…
+                <el-icon class="mr-1"><Setting /></el-icon> 所持設定を管理…
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -70,7 +70,7 @@
           @command="onGroupCommand"
         >
           <button class="drawer-pill" type="button">
-            <span class="font-bold text-ink">編組</span>
+            <span class="font-bold text-ink">編成</span>
             <span class="flex-1 font-bold text-focus truncate text-left">{{ currentGroup.name }}</span>
             <el-icon :size="12" class="opacity-60"><ArrowDown /></el-icon>
           </button>
@@ -86,7 +86,7 @@
                 {{ g.name }}
               </el-dropdown-item>
               <el-dropdown-item command="add" divided>
-                <el-icon class="mr-1"><Plus /></el-icon> 編組を追加
+                <el-icon class="mr-1"><Plus /></el-icon> 編成を追加
               </el-dropdown-item>
               <el-dropdown-item command="rename">
                 <el-icon class="mr-1"><Edit /></el-icon> 名前を変更
@@ -140,7 +140,7 @@
               v-else
               :title="`「${team.name}」を削除しますか？元に戻せません`"
               confirm-button-text="削除"
-              cancel-button-text="取消"
+              cancel-button-text="キャンセル"
               confirm-button-type="danger"
               :width="220"
               @confirm="$emit('remove-team', idx)"
@@ -167,7 +167,7 @@
           @click="$emit('add-team')"
         >
           <el-icon :size="14"><Plus /></el-icon>
-          <span>新增配將</span>
+          <span>新しい部隊を追加</span>
         </button>
       </div>
 
@@ -178,7 +178,7 @@
         </button>
         <button class="action-row" @click="$emit('export-to-group')">
           <el-icon :size="14"><Position /></el-icon>
-          <span>他の編組へ書き出す</span>
+          <span>他の編成へ書き出す</span>
         </button>
       </div>
     </div>
@@ -230,12 +230,12 @@ const onProfileVisibleChange = (visible: boolean) => {
 
 const onProfileCommand = (cmd: string) => {
   if (isEditingInventory.value && (cmd === 'unload' || cmd.startsWith('apply:'))) {
-    ElMessage.warning('請先儲存或取消庫存編輯')
+    ElMessage.warning('先に所持編集を保存またはキャンセルしてください')
     return
   }
   if (cmd === 'unload') {
     unloadProfile()
-    ElMessage.info('已切換為不使用任何角色配置')
+    ElMessage.info('所持設定を使用しない状態に切り替えました')
   } else if (cmd === 'edit-inventory') {
     startEditingInventory()
     emit('update:modelValue', false)
@@ -250,7 +250,7 @@ const onProfileCommand = (cmd: string) => {
       return
     }
     applyProfile(p)
-    ElMessage.success(`已套用「${p.name}」`)
+    ElMessage.success(`「${p.name}」を適用しました`)
   }
 }
 
@@ -261,26 +261,26 @@ const onGroupCommand = async (cmd: string) => {
   } else if (cmd === 'add') {
     const newIdx = addGroup()
     setCurrentGroup(newIdx)
-    ElMessage.success(`已建立並切換到 ${groups[newIdx].name}`)
+    ElMessage.success(`${groups[newIdx].name}を作成して切り替えました`)
   } else if (cmd === 'import-from-link') {
     emit('import-from-link')
   } else if (cmd === 'rename') {
     try {
-      const { value } = await ElMessageBox.prompt('新しい名前を入力', '編組名を変更', {
-        confirmButtonText: '儲存',
-        cancelButtonText: '取消',
+      const { value } = await ElMessageBox.prompt('新しい名前を入力', '編成名を変更', {
+        confirmButtonText: '保存',
+        cancelButtonText: 'キャンセル',
         inputValue: currentGroup.value.name,
         inputValidator: (v: string) => {
           const trimmed = (v ?? '').trim()
-          if (!trimmed) return '名稱不可為空'
-          if (trimmed.length > 20) return '名稱最多 20 字'
+          if (!trimmed) return '名前は空にできません'
+          if (trimmed.length > 20) return '名前は20文字以内にしてください'
           return true
         },
       })
       const next = value.trim()
       if (next === currentGroup.value.name) return
       renameGroup(currentGroupIndex.value, next)
-      ElMessage.success('編組名を変更しました')
+      ElMessage.success('編成名を変更しました')
     } catch {
       // cancel = no-op
     }

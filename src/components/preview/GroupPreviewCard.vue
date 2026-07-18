@@ -51,7 +51,7 @@ const props = withDefaults(defineProps<{
   showWatermark: true,
 })
 
-const resolvedTitle = computed(() => props.title ?? props.group.name ?? '未命名編組')
+const resolvedTitle = computed(() => props.title ?? props.group.name ?? '名前なしの編成')
 
 // Auto picks stack for ≤3 teams (one column reads naturally), grid-2col for
 // ≥4 teams to halve the screencap height. Caller can force either layout.

@@ -265,14 +265,14 @@ const handleSwapAction = (role: Role) => {
   } else {
     swapRoles(swapModeRole.value, role)
     swapModeRole.value = null
-    ElMessage.success('已交換槽位')
+    ElMessage.success('枠を入れ替えました')
   }
 }
 
 const handleHeroDrop = (targetRole: Role) => {
   if (dragSourceRole.value && dragSourceRole.value !== targetRole) {
     swapRoles(dragSourceRole.value, targetRole)
-    ElMessage.success('已交換槽位')
+    ElMessage.success('枠を入れ替えました')
   }
   dragSourceRole.value = null
 }
@@ -301,7 +301,7 @@ const handleSkillDrop = (role: Role, slotIdx: number, skill: Skill) => {
   const targetRole = currentLineup.value[role]
   if (slotIdx === 1) targetRole.skill1 = skill
   if (slotIdx === 2) targetRole.skill2 = skill
-  ElMessage.success(`已習得 ${skill.name}`)
+  ElMessage.success(`${skill.name}を習得しました`)
 }
 
 const handleSkillSlotDrop = (targetRole: Role, sourceRole: Role, sourceSlotIdx: number, targetSlotIdx: number) => {
@@ -334,7 +334,7 @@ const assignHeroToRole = (role: Role, hero: Hero) => {
 const selectHeroFromLibrary = (hero: Hero) => {
   if (currentSelectingHeroRole.value) {
     assignHeroToRole(currentSelectingHeroRole.value, hero)
-    ElMessage.success(`已選擇 ${hero.name}`)
+    ElMessage.success(`${hero.name}を選択しました`)
   } else {
     if (!currentLineup.value.main.hero) assignHeroToRole('main', hero)
     else if (!currentLineup.value.vice1.hero) assignHeroToRole('vice1', hero)
@@ -396,7 +396,7 @@ const selectSkillFromDialog = (skill: Skill) => {
     const empty = findFirstEmptySkillSlot()
     if (!empty) {
       triggerLineupShake()
-      ElMessage.warning('所有戰法欄位都已滿，請先點擊欲覆寫的欄位')
+      ElMessage.warning('すべての戦法枠が埋まっています。先に上書きしたい枠をクリックしてください')
       return
     }
     targetRole = empty.r
@@ -406,7 +406,7 @@ const selectSkillFromDialog = (skill: Skill) => {
   const role = currentLineup.value[targetRole!]
   if (targetSlot === 1) role.skill1 = skill
   if (targetSlot === 2) role.skill2 = skill
-  ElMessage.success(`已習得 ${skill.name}`)
+  ElMessage.success(`${skill.name}を習得しました`)
 
   // Only advance focus when the user explicitly focused a slot first.
   // Auto-targeted picks should keep focus cleared so subsequent clicks
@@ -438,7 +438,7 @@ const conflictingSkillNames = computed(() => {
 const clearLineup = (type: ResetTarget) => {
   if (type === 'team') {
     clearLineupData('team')
-    ElMessage.info('當前隊伍已重置')
+    ElMessage.info('現在の部隊をリセットしました')
   }
   if (type === 'group') {
     // Clear teams in the current group, then regenerate its id so the next
@@ -446,11 +446,11 @@ const clearLineup = (type: ResetTarget) => {
     // — keeps the "reset this group" intent honest across local + cloud.
     clearLineupData('group')
     regenerateCurrentGroupId()
-    ElMessage.info('當前編組已重置')
+    ElMessage.info('現在の編成をリセットしました')
   }
   if (type === 'inventory') {
     clearInventory()
-    ElMessage.info('庫存已清空')
+    ElMessage.info('所持をクリアしました')
   }
   if (type === 'all') {
     // Wipe groups[] back to a single default group (fresh id) and clear
@@ -458,7 +458,7 @@ const clearLineup = (type: ResetTarget) => {
     // up by stale-detect rather than silently overwritten.
     resetGroupsToDefault()
     clearInventory()
-    ElMessage.info('所有資料已重置')
+    ElMessage.info('すべてのデータをリセットしました')
   }
   // Synchronously persist so an immediate F5 / logout doesn't lose the
   // reset (the watcher's 800ms debounce would otherwise race the unload).
@@ -534,11 +534,11 @@ const shareLineup = async (type: ShareScope) => {
   }
 
   navigator.clipboard.writeText(url).then(() => {
-    ElMessage.success('分享連結已複製到剪貼簿！')
+    ElMessage.success('共有リンクをクリップボードにコピーしました')
     shareDialogVisible.value = false
     shareNameInput.value = ''
   }).catch(() => {
-    ElMessage.error('複製失敗，請手動複製網址')
+    ElMessage.error('コピーに失敗しました。手動でURLをコピーしてください')
   })
 }
 
@@ -558,9 +558,9 @@ const onShareDialogSubmit = async (payload: ShareEventPayload) => {
         isPublic: true,
         authorName: displayName.value || null,
       })
-      ElMessage.success('已同時加入公開「精選隊伍」庫')
+      ElMessage.success('公開「おすすめ編成」へ追加しました')
     } catch (e) {
-      ElMessage.error(`公開精選隊伍發佈失敗：${(e as Error).message}`)
+      ElMessage.error(`公開おすすめ編成の投稿に失敗しました: ${(e as Error).message}`)
     }
   }
 }
@@ -587,7 +587,7 @@ const restoreFromBlob = (data: ShareableData) => {
   }
   if (report.healed.length > 0) {
     ElMessage.warning(
-      `已自動清除 ${report.healed.length} 個無法解析的英雄或戰法（資料表更新後）`,
+      `解析できない武将または戦法を ${report.healed.length} 件、自動で削除しました（データ更新後）`,
     )
   }
 }
@@ -606,7 +606,7 @@ const {
 
 // TeamListPanel actions
 const onAddTeam = () => {
-  if (!addTeam()) ElMessage.info(`當前隊組已滿（${MAX_TEAMS_PER_GROUP} 隊）`)
+  if (!addTeam()) ElMessage.info(`現在の編成は上限に達しています（${MAX_TEAMS_PER_GROUP} 部隊）`)
 }
 
 const onRemoveTeam = (idx: number) => {
@@ -620,9 +620,9 @@ const onRemoveTeam = (idx: number) => {
   // page unload otherwise). Same pattern as the reset handler.
   flushLocalAutosave()
   if (wasLast) {
-    ElMessage.info(`已刪除「${removedName}」，並自動建立一支空隊伍`)
+    ElMessage.info(`「${removedName}」を削除し、空の部隊を自動作成しました`)
   } else {
-    ElMessage.info(`已刪除「${removedName}」`)
+    ElMessage.info(`「${removedName}」を削除しました`)
   }
 }
 
@@ -632,7 +632,7 @@ const onSaveAsProposal = () => {
   // createProposal RLS gates on auth — short-circuit to the auth dialog so
   // anon users see the reason instead of a generic 401.
   if (!isLoggedIn.value) {
-    ElMessage.info('請先登入才能儲存精選隊伍')
+    ElMessage.info('おすすめ編成を保存するには先にログインしてください')
     authDialogVisible.value = true
     return
   }
@@ -650,7 +650,7 @@ const onSubmitProposal = async (payload: { name: string; isPublic: boolean }) =>
       authorName: displayName.value || null,
     })
     createProposalDialogVisible.value = false
-    ElMessage.success('精選隊伍已儲存')
+    ElMessage.success('おすすめ編成を保存しました')
   } catch (e) {
     ElMessage.error(`建立失敗：${(e as Error).message}`)
   } finally {
@@ -664,7 +664,7 @@ const onSubmitProposal = async (payload: { name: string; isPublic: boolean }) =>
 // edit to the live team can't mutate the snapshot held by the dialog.
 const onExportTeamToOtherGroup = () => {
   if (groups.length <= 1) {
-    ElMessage.info('尚無其他編組，請先在「我的編組」建立新編組')
+    ElMessage.info('他の編成がありません。先に「保存した編成」で新しい編成を作成してください')
     return
   }
   const live = currentLineup.value
@@ -696,12 +696,12 @@ const onExportTeamConfirmed = ({
     ? addTeamFromSnapshot(src.team)
     : appendTeamToGroup(destGroupIdx, src.team)
   if (!ok) {
-    ElMessage.error('該編組已滿，無法加入')
+    ElMessage.error('その編成は上限に達しているため追加できません')
     return
   }
   flushLocalAutosave()
   exportTeamSource.value = null
-  ElMessage.success(`已將「${src.displayName}」匯入到「${destGroup.name}」`)
+  ElMessage.success(`「${src.displayName}」を「${destGroup.name}」へ取り込みました`)
 }
 
 // Surface healing aggregate as a single info toast — share blobs created on
@@ -710,7 +710,7 @@ const onExportTeamConfirmed = ({
 // and the count tells the user how many entries were dropped.
 const reportHealedFromImport = (healed: string[]): void => {
   if (healed.length === 0) return
-  ElMessage.warning(`已自動清除 ${healed.length} 個無法解析的英雄或戰法（資料版本差異）`)
+  ElMessage.warning(`解析できない武将または戦法を ${healed.length} 件、自動で削除しました（データバージョン差異）`)
 }
 
 const onImportFromLink = (payload: ImportFromLinkPayload) => {
@@ -738,9 +738,9 @@ const onImportFromLink = (payload: ImportFromLinkPayload) => {
       flushLocalAutosave()
       reportHealedFromImport(payload.healed)
       if (truncated > 0) {
-        ElMessage.warning(`已匯入 ${next.length} 個編組，但有 ${truncated} 支隊伍因容量上限被略過`)
+        ElMessage.warning(`${next.length} 個の編成を取り込みましたが、容量上限により ${truncated} 部隊をスキップしました`)
       } else {
-        ElMessage.success(`已匯入 ${next.length} 個編組`)
+        ElMessage.success(`${next.length} 個の編成を取り込みました`)
       }
       return
     }
@@ -752,7 +752,7 @@ const onImportFromLink = (payload: ImportFromLinkPayload) => {
     let added = 0
     let truncated = 0
     for (const ig of payload.groups) {
-      const finalName = existing.has(ig.name) ? `匯入-${ig.name}` : ig.name
+      const finalName = existing.has(ig.name) ? `取り込み-${ig.name}` : ig.name
       const newIdx = addGroup(finalName)
       if (firstNewIdx === null) firstNewIdx = newIdx
       existing.add(finalName)
@@ -774,9 +774,9 @@ const onImportFromLink = (payload: ImportFromLinkPayload) => {
     flushLocalAutosave()
     reportHealedFromImport(payload.healed)
     if (truncated > 0) {
-      ElMessage.warning(`已新增 ${added} 個編組，但有 ${truncated} 支隊伍因容量上限被略過`)
+      ElMessage.warning(`${added} 個の編成を追加しましたが、容量上限により ${truncated} 部隊をスキップしました`)
     } else {
-      ElMessage.success(`已新增 ${added} 個編組`)
+      ElMessage.success(`${added} 個の編成を追加しました`)
     }
     return
   }
@@ -813,7 +813,7 @@ const onImportFromLink = (payload: ImportFromLinkPayload) => {
     dest.vice2 = incoming.vice2
     flushLocalAutosave()
     reportHealedFromImport(payload.healed)
-    ElMessage.success('已覆寫當前顯示的隊伍')
+    ElMessage.success('現在表示中の部隊を上書きしました')
     return
   }
   // append
@@ -824,9 +824,9 @@ const onImportFromLink = (payload: ImportFromLinkPayload) => {
   flushLocalAutosave()
   reportHealedFromImport(payload.healed)
   if (added === clones.length) {
-    ElMessage.success(`已加入 ${added} 支隊伍到當前編組`)
+    ElMessage.success(`${added} 部隊を現在の編成に追加しました`)
   } else {
-    ElMessage.warning(`已加入 ${added} 支隊伍，剩餘因容量上限未加入`)
+    ElMessage.warning(`${added} 部隊を追加しました。残りは容量上限により追加できませんでした`)
   }
 }
 
@@ -916,7 +916,7 @@ const {
 watch(autosaveHealingReport, (keys) => {
   if (keys.length === 0) return
   ElMessage.warning(
-    `已自動清除 ${keys.length} 個無法解析的英雄或戰法（資料表更新後）`,
+    `解析できない武将または戦法を ${keys.length} 件、自動で削除しました（データ更新後）`,
   )
 })
 
