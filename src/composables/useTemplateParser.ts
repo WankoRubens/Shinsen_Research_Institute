@@ -28,20 +28,57 @@ const JP_STATUS_NAMES: Record<string, string> = {
   鐵壁: '鉄壁',
   閃避: '回避',
   會心: '会心',
+  偽報: '偽報',
+  畏縮: '畏縮',
+  抵禦: '抵御',
+  必中: '必中',
+  先攻: '先攻',
+  連擊: '連撃',
+  破陣: '破陣',
+  亂舞: '乱舞',
   奇謀: '奇謀',
+  會心傷害率: '会心ダメージ率',
+  奇謀傷害率: '奇謀ダメージ率',
+  離反: '離反',
   攻心: '攻心',
+  休養: '休養',
+  禁療: '禁療',
+  潰走: '潰走',
+  洞察: '洞察',
+  免疫: '免疫',
+  援護: '援護',
+  '發動機率增加·主動': '能動戦法発動確率上昇',
+  '發動機率增加·突擊': '突撃戦法発動確率上昇',
+  '發動機率增加·其他': '指定戦法発動確率上昇',
+}
+
+const JP_STATUS_DESCRIPTIONS: Record<string, string> = {
+  鐵壁: '攻撃を受けた時、確率でダメージを防ぐ。発動ごとに1層消費し、層数または継続ターンが尽きると解除される。',
+  禁療: '受ける回復量が低下する。',
+  '發動機率增加·主動': '能動戦法の発動確率が上昇する。',
+  '發動機率增加·突擊': '突撃戦法の発動確率が上昇する。',
+  '發動機率增加·其他': '指定された戦法タイプの発動確率が上昇する。',
+}
+
+const JP_DAMAGE_TYPE_NAMES: Record<string, string> = {
+  physical: '兵刃',
+  tactical: '計略',
+  strategy: '計略',
+  true: '固定',
+  謀略: '計略',
+  真實: '固定',
 }
 
 const JP_STAT_NAMES: Record<string, string> = {
   lea: '統率',
   val: '武勇',
-  int: '智略',
+  int: '知略',
   pol: '政務',
   cha: '魅力',
   spd: '速度',
   統率: '統率',
   武勇: '武勇',
-  智略: '智略',
+  智略: '知略',
   政務: '政務',
   魅力: '魅力',
   速度: '速度',
@@ -71,8 +108,14 @@ export function useTemplateParser() {
   const statusName = (content: string, fallback?: string): string =>
     JP_STATUS_NAMES[content] || fallback || content
 
+  const statusDescription = (content: string, fallback?: string): string =>
+    JP_STATUS_DESCRIPTIONS[content] || fallback || '説明はまだありません'
+
   const statName = (content: string, fallback?: string): string =>
     JP_STAT_NAMES[content] || fallback || content
+
+  const damageTypeName = (content: string, fallback?: string): string =>
+    JP_DAMAGE_TYPE_NAMES[content] || (fallback ? JP_DAMAGE_TYPE_NAMES[fallback] || fallback : content)
 
   const parseText = (inputText: string, isMaxLevel: boolean = false, vars?: Record<string, any>): Segment[] => {
     if (!inputText) return []
@@ -99,14 +142,17 @@ export function useTemplateParser() {
           data: {
             ...(statusData || {}),
             name: statusName(content, statusData?.name),
-            description: statusData?.description || '説明はまだありません',
+            description: statusDescription(content, statusData?.description),
           },
         })
       } else if (type === 'dmg') {
         const dmgData = statuses.value._damage_types?.[content]
         segments.push({
           type: 'dmg',
-          data: dmgData || { name: content },
+          data: {
+            ...(dmgData || {}),
+            name: damageTypeName(content, dmgData?.name),
+          },
         })
       } else if (type === 'scale') {
         const parts = content.split(':')

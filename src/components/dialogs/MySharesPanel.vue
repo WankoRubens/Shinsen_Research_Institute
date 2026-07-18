@@ -164,7 +164,7 @@ const refresh = async () => {
   try {
     shares.value = await listMyShares()
   } catch (e) {
-    ElMessage.error(`載入失敗：${(e as Error).message}`)
+    ElMessage.error(`読み込みに失敗しました: ${(e as Error).message}`)
   } finally {
     loading.value = false
   }
@@ -195,7 +195,7 @@ const saveName = async (s: MyShare) => {
     cancelEdit()
     ElMessage.success('更新しました')
   } catch (e) {
-    ElMessage.error(`更新失敗：${(e as Error).message}`)
+    ElMessage.error(`更新に失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -263,7 +263,7 @@ const openPreview = async (s: MyShare) => {
       previewError.value = 'この共有にはプレビューできる部隊内容がありません'
     }
   } catch (e) {
-    previewError.value = `載入失敗：${(e as Error).message}`
+    previewError.value = `読み込みに失敗しました: ${(e as Error).message}`
   } finally {
     previewLoading.value = false
   }

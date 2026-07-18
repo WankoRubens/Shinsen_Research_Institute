@@ -29,10 +29,10 @@
             <SortPills
               v-model="heroSetSort"
               :options="heroSetSortOptions"
-              aria-label="英雄組合排序"
+              aria-label="武将組み合わせの並び順"
             />
             <span v-if="selectedHeroes.length > 0" class="filter-hint">
-              篩出 <strong>{{ filteredHeroSets.length }}</strong> 組
+              <strong>{{ filteredHeroSets.length }}</strong> 組を表示
             </span>
           </div>
 
@@ -60,7 +60,7 @@
           <div v-else class="split-layout">
             <aside class="set-sidebar">
               <header class="sidebar-head">
-                <span class="sidebar-title">英雄組合</span>
+                <span class="sidebar-title">武将組み合わせ</span>
                 <span class="sidebar-count">{{ filteredHeroSets.length }}</span>
               </header>
               <div class="sidebar-list">
@@ -134,7 +134,7 @@
                     <span class="head-stat head-stat--up">
                       <el-icon :size="13"><CaretTop /></el-icon>
                       <strong>{{ activeHeroSet.totalUpvoteCount }}</strong>
-                      <span class="head-stat-label">總贊</span>
+                      <span class="head-stat-label">総投票</span>
                     </span>
                     <span class="head-stat-divider" />
                     <span class="head-stat" :class="trendClass">
@@ -181,9 +181,9 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="我的提案" name="mine" :disabled="!isLoggedIn">
+        <el-tab-pane label="自分の提案" name="mine" :disabled="!isLoggedIn">
           <div v-if="!isLoggedIn" class="empty-state">
-            登入後可管理自己的提案。
+            ログインすると自分の提案を管理できます。
           </div>
           <div v-else v-loading="loadingMine" class="min-h-[160px]">
             <p
@@ -398,7 +398,7 @@ const onVariantVote = async (id: string, direction: VoteDirection): Promise<void
     return
   }
   try { await vote(id, direction) }
-  catch (e) { ElMessage.error(`投票失敗：${(e as Error).message}`) }
+  catch (e) { ElMessage.error(`投票に失敗しました: ${(e as Error).message}`) }
 }
 
 const onWithdrawVariant = async (variant: Variant): Promise<void> => {
@@ -406,7 +406,7 @@ const onWithdrawVariant = async (variant: Variant): Promise<void> => {
     const { deleted } = await withdraw(variant.id)
     ElMessage.success(deleted ? '取り下げました。派生案も削除しました' : '投稿を取り下げました')
   } catch (e) {
-    ElMessage.error(`撤回失敗：${(e as Error).message}`)
+    ElMessage.error(`取り下げに失敗しました: ${(e as Error).message}`)
   }
 }
 
@@ -485,7 +485,7 @@ const onTogglePublic = async (p: Proposal): Promise<void> => {
     await togglePublic(p.id, !wasPublic)
     ElMessage.success(wasPublic ? '非公開にしました' : '公開しました')
     void refreshHeroSets()
-  } catch (e) { ElMessage.error(`切換失敗：${(e as Error).message}`) }
+  } catch (e) { ElMessage.error(`切り替えに失敗しました: ${(e as Error).message}`) }
 }
 
 const onDelete = async (p: Proposal): Promise<void> => {

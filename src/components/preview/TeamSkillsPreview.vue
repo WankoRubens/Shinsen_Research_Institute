@@ -32,7 +32,7 @@
       <span class="wm-line wm-line--right" />
     </div>
 
-    <!-- Skills + 兵學 fused into one card. -->
+    <!-- Skills + bingxue fused into one card. -->
     <div class="skills-card">
       <div class="grid grid--skills">
         <div v-for="(role, i) in roles" :key="`s-${i}`" class="skill-col">
@@ -82,7 +82,7 @@
         </div>
       </div>
 
-      <!-- 兵學 fused into the bottom of the same card. Each column has its
+      <!-- Bingxue fused into the bottom of the same card. Each column has its
            own colored block (direction palette: red/amber/purple/emerald)
            with no separate outer border — the card border already frames
            them. The colored direction header is the only chromatic accent. -->
@@ -109,7 +109,7 @@
               </span>
             </div>
           </template>
-          <div v-else class="bingxue-empty">未設定 兵學</div>
+          <div v-else class="bingxue-empty">兵学未設定</div>
         </div>
       </div>
     </div>
@@ -136,7 +136,7 @@ const isMetaSkill = (s: Skill | null | undefined): boolean =>
   s?.type === '兵種' || s?.type === '陣法'
 
 const roles = computed(() => [
-  { key: 'main',  label: '主將', data: props.team.main },
+  { key: 'main',  label: '主将', data: props.team.main },
   { key: 'vice1', label: '副将', data: props.team.vice1 },
   { key: 'vice2', label: '副将', data: props.team.vice2 },
 ])
@@ -176,7 +176,7 @@ const hasAnyBingxue = computed(() =>
   min-height: 30px;
 }
 
-/* Role chip: 主將 amber gradient with shadow lift = the primary actor.
+/* Role chip: main general amber gradient with shadow lift = the primary actor.
    Vice chips: neutral, quietly bordered. */
 .role-chip {
   padding: 2px 7px;
@@ -232,7 +232,7 @@ const hasAnyBingxue = computed(() =>
   background: transparent;
 }
 
-/* Skills card: contains skills + 兵學 only. No more watermark wrapper
+/* Skills card: contains skills + bingxue only. No more watermark wrapper
    inside. */
 .skills-card {
   border: 1px solid rgb(var(--color-divider));
@@ -341,7 +341,7 @@ const hasAnyBingxue = computed(() =>
   white-space: nowrap;
 }
 
-/* 兵學 grid: continuation of the same card. Heavy top border (2px) makes
+/* Bingxue grid: continuation of the same card. Heavy top border (2px) makes
    it read as a distinct section without using a different background, so
    the table reads as one coherent block divided by emphasis. Each column
    keeps its colored direction header for the 4-school palette. */
@@ -406,7 +406,7 @@ const hasAnyBingxue = computed(() =>
 
 /* Direction palette: tints the col background (so the colored band covers
    any row-stretched height), the header bar, and the minor chips. The four
-   schools (武略/陣立/機略/臨戰) read instantly. */
+   schools (武略/陣立/機略/臨戦) read instantly. */
 .bingxue-col[data-dir="武略"] { background: rgba(254, 226, 226, 0.35); }
 .bingxue-header[data-dir="武略"] { background: #ef4444; }
 .bingxue-minor[data-dir="武略"]  { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
@@ -419,7 +419,7 @@ const hasAnyBingxue = computed(() =>
 .bingxue-header[data-dir="機略"] { background: #a855f7; }
 .bingxue-minor[data-dir="機略"]  { background: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
 
-.bingxue-col[data-dir="臨戰"] { background: rgba(209, 250, 229, 0.35); }
-.bingxue-header[data-dir="臨戰"] { background: #10b981; }
-.bingxue-minor[data-dir="臨戰"]  { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
+.bingxue-col[data-dir="臨戦"] { background: rgba(209, 250, 229, 0.35); }
+.bingxue-header[data-dir="臨戦"] { background: #10b981; }
+.bingxue-minor[data-dir="臨戦"]  { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
 </style>

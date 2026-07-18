@@ -62,7 +62,7 @@
     <MergeOnSignInDialog />
     <CloudConflictDialog />
 
-    <!-- Auth + changelog dialogs. Layout-level so login / 更新紀錄 work
+    <!-- Auth + changelog dialogs. Layout-level so login / 更新履歴 work
          from every route, not just the lineup builder. -->
     <ChangelogDialog v-model="changelogDialogVisible" />
     <AuthDialog v-model="authDialogVisible" @sign-in="onSignIn" />
@@ -108,7 +108,7 @@ const { t } = useLocale()
 // statically via meta; the coming-soon page picks dynamic values per :topic.
 const COMING_SOON_META: Record<string, { title: string; description: string }> = {
   'battle-sim': {
-    title: '戰鬥模擬',
+    title: '戦闘シミュレーション',
     description: '両軍の編成から戦闘の流れを自動で推演します。',
   },
   'hero-db': {
@@ -127,7 +127,7 @@ const pageTitle = computed<string>(() => {
   if (route.name === 'comingSoon') {
     const topic = String(route.params.topic ?? '')
     if (topic === 'hero-db') return t('heroDb')
-    return COMING_SOON_META[topic]?.title ?? '即將推出'
+    return COMING_SOON_META[topic]?.title ?? '準備中'
   }
   return String(route.meta.title ?? route.name ?? '')
 })
@@ -137,7 +137,7 @@ const pageDescription = computed<string | undefined>(() => {
   if (route.name === 'settings') return t('settingsDescription')
   if (route.name === 'comingSoon') {
     const topic = String(route.params.topic ?? '')
-    return COMING_SOON_META[topic]?.description ?? '此功能尚未上線。'
+    return COMING_SOON_META[topic]?.description ?? 'この機能はまだ公開されていません。'
   }
   const d = route.meta.description
   return typeof d === 'string' ? d : undefined

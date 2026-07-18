@@ -982,15 +982,15 @@ export const applyNamedSkillEffect = (
     }
     case '出奇制勝': {
       // 戦法タイプ: 受動
-      // 提高主動戰法傷害，機率獲得會心
+      // 能動戦法の与ダメージを上げ、確率で会心を獲得
       // 戦法説明にある能力値/与ダメ/被ダメ補正（28%または28）を反映する
       applyDatabaseBuffs(ctx, h)
       return true
     }
     case '越後先手組': {
       // 戦法タイプ: 兵種
-      // 騎兵進階，提速並機率恢復兵力
-      // 自軍全體を回復（回復率78%）する
+      // 騎兵を進化させ、速度上昇と確率回復を付与
+      // 自軍全体を回復（回復率78%）する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（24%または24）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'heal').forEach((target) => {
@@ -1000,8 +1000,8 @@ export const applyNamedSkillEffect = (
     }
     case '追亡逐北': {
       // 戦法タイプ: 能動
-      // 單體謀略傷害並施加畏縮
-      // 敵軍單體に計略ダメージ（ダメージ率146%）を与える
+      // 単体計略ダメージと畏縮付与
+      // 敵軍単体に計略ダメージ（ダメージ率146%）を与える
       // 畏縮を付与する
       databaseTargets(ctx, h, 'damage').forEach((target) => {
         h.dealSkillDamage(ctx, target, 146, 'strategy')
@@ -1017,8 +1017,8 @@ export const applyNamedSkillEffect = (
     }
     case '伊達風采': {
       // 戦法タイプ: 指揮
-      // 消耗風采造成雙傷害，疊滿提升屬性
-      // 敵軍單體に兵刃ダメージ（ダメージ率92%）を与える
+      // 風采を消費して兵刃・計略ダメージを与え、重ねがけで能力上昇
+      // 敵軍単体に兵刃ダメージ（ダメージ率92%）を与える
       // 戦法説明にある能力値/与ダメ/被ダメ補正（5%または5）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'damage').forEach((target) => {
@@ -1028,8 +1028,8 @@ export const applyNamedSkillEffect = (
     }
     case '龍騎兵': {
       // 戦法タイプ: 兵種
-      // 鐵炮進階兵種，機率消耗彈丸造成傷害
-      // 自軍全體に兵刃ダメージ（ダメージ率104%）を与える
+      // 鉄砲を進化させ、弾丸を消費してダメージを与える
+      // 自軍全体に兵刃ダメージ（ダメージ率104%）を与える
       databaseTargets(ctx, h, 'damage').forEach((target) => {
         h.dealSkillDamage(ctx, target, 104, 'physical')
       })
@@ -1046,8 +1046,8 @@ export const applyNamedSkillEffect = (
     }
     case '伊賀忍者': {
       // 戦法タイプ: 兵種
-      // 弓兵進階，利用密報造成額外傷害
-      // 自軍全體に兵刃ダメージ（ダメージ率102%）を与える
+      // 弓兵を進化させ、密報を使って追加ダメージを与える
+      // 自軍全体に兵刃ダメージ（ダメージ率102%）を与える
       // 疲弊を付与する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（10%または10）を反映する
       applyDatabaseBuffs(ctx, h)
@@ -1065,8 +1065,8 @@ export const applyNamedSkillEffect = (
     }
     case '風流武者': {
       // 戦法タイプ: 受動
-      // 主動戰法機率治療或增傷
-      // 自軍群體（2人）を回復（回復率132%）する
+      // 能動戦法の発動に応じて回復または与ダメージを上昇
+      // 自軍複数（2人）を回復（回復率132%）する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（30%または30）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'heal').forEach((target) => {
@@ -1076,8 +1076,8 @@ export const applyNamedSkillEffect = (
     }
     case '威風凜凜': {
       // 戦法タイプ: 突撃
-      // 攻擊後強制目標傷害降低
-      // 敵軍單體に兵刃ダメージ（ダメージ率238%）を与える
+      // 通常攻撃後に目標の与ダメージを低下
+      // 敵軍単体に兵刃ダメージ（ダメージ率238%）を与える
       // 戦法説明にある能力値/与ダメ/被ダメ補正（42%または42）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'damage').forEach((target) => {
@@ -1087,8 +1087,8 @@ export const applyNamedSkillEffect = (
     }
     case '傳馬疾馳': {
       // 戦法タイプ: 能動
-      // 增強友軍並轉移效果
-      // 友軍單體に兵刃ダメージ（ダメージ率102%）を与える
+      // 友軍を強化し、効果終了時に別の友軍へ移す
+      // 友軍単体に兵刃ダメージ（ダメージ率102%）を与える
       // 戦法説明にある能力値/与ダメ/被ダメ補正（20%または20）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'damage').forEach((target) => {
@@ -1098,12 +1098,12 @@ export const applyNamedSkillEffect = (
     }
     case '重農主義': {
       // 戦法タイプ: 指揮
-      // 評定衆時增加兵糧增產效果
+      // 評定衆時に兵糧増産効果を追加
       return applyDatabaseSkillEffect(ctx, h)
     }
     case '上州黃斑': {
       // 戦法タイプ: 指揮
-      // 條件施加消沉或疲弊狀態
+      // 条件に応じて消沈または疲弊を付与
       // 疲弊を付与する
       databaseTargets(ctx, h, 'control').forEach((target) => {
         ["疲弊"].forEach((name) => {
@@ -1116,8 +1116,8 @@ export const applyNamedSkillEffect = (
     }
     case '戮力同心': {
       // 戦法タイプ: 指揮
-      // 每回合機率恢復友軍兵力
-      // 自軍單體或自軍群體を回復（回復率82%）する
+      // 毎ターン確率で友軍を回復
+      // 自軍単体または自軍複数を回復（回復率82%）する
       databaseTargets(ctx, h, 'heal').forEach((target) => {
         h.healBySkill(ctx, target, 82, databaseHealKind(ctx.skill))
       })
@@ -1125,8 +1125,8 @@ export const applyNamedSkillEffect = (
     }
     case '鬼義重': {
       // 戦法タイプ: 能動
-      // 群體兵刃傷害並降低統率
-      // 敵軍群體（2人）に兵刃ダメージ（ダメージ率214%）を与える
+      // 複数兵刃ダメージと統率低下
+      // 敵軍複数（2人）に兵刃ダメージ（ダメージ率214%）を与える
       // 戦法説明にある能力値/与ダメ/被ダメ補正（65%または65）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'damage').forEach((target) => {
@@ -1136,8 +1136,8 @@ export const applyNamedSkillEffect = (
     }
     case '股肱之臣': {
       // 戦法タイプ: 能動
-      // 群體回生與傷害提升
-      // 自軍群體（2-3人）を回復（回復率54%）する
+      // 複数に回生を付与し、残数に応じて与ダメージ上昇
+      // 自軍複数（2-3人）を回復（回復率54%）する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（11%または11）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'heal').forEach((target) => {
@@ -1147,8 +1147,8 @@ export const applyNamedSkillEffect = (
     }
     case '荷馱崩': {
       // 戦法タイプ: 能動
-      // 群體謀略傷害並減少治療
-      // 敵軍群體（2人）に計略ダメージ（ダメージ率134%）を与える
+      // 複数計略ダメージと被回復効果低下
+      // 敵軍複数（2人）に計略ダメージ（ダメージ率134%）を与える
       databaseTargets(ctx, h, 'damage').forEach((target) => {
         h.dealSkillDamage(ctx, target, 134, 'strategy')
       })
@@ -1156,7 +1156,7 @@ export const applyNamedSkillEffect = (
     }
     case '天神山殘照': {
       // 戦法タイプ: 受動
-      // 普通攻擊觸發謀略傷害並提升屬性
+      // 通常攻撃後に計略ダメージを与え、序盤は自身の能力を上昇
       // 自身に計略ダメージ（ダメージ率218%）を与える
       // 戦法説明にある能力値/与ダメ/被ダメ補正（60%または60）を反映する
       applyDatabaseBuffs(ctx, h)
@@ -2286,7 +2286,7 @@ export const applyNamedSkillEffect = (
     case '乱世の華': {
       // 戦法タイプ: 突撃
       // 通常攻撃後、攻撃対象にもう一度兵刃ダメージ （ダメージ率79%→158%）と計略ダメージ（ダメージ率79%→158%、知略依存）を与える、このダメージは双方の属
-      // 敵軍單體に計略ダメージ（ダメージ率158%）を与える
+      // 敵軍単体に計略ダメージ（ダメージ率158%）を与える
       databaseTargets(ctx, h, 'damage').forEach((target) => {
         h.dealSkillDamage(ctx, target, 158, 'strategy')
       })
@@ -2719,7 +2719,7 @@ export const applyNamedSkillEffect = (
     }
     case '臨時槍之鈴': {
       // 戦法タイプ: 突撃
-      // 造成兵刃傷害並有條件額外恢復兵力
+      // 兵刃ダメージを与え、条件付きで自身を回復
       return applyDatabaseSkillEffect(ctx, h)
     }
     case '祓除': {

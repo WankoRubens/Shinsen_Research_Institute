@@ -18,7 +18,7 @@ export const snapshotTeam = (lineup: Lineup): Lineup =>
  *  every surface that renders the same logical variant, so column rhythm
  *  is stable from drawer header → sidebar → variant card.
  *
- *  The swap is structural (vice slots carry their full skill/兵學 bundle),
+ *  The swap is structural (vice slots carry their full skill/bingxue bundle),
  *  not just name-level — same comparator as the server-side hash function
  *  to keep client + server in lockstep. */
 export const withCanonicalViceOrder = (team: Lineup): Lineup => {

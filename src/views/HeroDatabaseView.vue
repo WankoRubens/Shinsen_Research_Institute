@@ -38,7 +38,7 @@
             />
             <div class="min-w-0 flex-1 flex flex-col">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-lg font-bold text-[#1f2933] truncate">{{ selectedHero.name }}</span>
+                <span class="text-lg font-bold text-[#1f2933] truncate">{{ selectedHero.name_jp || selectedHero.name }}</span>
                 <span
                   class="text-xs font-bold px-1.5 py-0.5 rounded text-white"
                   :class="rarityClass(selectedHero.rarity)"
@@ -48,8 +48,8 @@
               </div>
               <div class="text-sm text-[#6b5b36]">Cost {{ selectedHero.cost }}</div>
               <div class="text-sm text-[#6b5b36]">
-                {{ selectedHero.faction || '勢力不明' }}
-                <span v-if="selectedHero.clan"> / {{ selectedHero.clan }}</span>
+                {{ selectedHero.faction_jp || selectedHero.faction || '勢力不明' }}
+                <span v-if="selectedHero.clan_jp || selectedHero.clan"> / {{ selectedHero.clan_jp || selectedHero.clan }}</span>
               </div>
               <div v-if="selectedLabels.length" class="flex flex-wrap gap-1 mt-2">
                 <span

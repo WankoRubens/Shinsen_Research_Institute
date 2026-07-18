@@ -1,4 +1,4 @@
-// Supabase REST client for the proposal (= personal-collection 精選隊伍)
+// Supabase REST client for the proposal (= personal-collection おすすめ編成)
 // surface. The public feed + voting moved to `variants.ts` in the
 // variant-first migration; this file now covers only my-drafts CRUD.
 //
@@ -125,7 +125,7 @@ export const deleteProposal = async (id: string): Promise<void> => {
 /** List the current user's own proposals (private + public). Auth required.
  *  Must filter by user_id explicitly: the proposals table has an OR of RLS
  *  SELECT policies (owner OR is_public), so an unfiltered query also returns
- *  every public proposal from other users — they would leak into 我的提案. */
+ *  every public proposal from other users - they would leak into 自分の提案. */
 export const listMyProposals = async (): Promise<Proposal[]> => {
   if (!SUPABASE_URL) throw new Error('proposals backend not configured')
   const token = await getValidAccessToken()

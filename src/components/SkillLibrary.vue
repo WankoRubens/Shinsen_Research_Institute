@@ -231,7 +231,7 @@ watch(searchQuery, (newVal) => {
 const filterType = ref('')
 const filterRarity = ref('')
 const skillLibraryMaxLevel = ref(true)
-const typeOrder = ['受動', '被動', '被动', '兵種', '兵种', '指揮', '指挥', '陣法', '阵法', '能動', '主動', '主动', '突撃', '突擊', '突击']
+const typeOrder = ['受動', '兵種', '指揮', '陣法', '能動', '突撃']
 
 const skillTypes = computed(() => {
   const set = new Set<string>()

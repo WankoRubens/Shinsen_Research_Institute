@@ -117,7 +117,7 @@
   <!-- Selection dialog -->
   <el-dialog
     v-model="dialogVisible"
-    :title="`兵学設定 — ${hero?.name || ''}`"
+    :title="`兵学設定 — ${hero?.name_jp || hero?.name || ''}`"
     width="820px"
     class="bingxue-dialog"
     append-to-body
@@ -431,7 +431,7 @@ const headerClass = computed(() => {
   return d === '武略' ? 'bg-red-500'
     : d === '陣立' ? 'bg-amber-600'
     : d === '機略' ? 'bg-purple-500'
-    : d === '臨戰' ? 'bg-emerald-500'
+    : d === '臨戦' ? 'bg-emerald-500'
     : 'bg-gray-400'
 })
 const borderClass = computed(() => {
@@ -439,7 +439,7 @@ const borderClass = computed(() => {
   return d === '武略' ? 'border-red-300'
     : d === '陣立' ? 'border-amber-300'
     : d === '機略' ? 'border-purple-300'
-    : d === '臨戰' ? 'border-emerald-300'
+    : d === '臨戦' ? 'border-emerald-300'
     : 'border-gray-200'
 })
 const chipClass = computed(() => {
@@ -447,7 +447,7 @@ const chipClass = computed(() => {
   return d === '武略' ? 'bg-red-50 border-red-200 text-red-700'
     : d === '陣立' ? 'bg-amber-50 border-amber-200 text-amber-700'
     : d === '機略' ? 'bg-purple-50 border-purple-200 text-purple-700'
-    : d === '臨戰' ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+    : d === '臨戦' ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
     : 'bg-gray-50 border-gray-200 text-gray-700'
 })
 
@@ -455,21 +455,21 @@ const colorTextClassFor = (d: BingxueDirection) => {
   return d === '武略' ? 'text-red-600'
     : d === '陣立' ? 'text-amber-700'
     : d === '機略' ? 'text-purple-600'
-    : d === '臨戰' ? 'text-emerald-600'
+    : d === '臨戦' ? 'text-emerald-600'
     : 'text-gray-600'
 }
 const colorCardActiveFor = (d: BingxueDirection) => {
   return d === '武略' ? 'border-red-400 bg-red-50 ring-1 ring-red-300'
     : d === '陣立' ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-300'
     : d === '機略' ? 'border-purple-400 bg-purple-50 ring-1 ring-purple-300'
-    : d === '臨戰' ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-300'
+    : d === '臨戦' ? 'border-emerald-400 bg-emerald-50 ring-1 ring-emerald-300'
     : 'border-gray-400 bg-gray-50'
 }
 const colorBadgeClassFor = (d: BingxueDirection) => {
   return d === '武略' ? 'bg-red-500 text-white'
     : d === '陣立' ? 'bg-amber-600 text-white'
     : d === '機略' ? 'bg-purple-500 text-white'
-    : d === '臨戰' ? 'bg-emerald-500 text-white'
+    : d === '臨戦' ? 'bg-emerald-500 text-white'
     : 'bg-gray-400 text-white'
 }
 

@@ -1,13 +1,13 @@
 // Phase 2 type-layer for the dual-mode lineup model.
 //
 // Two modes:
-//   - 編組 (Group): a set of up to 5 teams sharing a hero/skill uniqueness
+//   - 編成グループ (Group): a set of up to 5 teams sharing a hero/skill uniqueness
 //     constraint — mirrors what the user actually owns in the live game.
-//   - 精選隊伍 (FeaturedTeam — kept as `Proposal` in code/DB for backwards
+//   - おすすめ編成 (FeaturedTeam — kept as `Proposal` in code/DB for backwards
 //     compatibility): a single team frozen as a snapshot, optionally made
 //     public for community sharing/voting/import. No uniqueness constraint
 //     vs. anything else (theory-craft). The CHT label was originally
-//     "配將提案" but that name is reserved for a future group-level
+//     "lineup proposal" but that name is reserved for a future group-level
 //     theory-craft suggestion feature.
 //
 // `Lineup` (= Team) lives in useLineups; we only re-export the alias here so
@@ -19,7 +19,7 @@ import type { Lineup } from '../composables/useLineups'
 export type Team = Lineup
 
 /**
- * A 編組 holds up to MAX_TEAMS_PER_GROUP teams. Within a group, a hero or
+ * A 編成グループ holds up to MAX_TEAMS_PER_GROUP teams. Within a group, a hero or
  * skill may appear in at most one team — this enforces the inventory truth
  * that you can't put 黒田官兵衛 in two teams simultaneously when you only own
  * one copy.
@@ -46,12 +46,12 @@ export const MAX_TEAMS_PER_GROUP = 10
  *   collides; the existing team keeps its hero.
  *
  * Surface in `ExportTeamToGroupDialog` (shared between LineupBuilder's
- * "導出到其他編組" entrypoint and the ProposalsView "匯入到編組" button).
+ * "他の編成へ書き出す" entrypoint and the ProposalsView "編成へ取り込む" button).
  */
 export type ImportConflictResolution = 'cancel' | 'overwrite' | 'leave-empty'
 
 /**
- * A 精選隊伍 (rendered as "FeaturedTeam" in CHT UI labels; type stays
+ * An おすすめ編成 (rendered as "FeaturedTeam" in UI labels; type stays
  * `Proposal` for backwards compat with the DB column name) is a snapshot
  * of a single team. Snapshots are intentionally
  * data-redundant (we copy hero/skill names, not just ids) so a future

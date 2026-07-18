@@ -15,12 +15,12 @@
           effect="dark"
           :content="contributorTooltip"
         >
-          <span class="chip chip--contrib">+{{ contributorCount - 1 }} 貢獻者</span>
+          <span class="chip chip--contrib">+{{ contributorCount - 1 }} 投稿者</span>
         </el-tooltip>
         <span v-if="isMyContribution" class="chip chip--mine" title="あなたが投稿した派生案">
-          我的
+          自分
         </span>
-        <span class="time" :title="`首次提交：${variant.firstSubmittedAt}`">
+        <span class="time" :title="`初回投稿：${variant.firstSubmittedAt}`">
           · {{ relativeTime(variant.updatedAt) }}
         </span>
       </div>
@@ -38,8 +38,8 @@
             <button
               type="button"
               class="icon-btn icon-btn--danger"
-              title="撤回我的提交"
-              aria-label="撤回我的提交"
+              title="自分の投稿を取り下げ"
+              aria-label="自分の投稿を取り下げ"
             >
               <el-icon :size="14"><CircleClose /></el-icon>
             </button>
@@ -130,7 +130,7 @@ const canVote = computed(() => props.isLoggedIn && !props.isMyContribution)
 const voteTooltip = computed(() => {
   if (canVote.value) return ''
   if (props.isMyContribution) return '自分が参加している派生案には投票できません'
-  return '登入後可投票'
+  return 'ログインすると投票できます'
 })
 </script>
 

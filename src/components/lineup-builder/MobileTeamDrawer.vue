@@ -51,7 +51,7 @@
                 </el-icon>
                 <span class="flex-1 truncate mr-2">{{ p.name }}</span>
                 <span class="text-[11px] text-ink-mute tabular-nums">
-                  {{ p.inv_h.length }}武 · {{ p.inv_s.length }}法
+                  {{ p.inv_h.length }}武将・{{ p.inv_s.length }}戦法
                 </span>
               </el-dropdown-item>
               <el-dropdown-item command="edit-inventory" divided>

@@ -1,4 +1,4 @@
-// Cloud-sync backend for 編組 (lineup groups). Companion to the localStorage
+// Cloud-sync backend for 編成グループ (lineup groups). Companion to the localStorage
 // autosave in useGroupPersistence.ts — local stays the session-level source
 // of truth, this is the cross-device mirror.
 //

@@ -1,6 +1,6 @@
-// Supabase REST client for the variant-first 精選隊伍 feature.
+// Supabase REST client for the variant-first おすすめ編成 feature.
 //
-// In the new model, a variant is a canonical (HeroSet + skills + 兵學 + breakthrough)
+// In the new model, a variant is a canonical (HeroSet + skills + bingxue + breakthrough)
 // fingerprint — multiple users submitting the same team configuration collapse
 // into a single variant row. Votes attach to variants; per-user submission
 // attempts are tracked in variant_contributors.

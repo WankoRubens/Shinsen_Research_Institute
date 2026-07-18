@@ -92,7 +92,7 @@
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <el-button class="!rounded-sm" :disabled="busy" @click="onCancel">稍後再決定</el-button>
+        <el-button class="!rounded-sm" :disabled="busy" @click="onCancel">あとで決める</el-button>
         <el-button
           type="primary"
           class="!rounded-sm"

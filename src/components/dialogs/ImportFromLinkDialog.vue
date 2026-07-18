@@ -28,7 +28,7 @@
     <!-- Step 2: loading spinner -->
     <div v-else-if="phase === 'loading'" class="text-center py-8 text-sm text-ink-mute">
       <el-icon class="is-loading mr-1.5" :size="16"><Loading /></el-icon>
-      載入中…
+      読み込み中…
     </div>
 
     <!-- Step 3a: error -->
@@ -163,7 +163,7 @@
           class="!rounded-sm"
           :disabled="!canLoad"
           @click="onLoad"
-        >載入</el-button>
+        >読み込む</el-button>
         <template v-if="phase === 'ready' && mode === 'pick' && hasPickConflict">
           <el-button
             class="!rounded-sm"
@@ -409,7 +409,7 @@ const onLoad = async () => {
     const msg = (e as Error).message
     if (/not found/i.test(msg)) errorMessage.value = '共有内容が見つかりません（削除された可能性があります）'
     else if (/invalid share slug/i.test(msg)) errorMessage.value = 'リンク形式が正しくありません'
-    else errorMessage.value = `載入失敗：${msg}`
+    else errorMessage.value = `読み込みに失敗しました: ${msg}`
     phase.value = 'error'
     return
   }

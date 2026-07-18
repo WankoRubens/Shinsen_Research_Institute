@@ -1,5 +1,5 @@
 <template>
-  <!-- Personal-collection card for the 我的提案 tab. Read-only display:
+  <!-- Personal-collection card for the 自分の提案 tab. Read-only display:
        only the visibility toggle is interactive, and it lives in the
        TeamPreviewCard header (before the title) via the title-prefix slot.
        Delete/import/vote actions were removed — the bottom meta panel
@@ -15,9 +15,9 @@
         <el-popconfirm
           v-if="canEdit"
           :title="proposal.isPublic
-            ? '確定設為私人？其他人將無法看見此提案'
-            : '確定公開此提案？所有人都能看見和投票'"
-          confirm-button-text="確定"
+            ? '非公開にしますか？他の人はこの提案を見られなくなります'
+            : '公開しますか？全員が閲覧・投票できるようになります'"
+          confirm-button-text="決定"
           cancel-button-text="キャンセル"
           :width="260"
           @confirm="$emit('toggle-public')"
@@ -27,14 +27,14 @@
               type="button"
               class="visibility-chip"
               :class="{ 'visibility-chip--public': proposal.isPublic }"
-              :title="proposal.isPublic ? '點擊切換成私人' : '點擊切換成公開'"
-              :aria-label="proposal.isPublic ? '切換成私人' : '切換成公開'"
+              :title="proposal.isPublic ? 'クリックして非公開に切り替え' : 'クリックして公開に切り替え'"
+              :aria-label="proposal.isPublic ? '非公開に切り替え' : '公開に切り替え'"
               @click.stop
             >
               <el-icon :size="13">
                 <component :is="proposal.isPublic ? View : Hide" />
               </el-icon>
-              <span class="visibility-label">{{ proposal.isPublic ? '公開' : '私人' }}</span>
+              <span class="visibility-label">{{ proposal.isPublic ? '公開' : '非公開' }}</span>
             </button>
           </template>
         </el-popconfirm>
@@ -42,12 +42,12 @@
           v-else
           class="visibility-chip visibility-chip--static"
           :class="{ 'visibility-chip--public': proposal.isPublic }"
-          :title="proposal.isPublic ? '公開' : '私人'"
+          :title="proposal.isPublic ? '公開' : '非公開'"
         >
           <el-icon :size="13">
             <component :is="proposal.isPublic ? View : Hide" />
           </el-icon>
-          <span class="visibility-label">{{ proposal.isPublic ? '公開' : '私人' }}</span>
+          <span class="visibility-label">{{ proposal.isPublic ? '公開' : '非公開' }}</span>
         </span>
 
         <el-popconfirm

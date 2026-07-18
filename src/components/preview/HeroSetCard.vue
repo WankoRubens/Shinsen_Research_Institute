@@ -9,7 +9,7 @@
     <div class="portraits">
       <div class="portrait-cell portrait-cell--main">
         <PreviewPortrait :src="mainHero?.portrait ?? null" :alt="mainHero?.name" :render="68" />
-        <span class="role-tag role-tag--main" title="主將">主</span>
+        <span class="role-tag role-tag--main" title="主将">主</span>
       </div>
       <div v-for="(v, idx) in viceHeroes" :key="`v-${idx}`" class="portrait-cell">
         <PreviewPortrait :src="v?.portrait ?? null" :alt="v?.name" :render="68" />
@@ -90,7 +90,7 @@ const trendDisplay = computed(() => {
   if (delta.value < 0) return `${delta.value}`
   return '0'
 })
-const trendTitle = computed(() => `近 30 天淨投票 ${trendDisplay.value}`)
+const trendTitle = computed(() => `直近30日の純投票 ${trendDisplay.value}`)
 </script>
 
 <style scoped>
@@ -135,7 +135,7 @@ const trendTitle = computed(() => `近 30 天淨投票 ${trendDisplay.value}`)
 .portrait-cell--main :deep(.preview-portrait) {
   box-shadow: 0 0 0 2px #b45309, 0 0 0 3px #fff;
 }
-/* 主將 tag: amber pill nudged onto the portrait corner. Keep it small —
+/* Main-general tag: amber pill nudged onto the portrait corner. Keep it small —
    the visual ring already differentiates the main slot; the chip is for
    accessibility and ambiguous cases (similar-looking portraits). */
 .role-tag--main {

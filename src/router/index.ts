@@ -108,7 +108,7 @@ const routes: RouteRecordRaw[] = [
         path: 'coming-soon/:topic?',
         name: 'comingSoon',
         component: ComingSoon,
-        meta: { title: '即將推出' },
+        meta: { title: '準備中' },
       },
     ],
   },

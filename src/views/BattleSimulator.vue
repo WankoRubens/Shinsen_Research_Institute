@@ -304,16 +304,16 @@
 
           <ChartPanel title="回復分析">
             <div class="stat-box stat-box--wide">
-              <span>理論治療量 <b class="blue">{{ formatNumber(healingTheory) }}</b></span>
-              <span>実際治療量 <b class="orange">{{ formatNumber(healingActual) }}</b></span>
-              <span>治療有効率 <b class="red">{{ healingEfficiency.toFixed(2) }}</b></span>
+              <span>理論回復量 <b class="blue">{{ formatNumber(healingTheory) }}</b></span>
+              <span>実際回復量 <b class="orange">{{ formatNumber(healingActual) }}</b></span>
+              <span>回復有効率 <b class="red">{{ healingEfficiency.toFixed(2) }}</b></span>
             </div>
             <LineSeries :series="healingSeries" />
           </ChartPanel>
 
           <ChartPanel title="多穿分析">
             <div class="stat-box stat-box--wide">
-              <span>平均傷兵 <b class="blue">{{ formatNumber(avgEnemyLoss) }}</b></span>
+            <span>平均損兵 <b class="blue">{{ formatNumber(avgEnemyLoss) }}</b></span>
               <span>平均損失 <b class="orange">{{ formatNumber(avgAllyLoss) }}</b></span>
               <span>戦功損失比 <b class="red">{{ batchResult.exchangeRatio.toFixed(1) }}</b></span>
             </div>

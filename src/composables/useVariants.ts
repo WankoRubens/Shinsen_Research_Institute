@@ -1,8 +1,8 @@
-// State + actions for the variant-first 精選隊伍 feature.
+// State + actions for the variant-first おすすめ編成 feature.
 //
 // Two-level model:
 //   - Level 1: HeroSet grid (3-hero combos, no skills)  — `heroSets`
-//   - Level 2: Variants under one HeroSet (skills/兵學) — `activeVariants`
+//   - Level 2: Variants under one HeroSet (skills/bingxue) — `activeVariants`
 //
 // All hashing happens server-side. The composable manages: reactive state,
 // optimistic voting deltas, contributor cache, sort/filter selections.

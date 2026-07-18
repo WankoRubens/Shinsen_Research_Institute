@@ -3,10 +3,10 @@ import { Hero, Skill, BingxueDirection } from './useData'
 import { useGroups } from './useGroups'
 import { MAX_TEAMS_PER_GROUP } from '../types/group'
 
-// Active 兵學 selection for a hero. A hero activates ONE direction at a time,
+// Active bingxue selection for a hero. A hero activates one direction at a time,
 // picks 1 of 3 majors (1 pt), plus minors from 6 available using a 5-point budget.
 // Each minor costs `level` points (Lv1=1pt, Lv2=2pt). Total of .minors.level sums
-// must be ≤5. `direction: null` = 兵學 not yet configured.
+// must be <=5. `direction: null` means bingxue is not configured yet.
 export interface BingxueMinor {
   name: string          // JP key
   level: 1 | 2

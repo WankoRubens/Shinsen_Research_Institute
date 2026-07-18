@@ -224,15 +224,27 @@ const libraryHeroes = computed(() => heroes.value.filter((hero) => {
   return allowedRaritySet.value.has(Number(hero.rarity))
 }))
 
+const heroFactionLabel = (hero: Hero): string => hero.faction_jp || hero.faction || ''
+const heroClanLabel = (hero: Hero): string => hero.clan_jp || hero.clan || ''
+const heroSearchText = (hero: Hero): string => [
+  hero.name_jp,
+  hero.name,
+  hero.faction_jp,
+  hero.faction,
+  hero.clan_jp,
+  hero.clan,
+].filter(Boolean).join(' ')
+
 const factions = computed(() => {
-  return [...new Set(libraryHeroes.value.map(h => h.faction))].filter(Boolean).sort()
+  return [...new Set(libraryHeroes.value.map(heroFactionLabel))].filter(Boolean).sort()
 })
 
 const clans = computed(() => {
   const counts = new Map<string, number>()
   for (const h of libraryHeroes.value) {
-    if (!h.clan) continue
-    counts.set(h.clan, (counts.get(h.clan) ?? 0) + 1)
+    const clan = heroClanLabel(h)
+    if (!clan) continue
+    counts.set(clan, (counts.get(clan) ?? 0) + 1)
   }
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c)
 })
@@ -295,10 +307,10 @@ const resetFilters = () => {
 
 const filteredHeroes = computed(() => {
   return libraryHeroes.value.filter(h => {
-    if (debouncedSearchQuery.value && !h.name.includes(debouncedSearchQuery.value)) return false
-    if (selectedFaction.value && h.faction !== selectedFaction.value) return false
+    if (debouncedSearchQuery.value && !heroSearchText(h).includes(debouncedSearchQuery.value)) return false
+    if (selectedFaction.value && heroFactionLabel(h) !== selectedFaction.value) return false
     if (selectedCost.value !== null && h.cost !== selectedCost.value) return false
-    if (selectedClan.value && h.clan !== selectedClan.value) return false
+    if (selectedClan.value && heroClanLabel(h) !== selectedClan.value) return false
     if (props.showTroopFilter && selectedTroopTypes.value.size > 0 && !heroHasTroopType(h, selectedTroopTypes.value)) return false
     if (props.showLabelFilter && selectedLabelValue.value && !heroLabels(h).includes(selectedLabelValue.value)) return false
     if (props.mode === 'select' && props.filterOwned && !props.ownedHeroes.includes(h.name)) return false

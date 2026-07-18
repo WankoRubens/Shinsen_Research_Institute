@@ -16,7 +16,7 @@
         </div>
         <div class="min-w-0">
           <div class="text-base sm:text-lg font-bold text-gray-800 leading-tight">
-            更新紀錄
+            更新履歴
           </div>
           <div class="text-xs text-gray-500 mt-0.5">
             最新 v{{ latestVersion }}

@@ -158,7 +158,7 @@ const props = withDefaults(defineProps<{
 const portraitSize = computed(() => props.density === 'compact' ? 104 : 166)
 
 const roles = computed(() => [
-  { key: 'main', label: '主將', data: props.team.main },
+  { key: 'main', label: '主将', data: props.team.main },
   { key: 'vice1', label: '副将', data: props.team.vice1 },
   { key: 'vice2', label: '副将', data: props.team.vice2 },
 ])
@@ -406,7 +406,7 @@ const hasAnyBingxue = computed(() =>
 .skill-name--meta { font-weight: 700; background: rgba(180, 83, 9, 0.05); }
 .skill-name--meta:hover { background: rgba(180, 83, 9, 0.12); }
 
-/* 自帶戰法 row: tinted background + leading badge to distinguish from
+/* Unique-skill row: tinted background + leading badge to distinguish from
    user-chosen skill1/skill2. Sits at the top of each column. */
 .skill-name--unique {
   background: rgba(180, 83, 9, 0.06);
@@ -502,9 +502,9 @@ const hasAnyBingxue = computed(() =>
 .bingxue-box[data-dir="機略"] .bingxue-header { background: #a855f7; }
 .bingxue-box[data-dir="機略"] .bingxue-minor { background: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
 
-.bingxue-box[data-dir="臨戰"] { border-color: #6ee7b7; }
-.bingxue-box[data-dir="臨戰"] .bingxue-header { background: #10b981; }
-.bingxue-box[data-dir="臨戰"] .bingxue-minor { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
+.bingxue-box[data-dir="臨戦"] { border-color: #6ee7b7; }
+.bingxue-box[data-dir="臨戦"] .bingxue-header { background: #10b981; }
+.bingxue-box[data-dir="臨戦"] .bingxue-minor { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
 
 .team-preview--compact .bingxue-header { padding: 3px 6px; }
 .team-preview--compact .bingxue-major { font-size: 11px; }

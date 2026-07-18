@@ -301,7 +301,7 @@ const handleSkillDrop = (role: Role, slotIdx: number, skill: Skill) => {
   const targetRole = currentLineup.value[role]
   if (slotIdx === 1) targetRole.skill1 = skill
   if (slotIdx === 2) targetRole.skill2 = skill
-  ElMessage.success(`${skill.name}を習得しました`)
+  ElMessage.success(`${skill.name_jp || skill.name}を習得しました`)
 }
 
 const handleSkillSlotDrop = (targetRole: Role, sourceRole: Role, sourceSlotIdx: number, targetSlotIdx: number) => {
@@ -320,7 +320,7 @@ const handleSkillSlotDrop = (targetRole: Role, sourceRole: Role, sourceSlotIdx: 
 // were relative to the old hero and no longer apply. This reset lives here (the
 // explicit user-assignment path) rather than in a LineupSlot watch, so that
 // switching teams or restoring saved data — which also change props.hero —
-// never wipe the user's 突破/屬性.
+// never wipe the user's breakthrough/stat allocation.
 const assignHeroToRole = (role: Role, hero: Hero) => {
   const slot = currentLineup.value[role]
   if (slot.hero?.name === hero.name) return
@@ -334,7 +334,7 @@ const assignHeroToRole = (role: Role, hero: Hero) => {
 const selectHeroFromLibrary = (hero: Hero) => {
   if (currentSelectingHeroRole.value) {
     assignHeroToRole(currentSelectingHeroRole.value, hero)
-    ElMessage.success(`${hero.name}を選択しました`)
+    ElMessage.success(`${hero.name_jp || hero.name}を選択しました`)
   } else {
     if (!currentLineup.value.main.hero) assignHeroToRole('main', hero)
     else if (!currentLineup.value.vice1.hero) assignHeroToRole('vice1', hero)
@@ -406,7 +406,7 @@ const selectSkillFromDialog = (skill: Skill) => {
   const role = currentLineup.value[targetRole!]
   if (targetSlot === 1) role.skill1 = skill
   if (targetSlot === 2) role.skill2 = skill
-  ElMessage.success(`${skill.name}を習得しました`)
+  ElMessage.success(`${skill.name_jp || skill.name}を習得しました`)
 
   // Only advance focus when the user explicitly focused a slot first.
   // Auto-targeted picks should keep focus cleared so subsequent clicks
@@ -652,7 +652,7 @@ const onSubmitProposal = async (payload: { name: string; isPublic: boolean }) =>
     createProposalDialogVisible.value = false
     ElMessage.success('おすすめ編成を保存しました')
   } catch (e) {
-    ElMessage.error(`建立失敗：${(e as Error).message}`)
+    ElMessage.error(`作成に失敗しました: ${(e as Error).message}`)
   } finally {
     proposalSubmitting.value = false
   }
@@ -745,7 +745,7 @@ const onImportFromLink = (payload: ImportFromLinkPayload) => {
       return
     }
     // Otherwise: append each incoming group as a NEW group. Prefix with
-    // "匯入-" when the display name collides with an existing group — keeps
+    // "取り込み-" when the display name collides with an existing group - keeps
     // the picker unambiguous on subsequent edits.
     const existing = new Set(groups.map((g) => g.name))
     let firstNewIdx: number | null = null
@@ -987,7 +987,7 @@ html.el-popup-parent--hidden {
     margin-left: 4px;
   }
 }
-/* Tighten the gap between the 武將庫/戰法庫 tab header and its panel content.
+/* Tighten the gap between the hero/skill library tab header and its panel content.
    Element Plus default is margin: 0 0 15px; which leaves too much dead space. */
 .el-tabs--top > .el-tabs__header.is-top {
   margin-bottom: 6px;
@@ -997,7 +997,7 @@ html.el-popup-parent--hidden {
     margin-bottom: 2px;
   }
 }
-/* Library tabs (武將庫/戰法庫): shorter header row (80% of EP default 40px). */
+/* Library tabs (hero/skill library): shorter header row (80% of EP default 40px). */
 .library-tabs .el-tabs__item {
   height: 32px;
   line-height: 32px;

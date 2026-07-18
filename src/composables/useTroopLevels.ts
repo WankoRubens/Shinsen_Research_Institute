@@ -9,7 +9,7 @@
 
 import { computed, type Ref, type ComputedRef } from 'vue'
 import type { Lineup } from './useLineups'
-import { TRAIT_UNLOCK, TROOP_TYPES, type TroopType } from '../constants/traits'
+import { TRAIT_UNLOCK, TROOP_TYPES, normalizeTroopType, type TroopType } from '../constants/traits'
 
 export function useTroopLevels(lineup: Ref<Lineup> | ComputedRef<Lineup>) {
   return computed<Record<TroopType, number>>(() => {
@@ -24,10 +24,12 @@ export function useTroopLevels(lineup: Ref<Lineup> | ComputedRef<Lineup>) {
         // Trait slot i only active if breakthrough >= TRAIT_UNLOCK[i]
         if (i >= TRAIT_UNLOCK.length || role.breakthrough < TRAIT_UNLOCK[i]) return
         if (!t.affinity) return
-        for (const tt of t.affinity.troop_types) {
+        for (const rawTroopType of t.affinity.troop_types) {
+          const tt = normalizeTroopType(rawTroopType)
+          if (!tt) continue
           if (tt in sums) {
-            sums[tt as TroopType].lv += t.affinity.level
-            sums[tt as TroopType].cap += t.affinity.level_cap_bonus
+            sums[tt].lv += t.affinity.level
+            sums[tt].cap += t.affinity.level_cap_bonus
           }
         }
       })

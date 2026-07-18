@@ -48,9 +48,9 @@
       <div v-if="hero" class="flex items-center gap-1 mt-0.5 md:mt-1">
         <div
           class="flex-1 min-w-0 font-bold text-ink truncate text-[11px] md:text-sm"
-          :title="hero.name"
+          :title="hero.name_jp || hero.name"
         >
-          {{ hero.name }}
+          {{ hero.name_jp || hero.name }}
         </div>
         <!-- Desktop: inline stars with hover-fill preview -->
         <div
@@ -63,7 +63,7 @@
             type="button"
             class="breakthrough-star"
             :class="{ 'is-filled': n <= displayStarCount }"
-            :title="breakthrough === n ? '再次點擊重置' : `設定為 ${n} 星突破`"
+            :title="breakthrough === n ? 'もう一度クリックでリセット' : `${n}凸に設定`"
             @mouseenter="hoverStar = n"
             @click.stop="setBreakthrough(n)"
           >
@@ -114,7 +114,7 @@
             </button>
           </div>
           <div class="text-center text-[10px] text-gray-400 mt-1">
-            點擊當前星數可重置
+            現在の星数をクリックするとリセットできます
           </div>
         </el-popover>
       </div>
@@ -157,7 +157,7 @@
       <div
         v-if="hero"
         class="hidden md:block rounded border border-divider bg-white cursor-pointer hover:border-focus transition-colors px-1 py-1 md:px-1.5 md:py-1"
-        :title="`點擊調整自由加點 · 剩餘 ${freePointsRemaining} 點`"
+        :title="`クリックして自由加点を調整 · 残り ${freePointsRemaining} 点`"
         @click.stop="openStatsEditor"
       >
         <div class="grid grid-cols-6 gap-0.5">
@@ -236,7 +236,7 @@
               <div class="font-bold text-focus flex flex-col">
                 <span>{{ uniqueSkillData.type }}</span>
                 <span v-if="uniqueSkillData.activation_rate" class="text-[10px] text-gray-500 mt-0.5">
-                  發動機率 {{ formatRate(uniqueSkillData.activation_rate) }}
+                  発動確率 {{ formatRate(uniqueSkillData.activation_rate) }}
                 </span>
               </div>
               <div class="flex items-center gap-1 scale-90 origin-top-right">
@@ -313,7 +313,7 @@
               <div class="font-bold text-focus flex flex-col">
                 <span>{{ skill1.type }}</span>
                 <span v-if="skill1.activation_rate" class="text-[10px] text-gray-500 mt-0.5">
-                  發動機率 {{ formatRate(skill1.activation_rate) }}
+                  発動確率 {{ formatRate(skill1.activation_rate) }}
                 </span>
               </div>
               <div class="flex items-center gap-1 scale-90 origin-top-right">
@@ -387,7 +387,7 @@
               <div class="font-bold text-focus flex flex-col">
                 <span>{{ skill2.type }}</span>
                 <span v-if="skill2.activation_rate" class="text-[10px] text-gray-500 mt-0.5">
-                  發動機率 {{ formatRate(skill2.activation_rate) }}
+                  発動確率 {{ formatRate(skill2.activation_rate) }}
                 </span>
               </div>
               <div class="flex items-center gap-1 scale-90 origin-top-right">
@@ -411,7 +411,7 @@
     </div>
 
     <!-- Stats Editor Dialog -->
-    <el-dialog v-model="statsDialogVisible" title="自由屬性加點" width="360px" append-to-body align-center>
+    <el-dialog v-model="statsDialogVisible" title="自由属性加点" width="360px" append-to-body align-center>
       <div class="flex flex-col gap-3">
         <div class="text-xs text-gray-500 flex justify-between">
           <span>剩餘可分配點數</span>
@@ -444,7 +444,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="statsDialogVisible = false">キャンセル</el-button>
-          <el-button type="primary" @click="saveStats">確認修改</el-button>
+          <el-button type="primary" @click="saveStats">変更を保存</el-button>
         </span>
       </template>
     </el-dialog>
@@ -669,7 +669,7 @@ const maxBreakthrough = computed(() => {
 // assignment is the parent's job (LineupBuilder.selectHeroFromLibrary) — doing
 // it here on any props.hero change would also fire on team switch / restore,
 // where props.hero changes merely because the slot now shows a different team,
-// and would wipe the user's saved 突破/屬性.
+// and would wipe the user's saved breakthrough/stat allocation.
 watch(() => props.hero, () => {
   if (props.hero && props.breakthrough > maxBreakthrough.value) {
     emit('update:breakthrough', maxBreakthrough.value)

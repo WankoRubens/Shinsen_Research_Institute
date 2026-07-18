@@ -155,7 +155,7 @@
         </p>
         <el-input
           v-model="importUrl"
-          placeholder="https://...#s/xxx 或 https://...#xxxx"
+          placeholder="https://...#s/xxx または https://...#xxxx"
           clearable
           autofocus
         />
@@ -371,7 +371,7 @@ const saveRename = async (p: Profile) => {
     cancelRename()
     ElMessage.success('更新しました')
   } catch (e) {
-    ElMessage.error(`更新失敗：${(e as Error).message}`)
+    ElMessage.error(`更新に失敗しました: ${(e as Error).message}`)
   }
 }
 

@@ -8,7 +8,7 @@
         <div class="flex items-center gap-2 mb-2">
           <img :src="skill.icon" class="w-10 h-10 rounded-lg bg-gray-100 object-cover flex-shrink-0" />
           <div class="min-w-0">
-            <div class="font-bold text-sm text-gray-800 truncate">{{ skill.name }}</div>
+            <div class="font-bold text-sm text-gray-800 truncate">{{ skill.name_jp || skill.name }}</div>
             <div class="flex items-center gap-1 mt-0.5">
               <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{{ skill.type }}</span>
               <span v-if="skill.rarity === 'S'" class="text-xs font-bold text-yellow-600">S</span>

@@ -14,7 +14,7 @@
         </span>
         <span class="text-xs text-ink-mute hidden sm:inline">·</span>
         <span class="text-xs text-ink-mute hidden sm:inline">
-          每組最多 {{ MAX_TEAMS_PER_GROUP }} 編成伍
+          各編成は最大 {{ MAX_TEAMS_PER_GROUP }} 部隊
         </span>
 
         <el-tooltip
@@ -22,7 +22,7 @@
           placement="top"
         >
           <span class="ml-auto inline-flex items-center gap-1 text-[11px] text-ink-mute cursor-help">
-            <el-icon :size="12"><InfoFilled /></el-icon>本機暫存
+            <el-icon :size="12"><InfoFilled /></el-icon>この端末に保存
           </span>
         </el-tooltip>
       </div>

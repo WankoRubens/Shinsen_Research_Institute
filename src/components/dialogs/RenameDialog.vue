@@ -25,7 +25,7 @@
         @click="$emit('submit')"
         class="w-full !m-0"
       >
-        確定
+        決定
       </el-button>
     </div>
   </el-dialog>

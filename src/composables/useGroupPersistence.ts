@@ -1,4 +1,4 @@
-// Phase A + C — localStorage autosave AND opt-in cloud sync for 編組.
+// Phase A + C - localStorage autosave AND opt-in cloud sync for 編成グループ.
 //
 // Two channels, one source of truth:
 //   - localStorage (Phase A): ~800ms debounce, every reactive edit. Works
@@ -884,7 +884,7 @@ const resolveMergeKeepLocal = async (): Promise<MergeResolutionResult> => {
 }
 
 // Append cloud groups after local. Capped at 20 total — past that the UI
-// (我的編組 page) wouldn't render gracefully anyway, and the dialog has
+// (自分の編成グループ page) wouldn't render gracefully anyway, and the dialog has
 // already warned about truncation.
 const APPEND_MAX_TOTAL = 20
 
@@ -910,7 +910,7 @@ const resolveMergeAppend = async (): Promise<MergeResolutionResult> => {
   // Disambiguate name collisions: any local group whose name matches a
   // cloud group we're about to append gets a "本地-" prefix. IDs were
   // already distinct, so this is purely a readability fix — without it the
-  // user sees two identically-named entries (e.g. two "新編組") and can't
+  // user sees two identically-named entries (e.g. two "新規編成グループ") and can't
   // tell which is which after reload.
   const cloudNames = new Set(cloudRowsToAppend.map((r) => r.name))
   const localGroupsRenamed = localGroups.map((g) =>

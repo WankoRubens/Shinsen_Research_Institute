@@ -48,7 +48,7 @@ export function useActiveProfile() {
 
   // User-driven "switch to no profile". Unlike clearActiveProfile (used for
   // sign-out / session expiry, which leaves inventory intact so anonymous
-  // edits survive), this also empties the inventory and disables 顯示已擁有
+  // edits survive), this also empties the inventory and disables owned-item filtering.
   // — semantically "use the full library, no roster gating".
   const unloadProfile = (): void => {
     ownedHeroes.value = []

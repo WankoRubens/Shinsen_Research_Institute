@@ -29,8 +29,8 @@
       <!-- Camp overlay -->
       <div v-if="!compact" class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-4 md:pt-6 pb-0.5 md:pb-1 px-1 md:px-1.5">
         <div class="text-white text-[9px] md:text-xs font-bold flex items-center gap-1">
-          <span>{{ hero.faction }}</span>
-          <span v-if="hero.clan" class="opacity-80 font-normal">· {{ hero.clan }}</span>
+          <span>{{ hero.faction_jp || hero.faction }}</span>
+          <span v-if="hero.clan_jp || hero.clan" class="opacity-80 font-normal">· {{ hero.clan_jp || hero.clan }}</span>
         </div>
       </div>
     </div>
@@ -41,7 +41,7 @@
         class="font-bold text-gray-800 truncate text-center"
         :class="compact ? 'text-[10px]' : 'text-[10px] md:text-sm'"
       >
-        {{ hero.name }}
+        {{ hero.name_jp || hero.name }}
       </div>
     </div>
   </div>

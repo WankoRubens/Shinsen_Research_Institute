@@ -8,7 +8,7 @@
   >
     <template v-if="source">
       <p class="text-sm text-ink-soft mb-4 leading-relaxed">
-        將「<span class="font-bold text-ink">{{ source.displayName }}</span>」
+        「<span class="font-bold text-ink">{{ source.displayName }}</span>」を
         目標の編成へ取り込みます。容量が上限に達している編成は選択できません。
       </p>
 

@@ -11,7 +11,7 @@
   >
     <div v-if="heroSet" class="drawer-body">
       <!-- Header: portraits ONLY. Hero names + role labels live inside each
-           variant card below, so duplicating them here is noise. The 主將
+           variant card below, so duplicating them here is noise. The main-general
            ring + a single amber accent on the stats bar carry the brand. -->
       <header class="set-header">
         <button
@@ -41,7 +41,7 @@
           <span class="stat stat--up">
             <el-icon :size="13"><CaretTop /></el-icon>
             <span class="stat-num">{{ heroSet.totalUpvoteCount }}</span>
-            <span class="stat-label">總贊</span>
+            <span class="stat-label">総投票</span>
           </span>
           <span class="stat-divider" />
           <span class="stat" :class="trendClass">
@@ -227,7 +227,7 @@ const firstAuthorName = (variant: Variant): string | null =>
 }
 
 /* Set header: portraits + stats only, no labels and no names. The visual
-   identity comes from the 主將 ring + amber stats bar; redundant text was
+   identity comes from the main-general ring + amber stats bar; redundant text was
    stripped per design feedback. */
 .set-header {
   position: relative;
@@ -277,7 +277,7 @@ const firstAuthorName = (variant: Variant): string | null =>
   display: flex;
   justify-content: center;
 }
-/* 主將 ring: layered amber → white shadow rings give the portrait a
+/* Main-general ring: layered amber -> white shadow rings give the portrait a
    "framed" look without an extra DOM node. Subordinate viable but the
    main slot now reads instantly. */
 .portrait-cell--main :deep(.preview-portrait) {

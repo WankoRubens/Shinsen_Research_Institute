@@ -1,4 +1,4 @@
-// Personal-collection state for the 我的提案 surface.
+// Personal-collection state for the 自分の提案 surface.
 //
 // The public feed and voting now live in `useVariants` (canonical hash-based
 // model). This composable retains only the my-drafts surface: list / create
