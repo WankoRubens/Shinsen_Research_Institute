@@ -260,7 +260,7 @@ const SKILL_JP_OVERRIDES: Record<string, Partial<Skill>> = {
     brief_description_jp: '単体計略ダメージと畏縮付与',
   },
   '伊達風采': {
-    name_jp: '伊達風采',
+    name_jp: '伊達の粋',
     description_jp: '戦闘開始時、自身が5層の風采を獲得する。毎ターン行動時、風采を1層消費して敵軍単体にそれぞれ{var:dmg_rate}の兵刃ダメージと計略ダメージを与える（{scale:武勇}/{scale:知略}）。兵刃ダメージと計略ダメージをそれぞれ2回与えるたび、自身の武勇と知略が{var:stat_buff}上昇する（{scale:武勇}/{scale:知略}）。最大{var:buff_stack_max}回まで重ねがけ可能で、最大到達後は風采を1層獲得する。',
     brief_description_jp: '風采を消費して兵刃・計略ダメージを与え、重ねがけで能力上昇',
   },
@@ -295,7 +295,7 @@ const SKILL_JP_OVERRIDES: Record<string, Partial<Skill>> = {
     brief_description_jp: '友軍を強化し、効果終了時に別の友軍へ移す',
   },
   '上州黃斑': {
-    name_jp: '上州黄斑',
+    name_jp: '上州の黄斑',
     description_jp: '戦闘中、前ターンに通常攻撃を受けていた場合、{var:trigger_rate}の確率（{scale:統率}）で攻撃してきた目標に{status:消沈}を付与する（ダメージ率{var:debuff_rate}、{scale:知略}）。{var:debuff_duration}ターン持続。そうでない場合、{var:random_rate}の確率（{scale:統率}）で敵軍複数（2名）に{status:消沈}を付与する。消沈を付与する時、対象がすでに消沈状態なら、代わりに{var:fatigue_rate}{status:疲弊}を付与する（{scale:統率}）。{var:fatigue_duration}ターン持続。',
     brief_description_jp: '条件に応じて消沈または疲弊を付与',
   },

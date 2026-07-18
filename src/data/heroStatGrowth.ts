@@ -25,8 +25,8 @@ export const HERO_STAT_GROWTH: Record<string, HeroStatGrowthEntry> = {
     growth: { lea: 1.80, val: 3.00, int: 0.81, pol: 1.98, cha: 1.69, spd: 1.35 },
   },
   '長野業正': {
-    level1: { lea: 90.00, val: 90.00, int: 90.00, pol: 90.00, cha: 90.00, spd: 90.00 },
-    growth: { lea: 1.23, val: 1.23, int: 1.23, pol: 1.23, cha: 1.23, spd: 1.23 },
+    level1: { lea: 91.00, val: 81.00, int: 91.00, pol: 65.00, cha: 74.00, spd: 45.00 },
+    growth: { lea: 2.05, val: 1.29, int: 2.05, pol: 0.58, cha: 0.82, spd: 0.52 },
   },
   '宇佐美定満': {
     level1: { lea: 83.00, val: 63.00, int: 92.00, pol: 66.00, cha: 63.00, spd: 54.00 },
@@ -261,8 +261,8 @@ export const HERO_STAT_GROWTH: Record<string, HeroStatGrowthEntry> = {
     growth: { lea: 1.02, val: 1.71, int: 0.89, pol: 0.72, cha: 0.40, spd: 1.18 },
   },
   '堀直政': {
-    level1: { lea: 90.00, val: 90.00, int: 90.00, pol: 90.00, cha: 90.00, spd: 90.00 },
-    growth: { lea: 1.23, val: 1.23, int: 1.23, pol: 1.23, cha: 1.23, spd: 1.23 },
+    level1: { lea: 75.00, val: 70.00, int: 79.00, pol: 85.00, cha: 78.00, spd: 34.00 },
+    growth: { lea: 1.56, val: 0.63, int: 1.88, pol: 1.86, cha: 1.45, spd: 0.35 },
   },
   '河尻秀隆': {
     level1: { lea: 53.00, val: 61.00, int: 62.00, pol: 64.00, cha: 52.00, spd: 51.00 },
@@ -339,8 +339,8 @@ export const HERO_STAT_GROWTH: Record<string, HeroStatGrowthEntry> = {
     growth: { lea: 1.49, val: 0.40, int: 1.77, pol: 0.92, cha: 0.96, spd: 0.89 },
   },
   '大久保長安': {
-    level1: { lea: 90.00, val: 90.00, int: 90.00, pol: 90.00, cha: 90.00, spd: 90.00 },
-    growth: { lea: 1.23, val: 1.23, int: 1.23, pol: 1.23, cha: 1.23, spd: 1.23 },
+    level1: { lea: 20.00, val: 21.00, int: 65.00, pol: 89.00, cha: 76.00, spd: 65.00 },
+    growth: { lea: 1.63, val: 0.24, int: 1.82, pol: 2.05, cha: 1.69, spd: 0.98 },
   },
   '鳥居元忠': {
     level1: { lea: 62.00, val: 69.00, int: 72.00, pol: 24.00, cha: 48.00, spd: 68.00 },
@@ -451,16 +451,16 @@ export const HERO_STAT_GROWTH: Record<string, HeroStatGrowthEntry> = {
 
   // 群雄
   '伊達政宗': {
-    level1: { lea: 90.00, val: 90.00, int: 90.00, pol: 90.00, cha: 90.00, spd: 90.00 },
-    growth: { lea: 1.23, val: 1.23, int: 1.23, pol: 1.23, cha: 1.23, spd: 1.23 },
+    level1: { lea: 94.00, val: 86.00, int: 87.00, pol: 96.00, cha: 81.00, spd: 67.00 },
+    growth: { lea: 1.92, val: 2.01, int: 2.00, pol: 2.09, cha: 1.80, spd: 1.02 },
   },
   '今川義元': {
     level1: { lea: 94.00, val: 85.00, int: 88.00, pol: 94.00, cha: 95.00, spd: 70.00 },
     growth: { lea: 2.04, val: 1.82, int: 1.82, pol: 2.39, cha: 2.60, spd: 1.27 },
   },
   '佐竹義重': {
-    level1: { lea: 90.00, val: 90.00, int: 90.00, pol: 90.00, cha: 90.00, spd: 90.00 },
-    growth: { lea: 1.23, val: 1.23, int: 1.23, pol: 1.23, cha: 1.23, spd: 1.23 },
+    level1: { lea: 88.00, val: 88.00, int: 83.00, pol: 86.00, cha: 91.00, spd: 61.00 },
+    growth: { lea: 1.68, val: 2.31, int: 1.37, pol: 1.72, cha: 2.01, spd: 0.94 },
   },
   '松永久秀': {
     level1: { lea: 86.00, val: 72.00, int: 94.00, pol: 90.00, cha: 72.00, spd: 59.00 },
@@ -514,9 +514,9 @@ export const HERO_STAT_GROWTH: Record<string, HeroStatGrowthEntry> = {
     level1: { lea: 88.00, val: 93.00, int: 83.00, pol: 62.00, cha: 66.00, spd: 62.00 },
     growth: { lea: 1.95, val: 1.97, int: 1.74, pol: 0.70, cha: 0.78, spd: 0.92 },
   },
-  '三好實休': {
-    level1: { lea: 90.00, val: 90.00, int: 90.00, pol: 90.00, cha: 90.00, spd: 90.00 },
-    growth: { lea: 1.23, val: 1.23, int: 1.23, pol: 1.23, cha: 1.23, spd: 1.23 },
+  '三好実休': {
+    level1: { lea: 81.00, val: 76.00, int: 85.00, pol: 83.00, cha: 85.00, spd: 42.00 },
+    growth: { lea: 1.67, val: 0.82, int: 2.09, pol: 1.75, cha: 1.82, spd: 0.68 },
   },
   '寿桂尼': {
     level1: { lea: 74.00, val: 29.00, int: 83.00, pol: 86.00, cha: 75.00, spd: 22.00 },
@@ -619,8 +619,8 @@ export const HERO_STAT_GROWTH: Record<string, HeroStatGrowthEntry> = {
     growth: { lea: 1.62, val: 1.68, int: 1.62, pol: 0.88, cha: 1.43, spd: 0.85 },
   },
   '藤林正保': {
-    level1: { lea: 90.00, val: 90.00, int: 90.00, pol: 90.00, cha: 90.00, spd: 90.00 },
-    growth: { lea: 1.23, val: 1.23, int: 1.23, pol: 1.23, cha: 1.23, spd: 1.23 },
+    level1: { lea: 43.00, val: 71.00, int: 73.00, pol: 8.00, cha: 59.00, spd: 56.00 },
+    growth: { lea: 1.43, val: 1.80, int: 1.43, pol: 0.10, cha: 0.77, spd: 1.32 },
   },
   '南部晴政': {
     level1: { lea: 84.00, val: 80.00, int: 47.00, pol: 40.00, cha: 76.00, spd: 64.00 },
@@ -643,8 +643,8 @@ export const HERO_STAT_GROWTH: Record<string, HeroStatGrowthEntry> = {
     growth: { lea: 0.62, val: 0.16, int: 0.46, pol: 0.31, cha: 0.33, spd: 0.37 },
   },
   '浦上宗景': {
-    level1: { lea: 90.00, val: 90.00, int: 90.00, pol: 90.00, cha: 90.00, spd: 90.00 },
-    growth: { lea: 1.23, val: 1.23, int: 1.23, pol: 1.23, cha: 1.23, spd: 1.23 },
+    level1: { lea: 61.00, val: 66.00, int: 68.00, pol: 61.00, cha: 65.00, spd: 37.00 },
+    growth: { lea: 1.00, val: 1.10, int: 1.70, pol: 0.79, cha: 0.80, spd: 0.81 },
   },
   '吉川広家': {
     level1: { lea: 60.00, val: 55.00, int: 77.00, pol: 81.00, cha: 43.00, spd: 54.00 },

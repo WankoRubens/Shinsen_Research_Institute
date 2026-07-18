@@ -343,11 +343,17 @@
   },
   {
     "name": "伊達政宗",
+    "name_jp": "伊達政宗",
+    "aliases": [
+      "伊達政宗"
+    ],
     "portrait": "https://i.imgur.com/q5xaAim.png",
     "rarity": 5,
     "cost": 7,
     "faction": "群雄",
+    "faction_jp": "群雄",
     "clan": "伊達家",
+    "clan_jp": "伊達家",
     "gender": "男",
     "stats": {
       "lea": 190,
@@ -363,25 +369,33 @@
     "traits": [
       {
         "name": "獨眼龍",
+        "name_jp": "独眼竜",
         "description": "每回合行動前，使自身造成傷害提高，持續1回合（受自身武勇與智略之差影響，差值越小傷害提升越多，最多10%。自身為大將時，最多15%；差距超過20%時則無效）",
+        "description_jp": "毎ターン行動前、1ターンの間、自身の与ダメージが上昇する。上昇値は武勇と知略の差が小さいほど大きくなり、最大10%。自身が大将の場合は最大15%。差が20%を超えると無効。",
         "active": true,
         "rank": "S"
       },
       {
         "name": "飛龍在天",
+        "name_jp": "昇り龍",
         "description": "部隊的騎兵、鐵炮等級+3",
+        "description_jp": "部隊の騎兵・鉄砲レベルが3増加する。",
         "active": true,
         "rank": "S"
       },
       {
         "name": "善戰II",
+        "name_jp": "善戦Ⅱ",
         "description": "增加2.9%會心狀態和奇謀狀態",
+        "description_jp": "2.9%の会心と奇策を獲得する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "高昂II",
+        "name_jp": "高揚Ⅱ",
         "description": "增加3.8%會心傷害率和奇謀傷害率",
+        "description_jp": "会心と奇策ダメージ率が3.8%増加する。",
         "active": true,
         "rank": "B"
       }
@@ -390,11 +404,17 @@
   },
   {
     "name": "長野業正",
+    "name_jp": "長野業正",
+    "aliases": [
+      "長野業正"
+    ],
     "portrait": "https://i.imgur.com/ONGXNGW.png",
     "rarity": 5,
     "cost": 7,
     "faction": "上杉",
+    "faction_jp": "上杉",
     "clan": "上杉家",
+    "clan_jp": "上杉家",
     "gender": "男",
     "stats": {
       "lea": 193.5,
@@ -410,25 +430,33 @@
     "traits": [
       {
         "name": "金城鐵壁",
+        "name_jp": "金城鉄壁",
         "description": "受到普通攻擊時，若敵方處於負面狀態中，自身有30%機率恢復兵力（恢復率52%，受統率影響）",
+        "description_jp": "通常攻撃を受けた時、敵軍が弱体状態であれば、30%の確率で兵力を回復する（回復率52%、統率依存）。",
         "active": true,
         "rank": "S"
       },
       {
         "name": "弓槍術II",
+        "name_jp": "弓槍術Ⅱ",
         "description": "部隊的弓兵、足輕等級上升2級",
+        "description_jp": "部隊の足軽・弓兵レベルが2増加する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "剛猛II",
+        "name_jp": "剛猛Ⅱ",
         "description": "使自身受到普通攻擊的機率提高",
+        "description_jp": "自身が通常攻撃を受ける確率が中幅上昇する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "守勢I",
+        "name_jp": "守勢Ⅰ",
         "description": "我軍全體受到傷害減少1%",
+        "description_jp": "自軍全体の被ダメージが1%減少する。",
         "active": true,
         "rank": "C"
       }
@@ -437,11 +465,17 @@
   },
   {
     "name": "佐竹義重",
+    "name_jp": "佐竹義重",
+    "aliases": [
+      "佐竹義重"
+    ],
     "portrait": "https://i.imgur.com/M41XVF9.png",
     "rarity": 5,
     "cost": 7,
     "faction": "群雄",
+    "faction_jp": "群雄",
     "clan": "佐竹家",
+    "clan_jp": "佐竹家",
     "gender": "男",
     "stats": {
       "lea": 172,
@@ -457,25 +491,33 @@
     "traits": [
       {
         "name": "阪東太郎",
+        "name_jp": "坂東太郎",
         "description": "對統率被降低或減少的武將造成兵刃傷害時，有55%機率增加自身武勇8點，持續2回合，最多疊加3層",
+        "description_jp": "統率が低下している武将に兵刃ダメージを与えた時、55%の確率で自身の武勇が8上昇する。2ターン持続、最大3層まで重ねがけ可能。",
         "active": true,
         "rank": "S"
       },
       {
         "name": "弓炮術II",
+        "name_jp": "弓砲術Ⅱ",
         "description": "部隊的弓兵、鐵炮等級上升2級",
+        "description_jp": "部隊の弓兵・鉄砲レベルが2増加する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "堅固I",
+        "name_jp": "堅固Ⅰ",
         "description": "我軍全體受到的謀略傷害減少2.3%",
+        "description_jp": "自軍全体の計略被ダメージが2.3%減少する。",
         "active": true,
         "rank": "C"
       },
       {
         "name": "盡力II",
+        "name_jp": "尽力Ⅱ",
         "description": "獲得4%會心狀態",
+        "description_jp": "4%の会心を獲得する。",
         "active": true,
         "rank": "B"
       }
@@ -1881,10 +1923,16 @@
   {
     "portrait": "https://i.imgur.com/4tS1C7F.png",
     "name": "三好實休",
+    "name_jp": "三好実休",
+    "aliases": [
+      "三好実休"
+    ],
     "rarity": 5,
     "cost": 6,
     "faction": "群雄",
+    "faction_jp": "群雄",
     "clan": "三好家",
+    "clan_jp": "三好家",
     "gender": "男",
     "stats": {
       "lea": 164.5,
@@ -1900,25 +1948,33 @@
     "traits": [
       {
         "name": "物外軒",
+        "name_jp": "物外軒",
         "description": "戰鬥中，前4回合主動、突擊戰法發動率提升4.5%（受茶道等級影響）",
+        "description_jp": "戦闘中、4ターン目まで自身の能動・突撃戦法の発動確率が4.5%上昇する（茶道レベルの影響を受ける）。",
         "active": true,
         "rank": "S"
       },
       {
         "name": "炮術III",
+        "name_jp": "砲術Ⅲ",
         "description": "部隊鐵炮等級+3",
+        "description_jp": "部隊の鉄砲レベルが3増加する。",
         "active": true,
         "rank": "A"
       },
       {
         "name": "固守II",
+        "name_jp": "固守Ⅱ",
         "description": "我軍全體受到兵刃傷害減少1.8%",
+        "description_jp": "自軍全体の兵刃被ダメージが1.8%減少する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "智慧I",
+        "name_jp": "知恵Ⅰ",
         "description": "智略提高2%",
+        "description_jp": "知略が2%上昇する。",
         "active": true,
         "rank": "C"
       }
@@ -4392,11 +4448,17 @@
   },
   {
     "name": "藤林正保",
+    "name_jp": "藤林正保",
+    "aliases": [
+      "藤林正保"
+    ],
     "portrait": "https://i.imgur.com/OxVO6ZM.png",
     "rarity": 5,
     "cost": 5,
     "faction": "群雄",
+    "faction_jp": "群雄",
     "clan": "國眾",
+    "clan_jp": "国衆",
     "gender": "男",
     "stats": {
       "lea": 85,
@@ -4412,25 +4474,33 @@
     "traits": [
       {
         "name": "弓槍術II",
+        "name_jp": "弓槍術Ⅱ",
         "description": "部隊的足輕、弓兵等級+2",
+        "description_jp": "部隊の足軽・弓兵レベルが2増加する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "血氣II",
+        "name_jp": "血気Ⅱ",
         "description": "造成兵刃傷害增加2.2%",
+        "description_jp": "兵刃与ダメージが2.2%増加する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "武威II",
+        "name_jp": "武威Ⅱ",
         "description": "武勇提高2.5%",
+        "description_jp": "武勇が2.5%上昇する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "看破I",
+        "name_jp": "看破Ⅰ",
         "description": "受到謀略傷害減少2.6%",
+        "description_jp": "受ける計略ダメージが2.6%減少する。",
         "active": true,
         "rank": "C"
       }
@@ -4439,11 +4509,17 @@
   },
   {
     "name": "大久保長安",
+    "name_jp": "大久保長安",
+    "aliases": [
+      "大久保長安"
+    ],
     "portrait": "https://i.imgur.com/lY6o6rm.png",
     "rarity": 5,
     "cost": 5,
     "faction": "德川",
+    "faction_jp": "徳川",
     "clan": "德川家",
+    "clan_jp": "徳川家",
     "gender": "男",
     "stats": {
       "lea": 101.5,
@@ -4459,25 +4535,33 @@
     "traits": [
       {
         "name": "馬術II",
+        "name_jp": "馬術Ⅱ",
         "description": "部隊的騎兵等級+2",
+        "description_jp": "部隊の騎兵レベルが2増加する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "智慧II",
+        "name_jp": "知恵Ⅱ",
         "description": "智略提高2.5%",
+        "description_jp": "知略が2.5%上昇する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "靈巧III",
+        "name_jp": "急速Ⅲ",
         "description": "速度提高3%",
+        "description_jp": "速度が3%上昇する。",
         "active": true,
         "rank": "A"
       },
       {
         "name": "隱忍I",
+        "name_jp": "忍耐Ⅰ",
         "description": "使自身受到普通攻擊的機率略微降低",
+        "description_jp": "自身が通常攻撃の対象に選ばれる確率が小幅低下する。",
         "active": true,
         "rank": "C"
       }
@@ -4486,11 +4570,17 @@
   },
   {
     "name": "堀直政",
+    "name_jp": "堀直政",
+    "aliases": [
+      "堀直政"
+    ],
     "portrait": "https://i.imgur.com/0jdBDUR.png",
     "rarity": 5,
     "cost": 5,
     "faction": "織田",
+    "faction_jp": "織田",
     "clan": "織田家",
+    "clan_jp": "織田家",
     "gender": "男",
     "stats": {
       "lea": 153,
@@ -4506,25 +4596,33 @@
     "traits": [
       {
         "name": "看破II",
+        "name_jp": "看破Ⅱ",
         "description": "受到謀略傷害減少3.3%",
+        "description_jp": "受ける計略ダメージが3.3%減少する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "馬槍術I",
+        "name_jp": "馬槍術Ⅰ",
         "description": "部隊的騎兵、足輕等級上升1級",
+        "description_jp": "部隊の騎兵・足軽レベルが1増加する。",
         "active": true,
         "rank": "C"
       },
       {
         "name": "威勢II",
+        "name_jp": "威勢Ⅱ",
         "description": "本回合未收到普通攻擊時，自帶主動戰法的發動機率增加2.8%",
+        "description_jp": "このターンに通常攻撃を受けていない場合、自身の固有能動戦法の発動確率が2.8%上昇する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "防護II",
+        "name_jp": "防護Ⅱ",
         "description": "受到兵刃傷害減少2.2%",
+        "description_jp": "受ける兵刃ダメージが2.2%減少する。",
         "active": true,
         "rank": "B"
       }
@@ -5898,11 +5996,17 @@
   },
   {
     "name": "浦上宗景",
+    "name_jp": "浦上宗景",
+    "aliases": [
+      "浦上宗景"
+    ],
     "portrait": "https://i.imgur.com/Mkg4Iay.png",
     "rarity": 5,
     "cost": 4,
     "faction": "群雄",
+    "faction_jp": "群雄",
     "clan": "浦上家",
+    "clan_jp": "浦上家",
     "gender": "男",
     "stats": {
       "lea": 111,
@@ -5918,25 +6022,33 @@
     "traits": [
       {
         "name": "弓術III",
+        "name_jp": "弓術Ⅲ",
         "description": "弓兵等級+3",
+        "description_jp": "部隊の弓兵レベルが3増加する。",
         "active": true,
         "rank": "A"
       },
       {
         "name": "智慧II",
+        "name_jp": "知恵Ⅱ",
         "description": "智略提高2.5%",
+        "description_jp": "知略が2.5%上昇する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "防護II",
+        "name_jp": "防護Ⅱ",
         "description": "受到兵刃傷害減少2.2%",
+        "description_jp": "受ける兵刃ダメージが2.2%減少する。",
         "active": true,
         "rank": "B"
       },
       {
         "name": "攻勢II",
+        "name_jp": "攻勢Ⅱ",
         "description": "我軍全體造成傷害增加1.3%",
+        "description_jp": "自軍全体の与ダメージが1.3%増加する。",
         "active": true,
         "rank": "B"
       }
