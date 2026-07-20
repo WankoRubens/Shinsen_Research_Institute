@@ -2,6 +2,9 @@
   <div v-loading="loading" class="min-h-[160px]">
     <!-- Header actions -->
     <div class="flex items-center gap-2 mb-3 flex-wrap">
+      <el-button type="primary" :icon="Edit" @click="openInventoryEditor">
+        所持武将・戦法を編集
+      </el-button>
       <el-button type="primary" plain :icon="Plus" @click="openCreateDialog">
         現在の所持を新規設定として保存
       </el-button>
@@ -16,7 +19,7 @@
       class="text-center text-gray-400 py-8 text-sm"
     >
       まだ所持設定がありません。<br>
-      メイン画面で所持を編集してから、上のボタンで設定として保存してください。
+      上の「所持武将・戦法を編集」から所持内容を登録してください。
     </p>
 
     <el-table v-else-if="profiles.length > 0" :data="profiles" size="default" style="width: 100%">
@@ -181,6 +184,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Plus, Link, Edit, Close, Check, Delete, Star, StarFilled, Share,
@@ -202,7 +206,10 @@ withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
 const emit = defineEmits<{ (e: 'close-request'): void }>()
 
 const { heroes, skills } = useData()
-const { ownedHeroes, ownedSkills, isEditingInventory } = useInventory()
+const router = useRouter()
+const {
+  ownedHeroes, ownedSkills, isEditingInventory, startEditingInventory,
+} = useInventory()
 const {
   applyProfile, syncActiveProfile, activeProfileId, activeProfile,
 } = useActiveProfile()
@@ -223,6 +230,14 @@ const importDialogVisible = ref(false)
 const importUrl = ref('')
 const importName = ref('')
 const importLoading = ref(false)
+
+// Open the lineup builder directly in inventory-management mode so users do
+// not have to discover the profile dropdown before registering owned items.
+const openInventoryEditor = async () => {
+  if (!isEditingInventory.value) startEditingInventory()
+  emit('close-request')
+  await router.push({ name: 'lineup' })
+}
 
 // Share the serializer factory with AppLayout / LineupBuilder so alias
 // handling stays consistent across all CHT→JP profile-stable mappings.
