@@ -18,6 +18,10 @@ import AiLineupOptimizer from '../views/AiLineupOptimizer.vue'
 import SettingsView from '../views/SettingsView.vue'
 import ComingSoon from '../views/ComingSoon.vue'
 import HeroDatabaseView from '../views/HeroDatabaseView.vue'
+import { isPagePublished, type PageName } from '../config/publishedPages'
+
+const publishedRoute = (name: PageName, route: RouteRecordRaw): RouteRecordRaw[] =>
+  isPagePublished(name) ? [route] : []
 
 const routes: RouteRecordRaw[] = [
   {
@@ -25,7 +29,7 @@ const routes: RouteRecordRaw[] = [
     component: AppLayout,
     children: [
       { path: '', name: 'lineup', component: LineupBuilder },
-      {
+      ...publishedRoute('profiles', {
         path: 'profiles',
         name: 'profiles',
         component: ProfilesView,
@@ -33,8 +37,8 @@ const routes: RouteRecordRaw[] = [
           title: '所持武将',
           description: '各設定は名前付きの所持データ（武将 + 戦法）です。メイン / サブ / 友人用など複数作成でき、適用後は編成シミュレータがその所持データを基準にします。',
         },
-      },
-      {
+      }),
+      ...publishedRoute('groups', {
         path: 'groups',
         name: 'groups',
         component: MyGroups,
@@ -43,8 +47,8 @@ const routes: RouteRecordRaw[] = [
           // Cap mirrors MAX_TEAMS_PER_GROUP in types/group.ts — update both if changed.
           description: '各編成には最大10部隊まで保存できます。展開してプレビューを確認し、共有やスクリーンショットに使えます。',
         },
-      },
-      {
+      }),
+      ...publishedRoute('shares', {
         path: 'shares',
         name: 'shares',
         component: SharesView,
@@ -52,8 +56,8 @@ const routes: RouteRecordRaw[] = [
           title: '共有',
           description: '作成済みの共有リンクを管理します。固定、命名、コピー、削除ができます。',
         },
-      },
-      {
+      }),
+      ...publishedRoute('proposals', {
         path: 'proposals',
         name: 'proposals',
         component: ProposalsView,
@@ -61,8 +65,8 @@ const routes: RouteRecordRaw[] = [
           title: 'おすすめ編成',
           description: '公開された部隊の提案です。投票、編成への追加、プレビュー確認ができます。',
         },
-      },
-      {
+      }),
+      ...publishedRoute('battleSim', {
         path: 'battle-sim',
         name: 'battleSim',
         component: BattleSimulator,
@@ -70,8 +74,8 @@ const routes: RouteRecordRaw[] = [
           title: '戦闘シミュレータ',
           description: '保存した編成を使って、ターン制戦闘・ダメージ計算・戦法発動を試算します。',
         },
-      },
-      {
+      }),
+      ...publishedRoute('mockBattle', {
         path: 'mock-battle',
         name: 'mockBattle',
         component: MockBattle,
@@ -79,8 +83,8 @@ const routes: RouteRecordRaw[] = [
           title: '模擬対戦',
           description: '自軍編成と敵軍編成を作成し、1戦分のターンログを確認します。',
         },
-      },
-      {
+      }),
+      ...publishedRoute('aiLineup', {
         path: 'ai-lineup',
         name: 'aiLineup',
         component: AiLineupOptimizer,
@@ -88,14 +92,14 @@ const routes: RouteRecordRaw[] = [
           title: 'AI編成',
           description: '固定した武将・戦法をもとに、空き枠の組み合わせを総当たりで探索します。',
         },
-      },
-      {
+      }),
+      ...publishedRoute('settings', {
         path: 'settings',
         name: 'settings',
         component: SettingsView,
         meta: { title: '設定', description: '表示、外観、アカウント設定。' },
-      },
-      {
+      }),
+      ...publishedRoute('heroDb', {
         path: 'heroes',
         name: 'heroDb',
         component: HeroDatabaseView,
@@ -103,7 +107,7 @@ const routes: RouteRecordRaw[] = [
           title: '武将データベース',
           description: '編成時に使っている武将データを一覧表示します。',
         },
-      },
+      }),
       {
         path: 'coming-soon/:topic?',
         name: 'comingSoon',

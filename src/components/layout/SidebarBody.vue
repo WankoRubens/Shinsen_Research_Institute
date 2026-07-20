@@ -42,22 +42,25 @@
         />
       </template>
 
-      <SidebarSection v-if="!collapsed" :label="t('unlikely')" class="mt-4" />
-      <SidebarLink
-        v-for="item in wishNav"
-        :key="item.name"
-        :to="item.to"
-        :icon="item.icon"
-        :label="item.label"
-        badge="?"
-        :collapsed="collapsed"
-        :active="activeRoute === item.name"
-        @click="$emit('nav')"
-      />
+      <template v-if="wishNav.length">
+        <SidebarSection v-if="!collapsed" :label="t('unlikely')" class="mt-4" />
+        <SidebarLink
+          v-for="item in wishNav"
+          :key="item.name"
+          :to="item.to"
+          :icon="item.icon"
+          :label="item.label"
+          badge="?"
+          :collapsed="collapsed"
+          :active="activeRoute === item.name"
+          @click="$emit('nav')"
+        />
+      </template>
     </div>
 
     <div class="border-t border-divider pt-2 mt-2">
       <SidebarLink
+        v-if="isPagePublished('settings')"
         :to="{ name: 'settings' }"
         :icon="Setting"
         :label="t('settings')"
@@ -88,6 +91,7 @@ import {
 import SidebarLink from './SidebarLink.vue'
 import SidebarSection from './SidebarSection.vue'
 import { useLocale } from '../../composables/useLocale'
+import { isPagePublished, type PageName } from '../../config/publishedPages'
 
 defineProps<{ collapsed: boolean; activeRoute?: string }>()
 defineEmits<{
@@ -105,7 +109,7 @@ type NavItem = {
   badge?: string
 }
 
-const primaryNav = computed<readonly NavItem[]>(() => [
+const primaryNav = computed<readonly NavItem[]>(() => ([
   { name: 'lineup', to: { name: 'lineup' }, icon: Grid, label: t('lineup'), badge: t('workbench') },
   { name: 'profiles', to: { name: 'profiles' }, icon: User, label: t('profiles') },
   { name: 'groups', to: { name: 'groups' }, icon: Flag, label: t('groups') },
@@ -115,7 +119,7 @@ const primaryNav = computed<readonly NavItem[]>(() => [
   { name: 'mockBattle', to: { name: 'mockBattle' }, icon: Aim, label: t('mockBattle'), badge: 'NEW' },
   { name: 'aiLineup', to: { name: 'aiLineup' }, icon: Aim, label: t('aiLineup'), badge: 'NEW' },
   { name: 'heroDb', to: { name: 'heroDb' }, icon: Reading, label: t('heroDb') },
-])
+] as Array<NavItem & { name: PageName }>).filter((item) => isPagePublished(item.name)))
 
 const soonNav = computed<readonly NavItem[]>(() => [])
 
