@@ -239,7 +239,7 @@ import { VideoPlay } from '@element-plus/icons-vue'
 import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
-import { simulateBattle, type BattleFighter, type BattleLogEntry, type BattleResult } from '../lib/battleSimulator'
+import { simulateBattle, type BattleLogEntry, type BattleResult } from '../lib/battleSimulator'
 import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { useLineups } from '../composables/useLineups'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
@@ -251,7 +251,7 @@ type BattleSideKey = 'ally' | 'enemy'
 type LogSide = BattleLogEntry['side']
 type PrepRow = { side: LogSide; message: string }
 type PrepSection = { title: string; rows: PrepRow[] }
-type ActionBlock = { id: string; side: LogSide; actor: string; entries: BattleLogEntry[] }
+type ActionBlock = { id: string; side: LogSide; actor: string; troops: number; entries: BattleLogEntry[] }
 
 const { lineups } = useLineups()
 const { heroes, skills, enemyFormations } = useData()
@@ -399,12 +399,6 @@ const roleByActor = (side: LogSide, actor: string): RoleData | null => {
   }) ?? null
 }
 
-const fighterByActor = (side: LogSide, actor: string): BattleFighter | null => {
-  if (!result.value || side === 'system') return null
-  const fighters = side === 'ally' ? result.value.ally : result.value.enemy
-  return fighters.find((fighter) => fighter.name === actor) ?? null
-}
-
 const rolesWithSide = () => [
   ...rolesOf(allyTeam).map((role) => ({ side: 'ally' as const, role })),
   ...rolesOf(enemyTeam).map((role) => ({ side: 'enemy' as const, role })),
@@ -458,6 +452,15 @@ const outcomeLabel = computed(() => {
 })
 
 const groupedLogs = computed(() => {
+  const troopKey = (side: LogSide, actor: string) => `${side}:${actor}`
+  const currentTroops = new Map<string, number>()
+  ;(result.value?.ally ?? []).forEach((fighter) => {
+    currentTroops.set(troopKey('ally', fighter.name), fighter.hp + fighter.wounded + fighter.dead)
+  })
+  ;(result.value?.enemy ?? []).forEach((fighter) => {
+    currentTroops.set(troopKey('enemy', fighter.name), fighter.hp + fighter.wounded + fighter.dead)
+  })
+
   const groups = new Map<number, BattleLogEntry[]>()
   ;(result.value?.logs ?? []).forEach((entry) => {
     if (entry.side === 'system' && /^ターン\d+$/.test(entry.message)) return
@@ -472,14 +475,22 @@ const groupedLogs = computed(() => {
       const previous = blocks[blocks.length - 1]
       if (previous && previous.side === entry.side && previous.actor === actor) {
         previous.entries.push(entry)
+        if (entry.target && entry.targetSide && typeof entry.afterHp === 'number') {
+          currentTroops.set(troopKey(entry.targetSide, entry.target), entry.afterHp)
+        }
         return
       }
       blocks.push({
         id: `${turn}-${index}-${entry.side}-${actor || 'system'}`,
         side: entry.side,
         actor,
+        troops: currentTroops.get(troopKey(entry.side, actor)) ?? 0,
         entries: [entry],
       })
+
+      if (entry.target && entry.targetSide && typeof entry.afterHp === 'number') {
+        currentTroops.set(troopKey(entry.targetSide, entry.target), entry.afterHp)
+      }
     })
     return {
       turn,
@@ -495,11 +506,7 @@ const actorSpeed = (block: ActionBlock): string => {
   const role = roleByActor(block.side, block.actor)
   return Number(role?.stats.spd ?? 0).toFixed(1)
 }
-const actorHp = (block: ActionBlock): number => {
-  const firstActorTargetLog = block.entries.find((entry) => entry.target === block.actor && typeof entry.beforeHp === 'number')
-  if (firstActorTargetLog?.beforeHp != null) return firstActorTargetLog.beforeHp
-  return fighterByActor(block.side, block.actor)?.hp ?? 0
-}
+const actorHp = (block: ActionBlock): number => block.troops
 const blockHealing = (block: ActionBlock): number =>
   block.entries.reduce((sum, entry) => sum + (entry.valueType === 'healing' ? entry.amount ?? 0 : 0), 0)
 const blockKills = (block: ActionBlock): number =>

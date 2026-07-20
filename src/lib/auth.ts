@@ -39,7 +39,9 @@ const decodeJwtPayload = (token: string): JwtPayload | null => {
   try {
     const part = token.split('.')[1]
     const padded = part + '='.repeat((4 - (part.length % 4)) % 4)
-    return JSON.parse(atob(padded.replace(/-/g, '+').replace(/_/g, '/')))
+    const binary = atob(padded.replace(/-/g, '+').replace(/_/g, '/'))
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+    return JSON.parse(new TextDecoder().decode(bytes))
   } catch {
     return null
   }
@@ -80,7 +82,17 @@ export const getSession = (): Session | null => {
   const raw = localStorage.getItem(SESSION_KEY)
   if (!raw) return null
   try {
-    return JSON.parse(raw) as Session
+    const session = JSON.parse(raw) as Session
+    const payload = decodeJwtPayload(session.access_token)
+    const displayName = payload?.user_metadata?.display_name
+
+    // Older versions decoded JWT bytes as Latin-1, which garbled Japanese names.
+    // Repair an already persisted session from the original UTF-8 JWT payload.
+    if (displayName != null && session.user.display_name !== displayName) {
+      session.user.display_name = displayName
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+    }
+    return session
   } catch {
     clearSession()
     return null

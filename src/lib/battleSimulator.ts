@@ -29,6 +29,7 @@ export interface BattleLogEntry {
   actor?: string
   message: string
   target?: string
+  targetSide?: BattleSide
   amount?: number
   beforeHp?: number
   afterHp?: number
@@ -829,6 +830,7 @@ const dealSkillDamage = (
     side: ctx.caster.side,
     actor: ctx.caster.name,
     target: target.name,
+    targetSide: target.side,
     amount: actual,
     beforeHp,
     afterHp,
@@ -897,6 +899,7 @@ const healBySkill = (ctx: SkillResolveContext, target: BattleFighter, rate: numb
     side: ctx.caster.side,
     actor: ctx.caster.name,
     target: target.name,
+    targetSide: target.side,
     amount: actual,
     beforeHp,
     afterHp,
@@ -992,6 +995,7 @@ const resolveSkill = (
         side: caster.side,
         actor: caster.name,
         target: fighter.name,
+        targetSide: fighter.side,
         amount: actual,
         beforeHp,
         afterHp,
@@ -1022,6 +1026,7 @@ const resolveSkill = (
         side: caster.side,
         actor: caster.name,
         target: fighter.name,
+        targetSide: fighter.side,
         amount: actual,
         beforeHp,
         afterHp,
@@ -1155,6 +1160,7 @@ const processDots = (
         side: source.side,
         actor: source.name,
         target: fighter.name,
+        targetSide: fighter.side,
         amount,
         beforeHp,
         afterHp,
@@ -1195,6 +1201,7 @@ const processTurnStartWoundedDeaths = (fighters: BattleFighter[], turn: number, 
     if (fighter.wounded <= 0) return
     const deadFromWounded = Math.min(fighter.wounded, Math.floor(fighter.wounded * 0.1))
     if (deadFromWounded <= 0) return
+    const beforeHp = fighter.hp
     fighter.wounded -= deadFromWounded
     fighter.dead += deadFromWounded
     fighter.maxHp = Math.max(0, fighter.maxHp - deadFromWounded)
@@ -1203,6 +1210,10 @@ const processTurnStartWoundedDeaths = (fighters: BattleFighter[], turn: number, 
       turn,
       side: fighter.side,
       actor: fighter.name,
+      target: fighter.name,
+      targetSide: fighter.side,
+      beforeHp,
+      afterHp: fighter.hp,
       deadDelta: deadFromWounded,
       effect: '負傷兵死亡',
       message: `ターン開始時に負傷兵${deadFromWounded.toLocaleString()}が戦死（残り負傷兵${fighter.wounded.toLocaleString()}）`,
@@ -1302,6 +1313,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         side: actor.side,
         actor: actor.name,
         target: target.name,
+        targetSide: target.side,
         amount: normalDamage,
         beforeHp,
         afterHp,
