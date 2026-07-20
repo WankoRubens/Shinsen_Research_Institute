@@ -155,23 +155,29 @@
         </div>
       </div>
 
-      <!-- Stats row (only when hero) — click opens stats editor.
-           freePointsRemaining shown in tooltip via title; bonus colour cues
-           which stats already received free points.
-           Hidden on mobile — the MobileSlotDetailDrawer surfaces these instead. -->
+      <!-- Keep the stat list visible on every viewport and before hero selection. -->
       <div
-        v-if="hero"
-        class="hidden md:block rounded border border-divider bg-white cursor-pointer hover:border-focus transition-colors px-1 py-1 md:px-1.5 md:py-1"
-        :title="`クリックして自由加点を調整 · 残り ${freePointsRemaining} 点`"
-        @click.stop="openStatsEditor"
+        class="rounded border border-divider bg-white px-1 py-1 transition-colors md:px-1.5"
+        :class="hero ? 'cursor-pointer hover:border-focus' : 'cursor-default'"
+        :title="hero ? `クリックして自由加点を調整 · 残り ${freePointsRemaining} 点` : '武将を選択すると属性値を表示します'"
+        :role="hero ? 'button' : undefined"
+        :tabindex="hero ? 0 : undefined"
+        @click.stop="hero && openStatsEditor()"
+        @keydown.enter.stop="hero && openStatsEditor()"
+        @keydown.space.prevent.stop="hero && openStatsEditor()"
       >
-        <div class="grid grid-cols-6 gap-0.5">
-          <div v-for="key in STAT_KEYS" :key="key" class="flex flex-col items-center leading-none">
-            <span class="text-[8px] md:text-[9px] text-ink-mute mb-0.5">{{ statLabels[key] }}</span>
-            <span class="text-[10px] md:text-xs font-bold text-ink">{{ formatStat(heroBaseStats[key] + (statBonus[key] || 0)) }}</span>
-            <span v-if="statBonus[key] > 0" class="text-[7px] md:text-[8px] text-emerald-600 mt-0.5">+{{ formatStat(statBonus[key]) }}</span>
-            <span v-else-if="statBonus[key] < 0" class="text-[7px] md:text-[8px] text-red-500 mt-0.5">{{ formatStat(statBonus[key]) }}</span>
-            <span v-else class="text-[7px] md:text-[8px] text-transparent mt-0.5 select-none">·</span>
+        <div class="grid grid-cols-2 gap-px overflow-hidden bg-divider">
+          <div v-for="key in STAT_KEYS" :key="key" class="min-h-6 min-w-0 overflow-hidden bg-white">
+            <div class="flex min-h-6 w-[125%] origin-left scale-x-80 flex-nowrap items-center justify-center gap-0.5 whitespace-nowrap py-0.5 text-[8px] leading-none md:min-h-5 md:w-full md:scale-x-100 md:text-[10px]">
+              <span class="shrink-0 text-ink-mute">{{ statLabels[key] }}</span>
+              <span class="shrink-0 font-bold text-ink">
+                {{ hero ? formatStat(heroBaseStats[key] + (statBonus[key] || 0)) : '-' }}
+              </span>
+              <span v-if="hero && statBonus[key] > 0" class="shrink-0 text-emerald-600">+{{ formatStatBonus(statBonus[key]) }}</span>
+              <span v-else-if="hero && statBonus[key] < 0" class="shrink-0 text-red-500">{{ formatStatBonus(statBonus[key]) }}</span>
+              <span v-else-if="hero" class="shrink-0 text-ink-mute">+0</span>
+              <span v-else class="shrink-0 text-ink-mute">-</span>
+            </div>
           </div>
         </div>
       </div>
@@ -582,6 +588,8 @@ const formatStat = (value: number | string | null | undefined) => {
   return Number.isFinite(numeric) ? numeric.toFixed(2) : String(value)
 }
 
+const formatStatBonus = (value: number) => Number.isInteger(value) ? value.toFixed(0) : value.toFixed(2)
+
 const heroBaseStats = computed(() => {
   const s = props.hero?.stats
   return {
@@ -641,12 +649,12 @@ const saveStats = () => {
 }
 
 const statLabels: Record<string, string> = {
-  lea: '統',
-  val: '武',
-  int: '智',
-  pol: '政',
-  cha: '魅',
-  spd: '速'
+  lea: '統率',
+  val: '武勇',
+  int: '知略',
+  pol: '政治',
+  cha: '魅力',
+  spd: '速度'
 }
 
 const localTraits = computed<Trait[]>(() => {
