@@ -13,7 +13,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel lineup-panel">
         <div class="section-head">
           <div>
             <p class="eyebrow">固定条件</p>
@@ -775,6 +775,10 @@ function waitForPaint(): Promise<void> {
   margin-top: 12px;
 }
 
+.lineup-grid > * {
+  min-width: 0;
+}
+
 .cost-pill,
 .estimate-pill {
   display: inline-flex;
@@ -988,10 +992,18 @@ function waitForPaint(): Promise<void> {
     flex-direction: column;
   }
 
-  .lineup-grid,
   .settings-grid,
   .result-grid {
     grid-template-columns: 1fr;
+  }
+
+  .lineup-panel {
+    padding: 6px;
+  }
+
+  .lineup-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
   }
 
   .result-metrics {

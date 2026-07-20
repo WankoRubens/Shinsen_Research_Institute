@@ -955,7 +955,7 @@ const LineSeries = defineComponent({
 .eyebrow { margin: 0 0 4px; font-size: 14px; font-weight: 800; }
 .cost-pill { color: #b45309; font-weight: 900; font-variant-numeric: tabular-nums; }
 .sim-lineup-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; align-items: stretch; }
-.sim-lineup-grid > * { min-height: 0; }
+.sim-lineup-grid > * { min-width: 0; min-height: 0; }
 .picker-body { height: min(72vh, 720px); min-height: 480px; display: flex; }
 .role-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
 .role-card { display: grid; gap: 10px; padding: 12px; background: #fbf4e9; border: 1px solid #d7c7b1; border-radius: 8px; }
@@ -1025,7 +1025,9 @@ const LineSeries = defineComponent({
 .matchup-cell.bad { background: #fde7df; color: #e54d2e; }
 .metric-empty { padding: 18px 14px; text-align: center; color: #64748b; font-size: 12px; }
 @media (max-width: 980px) {
-  .sim-lineup-grid, .role-grid, .run-panel, .overview-grid, .summary-strip, .analysis-panel, .two-col { grid-template-columns: 1fr; }
+  .simulator-lineup-panel { padding: 6px; }
+  .sim-lineup-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .role-grid, .run-panel, .overview-grid, .summary-strip, .analysis-panel, .two-col { grid-template-columns: 1fr; }
   .summary-strip div { border-right: 0; border-bottom: 1px solid #d8cdbc; padding: 8px 0; }
   .matchup-table, .member-grid { grid-template-columns: 1fr; }
 }

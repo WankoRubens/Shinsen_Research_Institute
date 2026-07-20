@@ -6,7 +6,7 @@
     <div class="head">
       <div class="head-left">
         <span class="author">
-          <span class="author-prefix">原作</span>
+          <span class="author-prefix">初回投稿</span>
           <strong class="author-name">{{ firstAuthorDisplay }}</strong>
         </span>
         <el-tooltip

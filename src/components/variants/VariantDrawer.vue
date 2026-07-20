@@ -17,7 +17,7 @@
         <button
           type="button"
           class="close-btn"
-          aria-label="關閉"
+          aria-label="閉じる"
           @click="$emit('update:modelValue', false)"
         >
           <el-icon :size="18"><Close /></el-icon>
@@ -41,13 +41,13 @@
           <span class="stat stat--up">
             <el-icon :size="13"><CaretTop /></el-icon>
             <span class="stat-num">{{ heroSet.totalUpvoteCount }}</span>
-            <span class="stat-label">総投票</span>
+            <span class="stat-label">総得票</span>
           </span>
           <span class="stat-divider" />
           <span class="stat" :class="trendClass">
             <el-icon :size="13"><component :is="trendIcon" /></el-icon>
             <span class="stat-num">{{ trendDisplay }}</span>
-            <span class="stat-label">近30天</span>
+            <span class="stat-label">直近30日</span>
           </span>
         </div>
       </header>
@@ -56,7 +56,7 @@
            brand. Element Plus radio-buttons looked generic and broke the
            visual rhythm. -->
       <div class="controls">
-        <span class="controls-label">排序</span>
+        <span class="controls-label">並び順</span>
         <div class="sort-pills" role="radiogroup" aria-label="派生案の並び順">
           <button
             type="button"
@@ -67,7 +67,7 @@
             @click="$emit('sort', 'votes')"
           >
             <el-icon :size="12"><CaretTop /></el-icon>
-            <span>投票</span>
+            <span>得票順</span>
           </button>
           <button
             type="button"
@@ -78,7 +78,7 @@
             @click="$emit('sort', 'latest')"
           >
             <el-icon :size="12"><Clock /></el-icon>
-            <span>最新</span>
+            <span>新着順</span>
           </button>
         </div>
         <span class="controls-spacer" />
@@ -188,13 +188,13 @@ const consensusInfo = computed<{ label: string; tooltip: string } | null>(() => 
   const share = top / total
   if (share >= 0.6) {
     return {
-      label: '共識型',
+      label: '支持集中',
       tooltip: `上位の派生案が ${Math.round(share * 100)}% の賛成を集めています。単一の組み方が広く支持されています`,
     }
   }
   if (share < 0.4) {
     return {
-      label: '分歧型',
+      label: '支持分散',
       tooltip: '賛成が複数の派生案に分散しています。まだ研究が進んでいる編成です',
     }
   }

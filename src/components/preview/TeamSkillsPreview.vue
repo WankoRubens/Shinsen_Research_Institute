@@ -13,7 +13,7 @@
       >
         <span class="role-chip" :class="`role-chip--${role.key}`">{{ role.label }}</span>
         <span class="hero-name" :class="{ 'hero-name--main': role.key === 'main' }">
-          {{ role.data.hero?.name ?? '—' }}
+          {{ displayHeroName(role.data.hero) }}
         </span>
         <span v-if="role.data.breakthrough > 0" class="break-chip">突{{ role.data.breakthrough }}</span>
       </div>
@@ -37,19 +37,19 @@
       <div class="grid grid--skills">
         <div v-for="(role, i) in roles" :key="`s-${i}`" class="skill-col">
           <el-tooltip
-            :content="uniqueSkills[i]?.brief_description || ''"
-            :disabled="!uniqueSkills[i]?.brief_description"
+            :content="displaySkillBrief(uniqueSkills[i])"
+            :disabled="!displaySkillBrief(uniqueSkills[i])"
             placement="top"
             effect="dark"
           >
             <div class="skill-cell skill-cell--unique" :class="{ 'skill-cell--empty': !uniqueSkills[i] }">
               <span class="own-tag">自</span>
-              <span class="skill-text">{{ uniqueSkills[i]?.name ?? '—' }}</span>
+              <span class="skill-text">{{ displaySkillName(uniqueSkills[i]) }}</span>
             </div>
           </el-tooltip>
           <el-tooltip
-            :content="role.data.skill1?.brief_description || ''"
-            :disabled="!role.data.skill1?.brief_description"
+            :content="displaySkillBrief(role.data.skill1)"
+            :disabled="!displaySkillBrief(role.data.skill1)"
             placement="top"
             effect="dark"
           >
@@ -60,12 +60,12 @@
                 'skill-cell--meta': isMetaSkill(role.data.skill1),
               }"
             >
-              {{ role.data.skill1?.name ?? '—' }}
+              {{ displaySkillName(role.data.skill1) }}
             </div>
           </el-tooltip>
           <el-tooltip
-            :content="role.data.skill2?.brief_description || ''"
-            :disabled="!role.data.skill2?.brief_description"
+            :content="displaySkillBrief(role.data.skill2)"
+            :disabled="!displaySkillBrief(role.data.skill2)"
             placement="top"
             effect="dark"
           >
@@ -76,7 +76,7 @@
                 'skill-cell--meta': isMetaSkill(role.data.skill2),
               }"
             >
-              {{ role.data.skill2?.name ?? '—' }}
+              {{ displaySkillName(role.data.skill2) }}
             </div>
           </el-tooltip>
         </div>
@@ -119,7 +119,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Lineup } from '../../composables/useLineups'
-import { useData, type Skill } from '../../composables/useData'
+import { useData, type Hero, type Skill } from '../../composables/useData'
 
 const { skills, bingxue: bingxueCatalog } = useData()
 
@@ -135,6 +135,13 @@ const findSkillByName = (name: string | null | undefined): Skill | null => {
 const isMetaSkill = (s: Skill | null | undefined): boolean =>
   s?.type === '兵種' || s?.type === '陣法'
 
+const displayHeroName = (hero: Hero | null | undefined): string =>
+  hero?.name_jp || hero?.name || '—'
+const displaySkillName = (skill: Skill | null | undefined): string =>
+  skill?.name_jp || skill?.name || '—'
+const displaySkillBrief = (skill: Skill | null | undefined): string =>
+  skill?.brief_description_jp || skill?.brief_description || ''
+
 const roles = computed(() => [
   { key: 'main',  label: '主将', data: props.team.main },
   { key: 'vice1', label: '副将', data: props.team.vice1 },
@@ -145,7 +152,10 @@ const uniqueSkills = computed(() =>
   roles.value.map(r => findSkillByName(r.data.hero?.unique_skill)),
 )
 
-const bingxueName = (jp: string): string => bingxueCatalog.value[jp]?.name ?? jp
+const bingxueName = (value: string): string => {
+  if (bingxueCatalog.value[value]) return value
+  return Object.entries(bingxueCatalog.value).find(([, item]) => item.name === value)?.[0] ?? value
+}
 const roman = (n: number): string => ['', 'I', 'II', 'III', 'IV', 'V'][n] ?? String(n)
 const hasAnyBingxue = computed(() =>
   roles.value.some(r => r.data.bingxue.direction),

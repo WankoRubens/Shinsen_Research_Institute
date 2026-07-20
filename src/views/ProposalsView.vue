@@ -74,7 +74,7 @@
                 >
                   <div class="sidebar-names">
                     <span class="sidebar-name sidebar-name--main">
-                      {{ s.sampleTeam?.main?.hero?.name ?? '—' }}
+                      {{ displayHeroName(s.sampleTeam?.main?.hero) }}
                     </span>
                     <span class="sidebar-sep">·</span>
                     <span class="sidebar-name">{{ sortedViceName(s, 0) }}</span>
@@ -107,22 +107,22 @@
                   <button
                     type="button"
                     class="back-btn"
-                    aria-label="返回列表"
-                    title="返回列表"
+                    aria-label="一覧に戻る"
+                    title="一覧に戻る"
                     @click="closeHeroSet"
                   >
                     <el-icon :size="16"><ArrowLeftBold /></el-icon>
                   </button>
                   <div class="head-portraits">
                     <div class="portrait-cell portrait-cell--main">
-                      <PreviewPortrait :src="activeMainHero?.portrait ?? null" :alt="activeMainHero?.name" :render="76" />
+                      <PreviewPortrait :src="activeMainHero?.portrait ?? null" :alt="displayHeroName(activeMainHero)" :render="76" />
                     </div>
                     <div
                       v-for="(v, idx) in activeViceHeroes"
                       :key="`vh-${idx}`"
                       class="portrait-cell"
                     >
-                      <PreviewPortrait :src="v?.portrait ?? null" :alt="v?.name" :render="76" />
+                      <PreviewPortrait :src="v?.portrait ?? null" :alt="displayHeroName(v)" :render="76" />
                     </div>
                   </div>
                   <div class="head-stats">
@@ -134,13 +134,13 @@
                     <span class="head-stat head-stat--up">
                       <el-icon :size="13"><CaretTop /></el-icon>
                       <strong>{{ activeHeroSet.totalUpvoteCount }}</strong>
-                      <span class="head-stat-label">総投票</span>
+                      <span class="head-stat-label">総得票</span>
                     </span>
                     <span class="head-stat-divider" />
                     <span class="head-stat" :class="trendClass">
                       <el-icon :size="13"><component :is="trendIcon" /></el-icon>
                       <strong>{{ trendDisplay }}</strong>
-                      <span class="head-stat-label">近30天</span>
+                      <span class="head-stat-label">直近30日</span>
                     </span>
                   </div>
                 </div>
@@ -228,7 +228,7 @@ import {
 import { useVariants } from '../composables/useVariants'
 import { useProposals } from '../composables/useProposals'
 import { useAuth } from '../composables/useAuth'
-import { useData } from '../composables/useData'
+import { useData, type Hero } from '../composables/useData'
 import { useGroups } from '../composables/useGroups'
 import { useGroupPersistence } from '../composables/useGroupPersistence'
 import { useDialogs } from '../composables/useDialogs'
@@ -269,15 +269,18 @@ const selectedHeroes = ref<string[]>([])
 // Sort option metadata. `markRaw` on the icon component avoids Vue reactivity
 // warnings about the icon being treated as a reactive ref.
 const heroSetSortOptions: Array<{ value: HeroSetSort; label: string; icon?: Component }> = [
-  { value: 'total',  label: '綜合分', icon: markRaw(TrendCharts) },
-  { value: 'recent', label: '近30天', icon: markRaw(Calendar) },
-  { value: 'latest', label: '最新',   icon: markRaw(Clock) },
+  { value: 'total',  label: '総合評価', icon: markRaw(TrendCharts) },
+  { value: 'recent', label: '直近30日', icon: markRaw(Calendar) },
+  { value: 'latest', label: '新着順',   icon: markRaw(Clock) },
   { value: 'count',  label: '派生案数', icon: markRaw(Tickets) },
 ]
 const variantSortOptions: Array<{ value: VariantSort; label: string; icon?: Component }> = [
-  { value: 'votes',  label: '投票', icon: markRaw(CaretTop) },
-  { value: 'latest', label: '最新', icon: markRaw(Clock) },
+  { value: 'votes',  label: '得票順', icon: markRaw(CaretTop) },
+  { value: 'latest', label: '新着順', icon: markRaw(Clock) },
 ]
+
+const displayHeroName = (hero: Hero | null | undefined): string =>
+  hero?.name_jp || hero?.name || '—'
 
 onMounted(async () => {
   await refreshHeroSets()
@@ -300,7 +303,7 @@ const heroOptions = computed(() => {
     typeof r === 'number' ? r : Number(r) || 0
   return [...heroes.value]
     .sort((a, b) => numericRarity(b.rarity) - numericRarity(a.rarity) || (b.cost ?? 0) - (a.cost ?? 0))
-    .map(h => ({ value: h.name, label: h.name }))
+    .map(h => ({ value: h.name, label: displayHeroName(h) }))
 })
 
 const filteredHeroSets = computed(() => {
@@ -317,7 +320,7 @@ const filteredHeroSets = computed(() => {
 // matches the variant cards' column rhythm.
 const sortedViceName = (s: HeroSetSummary, idx: 0 | 1): string => {
   const vices = sortedViceHeroes(s.sampleTeam)
-  return vices[idx]?.name ?? '—'
+  return displayHeroName(vices[idx])
 }
 
 const setTrendIcon = (delta: number) => delta > 0 ? Top : delta < 0 ? Bottom : Minus
@@ -352,13 +355,13 @@ const consensusInfo = computed<{ label: string; tooltip: string } | null>(() => 
   const share = top / total
   if (share >= 0.6) {
     return {
-      label: '共識型',
+      label: '支持集中',
       tooltip: `上位の派生案が ${Math.round(share * 100)}% の賛成を集めています。単一の組み方が広く支持されています`,
     }
   }
   if (share < 0.4) {
     return {
-      label: '分歧型',
+      label: '支持分散',
       tooltip: '賛成が複数の派生案に分散しています。まだ研究が進んでいる編成です',
     }
   }
@@ -431,8 +434,10 @@ const exportSource = ref<ExportSource | null>(null)
 
 const onImportVariantToGroup = (variant: Variant): void => {
   const t = variant.team
-  const name = [t.main?.hero?.name, t.vice1?.hero?.name, t.vice2?.hero?.name]
-    .filter(Boolean).join(' + ') || 'おすすめ派生案'
+  const name = [t.main?.hero, t.vice1?.hero, t.vice2?.hero]
+    .filter((hero): hero is Hero => Boolean(hero))
+    .map(displayHeroName)
+    .join(' + ') || 'おすすめ派生案'
   exportSource.value = {
     team: snapshotTeam(t),
     displayName: name,

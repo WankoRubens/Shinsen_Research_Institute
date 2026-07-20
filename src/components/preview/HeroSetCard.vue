@@ -8,20 +8,20 @@
   >
     <div class="portraits">
       <div class="portrait-cell portrait-cell--main">
-        <PreviewPortrait :src="mainHero?.portrait ?? null" :alt="mainHero?.name" :render="68" />
+        <PreviewPortrait :src="mainHero?.portrait ?? null" :alt="displayHeroName(mainHero)" :render="68" />
         <span class="role-tag role-tag--main" title="主将">主</span>
       </div>
       <div v-for="(v, idx) in viceHeroes" :key="`v-${idx}`" class="portrait-cell">
-        <PreviewPortrait :src="v?.portrait ?? null" :alt="v?.name" :render="68" />
+        <PreviewPortrait :src="v?.portrait ?? null" :alt="displayHeroName(v)" :render="68" />
       </div>
     </div>
 
     <div class="names">
-      <span class="name name--main">{{ mainHero?.name ?? '—' }}</span>
+      <span class="name name--main">{{ displayHeroName(mainHero) }}</span>
       <span class="name-sep">·</span>
-      <span class="name">{{ viceHeroes[0]?.name ?? '—' }}</span>
+      <span class="name">{{ displayHeroName(viceHeroes[0]) }}</span>
       <span class="name-sep">·</span>
-      <span class="name">{{ viceHeroes[1]?.name ?? '—' }}</span>
+      <span class="name">{{ displayHeroName(viceHeroes[1]) }}</span>
     </div>
 
     <div class="stats">
@@ -50,6 +50,7 @@ import { computed } from 'vue'
 import { CaretTop, Top, Bottom, Minus } from '@element-plus/icons-vue'
 import PreviewPortrait from './PreviewPortrait.vue'
 import type { HeroSetSummary } from '../../lib/variants'
+import type { Hero } from '../../composables/useData'
 
 const props = defineProps<{
   summary: HeroSetSummary
@@ -67,9 +68,12 @@ const viceHeroes = computed(() => [
   team.value?.vice1?.hero ?? null,
   team.value?.vice2?.hero ?? null,
 ])
+const displayHeroName = (hero: Hero | null | undefined): string =>
+  hero?.name_jp || hero?.name || '—'
 const heroNames = computed(() =>
-  [mainHero.value?.name, viceHeroes.value[0]?.name, viceHeroes.value[1]?.name]
-    .filter(Boolean) as string[],
+  [mainHero.value, viceHeroes.value[0], viceHeroes.value[1]]
+    .filter((hero): hero is Hero => Boolean(hero))
+    .map(displayHeroName),
 )
 
 // 30-day delta: arrow + signed count. Zero gets a flat indicator so the

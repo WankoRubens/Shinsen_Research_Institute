@@ -723,6 +723,10 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
   gap: 12px;
 }
 
+.lineup-grid > * {
+  min-width: 0;
+}
+
 .summary-pills {
   display: flex;
   flex-wrap: wrap;
@@ -947,8 +951,13 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
 }
 
 @media (max-width: 900px) {
+  .side-block {
+    padding: 6px;
+  }
+
   .lineup-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
   }
 
   .match-head,

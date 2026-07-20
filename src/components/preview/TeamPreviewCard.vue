@@ -37,30 +37,30 @@
         </div>
         <PreviewPortrait
           :src="role.data.hero?.portrait ?? null"
-          :alt="role.data.hero?.name"
+          :alt="displayHeroName(role.data.hero)"
           :render="portraitSize"
           class="portrait"
         />
-        <div class="hero-name">{{ role.data.hero?.name ?? '—' }}</div>
+        <div class="hero-name">{{ displayHeroName(role.data.hero) }}</div>
       </div>
     </div>
 
     <div class="skill-grid">
       <div v-for="(role, i) in roles" :key="`s-${i}`" class="skill-col">
         <el-tooltip
-          :content="uniqueSkills[i]?.brief_description || ''"
-          :disabled="!uniqueSkills[i]?.brief_description"
+          :content="displaySkillBrief(uniqueSkills[i])"
+          :disabled="!displaySkillBrief(uniqueSkills[i])"
           placement="top"
           effect="dark"
         >
           <div class="skill-name skill-name--unique" :class="{ 'skill-name--empty': !uniqueSkills[i] }">
             <span class="own-tag">自</span>
-            <span class="skill-text">{{ uniqueSkills[i]?.name ?? '—' }}</span>
+            <span class="skill-text">{{ displaySkillName(uniqueSkills[i]) }}</span>
           </div>
         </el-tooltip>
         <el-tooltip
-          :content="role.data.skill1?.brief_description || ''"
-          :disabled="!role.data.skill1?.brief_description"
+          :content="displaySkillBrief(role.data.skill1)"
+          :disabled="!displaySkillBrief(role.data.skill1)"
           placement="top"
           effect="dark"
         >
@@ -71,12 +71,12 @@
               'skill-name--meta': isMetaSkill(role.data.skill1),
             }"
           >
-            {{ role.data.skill1?.name ?? '—' }}
+            {{ displaySkillName(role.data.skill1) }}
           </div>
         </el-tooltip>
         <el-tooltip
-          :content="role.data.skill2?.brief_description || ''"
-          :disabled="!role.data.skill2?.brief_description"
+          :content="displaySkillBrief(role.data.skill2)"
+          :disabled="!displaySkillBrief(role.data.skill2)"
           placement="top"
           effect="dark"
         >
@@ -87,7 +87,7 @@
               'skill-name--meta': isMetaSkill(role.data.skill2),
             }"
           >
-            {{ role.data.skill2?.name ?? '—' }}
+            {{ displaySkillName(role.data.skill2) }}
           </div>
         </el-tooltip>
       </div>
@@ -123,7 +123,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { computeTeamCost, type Lineup } from '../../composables/useLineups'
-import { useData, type Skill } from '../../composables/useData'
+import { useData, type Hero, type Skill } from '../../composables/useData'
 import { useTroopLevels } from '../../composables/useTroopLevels'
 import { TROOP_TYPES, TROOP_LABELS } from '../../constants/traits'
 import PreviewPortrait from './PreviewPortrait.vue'
@@ -140,6 +140,13 @@ const findSkillByName = (name: string | null | undefined): Skill | null => {
 
 const isMetaSkill = (s: Skill | null | undefined): boolean =>
   s?.type === '兵種' || s?.type === '陣法'
+
+const displayHeroName = (hero: Hero | null | undefined): string =>
+  hero?.name_jp || hero?.name || '—'
+const displaySkillName = (skill: Skill | null | undefined): string =>
+  skill?.name_jp || skill?.name || '—'
+const displaySkillBrief = (skill: Skill | null | undefined): string =>
+  skill?.brief_description_jp || skill?.brief_description || ''
 
 const props = withDefaults(defineProps<{
   team: Lineup
@@ -191,7 +198,10 @@ const rarityStars = (rarity: number | string): string => {
 // Bingxue read-only display — mirrors BingxueSection's filled-state layout
 // (direction-colored header bar with major skill + per-minor chips). Wrapped
 // row only renders if any of the three heroes has a direction selected.
-const bingxueName = (jp: string): string => bingxueCatalog.value[jp]?.name ?? jp
+const bingxueName = (value: string): string => {
+  if (bingxueCatalog.value[value]) return value
+  return Object.entries(bingxueCatalog.value).find(([, item]) => item.name === value)?.[0] ?? value
+}
 const roman = (n: number): string => ['', 'I', 'II', 'III', 'IV', 'V'][n] ?? String(n)
 const hasAnyBingxue = computed(() =>
   roles.value.some(r => r.data.bingxue.direction),
