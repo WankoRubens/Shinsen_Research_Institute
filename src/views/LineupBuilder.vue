@@ -101,6 +101,7 @@
       v-model="createProposalDialogVisible"
       :is-logged-in="isLoggedIn"
       :submitting="proposalSubmitting"
+      :default-name="currentLineup.name"
       @submit="onSubmitProposal"
     />
 
@@ -654,13 +655,14 @@ const onSaveAsProposal = () => {
   createProposalDialogVisible.value = true
 }
 
-const onSubmitProposal = async (payload: { name: string; isPublic: boolean }) => {
+const onSubmitProposal = async (payload: { name: string; comment: string; isPublic: boolean }) => {
   proposalSubmitting.value = true
   try {
     // Display-name cap (10 chars) lives inside createFromLineup so both
     // create paths stay consistent without callers having to remember it.
     await createProposalFromLineup(currentLineup.value, {
       name: payload.name,
+      description: payload.comment || undefined,
       isPublic: payload.isPublic,
       authorName: displayName.value || null,
     })

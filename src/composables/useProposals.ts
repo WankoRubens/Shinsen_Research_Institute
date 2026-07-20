@@ -49,7 +49,7 @@ export function useProposals() {
 
   const createFromLineup = async (
     lineup: Lineup,
-    opts: { name: string; isPublic: boolean; authorName?: string | null; forkedFrom?: string | null },
+    opts: { name: string; description?: string; isPublic: boolean; authorName?: string | null; forkedFrom?: string | null },
   ): Promise<Proposal> => {
     const team = snapshotTeam(lineup)
     // Centralize the 10-char display-name cap here so every create path gets
@@ -57,7 +57,12 @@ export function useProposals() {
     const authorName = opts.authorName ? opts.authorName.slice(0, 10) : opts.authorName ?? null
     const created = await remoteCreate({ ...opts, authorName, team })
     if (opts.isPublic) {
-      try { await submitVariant(team, authorName) }
+      try {
+        await submitVariant(team, authorName, {
+          name: opts.name,
+          comment: opts.description ?? null,
+        })
+      }
       catch (e) { console.warn('submitVariant during create failed:', e) }
     }
     myProposals.value = [created, ...myProposals.value]
@@ -74,7 +79,10 @@ export function useProposals() {
     try {
       if (isPublic) {
         const authorName = updated.authorName ? updated.authorName.slice(0, 10) : null
-        await submitVariant(updated.team, authorName)
+        await submitVariant(updated.team, authorName, {
+          name: updated.name,
+          comment: updated.description ?? null,
+        })
       } else {
         const variantId = await findVariantForTeam(updated.team)
         if (variantId) await withdrawVariant(variantId)

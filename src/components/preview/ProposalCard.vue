@@ -75,6 +75,7 @@
         </el-popconfirm>
       </template>
     </TeamPreviewCard>
+    <p v-if="proposal.description" class="proposal-comment">{{ proposal.description }}</p>
   </div>
 </template>
 
@@ -109,6 +110,16 @@ defineEmits<{
 .proposal-card:hover {
   border-color: rgba(180, 83, 9, 0.35);
   box-shadow: 0 6px 16px rgba(180, 83, 9, 0.10), 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.proposal-comment {
+  margin: 0;
+  padding: 10px 14px 12px;
+  border-top: 1px solid rgb(var(--color-divider));
+  color: rgb(var(--color-ink-soft));
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Visibility chip: small pill with icon + label. Two palettes — private

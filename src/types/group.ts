@@ -64,9 +64,7 @@ export interface Proposal {
   id: string
   /** Free-text label, max ~50 chars (UI-enforced). */
   name: string
-  /** Optional short rationale. Legacy: the UI no longer surfaces description
-   *  (removed to keep the public feed harassment-free), but the DB column
-   *  remains for old rows. New proposals are created with description = null. */
+  /** Optional explanation of the lineup, limited to 500 characters. */
   description?: string
   /** Frozen team payload — same shape as Lineup but with snapshot semantics. */
   team: Team

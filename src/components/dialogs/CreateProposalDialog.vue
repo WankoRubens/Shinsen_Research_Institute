@@ -3,18 +3,31 @@
     :model-value="modelValue"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
     title="おすすめ編成として保存"
-    width="380px"
+    width="min(420px, calc(100vw - 24px))"
     align-center
   >
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1">
-        <label class="text-xs text-ink-mute">部隊名</label>
+        <label class="text-xs text-ink-mute">編成名</label>
         <el-input
           v-model="name"
           maxlength="50"
-          placeholder="例如：突騎奇襲一波流"
+          placeholder="編成名を入力"
           show-word-limit
           clearable
+        />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-ink-mute">編成コメント</label>
+        <el-input
+          v-model="comment"
+          type="textarea"
+          :rows="4"
+          maxlength="500"
+          placeholder="編成の狙いや使い方などを入力（任意）"
+          show-word-limit
+          resize="none"
         />
       </div>
 
@@ -51,13 +64,15 @@ const props = defineProps<{
   modelValue: boolean
   isLoggedIn: boolean
   submitting: boolean
+  defaultName?: string
 }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', v: boolean): void
-  (e: 'submit', payload: { name: string; isPublic: boolean }): void
+  (e: 'submit', payload: { name: string; comment: string; isPublic: boolean }): void
 }>()
 
 const name = ref('')
+const comment = ref('')
 const isPublic = ref(false)
 
 const nameValid = computed(() => name.value.trim().length > 0)
@@ -65,7 +80,8 @@ const nameValid = computed(() => name.value.trim().length > 0)
 // Reset on open so a previous submission doesn't leak back into a new one.
 watch(() => props.modelValue, (now) => {
   if (now) {
-    name.value = ''
+    name.value = props.defaultName?.trim() ?? ''
+    comment.value = ''
     isPublic.value = false
   }
 })
@@ -76,6 +92,7 @@ const onSubmit = () => {
   if (!nameValid.value) return
   emit('submit', {
     name: name.value.trim(),
+    comment: comment.value.trim(),
     isPublic: props.isLoggedIn ? isPublic.value : false,
   })
 }

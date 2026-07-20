@@ -13,6 +13,7 @@ import type { Proposal } from '../types/group'
 interface ProposalRow {
   id: string
   name: string
+  description: string | null
   team_blob: unknown
   is_public: boolean
   user_id: string | null
@@ -28,6 +29,7 @@ interface ProposalRow {
 const rowToProposal = (row: ProposalRow): Proposal => ({
   id: row.id,
   name: row.name,
+  description: row.description ?? undefined,
   team: row.team_blob as Proposal['team'],
   isPublic: row.is_public,
   authorId: row.user_id,
@@ -45,6 +47,7 @@ export const isProposalsEnabled = isSupabaseConfigured
 
 export interface CreateProposalInput {
   name: string
+  description?: string
   team: Proposal['team']
   isPublic: boolean
   forkedFrom?: string | null
@@ -57,10 +60,9 @@ export const createProposal = async (input: CreateProposalInput): Promise<Propos
   const token = await getValidAccessToken()
   if (!token) throw new Error('login required to create a proposal')
 
-  // description column is intentionally omitted — the UI no longer accepts
-  // user-supplied descriptions (anti-harassment); the DB default is NULL.
   const body = {
     name: input.name,
+    description: input.description?.trim() || null,
     team_blob: input.team,
     is_public: input.isPublic,
     forked_from: input.forkedFrom ?? null,
@@ -85,7 +87,7 @@ export const createProposal = async (input: CreateProposalInput): Promise<Propos
  *  is_public after the fact. */
 export const updateProposal = async (
   id: string,
-  patch: Partial<Pick<CreateProposalInput, 'name' | 'isPublic'>>,
+  patch: Partial<Pick<CreateProposalInput, 'name' | 'description' | 'isPublic'>>,
 ): Promise<Proposal> => {
   if (!SUPABASE_URL) throw new Error('proposals backend not configured')
   const token = await getValidAccessToken()
@@ -93,6 +95,7 @@ export const updateProposal = async (
 
   const body: Record<string, unknown> = {}
   if (patch.name !== undefined) body.name = patch.name
+  if (patch.description !== undefined) body.description = patch.description.trim() || null
   if (patch.isPublic !== undefined) body.is_public = patch.isPublic
 
   const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/proposals?id=eq.${encodeURIComponent(id)}`, {

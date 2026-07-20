@@ -50,6 +50,8 @@ interface ContributorRowDB {
   user_id: string
   contributed_at: string
   author_name: string | null
+  proposal_name?: string | null
+  proposal_comment?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +87,8 @@ export interface VariantContributor {
   userId: string
   contributedAt: string
   authorName: string | null
+  proposalName: string | null
+  proposalComment: string | null
 }
 
 export interface SubmitVariantResult {
@@ -130,6 +134,8 @@ const rowToContributor = (row: ContributorRowDB): VariantContributor => ({
   userId:        row.user_id,
   contributedAt: row.contributed_at,
   authorName:    row.author_name,
+  proposalName:  row.proposal_name ?? null,
+  proposalComment: row.proposal_comment ?? null,
 })
 
 // ---------------------------------------------------------------------------
@@ -203,17 +209,28 @@ export const findVariantForTeam = async (team: Lineup): Promise<string | null> =
 export const submitVariant = async (
   team: Lineup,
   authorName: string | null,
+  proposal?: { name: string; comment: string | null },
 ): Promise<SubmitVariantResult> => {
   if (!SUPABASE_URL) throw new Error('variants backend not configured')
   const token = await getValidAccessToken()
   if (!token) throw new Error('login required to publish a variant')
 
   const url = `${SUPABASE_URL}/rest/v1/rpc/submit_variant`
-  const res = await fetchWithTimeout(url, {
+  const request = (body: Record<string, unknown>) => fetchWithTimeout(url, {
     method: 'POST',
     headers: { ...restHeaders(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ p_team: team, p_author_name: authorName }),
+    body: JSON.stringify(body),
   })
+  let res = await request({
+    p_team: team,
+    p_author_name: authorName,
+    p_proposal_name: proposal?.name ?? null,
+    p_proposal_comment: proposal?.comment ?? null,
+  })
+  // Keep publishing functional until the metadata migration is applied.
+  if (!res.ok && proposal) {
+    res = await request({ p_team: team, p_author_name: authorName })
+  }
   if (!res.ok) throw new Error(`submit_variant failed: ${res.status} ${await res.text()}`)
   const body = await res.json() as {
     variant_id: string

@@ -237,7 +237,7 @@ $$;
 ALTER FUNCTION "public"."rls_auto_enable"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."submit_variant"("p_team" "jsonb", "p_author_name" "text" DEFAULT NULL::"text") RETURNS "jsonb"
+CREATE OR REPLACE FUNCTION "public"."submit_variant"("p_team" "jsonb", "p_author_name" "text" DEFAULT NULL::"text", "p_proposal_name" "text" DEFAULT NULL::"text", "p_proposal_comment" "text" DEFAULT NULL::"text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -247,7 +247,9 @@ DECLARE
     v_hero_set_hash  text;
     v_variant_id     uuid;
     v_is_new         boolean := false;
-    v_capped_name    text;
+    v_capped_name             text;
+    v_capped_proposal_name    text;
+    v_capped_proposal_comment text;
 BEGIN
     IF v_user IS NULL THEN
         RAISE EXCEPTION 'auth required';
@@ -266,6 +268,14 @@ BEGIN
     v_capped_name := CASE
         WHEN p_author_name IS NULL THEN NULL
         ELSE left(p_author_name, 10)
+    END;
+    v_capped_proposal_name := CASE
+        WHEN NULLIF(btrim(p_proposal_name), '') IS NULL THEN NULL
+        ELSE left(btrim(p_proposal_name), 50)
+    END;
+    v_capped_proposal_comment := CASE
+        WHEN NULLIF(btrim(p_proposal_comment), '') IS NULL THEN NULL
+        ELSE left(btrim(p_proposal_comment), 500)
     END;
 
     -- Upsert variant. ON CONFLICT (variant_hash) DO NOTHING returns no row,
@@ -286,10 +296,14 @@ BEGIN
     END IF;
 
     -- Register caller as contributor. Idempotent.
-    INSERT INTO public.variant_contributors (variant_id, user_id, author_name)
-    VALUES (v_variant_id, v_user, v_capped_name)
+    INSERT INTO public.variant_contributors
+        (variant_id, user_id, author_name, proposal_name, proposal_comment)
+    VALUES
+        (v_variant_id, v_user, v_capped_name, v_capped_proposal_name, v_capped_proposal_comment)
     ON CONFLICT (variant_id, user_id) DO UPDATE
-       SET author_name = EXCLUDED.author_name;
+       SET author_name = EXCLUDED.author_name,
+           proposal_name = EXCLUDED.proposal_name,
+           proposal_comment = EXCLUDED.proposal_comment;
 
     RETURN jsonb_build_object(
         'variant_id',   v_variant_id,
@@ -301,7 +315,7 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."submit_variant"("p_team" "jsonb", "p_author_name" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."submit_variant"("p_team" "jsonb", "p_author_name" "text", "p_proposal_name" "text", "p_proposal_comment" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."touch_updated_at"() RETURNS "trigger"
@@ -621,7 +635,11 @@ CREATE TABLE IF NOT EXISTS "public"."variant_contributors" (
     "variant_id" "uuid" NOT NULL,
     "user_id" "uuid" NOT NULL,
     "contributed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "author_name" "text"
+    "author_name" "text",
+    "proposal_name" "text",
+    "proposal_comment" "text",
+    CONSTRAINT "variant_contributors_proposal_comment_length" CHECK (("proposal_comment" IS NULL OR "char_length"("proposal_comment") <= 500)),
+    CONSTRAINT "variant_contributors_proposal_name_length" CHECK (("proposal_name" IS NULL OR "char_length"("proposal_name") <= 50))
 );
 
 
@@ -1048,8 +1066,8 @@ GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."submit_variant"("p_team" "jsonb", "p_author_name" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."submit_variant"("p_team" "jsonb", "p_author_name" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."submit_variant"("p_team" "jsonb", "p_author_name" "text", "p_proposal_name" "text", "p_proposal_comment" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."submit_variant"("p_team" "jsonb", "p_author_name" "text", "p_proposal_name" "text", "p_proposal_comment" "text") TO "service_role";
 
 
 

@@ -79,6 +79,11 @@
       </div>
     </div>
 
+    <div class="proposal-copy">
+      <h3 class="proposal-name">{{ proposalName }}</h3>
+      <p v-if="proposalComment" class="proposal-comment">{{ proposalComment }}</p>
+    </div>
+
     <!-- TeamSkillsPreview now embeds its own watermark as the bottom edge
          of the skills table, so the card body proper ends with brand —
          the bingxue strip sits below as a separate block. -->
@@ -119,6 +124,21 @@ const firstAuthorDisplay = computed<string>(() => {
 })
 
 const contributorCount = computed(() => props.contributors?.length ?? 0)
+
+const primaryContributor = computed(() => {
+  const contributors = props.contributors ?? []
+  return contributors.find((contributor) => contributor.userId === props.variant.firstAuthorId)
+    ?? contributors[0]
+    ?? null
+})
+
+const proposalName = computed(() =>
+  primaryContributor.value?.proposalName?.trim()
+  || props.variant.team.name?.trim()
+  || '名前なしの編成',
+)
+
+const proposalComment = computed(() => primaryContributor.value?.proposalComment?.trim() || '')
 
 const contributorTooltip = computed(() => {
   const list = props.contributors ?? []
@@ -224,6 +244,28 @@ const voteTooltip = computed(() => {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+.proposal-copy {
+  min-width: 0;
+  padding: 8px 10px;
+  border-left: 3px solid #d97706;
+  background: #fffaf0;
+}
+.proposal-name {
+  margin: 0;
+  color: rgb(var(--color-ink));
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.proposal-comment {
+  margin: 5px 0 0;
+  color: rgb(var(--color-ink-soft));
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .icon-btn {
   display: inline-flex;
