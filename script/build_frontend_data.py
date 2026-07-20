@@ -31,7 +31,7 @@ from paths import (
     HEROES_JSON, SKILLS_JSON, STATUSES_JSON, BINGXUE_JSON, ENEMY_FORMATIONS_JSON,
     BINGXUE_JP_TO_CHT_DIR,
     PROTOTYPE_DIR,
-    SHINSEN_SIM_API_JSON, GAME8_SKILLS_INDEX_JSON,
+    SHINSEN_SIM_API_JSON, S3_CODOMO_TEMPLATES_JSON, GAME8_SKILLS_INDEX_JSON,
 )
 
 # When CFG_AUTHORITATIVE=1 (default), cfg.json wins over LLM output for
@@ -214,7 +214,68 @@ def _merge_shinsen_sim_data(heroes: list[dict], skills: list[dict]) -> tuple[lis
     }
 
 
-def _build_enemy_formations() -> list[dict]:
+def _build_enemy_formations(heroes: list[dict], skills: list[dict]) -> list[dict]:
+    if S3_CODOMO_TEMPLATES_JSON.exists():
+        payload = json.loads(S3_CODOMO_TEMPLATES_JSON.read_text("utf-8-sig"))
+        hero_index = _index_by_names(heroes)
+        skill_index = _index_by_names(skills)
+        formations = []
+        errors = []
+
+        for formation in payload.get("formations", []):
+            source_members = formation.get("members", [])
+            if len(source_members) != 3:
+                errors.append(f"{formation.get('id')}: expected 3 members, found {len(source_members)}")
+                continue
+
+            members = []
+            for member in source_members:
+                hero_name = member.get("hero_name", "")
+                skill1_name = member.get("skill1_name", "")
+                skill2_name = member.get("skill2_name", "")
+                hero = hero_index.get(_norm_name(hero_name))
+                skill1 = skill_index.get(_norm_name(skill1_name))
+                skill2 = skill_index.get(_norm_name(skill2_name))
+                if not hero:
+                    errors.append(f"{formation.get('id')}: hero missing: {hero_name}")
+                if not skill1:
+                    errors.append(f"{formation.get('id')}: skill missing: {skill1_name}")
+                if not skill2:
+                    errors.append(f"{formation.get('id')}: skill missing: {skill2_name}")
+                if not hero or not skill1 or not skill2:
+                    continue
+
+                members.append({
+                    # Prefer simulator IDs where available. S3 additions that do
+                    # not have one remain resolvable through their Japanese name.
+                    "commander_id": hero.get("sim_id") or hero.get("name_jp") or hero.get("name"),
+                    "skill1_id": skill1.get("sim_id") or skill1.get("name_jp") or skill1.get("name"),
+                    "skill2_id": skill2.get("sim_id") or skill2.get("name_jp") or skill2.get("name"),
+                    "troops": 10000,
+                    "breakthrough": "5",
+                    "stat_focus": member.get("stat_focus", ""),
+                    "bingxue": member.get("bingxue"),
+                })
+
+            if len(members) == 3:
+                formations.append({
+                    "id": formation.get("id"),
+                    "name": formation.get("name"),
+                    "source_url": payload.get("source_url"),
+                    "tier": formation.get("tier"),
+                    "faction": formation.get("faction"),
+                    "troop_types": formation.get("troop_types", []),
+                    "members": members,
+                })
+
+        if errors:
+            details = "\n  - ".join(errors[:30])
+            remainder = f"\n  ... and {len(errors) - 30} more" if len(errors) > 30 else ""
+            raise RuntimeError(f"S3 template validation failed:\n  - {details}{remainder}")
+        return formations
+
+    # Keep the simulator snapshot as a fallback for older checkouts that do not
+    # yet contain the normalized Codomo template catalog.
     data = _load_shinsen_sim_data()
     formations = []
     for formation in data.get("enemyFormations", []) if data else []:
@@ -1418,7 +1479,7 @@ def main():
         }
 
     # Write all build artifacts
-    enemy_formations = _build_enemy_formations()
+    enemy_formations = _build_enemy_formations(heroes, skills)
     HEROES_JSON.parent.mkdir(parents=True, exist_ok=True)
     HEROES_JSON.write_text(json.dumps(heroes, ensure_ascii=False, indent=2), "utf-8")
     SKILLS_JSON.write_text(json.dumps(skills, ensure_ascii=False, indent=2), "utf-8")
@@ -1470,7 +1531,7 @@ def main():
                 f"[warn] {len(override_conflicts)} override fields differ from cfg "
                 f"→ {CFG_OVERRIDE_CONFLICTS_PATH}"
             )
-            print(f"       (review whether the override is now redundant — cfg may have caught up)")
+            print("       (review whether the override is now redundant - cfg may have caught up)")
         elif CFG_OVERRIDE_CONFLICTS_PATH.exists():
             CFG_OVERRIDE_CONFLICTS_PATH.unlink()
     else:

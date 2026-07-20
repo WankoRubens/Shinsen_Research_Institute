@@ -361,7 +361,7 @@ import { useLineups, isEmptyTeam } from '../composables/useLineups'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
 import { simulateBattleBatch, type BattleBatchResult, type BattleTurnStat } from '../lib/battleSimulator'
 import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
-import { BINGXUE_DIRECTIONS, useData, type BingxueDirection, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
+import { BINGXUE_DIRECTIONS, buildTemplateLookup, useData, type BingxueDirection, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
 import { heroLevel50Stats } from '../lib/heroStats'
 
 type RoleKey = 'main' | 'vice1' | 'vice2'
@@ -476,8 +476,8 @@ const skillOptions = computed(() =>
 )
 const heroByKey = computed(() => new Map(heroes.value.map((hero) => [heroKey(hero), hero])))
 const skillByKey = computed(() => new Map(skillOptions.value.map((skill) => [skillKey(skill), skill])))
-const heroBySimId = computed(() => new Map(heroes.value.map((hero) => [hero.sim_id, hero]).filter(([id]) => !!id) as [string, Hero][]))
-const skillBySimId = computed(() => new Map(skills.value.map((skill) => [skill.sim_id, skill]).filter(([id]) => !!id) as [string, Skill][]))
+const heroByTemplateKey = computed(() => buildTemplateLookup(heroes.value))
+const skillByTemplateKey = computed(() => buildTemplateLookup(skills.value))
 const usedHeroNames = computed(() => new Set([simTeam.main.hero?.name, simTeam.vice1.hero?.name, simTeam.vice2.hero?.name].filter(Boolean) as string[]))
 const usedSkillNames = computed(() => new Set([
   simTeam.main.skill1?.name,
@@ -523,16 +523,24 @@ const normalizeExclusiveTeamSkills = (team: Lineup) => {
   })
 }
 
-// テンプレ敵編成は sim_id で武将・戦法を引き直し、通常の Lineup と同じ形へ変換する。
+// テンプレのIDまたは名称で武将・戦法を引き直し、通常の Lineup と同じ形へ変換する。
 const roleFromTemplateMember = (member: EnemyFormation['members'][number]): RoleData => {
-  const hero = heroBySimId.value.get(member.commander_id) ?? null
+  const hero = heroByTemplateKey.value.get(member.commander_id) ?? null
+  const base = emptyBattleRole()
   return {
-    ...emptyBattleRole(),
+    ...base,
     hero,
-    skill1: member.skill1_id ? skillBySimId.value.get(member.skill1_id) ?? null : null,
-    skill2: member.skill2_id ? skillBySimId.value.get(member.skill2_id) ?? null : null,
+    skill1: member.skill1_id ? skillByTemplateKey.value.get(member.skill1_id) ?? null : null,
+    skill2: member.skill2_id ? skillByTemplateKey.value.get(member.skill2_id) ?? null : null,
     breakthrough: templateBreakthrough,
     stats: statsWithFocus(hero, member.stat_focus, templateBreakthrough),
+    bingxue: member.bingxue
+      ? {
+          direction: member.bingxue.direction,
+          major: member.bingxue.major,
+          minors: member.bingxue.minors.map((minor) => ({ ...minor })),
+        }
+      : base.bingxue,
   }
 }
 

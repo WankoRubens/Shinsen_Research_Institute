@@ -1,8 +1,13 @@
 [
   {
-    "id": "s3-tier-01",
-    "name": "Tier0 豊臣家 弓 黒田官兵衛",
+    "id": "s3-codomo-001",
+    "name": "Tier0 豊臣家 弓 黒田官兵衛・豊臣秀吉・ねね",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier0",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c113",
@@ -10,7 +15,25 @@
         "skill2_id": "t36",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c56",
@@ -18,7 +41,25 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c62",
@@ -26,14 +67,39 @@
         "skill2_id": "t44",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "恩顧",
+              "level": 2
+            },
+            {
+              "name": "不敵",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-02",
-    "name": "Tier0 豊臣家 弓/足/鉄 黒田官兵衛・ねね制御",
+    "id": "s3-codomo-002",
+    "name": "Tier0 豊臣家 弓/足/鉄 黒田官兵衛・豊臣秀吉・ねね",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier0",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵",
+      "足軽",
+      "鉄砲"
+    ],
     "members": [
       {
         "commander_id": "c113",
@@ -41,7 +107,25 @@
         "skill2_id": "t36",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c56",
@@ -49,7 +133,25 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c62",
@@ -57,14 +159,39 @@
         "skill2_id": "t30",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "統率"
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "気勢崩し",
+          "minors": [
+            {
+              "name": "恩顧",
+              "level": 2
+            },
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-03",
-    "name": "Tier0 豊臣家 弓/足/鉄 黒田官兵衛・ねね回復",
+    "id": "s3-codomo-003",
+    "name": "Tier0 豊臣家 弓/足/鉄 黒田官兵衛・豊臣秀吉・ねね",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier0",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵",
+      "足軽",
+      "鉄砲"
+    ],
     "members": [
       {
         "commander_id": "c113",
@@ -72,7 +199,25 @@
         "skill2_id": "t36",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c56",
@@ -80,37 +225,115 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c62",
-        "skill1_id": "惠風和雨",
+        "skill1_id": "恵風和雨",
         "skill2_id": "t38",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-04",
-    "name": "Tier0 群雄 足 立花誾千代",
+    "id": "s3-codomo-004",
+    "name": "Tier0 群雄 足 立花誾千代・立花道雪・北条氏康",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier0",
+    "faction": "群雄",
+    "troop_types": [
+      "足軽"
+    ],
     "members": [
       {
+        "commander_id": "立花誾千代",
         "skill1_id": "t_i1",
         "skill2_id": "t13",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "軍律擾乱",
+          "minors": [
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c34",
-        "skill1_id": "勇猛無前",
+        "skill1_id": "勇猛無比",
         "skill2_id": "t43",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c38",
@@ -118,14 +341,37 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-05",
+    "id": "s3-codomo-005",
     "name": "Tier0 徳川家 足 徳川家康・本多忠勝・本多正信",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier0",
+    "faction": "徳川家",
+    "troop_types": [
+      "足軽"
+    ],
     "members": [
       {
         "commander_id": "c24",
@@ -133,7 +379,25 @@
         "skill2_id": "t169",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "統率"
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "慧眼",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "恩顧",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c25",
@@ -141,7 +405,25 @@
         "skill2_id": "t33",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c29",
@@ -149,14 +431,37 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "地利",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-06",
+    "id": "s3-codomo-006",
     "name": "Tier0 武田家 弓 武田信玄・馬場信春・真田昌幸",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier0",
+    "faction": "武田家",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c14",
@@ -164,7 +469,25 @@
         "skill2_id": "t23",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "武略",
+          "major": "表裏一体",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c15",
@@ -172,21 +495,63 @@
         "skill2_id": "t30",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "統率"
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "殿軍救護",
+          "minors": [
+            {
+              "name": "内助",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "真田昌幸",
         "skill1_id": "t15",
-        "skill2_id": "瞬息萬變",
+        "skill2_id": "瞬息万変",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-07",
+    "id": "s3-codomo-007",
     "name": "Tier0 武田家 騎 武田信玄・山県昌景・山本勘助",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier0",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
     "members": [
       {
         "commander_id": "c14",
@@ -194,15 +559,51 @@
         "skill2_id": "t23",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "武略",
+          "major": "表裏一体",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c115",
-        "skill1_id": "勇猛無前",
+        "skill1_id": "勇猛無比",
         "skill2_id": "t39",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c17",
@@ -210,14 +611,37 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+知"
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-08",
+    "id": "s3-codomo-008",
     "name": "Tier0.5 織田家 鉄 明智光秀・真田昌幸・帰蝶",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "織田家",
+    "troop_types": [
+      "鉄砲"
+    ],
     "members": [
       {
         "commander_id": "c2",
@@ -225,14 +649,51 @@
         "skill2_id": "t_i5",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 1
+            }
+          ]
+        }
       },
       {
-        "skill1_id": "瞬息萬變",
+        "commander_id": "真田昌幸",
+        "skill1_id": "瞬息万変",
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c6",
@@ -240,22 +701,63 @@
         "skill2_id": "t30",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "右往左往",
+          "minors": [
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "恩顧",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-09",
+    "id": "s3-codomo-009",
     "name": "Tier0.5 織田家 騎 前田利家・柴田勝家・まつ",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "織田家",
+    "troop_types": [
+      "騎馬"
+    ],
     "members": [
       {
         "commander_id": "c4",
-        "skill1_id": "勇猛無前",
+        "skill1_id": "勇猛無比",
         "skill2_id": "t1",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c3",
@@ -263,21 +765,63 @@
         "skill2_id": "t13",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "破陣の勢い",
+          "minors": [
+            {
+              "name": "早駆",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "まつ",
         "skill1_id": "t28",
-        "skill2_id": "惠風和雨",
+        "skill2_id": "恵風和雨",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-10",
+    "id": "s3-codomo-010",
     "name": "Tier0.5 徳川家 足 徳川家康・本多忠勝・お江",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "徳川家",
+    "troop_types": [
+      "足軽"
+    ],
     "members": [
       {
         "commander_id": "c24",
@@ -285,7 +829,25 @@
         "skill2_id": "t169",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "統率"
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "慧眼",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "恩顧",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c25",
@@ -293,21 +855,63 @@
         "skill2_id": "t33",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
       },
       {
-        "skill1_id": "惠風和雨",
+        "commander_id": "お江",
+        "skill1_id": "恵風和雨",
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-11",
+    "id": "s3-codomo-011",
     "name": "Tier0.5 豊臣家 弓 黒田官兵衛・豊臣秀吉・お初",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c113",
@@ -315,7 +919,25 @@
         "skill2_id": "t36",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c56",
@@ -323,21 +945,63 @@
         "skill2_id": "t29",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "お初",
         "skill1_id": "t107",
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-12",
+    "id": "s3-codomo-012",
     "name": "Tier0.5 群雄 弓 北条綱成・立花道雪・北条氏康",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c36",
@@ -345,15 +1009,51 @@
         "skill2_id": "t13",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c34",
-        "skill1_id": "勇猛無前",
+        "skill1_id": "勇猛無比",
         "skill2_id": "t43",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c38",
@@ -361,14 +1061,37 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+知"
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-13",
+    "id": "s3-codomo-013",
     "name": "Tier0.5 群雄 弓 本願寺顕如・毛利元就・北条氏康",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c37",
@@ -376,7 +1099,25 @@
         "skill2_id": "t14",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c31",
@@ -384,7 +1125,25 @@
         "skill2_id": "t38",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "返り討ちの計",
+          "minors": [
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c38",
@@ -392,43 +1151,127 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+知"
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-14",
+    "id": "s3-codomo-014",
     "name": "Tier0.5 群雄 足 立花誾千代・立花道雪・安宅冬康",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "群雄",
+    "troop_types": [
+      "足軽"
+    ],
     "members": [
       {
+        "commander_id": "立花誾千代",
         "skill1_id": "t_i1",
         "skill2_id": "t13",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "軍律擾乱",
+          "minors": [
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c34",
-        "skill1_id": "勇猛無前",
+        "skill1_id": "勇猛無比",
         "skill2_id": "t43",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "安宅冬康",
         "skill1_id": "t28",
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-15",
+    "id": "s3-codomo-015",
     "name": "Tier0.5 混合 騎 北条綱成・柿崎景家・お江",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
     "members": [
       {
         "commander_id": "c36",
@@ -436,28 +1279,89 @@
         "skill2_id": "t2",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "柿崎景家",
         "skill1_id": "t172",
         "skill2_id": "t13",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
       },
       {
-        "skill1_id": "合盟之陣",
-        "skill2_id": "惠風和雨",
+        "commander_id": "お江",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-16",
+    "id": "s3-codomo-016",
     "name": "Tier0.5 混合 騎 北条綱成・柿崎景家・本多正信",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
     "members": [
       {
         "commander_id": "c36",
@@ -465,29 +1369,89 @@
         "skill2_id": "t2",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "柿崎景家",
         "skill1_id": "t172",
         "skill2_id": "t13",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c29",
-        "skill1_id": "合盟之陣",
+        "skill1_id": "会盟の陣",
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "地利",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-17",
+    "id": "s3-codomo-017",
     "name": "Tier0.5 混合 騎 北条綱成・柿崎景家・お初",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
     "members": [
       {
         "commander_id": "c36",
@@ -495,28 +1459,89 @@
         "skill2_id": "t2",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "柿崎景家",
         "skill1_id": "t172",
         "skill2_id": "t13",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
       },
       {
-        "skill1_id": "合盟之陣",
-        "skill2_id": "惠風和雨",
+        "commander_id": "お初",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-18",
+    "id": "s3-codomo-018",
     "name": "Tier0.5 豊臣家 弓 豊臣秀吉・福島正則・ねね",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c56",
@@ -524,7 +1549,25 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c59",
@@ -532,7 +1575,25 @@
         "skill2_id": "t1",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c62",
@@ -540,14 +1601,37 @@
         "skill2_id": "t30",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "統率"
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "気勢崩し",
+          "minors": [
+            {
+              "name": "恩顧",
+              "level": 2
+            },
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-19",
+    "id": "s3-codomo-019",
     "name": "Tier0.5 武田家 騎 武田信玄・真田昌幸・山本勘助",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
     "members": [
       {
         "commander_id": "c14",
@@ -555,14 +1639,51 @@
         "skill2_id": "t23",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "武略",
+          "major": "表裏一体",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "真田昌幸",
         "skill1_id": "t31",
-        "skill2_id": "瞬息萬變",
+        "skill2_id": "瞬息万変",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c17",
@@ -570,14 +1691,37 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+知"
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-20",
+    "id": "s3-codomo-020",
     "name": "Tier0.5 武田家 騎 武田信玄・馬場信春・山本勘助",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
     "members": [
       {
         "commander_id": "c14",
@@ -585,7 +1729,25 @@
         "skill2_id": "t23",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "武略",
+          "major": "表裏一体",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c15",
@@ -593,7 +1755,25 @@
         "skill2_id": "t30",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "統率"
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "殿軍救護",
+          "minors": [
+            {
+              "name": "内助",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c17",
@@ -601,22 +1781,63 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+知"
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-21",
+    "id": "s3-codomo-021",
     "name": "Tier0.5 武田家 騎 山県昌景・馬場信春・山本勘助",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
     "members": [
       {
         "commander_id": "c115",
-        "skill1_id": "勇猛無前",
+        "skill1_id": "勇猛無比",
         "skill2_id": "t39",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "武勇"
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c15",
@@ -624,7 +1845,25 @@
         "skill2_id": "t30",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "統率"
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "殿軍救護",
+          "minors": [
+            {
+              "name": "内助",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c17",
@@ -632,14 +1871,127 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+知"
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-22",
+    "id": "s3-codomo-022",
+    "name": "Tier0.5 織田家 鉄 明智光秀・真田昌幸・帰蝶",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "織田家",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c2",
+        "skill1_id": "t4",
+        "skill2_id": "t_i5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "真田昌幸",
+        "skill1_id": "t2",
+        "skill2_id": "瞬息万変",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c6",
+        "skill1_id": "t108",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-023",
     "name": "Tier0.5 織田家 鉄 織田信長・明智光秀・帰蝶",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "織田家",
+    "troop_types": [
+      "鉄砲"
+    ],
     "members": [
       {
         "commander_id": "c1",
@@ -647,7 +1999,25 @@
         "skill2_id": "t108",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "統率"
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c2",
@@ -655,52 +2025,153 @@
         "skill2_id": "t_i5",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c6",
         "skill1_id": "t38",
-        "skill2_id": "惠風和雨",
+        "skill2_id": "恵風和雨",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-23",
+    "id": "s3-codomo-024",
     "name": "Tier0.5 豊臣家 弓 豊臣秀吉・真田昌幸・ねね",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c56",
         "skill1_id": "t31",
-        "skill2_id": "奇策縱橫",
+        "skill2_id": "奇策縦横",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "真田昌幸",
         "skill1_id": "t107",
-        "skill2_id": "瞬息萬變",
+        "skill2_id": "瞬息万変",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c62",
-        "skill1_id": "惠風和雨",
+        "skill1_id": "恵風和雨",
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-24",
+    "id": "s3-codomo-025",
     "name": "Tier0.5 豊臣家 弓 黒田官兵衛・真田昌幸・お初",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c113",
@@ -708,28 +2179,89 @@
         "skill2_id": "t36",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
       },
       {
+        "commander_id": "真田昌幸",
         "skill1_id": "t107",
-        "skill2_id": "瞬息萬變",
+        "skill2_id": "瞬息万変",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
       },
       {
-        "skill1_id": "惠風和雨",
+        "commander_id": "お初",
+        "skill1_id": "恵風和雨",
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "id": "s3-tier-25",
+    "id": "s3-codomo-026",
     "name": "Tier0.5 群雄 弓 北条綱成・真田昌幸・北条氏康",
     "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier05",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
     "members": [
       {
         "commander_id": "c36",
@@ -737,14 +2269,51 @@
         "skill2_id": "t13",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+武"
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
       },
       {
-        "skill1_id": "瞬息萬變",
+        "commander_id": "真田昌幸",
+        "skill1_id": "瞬息万変",
         "skill2_id": "t2",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "知略"
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "軍律擾乱",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
       },
       {
         "commander_id": "c38",
@@ -752,7 +2321,6330 @@
         "skill2_id": "t15",
         "troops": 10000,
         "breakthrough": "5",
-        "stat_focus": "速度+知"
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-027",
+    "name": "Tier1 群雄 足 立花誾千代・立花道雪・高橋紹運",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "群雄",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "立花誾千代",
+        "skill1_id": "t_i1",
+        "skill2_id": "勇猛無比",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "軍律擾乱",
+          "minors": [
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c34",
+        "skill1_id": "t43",
+        "skill2_id": "t27",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c49",
+        "skill1_id": "t42",
+        "skill2_id": "t21",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "破陣の勢い",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-028",
+    "name": "Tier1 混合 弓 松永久秀・明智光秀・宇佐美定満",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c35",
+        "skill1_id": "疑心暗鬼",
+        "skill2_id": "t41",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c2",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "t107",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c71",
+        "skill1_id": "t15",
+        "skill2_id": "直諫敢行",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-029",
+    "name": "Tier1 混合 騎 真田昌幸・まつ・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "真田昌幸",
+        "skill1_id": "奇策縦横",
+        "skill2_id": "瞬息万変",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-030",
+    "name": "Tier1 織田家 騎 前田利家・帰蝶・まつ",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "織田家",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c4",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c6",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "右往左往",
+          "minors": [
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "t38",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-031",
+    "name": "Tier1 混合 騎 榊原康政・まつ・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c27",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t21",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-032",
+    "name": "Tier1 混合 騎 榊原康政・まつ・仙桃院",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c27",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c73",
+        "skill1_id": "t15",
+        "skill2_id": "t28",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-033",
+    "name": "Tier1 混合 弓 立花道雪・まつ・酒井忠次",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c34",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t43",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "t31",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c26",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-034",
+    "name": "Tier1 混合 弓 今川義元・まつ・酒井忠次",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c32",
+        "skill1_id": "t172",
+        "skill2_id": "攻其不備",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "t31",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c26",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-035",
+    "name": "Tier1 混合 騎 柿崎景家・まつ・飯富虎昌",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "柿崎景家",
+        "skill1_id": "t172",
+        "skill2_id": "勇猛無比",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c19",
+        "skill1_id": "t2",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-036",
+    "name": "Tier1 混合 弓 高橋紹運・まつ・大内義隆",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c49",
+        "skill1_id": "t36",
+        "skill2_id": "奇策縦横",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "破陣の勢い",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "t14",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c48",
+        "skill1_id": "t169",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "不敵",
+              "level": 2
+            },
+            {
+              "name": "才気",
+              "level": 2
+            },
+            {
+              "name": "恩顧",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-037",
+    "name": "Tier1 混合 弓 高橋紹運・まつ・お初",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c49",
+        "skill1_id": "奇策縦横",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "破陣の勢い",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "t14",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "お初",
+        "skill1_id": "t_i7",
+        "skill2_id": "t107",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 2
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-038",
+    "name": "Tier1 混合 騎 山県昌景・まつ・仙桃院",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c115",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "t16",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c73",
+        "skill1_id": "t28",
+        "skill2_id": "t_i7",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "不敵",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "才気",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-039",
+    "name": "Tier1 混合 足 加藤清正・まつ・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c57",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "t28",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-040",
+    "name": "Tier1 徳川家 足 酒井忠次・本多忠勝・お江",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "徳川家",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c26",
+        "skill1_id": "t11",
+        "skill2_id": "t2",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c25",
+        "skill1_id": "t_i2",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "お江",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-041",
+    "name": "Tier1 徳川家 足 酒井忠次・本多忠勝・お江",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "徳川家",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c26",
+        "skill1_id": "t169",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c25",
+        "skill1_id": "t6",
+        "skill2_id": "t33",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "お江",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-042",
+    "name": "Tier1 混合 騎 柿崎景家・まつ・北条綱成",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "柿崎景家",
+        "skill1_id": "t172",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t2",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-043",
+    "name": "Tier1 群雄 弓 北条綱成・今川義元・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t107",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c32",
+        "skill1_id": "t172",
+        "skill2_id": "t8",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-044",
+    "name": "Tier1 群雄 弓 北条綱成・毛利元就・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c31",
+        "skill1_id": "t107",
+        "skill2_id": "t29",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "返り討ちの計",
+          "minors": [
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "逆境",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-045",
+    "name": "Tier1 混合 足 伊達晴宗・福島正則・酒井忠次",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c39",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "t27",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c59",
+        "skill1_id": "t1",
+        "skill2_id": "t_i1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c26",
+        "skill1_id": "t2",
+        "skill2_id": "t11",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-046",
+    "name": "Tier1 混合 騎 伊達晴宗・成田甲斐・酒井忠次",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c39",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "t27",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c60",
+        "skill1_id": "t1",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c26",
+        "skill1_id": "t2",
+        "skill2_id": "t11",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-047",
+    "name": "Tier1 混合 鉄 本願寺顕如・鈴木佐大夫・妻木熙子",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c37",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "鈴木佐大夫",
+        "skill1_id": "t169",
+        "skill2_id": "t108",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c5",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "t38",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-048",
+    "name": "Tier1 混合 弓 北条綱成・山本勘助・織田信長",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t_i1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c1",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "不敵",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "才気",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-049",
+    "name": "Tier1 豊臣家 弓 豊臣秀吉・成田甲斐・ねね",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c56",
+        "skill1_id": "t5",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c60",
+        "skill1_id": "t1",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c62",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "気勢崩し",
+          "minors": [
+            {
+              "name": "恩顧",
+              "level": 2
+            },
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-050",
+    "name": "Tier1 武田家 騎 山県昌景・内藤昌豊・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c115",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t39",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c18",
+        "skill1_id": "t31",
+        "skill2_id": "t38",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-051",
+    "name": "Tier1 武田家 騎 山県昌景・馬場信春・真田昌幸",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c115",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t39",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c15",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "殿軍救護",
+          "minors": [
+            {
+              "name": "内助",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "真田昌幸",
+        "skill1_id": "t15",
+        "skill2_id": "瞬息万変",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-052",
+    "name": "Tier1 武田家 騎 武田信玄・飯富虎昌・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c14",
+        "skill1_id": "t8",
+        "skill2_id": "t23",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "武略",
+          "major": "表裏一体",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c19",
+        "skill1_id": "t13",
+        "skill2_id": "t27",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-053",
+    "name": "Tier1 武田家 騎 山県昌景・飯富虎昌・山本勘助",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c115",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c19",
+        "skill1_id": "t40",
+        "skill2_id": "t27",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-054",
+    "name": "Tier1 上杉家 騎 柿崎景家・宇佐美定満・上杉謙信",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "上杉家",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "柿崎景家",
+        "skill1_id": "t172",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c71",
+        "skill1_id": "t15",
+        "skill2_id": "直諫敢行",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c65",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-055",
+    "name": "Tier1 上杉家 足/騎 柿崎景家・上杉謙信・太田資正",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "上杉家",
+    "troop_types": [
+      "足軽",
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "柿崎景家",
+        "skill1_id": "t172",
+        "skill2_id": "勇猛無比",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c65",
+        "skill1_id": "t13",
+        "skill2_id": "t_i1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c69",
+        "skill1_id": "t28",
+        "skill2_id": "t40",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-056",
+    "name": "Tier1 織田家 弓 織田信長・柴田勝家・明智光秀",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "織田家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c1",
+        "skill1_id": "t169",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c3",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t21",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c2",
+        "skill1_id": "t4",
+        "skill2_id": "t38",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-057",
+    "name": "Tier1 織田家 弓 織田信長・柴田勝家・前田慶次",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "織田家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c1",
+        "skill1_id": "t169",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c3",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t21",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c13",
+        "skill1_id": "t172",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-058",
+    "name": "Tier1 織田家 弓 柴田勝家・前田慶次・織田信長",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "織田家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c3",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t21",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c13",
+        "skill1_id": "t172",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c1",
+        "skill1_id": "t37",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "気勢崩し",
+          "minors": [
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-059",
+    "name": "Tier1 織田家 鉄 柴田勝家・明智光秀・帰蝶",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "織田家",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c3",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t21",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c2",
+        "skill1_id": "t4",
+        "skill2_id": "t14",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c6",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "t108",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-060",
+    "name": "Tier1 織田家 鉄 明智光秀・帰蝶・妻木熙子",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "織田家",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c2",
+        "skill1_id": "t4",
+        "skill2_id": "t14",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c6",
+        "skill1_id": "t37",
+        "skill2_id": "t30",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "右往左往",
+          "minors": [
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "恩顧",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c5",
+        "skill1_id": "t_i7",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-061",
+    "name": "Tier1 織田家 弓 織田信長・真田昌幸・前田慶次",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "織田家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c1",
+        "skill1_id": "t169",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "真田昌幸",
+        "skill1_id": "t15",
+        "skill2_id": "瞬息万変",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c13",
+        "skill1_id": "t172",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-062",
+    "name": "Tier1 群雄 弓 本願寺顕如・毛利元就・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c37",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c31",
+        "skill1_id": "t107",
+        "skill2_id": "t29",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "返り討ちの計",
+          "minors": [
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "逆境",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-063",
+    "name": "Tier1 群雄 弓 松永久秀・毛利元就・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c35",
+        "skill1_id": "疑心暗鬼",
+        "skill2_id": "t41",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c31",
+        "skill1_id": "t107",
+        "skill2_id": "t29",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "返り討ちの計",
+          "minors": [
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "逆境",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-064",
+    "name": "Tier1 群雄 鉄 本願寺顕如・鈴木佐大夫・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "群雄",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c37",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "鈴木佐大夫",
+        "skill1_id": "t108",
+        "skill2_id": "t169",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-065",
+    "name": "Tier1 混合 騎 真田昌幸・前田慶次・本多正信",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "真田昌幸",
+        "skill1_id": "t2",
+        "skill2_id": "瞬息万変",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c13",
+        "skill1_id": "t172",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c29",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "地利",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-066",
+    "name": "Tier1 混合 鉄 松永久秀・織田信長・宇佐美定満",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier1",
+    "faction": "混合",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c35",
+        "skill1_id": "疑心暗鬼",
+        "skill2_id": "t41",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c1",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "t108",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "不敵",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c71",
+        "skill1_id": "t15",
+        "skill2_id": "直諫敢行",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-067",
+    "name": "Tier1.5 混合 足 松永久秀・宇佐美定満・お初",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "混合",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c35",
+        "skill1_id": "疑心暗鬼",
+        "skill2_id": "t41",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c71",
+        "skill1_id": "t14",
+        "skill2_id": "直諫敢行",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "お初",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-068",
+    "name": "Tier1.5 混合 足 酒井忠次・まつ・仙桃院",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "混合",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c26",
+        "skill1_id": "t172",
+        "skill2_id": "勇猛無比",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c73",
+        "skill1_id": "t15",
+        "skill2_id": "t_i7",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-069",
+    "name": "Tier1.5 混合 足 加藤清正・まつ・仙桃院",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "混合",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c57",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "まつ",
+        "skill1_id": "t16",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c73",
+        "skill1_id": "t28",
+        "skill2_id": "t_i7",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "不敵",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "才気",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-070",
+    "name": "Tier1.5 混合 弓 山本勘助・高橋紹運・お江",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "混合",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c17",
+        "skill1_id": "t107",
+        "skill2_id": "t38",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c49",
+        "skill1_id": "t21",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "破陣の勢い",
+          "minors": [
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "大勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "お江",
+        "skill1_id": "会盟の陣",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-071",
+    "name": "Tier1.5 徳川家 馬/足 酒井忠次・榊原康政・お江",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "徳川家",
+    "troop_types": [
+      "騎馬",
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c26",
+        "skill1_id": "t172",
+        "skill2_id": "t2",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c27",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "お江",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "t28",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-072",
+    "name": "Tier1.5 群雄 足 長宗我部元親・今川義元・十河一存",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "群雄",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c33",
+        "skill1_id": "t115",
+        "skill2_id": "t3",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c32",
+        "skill1_id": "t23",
+        "skill2_id": "t8",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c42",
+        "skill1_id": "t32",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-073",
+    "name": "Tier1.5 群雄 弓 本願寺顕如・毛利元就・毛利隆元",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c37",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c31",
+        "skill1_id": "t14",
+        "skill2_id": "t31",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "返り討ちの計",
+          "minors": [
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "逆境",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c41",
+        "skill1_id": "t107",
+        "skill2_id": "t38",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-074",
+    "name": "Tier1.5 群雄 足 今川義元・長宗我部元親・寿桂尼",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "群雄",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c32",
+        "skill1_id": "t23",
+        "skill2_id": "t8",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c33",
+        "skill1_id": "t115",
+        "skill2_id": "t3",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c53",
+        "skill1_id": "t167",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "武略",
+          "major": "表裏一体",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "妙策",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-075",
+    "name": "Tier1.5 群雄 足 長宗我部元親・立花道雪・伊達晴宗",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "群雄",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c33",
+        "skill1_id": "t115",
+        "skill2_id": "t3",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c34",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t43",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c39",
+        "skill1_id": "t2",
+        "skill2_id": "t1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-076",
+    "name": "Tier1.5 混合 足 山本勘助・大祝鶴・お江",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "混合",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c17",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "心頭滅却",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c51",
+        "skill1_id": "電光石火",
+        "skill2_id": "t_i1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "お江",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "会盟の陣",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-077",
+    "name": "Tier1.5 混合 足 佐久間信盛・大祝鶴・お江",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "混合",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c7",
+        "skill1_id": "t19",
+        "skill2_id": "t3",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c51",
+        "skill1_id": "電光石火",
+        "skill2_id": "t_i1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "お江",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "会盟の陣",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-078",
+    "name": "Tier1.5 群雄 鉄 本願寺顕如・大祝鶴・鈴木佐大夫",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "群雄",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c37",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c51",
+        "skill1_id": "電光石火",
+        "skill2_id": "t_i1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "鈴木佐大夫",
+        "skill1_id": "t169",
+        "skill2_id": "t108",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-079",
+    "name": "Tier1.5 豊臣家 弓 豊臣秀吉・竹中半兵衛・ねね",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c56",
+        "skill1_id": "t31",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c58",
+        "skill1_id": "t41",
+        "skill2_id": "疑心暗鬼",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c62",
+        "skill1_id": "t107",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-080",
+    "name": "Tier1.5 豊臣家 騎 豊臣秀吉・成田甲斐・福島正則",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "豊臣家",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c56",
+        "skill1_id": "t25",
+        "skill2_id": "t169",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c60",
+        "skill1_id": "t144",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c59",
+        "skill1_id": "t172",
+        "skill2_id": "t1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-081",
+    "name": "Tier1.5 豊臣家 弓 黒田官兵衛・豊臣秀吉・竹中半兵衛",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c113",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c56",
+        "skill1_id": "t31",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c58",
+        "skill1_id": "t41",
+        "skill2_id": "疑心暗鬼",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-082",
+    "name": "Tier1.5 豊臣家 足 黒田官兵衛・豊臣秀吉・宮部継潤",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "豊臣家",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c113",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c56",
+        "skill1_id": "t15",
+        "skill2_id": "t38",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c63",
+        "skill1_id": "t115",
+        "skill2_id": "t3",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-083",
+    "name": "Tier1.5 武田家 騎 山県昌景・飯富虎昌・内藤昌豊",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "武田家",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c115",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "離間の計",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c19",
+        "skill1_id": "t40",
+        "skill2_id": "t27",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c18",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-084",
+    "name": "Tier1.5 上杉家 足 上杉謙信・宇佐美定満・小島弥太郎",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "上杉家",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c65",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t_i1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c71",
+        "skill1_id": "t15",
+        "skill2_id": "直諫敢行",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c68",
+        "skill1_id": "t11",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-085",
+    "name": "Tier1.5 織田家 鉄 織田信長・明智光秀・妻木熙子",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "織田家",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c1",
+        "skill1_id": "t169",
+        "skill2_id": "t108",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "気勢崩し",
+          "minors": [
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c2",
+        "skill1_id": "t4",
+        "skill2_id": "t14",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c5",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "t_i7",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-086",
+    "name": "Tier1.5 群雄 鉄 本願寺顕如・鈴木佐大夫・大内義隆",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "群雄",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c37",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "鈴木佐大夫",
+        "skill1_id": "t2",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c48",
+        "skill1_id": "t108",
+        "skill2_id": "t169",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "陽動の策",
+          "minors": [
+            {
+              "name": "才気",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "恩顧",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-087",
+    "name": "Tier1.5 群雄 弓 北条綱成・相馬盛胤・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c36",
+        "skill1_id": "t41",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 武",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "搦手の策",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c112",
+        "skill1_id": "t107",
+        "skill2_id": "t44",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-088",
+    "name": "Tier1.5 群雄 弓 松永久秀・相馬盛胤・北条氏康",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier15",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c35",
+        "skill1_id": "疑心暗鬼",
+        "skill2_id": "t41",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "大勇",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c112",
+        "skill1_id": "t107",
+        "skill2_id": "t44",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c38",
+        "skill1_id": "t2",
+        "skill2_id": "t15",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "速度 + 知",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-089",
+    "name": "Tier2 群雄 全兵種 伊達晴宗・立花道雪・寿桂尼",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier2",
+    "faction": "群雄",
+    "troop_types": [
+      "弓兵",
+      "足軽",
+      "鉄砲",
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c39",
+        "skill1_id": "t2",
+        "skill2_id": "t11",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c34",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t43",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c53",
+        "skill1_id": "t167",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "武略",
+          "major": "表裏一体",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "妙策",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-090",
+    "name": "Tier2 群雄 騎 伊達晴宗・立花道雪・瑞渓院",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier2",
+    "faction": "群雄",
+    "troop_types": [
+      "騎馬"
+    ],
+    "members": [
+      {
+        "commander_id": "c39",
+        "skill1_id": "t2",
+        "skill2_id": "t11",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c34",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t43",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "冷静沈着",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c47",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "t31",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "天時",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-091",
+    "name": "Tier2 豊臣家 弓 豊臣秀吉・福島正則・加藤清正",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier2",
+    "faction": "豊臣家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c56",
+        "skill1_id": "t107",
+        "skill2_id": "t169",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "手当の心得",
+          "minors": [
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "明鏡",
+              "level": 2
+            },
+            {
+              "name": "不惑",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c59",
+        "skill1_id": "t11",
+        "skill2_id": "t1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c57",
+        "skill1_id": "t21",
+        "skill2_id": "勇猛無比",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-092",
+    "name": "Tier2 上杉家 足 上杉謙信・小島弥太郎・太田資正",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier2",
+    "faction": "上杉家",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c65",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t13",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "豪勇",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c68",
+        "skill1_id": "t11",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c69",
+        "skill1_id": "t28",
+        "skill2_id": "t40",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-093",
+    "name": "Tier2 織田家 鉄 明智光秀・明智秀満・妻木熙子",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier2",
+    "faction": "織田家",
+    "troop_types": [
+      "鉄砲"
+    ],
+    "members": [
+      {
+        "commander_id": "c2",
+        "skill1_id": "t4",
+        "skill2_id": "t_i5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c11",
+        "skill1_id": "t22",
+        "skill2_id": "t14",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "達人大観",
+          "minors": [
+            {
+              "name": "果敢",
+              "level": 2
+            },
+            {
+              "name": "機動",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c5",
+        "skill1_id": "恵風和雨",
+        "skill2_id": "t_薩摩鉄砲兵",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "臨戦",
+          "major": "鼓舞激励",
+          "minors": [
+            {
+              "name": "協同",
+              "level": 2
+            },
+            {
+              "name": "仁愛",
+              "level": 2
+            },
+            {
+              "name": "協同",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-094",
+    "name": "Tier2 織田家 弓 前田利家・前田慶次・織田信長",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier2",
+    "faction": "織田家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c4",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c13",
+        "skill1_id": "t172",
+        "skill2_id": "t6",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c1",
+        "skill1_id": "t37",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "気勢崩し",
+          "minors": [
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-095",
+    "name": "Tier2 織田家 弓 前田利家・柴田勝家・織田信長",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier2",
+    "faction": "織田家",
+    "troop_types": [
+      "弓兵"
+    ],
+    "members": [
+      {
+        "commander_id": "c4",
+        "skill1_id": "勇猛無比",
+        "skill2_id": "t1",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "武略",
+          "major": "舟中敵国",
+          "minors": [
+            {
+              "name": "剛力",
+              "level": 2
+            },
+            {
+              "name": "突貫",
+              "level": 2
+            },
+            {
+              "name": "豪勇",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c3",
+        "skill1_id": "t_i1",
+        "skill2_id": "t21",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "武勇",
+        "bingxue": {
+          "direction": "機略",
+          "major": "破陣の勢い",
+          "minors": [
+            {
+              "name": "神算",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "早駆",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c1",
+        "skill1_id": "t37",
+        "skill2_id": "t5",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "統率",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "気勢崩し",
+          "minors": [
+            {
+              "name": "逆境",
+              "level": 2
+            },
+            {
+              "name": "俊才",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "s3-codomo-096",
+    "name": "Tier2 群雄 足 本願寺顕如・里見義堯・寿桂尼",
+    "source_url": "https://www.sanguo-zhi.com/entry/s3-template/",
+    "tier": "tier2",
+    "faction": "群雄",
+    "troop_types": [
+      "足軽"
+    ],
+    "members": [
+      {
+        "commander_id": "c37",
+        "skill1_id": "t4",
+        "skill2_id": "t36",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "機略",
+          "major": "詭計百出",
+          "minors": [
+            {
+              "name": "多謀",
+              "level": 2
+            },
+            {
+              "name": "鬼気",
+              "level": 2
+            },
+            {
+              "name": "神秘",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c117",
+        "skill1_id": "t172",
+        "skill2_id": "t167",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "武略",
+          "major": "兵勢連鎖",
+          "minors": [
+            {
+              "name": "胆力",
+              "level": 2
+            },
+            {
+              "name": "活路",
+              "level": 2
+            },
+            {
+              "name": "剛力",
+              "level": 1
+            }
+          ]
+        }
+      },
+      {
+        "commander_id": "c53",
+        "skill1_id": "t_i7",
+        "skill2_id": "恵風和雨",
+        "troops": 10000,
+        "breakthrough": "5",
+        "stat_focus": "知略",
+        "bingxue": {
+          "direction": "陣立",
+          "major": "生々流転",
+          "minors": [
+            {
+              "name": "恩顧",
+              "level": 2
+            },
+            {
+              "name": "兵心",
+              "level": 2
+            },
+            {
+              "name": "不敵",
+              "level": 1
+            }
+          ]
+        }
       }
     ]
   }

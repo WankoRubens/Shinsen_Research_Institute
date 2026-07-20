@@ -182,7 +182,7 @@ import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
-import { useData, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
+import { buildTemplateLookup, useData, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
 import {
   emptyAiOptimizerRole,
   useAiLineupOptimizerState,
@@ -232,8 +232,8 @@ const finalistCount = 8
 
 const heroByKey = computed(() => new Map(heroOptions.value.map((hero) => [heroKey(hero), hero])))
 const skillByKey = computed(() => new Map(skillOptions.value.map((skill) => [skillKey(skill), skill])))
-const heroBySimId = computed(() => new Map(heroes.value.map((hero) => [hero.sim_id, hero]).filter(([id]) => !!id) as [string, Hero][]))
-const skillBySimId = computed(() => new Map(skills.value.map((skill) => [skill.sim_id, skill]).filter(([id]) => !!id) as [string, Skill][]))
+const heroByTemplateKey = computed(() => buildTemplateLookup(heroes.value))
+const skillByTemplateKey = computed(() => buildTemplateLookup(skills.value))
 
 const usedHeroNames = computed(() => new Set(roleKeys.map((role) => seedTeam[role].hero?.name).filter(Boolean) as string[]))
 const usedSkillNames = computed(() => new Set(roleKeys.flatMap((role) => [
@@ -512,14 +512,22 @@ const randomCandidateLineup = (index: number): Lineup | null => {
 }
 
 const roleFromTemplateMember = (member: EnemyFormation['members'][number]): RoleData => {
-  const hero = heroBySimId.value.get(member.commander_id) ?? null
+  const hero = heroByTemplateKey.value.get(member.commander_id) ?? null
+  const base = emptyRole()
   return {
-    ...emptyRole(),
+    ...base,
     hero,
-    skill1: member.skill1_id ? skillBySimId.value.get(member.skill1_id) ?? null : null,
-    skill2: member.skill2_id ? skillBySimId.value.get(member.skill2_id) ?? null : null,
+    skill1: member.skill1_id ? skillByTemplateKey.value.get(member.skill1_id) ?? null : null,
+    skill2: member.skill2_id ? skillByTemplateKey.value.get(member.skill2_id) ?? null : null,
     breakthrough: autoBreakthrough,
     stats: statsWithFocus(hero, member.stat_focus, autoBreakthrough),
+    bingxue: member.bingxue
+      ? {
+          direction: member.bingxue.direction,
+          major: member.bingxue.major,
+          minors: member.bingxue.minors.map((minor) => ({ ...minor })),
+        }
+      : base.bingxue,
   }
 }
 

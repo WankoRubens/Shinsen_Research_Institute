@@ -24,6 +24,8 @@ CFG_LAST_DIFF_SUMMARY = CFG_DIR / "last_diff_summary.txt"
 CFG_DIFF_REPORT = BUILD_DIR / "cfg_diff_report.md"
 SHINSEN_SIM_DIR = DATA_DIR / "shinsen_sim"
 SHINSEN_SIM_API_JSON = SHINSEN_SIM_DIR / "api_data.json"
+TEMPLATES_DIR = DATA_DIR / "templates"
+S3_CODOMO_TEMPLATES_JSON = TEMPLATES_DIR / "s3_codomo.json"
 GAME8_SKILLS_INDEX_JSON = GAME8_DIR / "skills_index.json"
 
 # Manual files for the three-layer override system.

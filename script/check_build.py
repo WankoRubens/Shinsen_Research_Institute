@@ -18,13 +18,17 @@ import json
 import sys
 
 from llm_core import has_kana as _has_kana
-from paths import HEROES_JSON, SKILLS_JSON
+from paths import ENEMY_FORMATIONS_JSON, HEROES_JSON, SKILLS_JSON
 
 
 def check() -> list[str]:
     heroes = json.loads(HEROES_JSON.read_text("utf-8"))
     skills = json.loads(SKILLS_JSON.read_text("utf-8"))
-    print(f"[check-build] heroes={len(heroes)} skills={len(skills)}")
+    formations = json.loads(ENEMY_FORMATIONS_JSON.read_text("utf-8"))
+    print(
+        f"[check-build] heroes={len(heroes)} skills={len(skills)} "
+        f"enemy_formations={len(formations)}"
+    )
 
     errors: list[str] = []
 
@@ -66,6 +70,41 @@ def check() -> list[str]:
             errors.append(f"Duplicate skill name: '{n}'")
         if n:
             seen_names.add(n)
+
+    # ---- Enemy formation completeness ------------------------------------
+    def build_lookup(items: list[dict]) -> dict[str, dict]:
+        lookup: dict[str, dict] = {}
+        for item in items:
+            for key in (
+                item.get("sim_id"),
+                item.get("name"),
+                item.get("name_jp"),
+                *(item.get("aliases") or []),
+            ):
+                if key:
+                    lookup[key] = item
+        return lookup
+
+    hero_lookup = build_lookup(heroes)
+    skill_lookup = build_lookup(skills)
+    if not formations:
+        errors.append("No enemy formations generated")
+    for formation in formations:
+        formation_id = formation.get("id") or formation.get("name") or "?"
+        members = formation.get("members") or []
+        if len(members) != 3:
+            errors.append(f"Formation '{formation_id}' must have exactly 3 members")
+            continue
+        for member in members:
+            hero_ref = member.get("commander_id")
+            if not hero_ref or hero_ref not in hero_lookup:
+                errors.append(f"Formation '{formation_id}' hero '{hero_ref}' not found in heroes.json")
+            for field in ("skill1_id", "skill2_id"):
+                skill_ref = member.get(field)
+                if not skill_ref or skill_ref not in skill_lookup:
+                    errors.append(
+                        f"Formation '{formation_id}' {field}='{skill_ref}' not found in skills.json"
+                    )
 
     # ---- Kana scan (user-visible text) ------------------------------------
     for s in skills:

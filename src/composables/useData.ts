@@ -220,12 +220,35 @@ export interface EnemyFormationMember {
   troops?: number
   breakthrough?: string
   stat_focus?: string
+  bingxue?: {
+    direction: BingxueDirection | null
+    major: string | null
+    minors: Array<{ name: string; level: 1 | 2 }>
+  }
 }
 
 export interface EnemyFormation {
   id: string
   name: string
   members: EnemyFormationMember[]
+}
+
+// Template catalogs prefer simulator IDs, but newly released heroes and skills
+// may only have Japanese names until the simulator publishes their IDs.
+export const buildTemplateLookup = <T extends {
+  sim_id?: string
+  name: string
+  name_jp?: string | null
+  aliases?: string[]
+}>(items: T[]): Map<string, T> => {
+  const lookup = new Map<string, T>()
+  for (const item of items) {
+    const keys = [item.sim_id, item.name, item.name_jp, ...(item.aliases ?? [])]
+    for (const key of keys) {
+      if (key) lookup.set(key, item)
+    }
+  }
+  return lookup
 }
 
 import heroesData from '../../.build/heroes.json'
