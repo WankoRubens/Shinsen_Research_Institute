@@ -165,7 +165,7 @@ export const removeDebuffs = (fighter: BattleFighter, count: number): string[] =
 }
 
 const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string) => {
-  logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, message })
+  logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, actorHp: ctx.caster.hp, message })
 }
 
 const textOfSkill = (skill: Skill): string =>

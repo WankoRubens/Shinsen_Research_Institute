@@ -484,7 +484,7 @@ const groupedLogs = computed(() => {
         id: `${turn}-${index}-${entry.side}-${actor || 'system'}`,
         side: entry.side,
         actor,
-        troops: currentTroops.get(troopKey(entry.side, actor)) ?? 0,
+        troops: entry.actorHp ?? currentTroops.get(troopKey(entry.side, actor)) ?? 0,
         entries: [entry],
       })
 

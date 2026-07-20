@@ -27,6 +27,7 @@ export interface BattleLogEntry {
   turn: number
   side: BattleSide | 'system'
   actor?: string
+  actorHp?: number
   message: string
   target?: string
   targetSide?: BattleSide
@@ -703,7 +704,7 @@ const applyControl = (
     targets.forEach((target) => {
       target.statuses[name] = Math.max(target.statuses[name] ?? 0, duration)
       controlStats[name] = (controlStats[name] ?? 0) + 1
-      if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, message: `${skill.name_jp || skill.name}: ${target.name}に${name}(${duration}T)` })
+      if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}: ${target.name}に${name}(${duration}T)` })
     })
   }
 }
@@ -726,7 +727,7 @@ const applyDot = (
       dotRate: normalizeRate(skill.dot_rate_max),
       dotType: damageKind(skill),
     })
-    if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, message: `${target.name}に${skill.dot_name}(${duration}T)` })
+    if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${target.name}に${skill.dot_name}(${duration}T)` })
   })
 }
 
@@ -829,6 +830,7 @@ const dealSkillDamage = (
     turn: ctx.turn,
     side: ctx.caster.side,
     actor: ctx.caster.name,
+    actorHp: ctx.caster.hp,
     target: target.name,
     targetSide: target.side,
     amount: actual,
@@ -879,7 +881,7 @@ const addHealingStock = (
     .filter((ally) => hasAnySkillNamed(ally, HEAL_STOCK_DAMAGE_SKILL_NAMES))
     .forEach((owner) => {
       owner.specialState.healingStock = (owner.specialState.healingStock ?? 0) + stockAmount
-      if (logs !== NO_LOGS) logs.push({ turn, side: owner.side, actor: owner.name, message: `回復蓄積: ${stockAmount}蓄積(合計${owner.specialState.healingStock})` })
+      if (logs !== NO_LOGS) logs.push({ turn, side: owner.side, actor: owner.name, actorHp: owner.hp, message: `回復蓄積: ${stockAmount}蓄積(合計${owner.specialState.healingStock})` })
     })
 }
 
@@ -898,6 +900,7 @@ const healBySkill = (ctx: SkillResolveContext, target: BattleFighter, rate: numb
     turn: ctx.turn,
     side: ctx.caster.side,
     actor: ctx.caster.name,
+    actorHp: ctx.caster.hp,
     target: target.name,
     targetSide: target.side,
     amount: actual,
@@ -934,7 +937,7 @@ const addControl = (ctx: SkillResolveContext, target: BattleFighter, name: strin
   if (!isAlive(target)) return
   target.statuses[name] = Math.max(target.statuses[name] ?? 0, duration)
   ctx.controlStats[name] = (ctx.controlStats[name] ?? 0) + 1
-  if (ctx.logs !== NO_LOGS) ctx.logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, message: `${skillDisplayName(ctx.skill)}: ${target.name}に${name}(${duration}T)` })
+  if (ctx.logs !== NO_LOGS) ctx.logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, actorHp: ctx.caster.hp, message: `${skillDisplayName(ctx.skill)}: ${target.name}に${name}(${duration}T)` })
 }
 
 const namedSkillHelpers: BattleSkillEffectHelpers = {
@@ -994,6 +997,7 @@ const resolveSkill = (
         turn,
         side: caster.side,
         actor: caster.name,
+        actorHp: caster.hp,
         target: fighter.name,
         targetSide: fighter.side,
         amount: actual,
@@ -1025,6 +1029,7 @@ const resolveSkill = (
         turn,
         side: caster.side,
         actor: caster.name,
+        actorHp: caster.hp,
         target: fighter.name,
         targetSide: fighter.side,
         amount: actual,
@@ -1050,7 +1055,7 @@ const resolveSkill = (
   applyDot(skill, targets, caster, turn, logs)
 
   if (rate === 0 && hRate === 0 && !skill.control_type && !skill.dot_name && (skill.buff_types || skill.debuff_types)) {
-    if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, message: `${skillName}の効果を適用` })
+    if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skillName}の効果を適用` })
   }
 }
 
@@ -1074,7 +1079,7 @@ const trySkill = (
   if (skill.maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= skill.maxPerTurn) return
   if (rng() > extractRate(skill)) {
     if (trigger === 'beforeAction' || trigger === 'afterNormalAttack') {
-      if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, message: `${skill.name_jp || skill.name}は不発` })
+      if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}は不発` })
     }
     return
   }
@@ -1087,13 +1092,13 @@ const trySkill = (
   const prep = trigger === 'beforeAction' ? preparationTurns(skill) : 0
   if (prep > 0) {
     caster.pendingSkills.push({ skill, remainingTurns: prep })
-    if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, message: `${skill.name_jp || skill.name}の準備を開始(${prep}T)` })
+    if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}の準備を開始(${prep}T)` })
     return
   }
   if (trigger !== 'beforeUniqueSkill' && isUniqueBattleSkill(skill)) {
     fireBeforeUniqueSkill(caster, skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
   }
-  if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, message: `${skill.name_jp || skill.name}発動` })
+  if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}発動` })
   resolveSkill(caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats)
 }
 
@@ -1119,7 +1124,7 @@ const processPendingSkills = (
     .forEach((pending) => {
       if (!isAlive(fighter)) return
       const target = chooseTarget(enemies, rng)
-      if (logs !== NO_LOGS) logs.push({ turn, side: fighter.side, actor: fighter.name, message: `${pending.skill.name_jp || pending.skill.name}の準備完了` })
+      if (logs !== NO_LOGS) logs.push({ turn, side: fighter.side, actor: fighter.name, actorHp: fighter.hp, message: `${pending.skill.name_jp || pending.skill.name}の準備完了` })
       if (isUniqueBattleSkill(pending.skill)) {
         fireBeforeUniqueSkill(fighter, pending.skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
       }
@@ -1159,6 +1164,7 @@ const processDots = (
         turn,
         side: source.side,
         actor: source.name,
+        actorHp: source.hp,
         target: fighter.name,
         targetSide: fighter.side,
         amount,
@@ -1210,6 +1216,7 @@ const processTurnStartWoundedDeaths = (fighters: BattleFighter[], turn: number, 
       turn,
       side: fighter.side,
       actor: fighter.name,
+      actorHp: fighter.hp,
       target: fighter.name,
       targetSide: fighter.side,
       beforeHp,
@@ -1289,7 +1296,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
 
       const blocked = isActionBlocked(actor, rng)
       if (blocked) {
-        if (logs !== NO_LOGS) logs.push({ turn, side: actor.side, actor: actor.name, message: `${actor.name}は${blocked}で行動できない` })
+        if (logs !== NO_LOGS) logs.push({ turn, side: actor.side, actor: actor.name, actorHp: actor.hp, message: `${actor.name}は${blocked}で行動できない` })
         continue
       }
 
@@ -1312,6 +1319,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         turn,
         side: actor.side,
         actor: actor.name,
+        actorHp: actor.hp,
         target: target.name,
         targetSide: target.side,
         amount: normalDamage,
