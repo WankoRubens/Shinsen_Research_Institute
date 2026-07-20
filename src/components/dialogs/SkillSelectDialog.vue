@@ -3,15 +3,18 @@
     :model-value="modelValue"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
     title="戦法を選択"
-    width="90%"
-    class="max-w-md skill-select-dialog"
+    width="min(760px, 94vw)"
+    class="skill-select-dialog"
     align-center
+    append-to-body
   >
-    <div class="h-[60vh]">
+    <div class="h-[70dvh] max-h-[720px]">
       <SkillLibrary
         mode="select"
         :used-skills="usedSkills"
         :owned-skills="ownedSkills"
+        :filter-owned="filterOwned"
+        @update:filterOwned="(value: boolean) => $emit('update:filterOwned', value)"
         @select="(skill: Skill) => $emit('select', skill)"
       />
     </div>
@@ -26,9 +29,11 @@ defineProps<{
   modelValue: boolean
   usedSkills: Set<string>
   ownedSkills: string[]
+  filterOwned: boolean
 }>()
 defineEmits<{
   (e: 'update:modelValue', v: boolean): void
+  (e: 'update:filterOwned', v: boolean): void
   (e: 'select', skill: Skill): void
 }>()
 </script>

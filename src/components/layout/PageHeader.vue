@@ -1,8 +1,15 @@
 <template>
   <el-header class="page-header bg-white sticky top-0 z-50 !h-auto">
     <div class="flex items-center px-3 md:px-5 min-h-[56px]">
-      <el-button class="md:hidden !px-1 !mr-1 flex-shrink-0" text @click="$emit('open-mobile-sidebar')">
-        <el-icon :size="20"><Menu /></el-icon>
+      <el-button
+        class="mobile-menu-button md:hidden !mr-1 flex-shrink-0"
+        text
+        title="主要機能メニューを開く"
+        aria-label="主要機能メニューを開く"
+        @click="$emit('open-mobile-sidebar')"
+      >
+        <el-icon :size="18"><Menu /></el-icon>
+        <span>メニュー</span>
       </el-button>
 
       <div class="flex-1 min-w-0 flex items-center gap-3 py-2">
@@ -73,5 +80,15 @@ defineEmits<{
   width: 1px;
   height: 18px;
   background: rgb(var(--color-divider));
+}
+.mobile-menu-button {
+  width: 42px;
+  height: 46px;
+  padding: 3px 2px !important;
+  flex-direction: column;
+  gap: 1px;
+  color: rgb(var(--color-ink-soft));
+  font-size: 9px;
+  line-height: 1;
 }
 </style>

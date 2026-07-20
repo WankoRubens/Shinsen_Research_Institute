@@ -28,14 +28,8 @@
         />
 
         <LineupWorkspace
-          v-model:active-tab="activeTab"
-          v-model:show-owned-only="showOwnedOnly"
           v-model:lineup-shake-active="lineupShakeActive"
           :current-lineup="currentLineup"
-          :owned-heroes="ownedHeroes"
-          :owned-skills="ownedSkills"
-          :all-used-hero-names="allUsedHeroNames"
-          :all-used-skill-names="allUsedSkillNames"
           :current-selecting-skill-role="currentSelectingSkillRole"
           :current-selecting-skill-slot="currentSelectingSkillSlot"
           :swap-mode-role="swapModeRole"
@@ -54,8 +48,6 @@
           @hero-drag-start="(role) => dragSourceRole = role"
           @hero-drag-end="() => dragSourceRole = null"
           @hero-drop="handleHeroDrop"
-          @select-hero-from-library="selectHeroFromLibrary"
-          @select-skill-from-library="selectSkillFromDialog"
         />
       </div>
 
@@ -75,10 +67,21 @@
       :role-data="currentDetailRole ? currentLineup[currentDetailRole] : null"
     />
 
+    <HeroSelectDialog
+      v-model="heroSelectDialogVisible"
+      :used-heroes="allUsedHeroNames"
+      :owned-heroes="ownedHeroes"
+      :filter-owned="showOwnedOnly"
+      @update:filterOwned="(value: boolean) => showOwnedOnly = value"
+      @select="selectHeroFromLibrary"
+    />
+
     <SkillSelectDialog
       v-model="skillSelectDialogVisible"
       :used-skills="allUsedSkillNames"
       :owned-skills="ownedSkills"
+      :filter-owned="showOwnedOnly"
+      @update:filterOwned="(value: boolean) => showOwnedOnly = value"
       @select="selectSkillFromDialog"
     />
 
@@ -123,6 +126,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import ResetDialog from '../components/dialogs/ResetDialog.vue'
+import HeroSelectDialog from '../components/dialogs/HeroSelectDialog.vue'
 import SkillSelectDialog from '../components/dialogs/SkillSelectDialog.vue'
 import ShareDialog from '../components/dialogs/ShareDialog.vue'
 import CreateProposalDialog from '../components/dialogs/CreateProposalDialog.vue'
@@ -206,6 +210,7 @@ const {
 const dialogs = useDialogs()
 const { hasUnseen: hasUnseenChangelog } = useChangelog()
 
+const heroSelectDialogVisible = dialogs.useDialog('hero-select')
 const skillSelectDialogVisible = dialogs.useDialog('skill-select')
 const resetDialogVisible = dialogs.useDialog('reset')
 const shareDialogVisible = dialogs.useDialog('share')
@@ -220,8 +225,6 @@ const importFromLinkDialogVisible = dialogs.useDialog('import-from-link')
 // Captured here (not read live) so the dialog can sit open across edits to
 // the live team without the snapshot mutating underneath the user.
 const exportTeamSource = ref<ExportSource | null>(null)
-
-const activeTab = ref<'heroes' | 'skills'>('heroes')
 
 const inventoryActiveTab = ref('heroes')
 
@@ -283,7 +286,7 @@ const openHeroSelect = (role: Role) => {
     return
   }
   currentSelectingHeroRole.value = role
-  activeTab.value = 'heroes'
+  heroSelectDialogVisible.value = true
 }
 
 const openMobileDetail = (role: Role) => {
@@ -294,7 +297,7 @@ const openMobileDetail = (role: Role) => {
 const handleSkillSlotClick = (role: Role, slotIdx: number) => {
   currentSelectingSkillRole.value = role
   currentSelectingSkillSlot.value = slotIdx
-  activeTab.value = 'skills'
+  skillSelectDialogVisible.value = true
 }
 
 const handleSkillDrop = (role: Role, slotIdx: number, skill: Skill) => {
@@ -332,6 +335,7 @@ const assignHeroToRole = (role: Role, hero: Hero) => {
 }
 
 const selectHeroFromLibrary = (hero: Hero) => {
+  const selectedFromDialog = heroSelectDialogVisible.value
   if (currentSelectingHeroRole.value) {
     assignHeroToRole(currentSelectingHeroRole.value, hero)
     ElMessage.success(`${hero.name_jp || hero.name}を選択しました`)
@@ -340,6 +344,10 @@ const selectHeroFromLibrary = (hero: Hero) => {
     else if (!currentLineup.value.vice1.hero) assignHeroToRole('vice1', hero)
     else if (!currentLineup.value.vice2.hero) assignHeroToRole('vice2', hero)
     else assignHeroToRole('main', hero)
+  }
+  if (selectedFromDialog) {
+    heroSelectDialogVisible.value = false
+    currentSelectingHeroRole.value = null
   }
 }
 
@@ -388,6 +396,7 @@ const selectSkillFromDialog = (skill: Skill) => {
   // 1. Use focused slot if any.
   // 2. Otherwise auto-target the first empty slot in the standard sequence.
   // 3. If none empty, shake the lineup grid to tell the user to focus a slot.
+  const selectedFromDialog = skillSelectDialogVisible.value
   const hadFocus = !!currentSelectingSkillRole.value && currentSelectingSkillSlot.value !== null
   let targetRole = currentSelectingSkillRole.value
   let targetSlot = currentSelectingSkillSlot.value as 1 | 2 | null
@@ -407,6 +416,12 @@ const selectSkillFromDialog = (skill: Skill) => {
   if (targetSlot === 1) role.skill1 = skill
   if (targetSlot === 2) role.skill2 = skill
   ElMessage.success(`${skill.name_jp || skill.name}を習得しました`)
+
+  if (selectedFromDialog) {
+    skillSelectDialogVisible.value = false
+    clearSkillFocus()
+    return
+  }
 
   // Only advance focus when the user explicitly focused a slot first.
   // Auto-targeted picks should keep focus cleared so subsequent clicks

@@ -10,6 +10,7 @@ export type OverlayName =
   | 'auth'
   | 'rename'
   | 'changelog'
+  | 'hero-select'
   | 'skill-select'
   | 'mobile-slot-detail'
   | 'mobile-team-drawer'

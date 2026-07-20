@@ -125,6 +125,9 @@
       <!-- Hero portrait -->
       <div
         class="rounded border-2 border-dashed flex items-center justify-center cursor-pointer transition-all relative overflow-hidden group w-full aspect-[3/4] flex-shrink-0"
+        role="button"
+        tabindex="0"
+        :aria-label="`${title}の武将を選択`"
         :class="isDragTarget
           ? 'border-focus bg-highlight scale-[1.02] shadow-md'
           : isSwapSource
@@ -134,6 +137,8 @@
               : 'border-divider hover:border-focus'"
         :draggable="!!hero"
         @click="$emit('open-hero-select')"
+        @keydown.enter="$emit('open-hero-select')"
+        @keydown.space.prevent="$emit('open-hero-select')"
         @dragstart="handleHeroDragStart"
         @dragend="$emit('hero-drag-end')"
         @dragover.prevent
@@ -272,6 +277,9 @@
           <template #reference>
             <div
               class="flex items-center gap-1 md:gap-2 p-0.5 md:p-2 bg-white rounded border cursor-pointer transition-all"
+              role="button"
+              tabindex="0"
+              :aria-label="`${title}の戦法1を選択`"
               :class="[
                 draggingSlot === 1 ? 'opacity-0' : '',
                 isConflictSkill(skill1)
@@ -286,6 +294,8 @@
               ]"
               :draggable="!!skill1"
               @click="$emit('open-skill-select', 1)"
+              @keydown.enter="$emit('open-skill-select', 1)"
+              @keydown.space.prevent="$emit('open-skill-select', 1)"
               @dragstart="(e) => handleSkillDragStart(e, 1)"
               @dragend="draggingSlot = null; emit('skill-drag-end')"
               @dragover.prevent
@@ -346,6 +356,9 @@
           <template #reference>
             <div
               class="flex items-center gap-1 md:gap-2 p-0.5 md:p-2 bg-white rounded border cursor-pointer transition-all"
+              role="button"
+              tabindex="0"
+              :aria-label="`${title}の戦法2を選択`"
               :class="[
                 draggingSlot === 2 ? 'opacity-0' : '',
                 isConflictSkill(skill2)
@@ -360,6 +373,8 @@
               ]"
               :draggable="!!skill2"
               @click="$emit('open-skill-select', 2)"
+              @keydown.enter="$emit('open-skill-select', 2)"
+              @keydown.space.prevent="$emit('open-skill-select', 2)"
               @dragstart="(e) => handleSkillDragStart(e, 2)"
               @dragend="draggingSlot = null; emit('skill-drag-end')"
               @dragover.prevent

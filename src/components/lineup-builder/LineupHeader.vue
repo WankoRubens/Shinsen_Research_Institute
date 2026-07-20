@@ -1,8 +1,15 @@
 <template>
   <el-header class="app-header bg-white border-b border-divider flex items-center justify-between px-0 md:px-4 sticky top-0 z-50">
     <div class="flex items-center gap-1 md:gap-3">
-      <el-button class="md:hidden !px-1 !mr-0" text @click="$emit('open-mobile-sidebar')">
-        <el-icon :size="20"><Menu /></el-icon>
+      <el-button
+        class="mobile-menu-button md:hidden !mr-0"
+        text
+        title="主要機能メニューを開く"
+        aria-label="主要機能メニューを開く"
+        @click="$emit('open-mobile-sidebar')"
+      >
+        <el-icon :size="18"><Menu /></el-icon>
+        <span>メニュー</span>
       </el-button>
 
       <!-- Profile selector — dropdown of the user's character profiles.
@@ -105,13 +112,23 @@
             :model-value="teamName"
             @update:model-value="(v: string) => $emit('update:teamName', v)"
             placeholder="部隊名を入力"
-            class="w-32 sm:w-48 font-bold"
+            class="hidden md:flex w-32 sm:w-48 font-bold"
             size="default"
           >
             <template #suffix>
               <el-icon class="el-input__icon"><Edit /></el-icon>
             </template>
           </el-input>
+          <button
+            type="button"
+            class="mobile-team-pill md:hidden"
+            title="部隊の切り替えと管理"
+            aria-label="部隊の切り替えと管理"
+            @click="$emit('open-mobile-team-drawer')"
+          >
+            <span class="truncate">{{ teamName || '部隊を選択' }}</span>
+            <el-icon :size="12"><ArrowDown /></el-icon>
+          </button>
         </div>
         <div v-else class="font-bold text-gray-800 text-lg">
           所持編集モード
@@ -249,6 +266,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:teamName', v: string): void
   (e: 'open-mobile-sidebar'): void
+  (e: 'open-mobile-team-drawer'): void
   (e: 'start-editing-inventory'): void
   (e: 'cancel-editing-inventory'): void
   (e: 'save-inventory'): void
@@ -363,5 +381,36 @@ const onGroupCommand = async (cmd: string) => {
 .profile-pill:focus-visible {
   outline: 2px solid rgb(var(--color-focus));
   outline-offset: 2px;
+}
+.mobile-menu-button {
+  width: 42px;
+  height: 46px;
+  padding: 3px 2px !important;
+  flex: 0 0 42px;
+  flex-direction: column;
+  gap: 1px;
+  color: rgb(var(--color-ink-soft));
+  font-size: 9px;
+  line-height: 1;
+}
+.mobile-team-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  width: 112px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid rgb(var(--color-divider));
+  border-radius: 3px;
+  background: rgb(var(--color-surface));
+  color: rgb(var(--color-ink));
+  font-size: 13px;
+  font-weight: 700;
+}
+@media (min-width: 768px) {
+  .mobile-team-pill {
+    display: none;
+  }
 }
 </style>
