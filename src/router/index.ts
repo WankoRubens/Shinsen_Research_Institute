@@ -16,9 +16,14 @@ import BattleSimulator from '../views/BattleSimulator.vue'
 import MockBattle from '../views/MockBattle.vue'
 import AiLineupOptimizer from '../views/AiLineupOptimizer.vue'
 import SettingsView from '../views/SettingsView.vue'
-import ComingSoon from '../views/ComingSoon.vue'
 import HeroDatabaseView from '../views/HeroDatabaseView.vue'
-import { isPagePublished, type PageName } from '../config/publishedPages'
+import {
+  canAccessPage,
+  isPageName,
+  isPagePublished,
+  type PageName,
+} from '../config/publishedPages'
+import { fetchCurrentUserAccessRole } from '../lib/featureAccess'
 
 const publishedRoute = (name: PageName, route: RouteRecordRaw): RouteRecordRaw[] =>
   isPagePublished(name) ? [route] : []
@@ -108,12 +113,6 @@ const routes: RouteRecordRaw[] = [
           description: '編成時に使っている武将データを一覧表示します。',
         },
       }),
-      {
-        path: 'coming-soon/:topic?',
-        name: 'comingSoon',
-        component: ComingSoon,
-        meta: { title: '準備中' },
-      },
     ],
   },
   // Catch-all is critical: legacy share links (#<base64>), short share links
@@ -145,4 +144,21 @@ const routes: RouteRecordRaw[] = [
 export const router = createRouter({
   history: createWebHashHistory(),
   routes,
+})
+
+// GitHub Pages is a static host, so private features are bundled with the app.
+// This guard keeps normal navigation restricted to users registered in
+// public.feature_access_users. Supabase RLS remains the security boundary for
+// server-side data.
+router.beforeEach(async (to) => {
+  if (!isPageName(to.name)) return true
+
+  try {
+    const role = await fetchCurrentUserAccessRole()
+    if (canAccessPage(to.name, role)) return true
+  } catch (error) {
+    console.warn('Private-page access check failed:', error)
+  }
+
+  return { name: 'lineup' }
 })

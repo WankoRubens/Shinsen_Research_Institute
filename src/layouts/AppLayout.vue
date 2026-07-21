@@ -87,6 +87,7 @@ import { useLineups } from '../composables/useLineups'
 import { useInventory } from '../composables/useInventory'
 import { useTroopLevels } from '../composables/useTroopLevels'
 import { useAuth } from '../composables/useAuth'
+import { useFeatureAccess } from '../composables/useFeatureAccess'
 import { useActiveProfile } from '../composables/useActiveProfile'
 import { useProfiles } from '../composables/useProfiles'
 import { useDialogs } from '../composables/useDialogs'
@@ -98,6 +99,11 @@ import { makeSerializer } from '../lib/lineupSerialize'
 import {
   createProfile, updateProfileInventory, type Profile,
 } from '../lib/profiles'
+import {
+  canAccessPage,
+  isPageAccessControlEnabled,
+  isPageName,
+} from '../config/publishedPages'
 
 const route = useRoute()
 const router = useRouter()
@@ -155,6 +161,7 @@ const {
   ownedSkills,
 } = useInventory()
 const { isLoggedIn, displayName, signIn, signOut, updateDisplayName } = useAuth()
+const { accessRole, checkingFullAccess } = useFeatureAccess()
 const {
   activeProfile, activeProfileName, applyProfile, unloadProfile, syncActiveProfile, clearActiveProfile,
 } = useActiveProfile()
@@ -165,6 +172,23 @@ const { heroes, skills } = useData()
 const { flushPendingCloudPush, flushLocalAutosave, snapshotForRecovery } = useGroupPersistence()
 
 const authDialogVisible = dialogs.useDialog('auth')
+
+// Signing out while a restricted page is open must immediately return the
+// user to the public workspace; route guards only run during navigation.
+watch(
+  [() => route.name, accessRole, checkingFullAccess],
+  ([routeName, role, checking]) => {
+    if (
+      isPageAccessControlEnabled
+      && !checking
+      && isPageName(routeName)
+      && !canAccessPage(routeName, role)
+    ) {
+      void router.replace({ name: 'lineup' })
+    }
+  },
+  { immediate: true },
+)
 
 // OAuth full-page redirect — snapshot in-progress lineup so the post-redirect
 // mount can restore it. Snapshot itself is harmless from non-lineup routes

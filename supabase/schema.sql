@@ -531,6 +531,19 @@ ALTER TABLE "public"."character_profiles" OWNER TO "postgres";
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."feature_access_users" (
+    "user_id" "uuid" NOT NULL,
+    "access_role" "text" DEFAULT 'member'::"text" NOT NULL,
+    "note" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "feature_access_users_role_check" CHECK (("access_role" = ANY (ARRAY['admin'::"text", 'member'::"text"])))
+);
+
+
+ALTER TABLE "public"."feature_access_users" OWNER TO "postgres";
+
+
+
 
 
 
@@ -663,6 +676,11 @@ ALTER TABLE "public"."variant_votes" OWNER TO "postgres";
 
 ALTER TABLE ONLY "public"."character_profiles"
     ADD CONSTRAINT "character_profiles_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."feature_access_users"
+    ADD CONSTRAINT "feature_access_users_pkey" PRIMARY KEY ("user_id");
 
 
 
@@ -807,6 +825,11 @@ ALTER TABLE ONLY "public"."character_profiles"
 
 
 
+ALTER TABLE ONLY "public"."feature_access_users"
+    ADD CONSTRAINT "feature_access_users_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 
 
 
@@ -869,6 +892,13 @@ ALTER TABLE ONLY "public"."variant_votes"
 
 
 ALTER TABLE "public"."character_profiles" ENABLE ROW LEVEL SECURITY;
+
+
+
+ALTER TABLE "public"."feature_access_users" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "feature_access_users_self_select" ON "public"."feature_access_users" FOR SELECT TO "authenticated" USING (("user_id" = "auth"."uid"()));
 
 
 
@@ -1100,6 +1130,11 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."character_profiles
 
 
 
+GRANT SELECT ON TABLE "public"."feature_access_users" TO "authenticated";
+GRANT ALL ON TABLE "public"."feature_access_users" TO "service_role";
+
+
+
 
 
 
@@ -1172,6 +1207,123 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "service_role";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_feature_access_admin"() RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'pg_temp'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.feature_access_users
+    WHERE user_id = auth.uid()
+      AND access_role = 'admin'
+  );
+$$;
+
+REVOKE ALL ON FUNCTION "public"."is_feature_access_admin"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."is_feature_access_admin"() FROM "anon";
+REVOKE ALL ON FUNCTION "public"."is_feature_access_admin"() FROM "authenticated";
+GRANT ALL ON FUNCTION "public"."is_feature_access_admin"() TO "service_role";
+
+
+CREATE OR REPLACE FUNCTION "public"."list_feature_access_users"()
+RETURNS TABLE(
+    "user_id" "uuid",
+    "display_name" "text",
+    "email" "text",
+    "provider" "text",
+    "access_role" "text",
+    "last_sign_in_at" timestamp with time zone
+)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'auth', 'pg_temp'
+    AS $$
+BEGIN
+  IF NOT public.is_feature_access_admin() THEN
+    RAISE EXCEPTION 'administrator access required' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    users.id,
+    COALESCE(
+      NULLIF(BTRIM(users.raw_user_meta_data ->> 'display_name'), ''),
+      NULLIF(BTRIM(users.raw_user_meta_data ->> 'user_name'), ''),
+      NULLIF(BTRIM(users.raw_user_meta_data ->> 'preferred_username'), ''),
+      NULLIF(BTRIM(users.raw_user_meta_data ->> 'name'), ''),
+      NULLIF(SPLIT_PART(users.email, '@', 1), ''),
+      'User'
+    ),
+    COALESCE(users.email::text, ''),
+    COALESCE(users.raw_app_meta_data ->> 'provider', ''),
+    COALESCE(access.access_role, 'general'),
+    users.last_sign_in_at
+  FROM auth.users AS users
+  LEFT JOIN public.feature_access_users AS access ON access.user_id = users.id
+  ORDER BY
+    CASE COALESCE(access.access_role, 'general')
+      WHEN 'admin' THEN 0
+      WHEN 'member' THEN 1
+      ELSE 2
+    END,
+    users.last_sign_in_at DESC NULLS LAST;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION "public"."list_feature_access_users"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."list_feature_access_users"() FROM "anon";
+GRANT ALL ON FUNCTION "public"."list_feature_access_users"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."list_feature_access_users"() TO "service_role";
+
+
+CREATE OR REPLACE FUNCTION "public"."set_feature_access_role"("p_user_id" "uuid", "p_access_role" "text") RETURNS void
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'auth', 'pg_temp'
+    AS $$
+DECLARE
+  target_role text;
+BEGIN
+  IF NOT public.is_feature_access_admin() THEN
+    RAISE EXCEPTION 'administrator access required' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_access_role NOT IN ('member', 'general') THEN
+    RAISE EXCEPTION 'access role must be member or general' USING ERRCODE = '22023';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = p_user_id) THEN
+    RAISE EXCEPTION 'user not found' USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT access_role
+  INTO target_role
+  FROM public.feature_access_users
+  WHERE user_id = p_user_id;
+
+  IF target_role = 'admin' THEN
+    RAISE EXCEPTION 'administrator access cannot be changed here' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_access_role = 'general' THEN
+    DELETE FROM public.feature_access_users
+    WHERE user_id = p_user_id;
+  ELSE
+    INSERT INTO public.feature_access_users (user_id, access_role)
+    VALUES (p_user_id, 'member')
+    ON CONFLICT (user_id) DO UPDATE
+      SET access_role = EXCLUDED.access_role;
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION "public"."set_feature_access_role"("uuid", "text") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."set_feature_access_role"("uuid", "text") FROM "anon";
+GRANT ALL ON FUNCTION "public"."set_feature_access_role"("uuid", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_feature_access_role"("uuid", "text") TO "service_role";
+
+
+NOTIFY pgrst, 'reload schema';
 
 
 

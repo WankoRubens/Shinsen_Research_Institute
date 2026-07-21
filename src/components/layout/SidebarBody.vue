@@ -60,7 +60,7 @@
 
     <div class="border-t border-divider pt-2 mt-2">
       <SidebarLink
-        v-if="isPagePublished('settings')"
+        v-if="canDisplayPage('settings')"
         :to="{ name: 'settings' }"
         :icon="Setting"
         :label="t('settings')"
@@ -91,7 +91,11 @@ import {
 import SidebarLink from './SidebarLink.vue'
 import SidebarSection from './SidebarSection.vue'
 import { useLocale } from '../../composables/useLocale'
-import { isPagePublished, type PageName } from '../../config/publishedPages'
+import { useFeatureAccess } from '../../composables/useFeatureAccess'
+import {
+  canAccessPage,
+  type PageName,
+} from '../../config/publishedPages'
 
 defineProps<{ collapsed: boolean; activeRoute?: string }>()
 defineEmits<{
@@ -100,6 +104,10 @@ defineEmits<{
 }>()
 
 const { t } = useLocale()
+const { accessRole } = useFeatureAccess()
+
+const canDisplayPage = (name: PageName): boolean =>
+  canAccessPage(name, accessRole.value)
 
 type NavItem = {
   name: string
@@ -119,7 +127,7 @@ const primaryNav = computed<readonly NavItem[]>(() => ([
   { name: 'mockBattle', to: { name: 'mockBattle' }, icon: Aim, label: t('mockBattle'), badge: 'NEW' },
   { name: 'aiLineup', to: { name: 'aiLineup' }, icon: Aim, label: t('aiLineup'), badge: 'NEW' },
   { name: 'heroDb', to: { name: 'heroDb' }, icon: Reading, label: t('heroDb') },
-] as Array<NavItem & { name: PageName }>).filter((item) => isPagePublished(item.name)))
+] as Array<NavItem & { name: PageName }>).filter((item) => canDisplayPage(item.name)))
 
 const soonNav = computed<readonly NavItem[]>(() => [])
 
