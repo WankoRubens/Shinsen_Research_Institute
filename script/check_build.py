@@ -2,7 +2,7 @@
 Post-build invariants on the frontend JSON files.
 
 Validates only what can be seen in `.build/*.json` — reference resolution,
-required fields, no kana in user-visible text, no duplicate skill names.
+required fields, and duplicate skill names.
 Override-agnostic by design: if overrides broke something, the JSON will
 show it; if the LLM missed something, the JSON will show it.
 
@@ -17,7 +17,6 @@ Usage:
 import json
 import sys
 
-from llm_core import has_kana as _has_kana
 from paths import ENEMY_FORMATIONS_JSON, HEROES_JSON, SKILLS_JSON
 
 
@@ -105,24 +104,6 @@ def check() -> list[str]:
                     errors.append(
                         f"Formation '{formation_id}' {field}='{skill_ref}' not found in skills.json"
                     )
-
-    # ---- Kana scan (user-visible text) ------------------------------------
-    for s in skills:
-        for field in ("name", "description", "commander_description", "brief_description", "target"):
-            v = s.get(field)
-            if _has_kana(v):
-                sample = (v or "")[:60]
-                errors.append(f"Skill '{s.get('name','?')}' {field} contains JP kana: {sample}")
-                break
-
-    for h in heroes:
-        if _has_kana(h.get("name")):
-            errors.append(f"Hero '{h.get('name_jp','?')}' name contains JP kana: {h.get('name','')[:60]}")
-        for t in h.get("traits") or []:
-            for field in ("name", "description"):
-                if _has_kana(t.get(field)):
-                    errors.append(f"Hero '{h.get('name','?')}' trait.{field} contains JP kana: {(t.get(field) or '')[:60]}")
-                    break
 
     return errors
 

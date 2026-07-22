@@ -1,0 +1,240 @@
+佐竹義重:
+  name: 佐竹義重
+  source_url: https://www.sanguo-zhi.com/entry/satake-yoshishige/
+  faction: 群雄
+  clan: 佐竹家
+  cost: 7
+  level1_stats:
+    lea: 88.0
+    val: 88.0
+    int: 83.0
+    pol: 86.0
+    cha: 91.0
+    spd: 61.0
+  growth:
+    lea: 1.68
+    val: 2.31
+    int: 1.37
+    pol: 1.72
+    cha: 2.01
+    spd: 0.94
+  unique_skill: 鬼義重
+  teachable_skill: 威風凜々
+  traits:
+  - name: 坂東太郎
+    description: 統率が低下または減少している武将に兵刃ダメージを与えた時、55％の確率で2ターンの間、自身の武勇が8増加（最大3回まで重ねがけ可能）
+    unlock: 無凸
+    importance: ☆☆☆☆
+  - name: 弓砲術Ⅱ
+    description: 部隊の弓兵・鉄砲レベルが2増加
+    unlock: 1凸
+    importance: ☆☆☆☆
+  - name: 堅固Ⅰ
+    description: 自軍全体の計略被ダメージが2.3％減少
+    unlock: 3凸
+    importance: ☆☆
+  - name: 尽力Ⅱ
+    description: 4％の会心を獲得
+    unlock: 5凸
+    importance: ☆☆☆
+三好実休:
+  name: 三好実休
+  source_url: https://www.sanguo-zhi.com/entry/miyoshi-jikkyu/
+  faction: 群雄
+  clan: 三好家
+  cost: 6
+  level1_stats:
+    lea: 81.0
+    val: 76.0
+    int: 85.0
+    pol: 83.0
+    cha: 85.0
+    spd: 42.0
+  growth:
+    lea: 1.67
+    val: 0.82
+    int: 2.09
+    pol: 1.75
+    cha: 1.82
+    spd: 0.68
+  unique_skill: 風流武者
+  teachable_skill: 威風凜々
+  traits:
+  - name: 物外軒
+    description: 戦闘中、4ターン目まで能動・突撃戦法の発動確率が4.5％上昇（茶道レベル依存）
+    unlock: 無凸
+    importance: ☆☆☆☆☆
+  - name: 砲術Ⅲ
+    description: 部隊の鉄砲レベルが3増加
+    unlock: 1凸
+    importance: ☆☆☆☆☆
+  - name: 固守Ⅱ
+    description: 自軍全体の兵刃被ダメージが1.8％減少
+    unlock: 3凸
+    importance: ☆☆☆☆
+  - name: 知恵Ⅰ
+    description: 知略が2％上昇
+    unlock: 5凸
+    importance: ☆☆☆
+長野業正:
+  name: 長野業正
+  source_url: https://www.sanguo-zhi.com/entry/nagano-narimasa/
+  faction: 上杉
+  clan: 上杉家
+  cost: 7
+  level1_stats:
+    lea: 91.0
+    val: 81.0
+    int: 91.0
+    pol: 65.0
+    cha: 74.0
+    spd: 45.0
+  growth:
+    lea: 2.05
+    val: 1.29
+    int: 2.05
+    pol: 0.58
+    cha: 0.82
+    spd: 0.52
+  unique_skill: 上州の黄斑
+  teachable_skill: 戮力同心
+  traits:
+  - name: 金城鉄壁
+    description: 通常攻撃を受けた時、敵軍が弱体化状態であれば、30％の確率で兵力を回復（回復率52％、統率依存）
+    unlock: 無凸
+    importance: ☆☆☆☆☆
+  - name: 弓槍術Ⅱ
+    description: 部隊の足軽・弓兵レベルが2増加
+    unlock: 1凸
+    importance: ☆☆☆☆
+  - name: 剛猛Ⅱ
+    description: 自身が通常攻撃を受ける確率中幅上昇
+    unlock: 3凸
+    importance: ☆☆☆☆
+  - name: 守勢Ⅰ
+    description: 自軍全体の被ダメージが1％減少
+    unlock: 5凸
+    importance: ☆☆☆
+伊達政宗:
+  name: 伊達政宗
+  source_url: https://www.sanguo-zhi.com/entry/date-masamune/
+  faction: 群雄
+  clan: 伊達家
+  cost: 7
+  level1_stats:
+    lea: 94.0
+    val: 86.0
+    int: 87.0
+    pol: 96.0
+    cha: 81.0
+    spd: 67.0
+  growth:
+    lea: 1.92
+    val: 2.01
+    int: 2.0
+    pol: 2.09
+    cha: 1.8
+    spd: 1.02
+  unique_skill: 伊達の粋
+  teachable_skill: 竜騎兵
+  traits:
+  - name: 独眼竜
+    description: 毎ターン行動前、自身の与ダメージが1ターンの間上昇。上昇値は武勇と知略の差が小さいほど大きくなり、最大10％上昇。大将の場合は最大15％上昇。その差が20％を超えると無効
+    unlock: 無凸
+    importance: ☆☆☆☆☆
+  - name: 昇り龍
+    description: 部隊の騎兵・鉄砲レベルが3増加
+    unlock: 1凸
+    importance: ☆☆☆☆☆
+  - name: 善戦Ⅱ
+    description: 2.9％の会心と奇策を獲得
+    unlock: 3凸
+    importance: ☆☆☆☆
+  - name: 高揚Ⅱ
+    description: 会心と奇策ダメージ率が3.8％増加
+    unlock: 5凸
+    importance: ☆☆☆
+まつ:
+  name: まつ
+  source_url: https://www.sanguo-zhi.com/entry/s3-matsu/
+  unique_skill: 松柏之操
+  teachable_skill: 奇策縦横
+  traits:
+  - name: 淑徳
+    description: 戦闘中、2ターン目まで、自軍大将が毎ターン最初に無策、封撃または混乱を付与された時、自身は80％の確率でそれを肩代わり
+    unlock: 無凸
+    importance: ★★★
+  - name: 馬槍術Ⅰ
+    description: 騎兵・足軽レベル+1
+    unlock: 1凸
+    importance: ★★
+  - name: 忍耐Ⅱ
+    description: 自身が通常攻撃を受ける確率が低下
+    unlock: 3凸
+    importance: ★
+  - name: 守勢Ⅲ
+    description: 自軍全体の被ダメージ-1.6％
+    unlock: 5凸
+    importance: ★★
+柿崎景家:
+  name: 柿崎景家
+  source_url: https://www.sanguo-zhi.com/entry/s3-kakizaki/
+  unique_skill: 越後二天
+  teachable_skill: 勇猛無比
+  traits:
+  - name: 騎兵大将
+    description: 部隊の騎兵レベルが3、レベル上限が1増加
+    unlock: 無凸
+    importance: ★★★
+  - name: 先駆け
+    description: 3ターン目終了まで、自身が制御状態を付与された際、40％の確率でそれを無効化（最大2回発動）
+    unlock: 1凸
+    importance: ★★★
+  - name: 血気Ⅱ
+    description: 兵刃与ダメージ+2.2％
+    unlock: 3凸
+    importance: ★★
+  - name: 猛攻Ⅱ
+    description: 自軍全体の兵刃与ダメージ+1.8％
+    unlock: 5凸
+    importance: ★
+真田昌幸:
+  name: 真田昌幸
+  source_url: https://www.sanguo-zhi.com/entry/s3-sanada/
+  unique_skill: 表裏比興
+  teachable_skill: 瞬息万変
+  traits:
+  - name: 老獪
+    description: 自勢力を大将勢力に変換／未変換時は心攻8％
+    unlock: 無凸
+    importance: ★★★（編成自由度の核）
+  - name: 虚実
+    description: 混乱中の敵がいる時、自身被ダメ-3％（真田家武将は50％適用）
+    unlock: 1凸
+    importance: ★★
+  - name: 弓砲術Ⅱ
+    description: 弓兵・鉄砲レベル+2
+    unlock: 3凸
+    importance: ★★
+  - name: 知恵Ⅰ
+    description: 知略+2％
+    unlock: 5凸
+    importance: ★
+立花誾千代:
+  name: 立花誾千代
+  source_url: https://www.sanguo-zhi.com/entry/tachibana-gintiyo/
+  unique_skill: 疾風迅雷
+  teachable_skill: 恵風和雨
+  traits:
+  - name: 近衛斉射
+    description: 通常攻撃後、20％の確率で対象を麻痺にする。2ターン持続
+    unlock: 無凸
+  - name: 姫家督
+    description: 兵刃ダメージを6回与えるたび、自軍で最も兵力が低い単体の兵力を回復（回復率98%、武勇の影響を受ける）。最大2回発動
+    unlock: 1凸
+  - name: 槍砲術Ⅱ
+    description: 部隊の足軽・鉄砲レベル+2
+    unlock: 3凸
+  - name: 武威Ⅰ
+    description: 武勇+2％
+    unlock: 5凸

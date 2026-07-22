@@ -4,8 +4,9 @@ cfg consistency check.
 
 Pipeline (sequential):
   1. crawl_heroes.py         — game8 crawl (forwards crawl-related flags)
-  2. fetch_cfg.py            — Sialia cfg.json (forwards --force)
-  3. cfg_diff.py             — diff vs prior cfg + internal consistency
+  2. crawl_sanguo_zhi_heroes.py — missing-field fallback for hero articles
+  3. fetch_cfg.py            — Sialia cfg.json (forwards --force)
+  4. cfg_diff.py             — diff vs prior cfg + internal consistency
 
 Each step is run as a subprocess. Failure of an earlier step short-circuits.
 Use --skip-crawl or --skip-cfg to selectively run only one source. Use
@@ -107,6 +108,16 @@ def main() -> int:
         rc = _run("crawl_heroes", crawl_cmd)
         if rc != 0:
             return rc
+
+        if not args.no_detail:
+            fallback_cmd = [uv, "run", "script/crawl_sanguo_zhi_heroes.py"]
+            if args.name:
+                fallback_cmd.extend(["--name", args.name])
+            if args.force_crawl:
+                fallback_cmd.append("--force")
+            rc = _run("crawl_sanguo_zhi_heroes", fallback_cmd)
+            if rc != 0:
+                return rc
 
     # --- 2. fetch cfg ------------------------------------------------------
     if not args.skip_cfg:

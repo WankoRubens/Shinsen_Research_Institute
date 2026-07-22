@@ -47,6 +47,8 @@ data/*
 !data/key_normalization.yaml
 !data/game8/
 !data/game8/skills_index.json
+!data/sanguo_zhi/
+!data/sanguo_zhi/heroes.yaml
 !data/shinsen_sim/
 !data/shinsen_sim/api_data.json
 !data/cfg/

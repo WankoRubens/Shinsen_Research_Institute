@@ -6,6 +6,7 @@
   "scripts": {
     "refresh": "uv run script/refresh_sources.py",
     "refresh:cfg": "uv run script/refresh_sources.py --skip-crawl",
+    "refresh:sanguo": "uv run script/crawl_sanguo_zhi_heroes.py",
     "data": "uv run script/merge_sources.py && uv run script/build_frontend_data.py && uv run script/check_build.py && uv run script/check_coverage.py && uv run script/check_cfg_drift.py",
     "dev": "npm run data && vite",
     "dev:supabase-dev": "npm run data && vite --mode dev",

@@ -2,7 +2,7 @@
   {
     "gender": "男",
     "portrait": "https://i.imgur.com/VYehA8W.png",
-    "detail_url": "",
+    "detail_url": "https://www.sanguo-zhi.com/entry/s3-kakizaki/",
     "teachable_skill": "勇猛無前",
     "assembly_skill": "先銳突擊",
     "stats": {
@@ -18,24 +18,36 @@
         "name": "騎兵大將",
         "description": "部隊的騎兵等級上升3級,等級上限增加1級",
         "active": true,
+        "name_jp": "騎兵大将",
+        "description_jp": "部隊の騎兵レベルが3、レベル上限が1増加",
+        "unlock": "無凸",
         "rank": "S"
       },
       {
         "name": "先驅",
         "description": "戰鬥前3回合,自身受到控制狀態時,有40%機率使其無效,最多生效2次",
         "active": true,
+        "name_jp": "先駆け",
+        "description_jp": "3ターン目終了まで、自身が制御状態を付与された際、40％の確率でそれを無効化（最大2回発動）",
+        "unlock": "1凸",
         "rank": "S"
       },
       {
         "name": "血氣II",
         "description": "造成兵刃傷害增加2.2%",
         "active": true,
+        "name_jp": "血気Ⅱ",
+        "description_jp": "兵刃与ダメージ+2.2％",
+        "unlock": "3凸",
         "rank": "B"
       },
       {
         "name": "猛攻II",
         "description": "我軍全體造成兵刃傷害增加1.8%",
         "active": true,
+        "name_jp": "猛攻Ⅱ",
+        "description_jp": "自軍全体の兵刃与ダメージ+1.8％",
+        "unlock": "5凸",
         "rank": "B"
       }
     ],
@@ -113,7 +125,7 @@
   {
     "gender": "女",
     "portrait": "https://i.imgur.com/uHjLFYR.png",
-    "detail_url": "",
+    "detail_url": "https://www.sanguo-zhi.com/entry/tachibana-gintiyo/",
     "teachable_skill": "惠風和雨",
     "assembly_skill": "姬武者同心",
     "stats": {
@@ -129,18 +141,27 @@
         "name": "近衛齊射",
         "description": "普通攻擊之後，有 20% 機率使目標進入麻痹狀態，每回合有 30% 機率無法行動，持續 2 回合。",
         "active": true,
+        "name_jp": "近衛斉射",
+        "description_jp": "通常攻撃後、20％の確率で対象を麻痺にする。2ターン持続",
+        "unlock": "無凸",
         "rank": "S"
       },
       {
         "name": "姬城督",
         "description": "每造成 6 次兵刃傷害，恢復我軍兵力最低單體（恢復率 98%，受武勇影響），最多觸發 2 次。",
         "active": true,
+        "name_jp": "姫家督",
+        "description_jp": "兵刃ダメージを6回与えるたび、自軍で最も兵力が低い単体の兵力を回復（回復率98%、武勇の影響を受ける）。最大2回発動",
+        "unlock": "1凸",
         "rank": "S"
       },
       {
         "name": "槍炮術II",
         "description": "部隊的足輕、鐵炮等級上升 2 級。",
         "active": true,
+        "name_jp": "槍砲術Ⅱ",
+        "description_jp": "部隊の足軽・鉄砲レベル+2",
+        "unlock": "3凸",
         "rank": "B"
       },
       {
@@ -150,6 +171,9 @@
           "rate": 0.02
         },
         "active": true,
+        "name_jp": "武威Ⅰ",
+        "description_jp": "武勇+2％",
+        "unlock": "5凸",
         "rank": "C"
       }
     ],
@@ -230,7 +254,7 @@
   {
     "gender": "男",
     "portrait": "https://i.imgur.com/Bc0WPgD.png",
-    "detail_url": "",
+    "detail_url": "https://www.sanguo-zhi.com/entry/s3-sanada/",
     "teachable_skill": "瞬息萬變",
     "assembly_skill": "六文錢之誓",
     "stats": {
@@ -246,18 +270,27 @@
         "name": "老獪",
         "description": "自身勢力將與大將保持一致，若勢力未發生改變時自身獲得8%攻心",
         "active": true,
+        "name_jp": "老獪",
+        "description_jp": "自勢力を大将勢力に変換／未変換時は心攻8％",
+        "unlock": "無凸",
         "rank": "S"
       },
       {
         "name": "虛實",
         "description": "行動後，若有敵軍武將處於混亂狀態，自身受到的傷害減少3%，持續1回合，友方真田家武將獲得50%的效果",
         "active": true,
+        "name_jp": "虚実",
+        "description_jp": "混乱中の敵がいる時、自身被ダメ-3％（真田家武将は50％適用）",
+        "unlock": "1凸",
         "rank": "S"
       },
       {
         "name": "弓炮術II",
         "description": "部隊的弓兵、鐵炮等級上升2級",
         "active": true,
+        "name_jp": "弓砲術Ⅱ",
+        "description_jp": "弓兵・鉄砲レベル+2",
+        "unlock": "3凸",
         "rank": "B"
       },
       {
@@ -267,6 +300,9 @@
           "int_up": 0.02
         },
         "active": true,
+        "name_jp": "知恵Ⅰ",
+        "description_jp": "知略+2％",
+        "unlock": "5凸",
         "rank": "C"
       }
     ],
@@ -373,6 +409,7 @@
         "description": "每回合行動前，使自身造成傷害提高，持續1回合（受自身武勇與智略之差影響，差值越小傷害提升越多，最多10%。自身為大將時，最多15%；差距超過20%時則無效）",
         "description_jp": "毎ターン行動前、1ターンの間、自身の与ダメージが上昇する。上昇値は武勇と知略の差が小さいほど大きくなり、最大10%。自身が大将の場合は最大15%。差が20%を超えると無効。",
         "active": true,
+        "unlock": "無凸",
         "rank": "S"
       },
       {
@@ -381,6 +418,7 @@
         "description": "部隊的騎兵、鐵炮等級+3",
         "description_jp": "部隊の騎兵・鉄砲レベルが3増加する。",
         "active": true,
+        "unlock": "1凸",
         "rank": "S"
       },
       {
@@ -389,6 +427,7 @@
         "description": "增加2.9%會心狀態和奇謀狀態",
         "description_jp": "2.9%の会心と奇策を獲得する。",
         "active": true,
+        "unlock": "3凸",
         "rank": "B"
       },
       {
@@ -397,10 +436,11 @@
         "description": "增加3.8%會心傷害率和奇謀傷害率",
         "description_jp": "会心と奇策ダメージ率が3.8%増加する。",
         "active": true,
+        "unlock": "5凸",
         "rank": "B"
       }
     ],
-    "detail_url": ""
+    "detail_url": "https://www.sanguo-zhi.com/entry/date-masamune/"
   },
   {
     "name": "長野業正",
@@ -434,6 +474,7 @@
         "description": "受到普通攻擊時，若敵方處於負面狀態中，自身有30%機率恢復兵力（恢復率52%，受統率影響）",
         "description_jp": "通常攻撃を受けた時、敵軍が弱体状態であれば、30%の確率で兵力を回復する（回復率52%、統率依存）。",
         "active": true,
+        "unlock": "無凸",
         "rank": "S"
       },
       {
@@ -442,6 +483,7 @@
         "description": "部隊的弓兵、足輕等級上升2級",
         "description_jp": "部隊の足軽・弓兵レベルが2増加する。",
         "active": true,
+        "unlock": "1凸",
         "rank": "B"
       },
       {
@@ -450,6 +492,7 @@
         "description": "使自身受到普通攻擊的機率提高",
         "description_jp": "自身が通常攻撃を受ける確率が中幅上昇する。",
         "active": true,
+        "unlock": "3凸",
         "rank": "B"
       },
       {
@@ -458,10 +501,11 @@
         "description": "我軍全體受到傷害減少1%",
         "description_jp": "自軍全体の被ダメージが1%減少する。",
         "active": true,
+        "unlock": "5凸",
         "rank": "C"
       }
     ],
-    "detail_url": ""
+    "detail_url": "https://www.sanguo-zhi.com/entry/nagano-narimasa/"
   },
   {
     "name": "佐竹義重",
@@ -495,6 +539,7 @@
         "description": "對統率被降低或減少的武將造成兵刃傷害時，有55%機率增加自身武勇8點，持續2回合，最多疊加3層",
         "description_jp": "統率が低下している武将に兵刃ダメージを与えた時、55%の確率で自身の武勇が8上昇する。2ターン持続、最大3層まで重ねがけ可能。",
         "active": true,
+        "unlock": "無凸",
         "rank": "S"
       },
       {
@@ -503,6 +548,7 @@
         "description": "部隊的弓兵、鐵炮等級上升2級",
         "description_jp": "部隊の弓兵・鉄砲レベルが2増加する。",
         "active": true,
+        "unlock": "1凸",
         "rank": "B"
       },
       {
@@ -511,6 +557,7 @@
         "description": "我軍全體受到的謀略傷害減少2.3%",
         "description_jp": "自軍全体の計略被ダメージが2.3%減少する。",
         "active": true,
+        "unlock": "3凸",
         "rank": "C"
       },
       {
@@ -519,10 +566,11 @@
         "description": "獲得4%會心狀態",
         "description_jp": "4%の会心を獲得する。",
         "active": true,
+        "unlock": "5凸",
         "rank": "B"
       }
     ],
-    "detail_url": ""
+    "detail_url": "https://www.sanguo-zhi.com/entry/satake-yoshishige/"
   },
   {
     "name": "織田信長",
@@ -1812,7 +1860,7 @@
   {
     "gender": "女",
     "portrait": "https://i.imgur.com/D1WjMi8.png",
-    "detail_url": "",
+    "detail_url": "https://www.sanguo-zhi.com/entry/s3-matsu/",
     "teachable_skill": "奇策縱橫",
     "assembly_skill": "姬武者同心",
     "stats": {
@@ -1828,24 +1876,36 @@
         "name": "淑德",
         "description": "戰鬥中，前2回合，我軍大將每回合首次被施加無策、封擊或者混亂狀態時，自身有80%幾率為其承擔。",
         "active": true,
+        "name_jp": "淑徳",
+        "description_jp": "戦闘中、2ターン目まで、自軍大将が毎ターン最初に無策、封撃または混乱を付与された時、自身は80％の確率でそれを肩代わり",
+        "unlock": "無凸",
         "rank": "S"
       },
       {
         "name": "馬槍術I",
         "description": "部隊的騎兵、足輕等級上升1級",
         "active": true,
+        "name_jp": "馬槍術Ⅰ",
+        "description_jp": "騎兵・足軽レベル+1",
+        "unlock": "1凸",
         "rank": "C"
       },
       {
         "name": "隱忍II",
         "description": "使自身受到普通攻擊的機率降低",
         "active": true,
+        "name_jp": "忍耐Ⅱ",
+        "description_jp": "自身が通常攻撃を受ける確率が低下",
+        "unlock": "3凸",
         "rank": "B"
       },
       {
         "name": "守勢III",
         "description": "我軍全體受到傷害減少1.6%",
         "active": true,
+        "name_jp": "守勢Ⅲ",
+        "description_jp": "自軍全体の被ダメージ-1.6％",
+        "unlock": "5凸",
         "rank": "A"
       }
     ],
@@ -1952,6 +2012,7 @@
         "description": "戰鬥中，前4回合主動、突擊戰法發動率提升4.5%（受茶道等級影響）",
         "description_jp": "戦闘中、4ターン目まで自身の能動・突撃戦法の発動確率が4.5%上昇する（茶道レベルの影響を受ける）。",
         "active": true,
+        "unlock": "無凸",
         "rank": "S"
       },
       {
@@ -1960,6 +2021,7 @@
         "description": "部隊鐵炮等級+3",
         "description_jp": "部隊の鉄砲レベルが3増加する。",
         "active": true,
+        "unlock": "1凸",
         "rank": "A"
       },
       {
@@ -1968,6 +2030,7 @@
         "description": "我軍全體受到兵刃傷害減少1.8%",
         "description_jp": "自軍全体の兵刃被ダメージが1.8%減少する。",
         "active": true,
+        "unlock": "3凸",
         "rank": "B"
       },
       {
@@ -1976,10 +2039,11 @@
         "description": "智略提高2%",
         "description_jp": "知略が2%上昇する。",
         "active": true,
+        "unlock": "5凸",
         "rank": "C"
       }
     ],
-    "detail_url": ""
+    "detail_url": "https://www.sanguo-zhi.com/entry/miyoshi-jikkyu/"
   },
   {
     "name": "北條氏康",

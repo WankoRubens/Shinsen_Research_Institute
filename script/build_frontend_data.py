@@ -32,6 +32,7 @@ from paths import (
     BINGXUE_JP_TO_CHT_DIR,
     PROTOTYPE_DIR,
     SHINSEN_SIM_API_JSON, S3_CODOMO_TEMPLATES_JSON, GAME8_SKILLS_INDEX_JSON,
+    SANGUO_ZHI_HEROES_YAML,
 )
 
 # When CFG_AUTHORITATIVE=1 (default), cfg.json wins over LLM output for
@@ -656,6 +657,86 @@ def _append_cfg_supplements(heroes: list[dict], skills: list[dict]) -> tuple[lis
         existing_hero_keys.update(keys)
 
     return heroes, skills
+
+
+def _merge_sanguo_zhi_hero_fallbacks(heroes: list[dict]) -> tuple[list[dict], dict]:
+    """Fill missing hero fields without replacing higher-priority sources."""
+    stats = {
+        "available": 0,
+        "matched": 0,
+        "fields_filled": 0,
+        "traits_added": 0,
+        "unmatched": [],
+    }
+    if not SANGUO_ZHI_HEROES_YAML.exists():
+        return heroes, stats
+
+    fallback = yaml.safe_load(SANGUO_ZHI_HEROES_YAML.read_text("utf-8")) or {}
+    stats["available"] = len(fallback)
+    hero_index = _index_by_names(heroes)
+
+    for source_name, source in fallback.items():
+        hero = hero_index.get(_norm_name(source.get("name") or source_name))
+        if hero is None:
+            stats["unmatched"].append(source_name)
+            continue
+        stats["matched"] += 1
+
+        for field in ("faction", "clan", "cost", "unique_skill", "teachable_skill"):
+            if not hero.get(field) and source.get(field):
+                hero[field] = source[field]
+                stats["fields_filled"] += 1
+        if not hero.get("detail_url") and source.get("source_url"):
+            hero["detail_url"] = source["source_url"]
+            stats["fields_filled"] += 1
+
+        existing_traits = hero.setdefault("traits", [])
+        existing_by_name = {
+            _norm_name(trait.get("name_jp") or trait.get("name")): trait
+            for trait in existing_traits
+            if _norm_name(trait.get("name_jp") or trait.get("name"))
+        }
+        source_traits = source.get("traits") or []
+        align_by_position = bool(existing_traits) and len(existing_traits) == len(source_traits)
+        for index, source_trait in enumerate(source_traits):
+            trait_name = source_trait.get("name", "")
+            key = _norm_name(trait_name)
+            if not key:
+                continue
+            target = existing_by_name.get(key)
+            if target is None and align_by_position:
+                target = existing_traits[index]
+            if target is not None:
+                description = source_trait.get("description", "")
+                if trait_name and not target.get("name_jp"):
+                    target["name_jp"] = trait_name
+                    stats["fields_filled"] += 1
+                if description and not target.get("description_jp"):
+                    target["description_jp"] = description
+                    stats["fields_filled"] += 1
+                if description and not target.get("description"):
+                    target["description"] = description
+                    stats["fields_filled"] += 1
+                if source_trait.get("unlock") and not target.get("unlock"):
+                    target["unlock"] = source_trait["unlock"]
+                    stats["fields_filled"] += 1
+                continue
+
+            description = source_trait.get("description", "")
+            trait = {
+                "name": trait_name,
+                "name_jp": trait_name,
+                "description": description,
+                "description_jp": description,
+                "active": True,
+            }
+            if source_trait.get("unlock"):
+                trait["unlock"] = source_trait["unlock"]
+            existing_traits.append(trait)
+            existing_by_name[key] = trait
+            stats["traits_added"] += 1
+
+    return heroes, stats
 
 
 def _cfg_fields_for_skill_override(key: str, lookup: dict) -> dict:
@@ -1431,6 +1512,7 @@ def main():
 
     heroes, skills, sim_merge_stats = _merge_shinsen_sim_data(heroes, skills)
     skills, game8_skill_count = _merge_game8_skill_index(skills)
+    heroes, sanguo_zhi_merge_stats = _merge_sanguo_zhi_hero_fallbacks(heroes)
 
     # Enrich override-added hero traits with affinity from canonical traits.yaml.
     # Override heroes have inline trait dicts that lack affinity; the canonical
@@ -1510,6 +1592,19 @@ def main():
         )
     if game8_skill_count:
         print(f"[info] Game8 skill descriptions merged: {game8_skill_count}")
+    if sanguo_zhi_merge_stats["available"]:
+        print(
+            "[info] sanguo-zhi hero fallback: "
+            f"{sanguo_zhi_merge_stats['matched']}/"
+            f"{sanguo_zhi_merge_stats['available']} matched, "
+            f"{sanguo_zhi_merge_stats['traits_added']} traits added, "
+            f"{sanguo_zhi_merge_stats['fields_filled']} fields filled"
+        )
+        if sanguo_zhi_merge_stats["unmatched"]:
+            print(
+                "[warn] sanguo-zhi heroes not present in primary data: "
+                + ", ".join(sanguo_zhi_merge_stats["unmatched"])
+            )
     if CFG_AUTHORITATIVE:
         print(f"[info] CFG_AUTHORITATIVE=1 (cfg.json wins for names + metadata)")
         _print_coverage_hint("heroes", hero_classification)
