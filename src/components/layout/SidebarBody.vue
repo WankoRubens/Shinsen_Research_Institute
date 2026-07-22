@@ -119,6 +119,7 @@ type NavItem = {
 
 const primaryNav = computed<readonly NavItem[]>(() => ([
   { name: 'lineup', to: { name: 'lineup' }, icon: Grid, label: t('lineup'), badge: t('workbench') },
+  { name: 'freeLineup', to: { name: 'freeLineup' }, icon: Grid, label: t('freeLineup') },
   { name: 'profiles', to: { name: 'profiles' }, icon: User, label: t('profiles') },
   { name: 'groups', to: { name: 'groups' }, icon: Flag, label: t('groups') },
   { name: 'shares', to: { name: 'shares' }, icon: Share, label: t('shares') },

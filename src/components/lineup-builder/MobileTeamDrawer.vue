@@ -9,7 +9,7 @@
   >
     <div class="h-full bg-white text-ink flex flex-col">
       <header class="px-4 py-3 border-b border-divider">
-        <h2 class="text-sm font-bold tracking-wide">編成シミュレーション</h2>
+        <h2 class="text-sm font-bold tracking-wide">{{ title || '共存編成' }}</h2>
       </header>
 
       <!-- Profile + Group selectors (moved from LineupHeader on mobile). -->
@@ -201,6 +201,7 @@ import { useAuth } from '../../composables/useAuth'
 import { useInventory } from '../../composables/useInventory'
 
 defineProps<{
+  title?: string
   modelValue: boolean
   lineups: Lineup[]
   currentTeamIndex: number

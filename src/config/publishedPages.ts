@@ -1,5 +1,6 @@
 export const ALL_PAGE_NAMES = [
   'lineup',
+  'freeLineup',
   'profiles',
   'groups',
   'shares',
@@ -20,10 +21,12 @@ export type AppAccessRole = 'admin' | 'member' | 'general'
 // VITE_PAGE_ACCESS_CONTROL is enabled.
 export const PUBLIC_PAGE_NAMES: readonly PageName[] = [
   'lineup',
+  'freeLineup',
   'profiles',
   'groups',
   'shares',
   'proposals',
+  'heroDb',
 ]
 
 const publicPages = new Set<PageName>(PUBLIC_PAGE_NAMES)

@@ -33,14 +33,31 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: AppLayout,
     children: [
-      { path: '', name: 'lineup', component: LineupBuilder },
+      {
+        path: '',
+        name: 'lineup',
+        component: LineupBuilder,
+        props: {
+          builderTitle: '共存編成',
+          allowReuseAcrossTeams: false,
+        },
+      },
+      ...publishedRoute('freeLineup', {
+        path: 'free-lineup',
+        name: 'freeLineup',
+        component: LineupBuilder,
+        props: {
+          builderTitle: '自由編成',
+          allowReuseAcrossTeams: true,
+        },
+      }),
       ...publishedRoute('profiles', {
         path: 'profiles',
         name: 'profiles',
         component: ProfilesView,
         meta: {
           title: '所持武将',
-          description: '各設定は名前付きの所持データ（武将 + 戦法）です。メイン / サブ / 友人用など複数作成でき、適用後は編成シミュレータがその所持データを基準にします。',
+          description: '各設定は名前付きの所持データ（武将 + 戦法）です。メイン / サブ / 友人用など複数作成でき、適用後は共存編成がその所持データを基準にします。',
         },
       }),
       ...publishedRoute('groups', {

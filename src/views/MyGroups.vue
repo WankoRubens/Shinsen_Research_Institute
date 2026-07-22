@@ -18,7 +18,7 @@
         </span>
 
         <el-tooltip
-          content="編成はこの端末に保存されます。バックアップする場合は編成シミュレータから共有リンクを作成してください。"
+          content="編成はこの端末に保存されます。バックアップする場合は共存編成から共有リンクを作成してください。"
           placement="top"
         >
           <span class="ml-auto inline-flex items-center gap-1 text-[11px] text-ink-mute cursor-help">
@@ -111,7 +111,7 @@
               :key="`e-${i}`"
               type="button"
               class="empty-slot"
-              :title="idx === currentGroupIndex ? '編成シミュレータで新しい部隊を作成' : 'この編成に切り替えて部隊を作成'"
+              :title="idx === currentGroupIndex ? '共存編成で新しい部隊を作成' : 'この編成に切り替えて部隊を作成'"
               @click="onAddTeamHere(idx)"
             >
               <el-icon :size="22" class="empty-slot__icon"><Plus /></el-icon>

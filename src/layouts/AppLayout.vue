@@ -6,7 +6,7 @@
     />
     <main class="flex-1 min-w-0 flex flex-col overflow-hidden">
       <LineupHeader
-        v-if="route.name === 'lineup'"
+        v-if="isLineupRoute"
         v-model:team-name="currentTeamName"
         :total-cost="totalCost"
         :troop-levels="troopLevels"
@@ -110,6 +110,7 @@ const router = useRouter()
 const sidebarCollapsed = ref(false)
 const sidebarMobileOpen = ref(false)
 const { t } = useLocale()
+const isLineupRoute = computed(() => route.name === 'lineup' || route.name === 'freeLineup')
 
 // Title / description for the shared PageHeader. Routes declare these
 // statically via meta; the coming-soon page picks dynamic values per :topic.

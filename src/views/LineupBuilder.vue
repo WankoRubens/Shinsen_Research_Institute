@@ -17,6 +17,7 @@
 
         <MobileTeamDrawer
           v-model="mobileSidebarVisible"
+          :title="builderTitle"
           :lineups="lineups"
           :current-team-index="currentTeamIndex"
           @select="(idx: number) => { currentTeamIndex = idx; mobileSidebarVisible = false }"
@@ -71,7 +72,7 @@
 
     <HeroSelectDialog
       v-model="heroSelectDialogVisible"
-      :used-heroes="allUsedHeroNames"
+      :used-heroes="pickerUsedHeroNames"
       :owned-heroes="ownedHeroes"
       :filter-owned="showOwnedOnly"
       @update:filterOwned="(value: boolean) => showOwnedOnly = value"
@@ -80,7 +81,7 @@
 
     <SkillSelectDialog
       v-model="skillSelectDialogVisible"
-      :used-skills="allUsedSkillNames"
+      :used-skills="pickerUsedSkillNames"
       :owned-skills="ownedSkills"
       :filter-owned="showOwnedOnly"
       @update:filterOwned="(value: boolean) => showOwnedOnly = value"
@@ -169,6 +170,16 @@ import { consumeInitialHash } from '../lib/initial-hash'
 import { heroLevel50Stats } from '../lib/heroStats'
 
 const router = useRouter()
+
+const props = withDefaults(defineProps<{
+  builderTitle?: string
+  allowReuseAcrossTeams?: boolean
+}>(), {
+  builderTitle: '共存編成',
+  allowReuseAcrossTeams: false,
+})
+
+const builderTitle = computed(() => props.builderTitle)
 
 const {
   lineups,
@@ -361,6 +372,37 @@ const SKILL_SLOT_SEQUENCE: {r: Role, s: 1 | 2}[] = [
   {r: 'vice1', s: 1}, {r: 'vice1', s: 2},
   {r: 'vice2', s: 1}, {r: 'vice2', s: 2},
 ]
+
+const currentTeamUsedSkillNames = computed(() => {
+  const names = new Set<string>()
+  for (const { r, s } of SKILL_SLOT_SEQUENCE) {
+    const role = currentLineup.value[r]
+    const skill = s === 1 ? role.skill1 : role.skill2
+    if (skill) names.add(skill.name)
+  }
+  return names
+})
+
+const currentTeamUsedHeroNames = computed(() => {
+  const names = new Set<string>()
+  for (const role of ['main', 'vice1', 'vice2'] as const) {
+    const hero = currentLineup.value[role].hero
+    if (hero) names.add(hero.name)
+  }
+  return names
+})
+
+const pickerUsedHeroNames = computed(() =>
+  props.allowReuseAcrossTeams
+    ? currentTeamUsedHeroNames.value
+    : allUsedHeroNames.value,
+)
+
+const pickerUsedSkillNames = computed(() =>
+  props.allowReuseAcrossTeams
+    ? currentTeamUsedSkillNames.value
+    : allUsedSkillNames.value,
+)
 
 const advanceFocus = () => {
   const currentIdx = SKILL_SLOT_SEQUENCE.findIndex(

@@ -33,6 +33,14 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.1.1',
+    date: '2026-07-22',
+    entries: [
+      { tag: 'feat', text: '「自由編成」を追加し、「編成シミュレーション」を「共存編成」へ名称変更しました。' },
+      { tag: 'feat', text: '「武将データベース」を追加しました（ところどころデータ抜けがあります）。' },
+    ],
+  },
+  {
     version: '0.1.0',
     date: '2026-07-22',
     entries: [

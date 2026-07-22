@@ -190,7 +190,7 @@
               v-if="!loadingMine && myProposals.length === 0"
               class="empty-state"
             >
-              提案はまだありません。編成シミュレーションで部隊を完成させたあと、サイドバーの「おすすめ編成として保存」から作成できます。
+              提案はまだありません。共存編成で部隊を完成させたあと、サイドバーの「おすすめ編成として保存」から作成できます。
             </p>
             <div v-else class="proposal-grid">
               <ProposalCard
