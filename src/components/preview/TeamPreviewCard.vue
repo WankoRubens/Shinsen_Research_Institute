@@ -20,8 +20,8 @@
     <div v-if="showWatermark" class="watermark watermark--header">
       <span class="watermark-line" />
       <span class="watermark-stamp">
-        <span class="watermark-icon font-brand">猫</span>
-        <span class="watermark-text font-brand">真戦編成</span>
+        <span class="watermark-icon font-brand">項</span>
+        <span class="watermark-text font-brand">編成</span>
       </span>
     </div>
 
