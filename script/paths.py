@@ -66,14 +66,13 @@ TRANSLATION_FAILURES_JSON = BUILD_DIR / "translation_failures.json"
 HERO_INDEX_CACHE = CRAWL_CACHE_DIR / "_hero_index.json"
 
 # ---------------------------------------------------------------------------
-# Bingxue (兵學) direction mapping — shared constant, NOT a path.
-# The CHT localization swaps 臨戦 ↔ 機略 relative to the JP source. This is
-# the single source of truth used by populate_bingxue_names.py (to fill yaml)
-# and build_frontend_data.py (to re-key heroes' bingxue for the frontend).
+# Bingxue direction mapping shared by the crawler and frontend builder.
+# The application is Japanese-only now, so Game8's four direction names must
+# pass through unchanged. Legacy `臨戰` data is normalized by the frontend.
 # ---------------------------------------------------------------------------
 BINGXUE_JP_TO_CHT_DIR = {
     "武略": "武略",
     "陣立": "陣立",
-    "臨戦": "機略",
-    "機略": "臨戰",
+    "臨戦": "臨戦",
+    "機略": "機略",
 }

@@ -262,46 +262,11 @@ const emit = defineEmits<{
 const MAX_MINORS = 5     // display cap (also 5 slots max even if you only spent 3 pts)
 const MAX_POINTS = 5     // minor skill-point budget
 
-const { heroes, bingxue: bingxueCatalog } = useData()
+const { bingxue: bingxueCatalog } = useData()
 
-// 武将別の兵学データが無い場合でも設定できるよう、カタログと他武将の候補を共通候補として集める。
-const fallbackBingxue = computed(() => {
-  const out = Object.fromEntries(
-    BINGXUE_DIRECTIONS.map((direction) => [direction, { major: [] as string[], minor: [] as string[] }]),
-  ) as NonNullable<Hero['bingxue']>
-
-  Object.values(bingxueCatalog.value).forEach((option) => {
-    const direction = option.direction as BingxueDirection
-    const bucket = option.tier === 'major' ? out[direction]?.major : out[direction]?.minor
-    const name = option.name_jp || option.name
-    if (bucket && name && !bucket.includes(name)) bucket.push(name)
-  })
-
-  heroes.value.forEach((heroItem) => {
-    if (!heroItem.bingxue) return
-    BINGXUE_DIRECTIONS.forEach((direction) => {
-      const source = heroItem.bingxue?.[direction]
-      if (!source) return
-      source.major.forEach((name) => {
-        if (name && !out[direction].major.includes(name)) out[direction].major.push(name)
-      })
-      source.minor.forEach((name) => {
-        if (name && !out[direction].minor.includes(name)) out[direction].minor.push(name)
-      })
-    })
-  })
-
-  return out
-})
-
-// 個別候補がある武将はそれを優先し、未整備の武将は共通候補で設定画面を開ける。
-const availableBingxue = computed(() => {
-  if (props.hero?.bingxue) return props.hero.bingxue
-  const fallback = fallbackBingxue.value
-  return BINGXUE_DIRECTIONS.some((direction) => fallback[direction].major.length || fallback[direction].minor.length)
-    ? fallback
-    : null
-})
+// 兵学は武将ごとに候補が異なるため、取得できた個別データだけを表示する。
+// 未取得時に全武将の候補を混ぜると選べない兵学まで表示されるので補完しない。
+const availableBingxue = computed(() => props.hero?.bingxue ?? null)
 
 // Track viewport so filled-state behavior can differ: desktop click opens
 // the edit dialog; mobile click shows the description popover (trigger=click)

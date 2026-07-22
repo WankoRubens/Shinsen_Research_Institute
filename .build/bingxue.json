@@ -1,1 +1,602 @@
-{}
+{
+  "生々流転": {
+    "name": "生々流転",
+    "name_jp": "生々流転",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "major",
+    "description": "",
+    "description_jp": "行動開始時、40%の確率で兵力を回復（回復率50%）",
+    "vars": {}
+  },
+  "気勢崩し": {
+    "name": "気勢崩し",
+    "name_jp": "気勢崩し",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "major",
+    "description": "",
+    "description_jp": "通常攻撃を受けた際、50%の確率で攻撃者の武勇と知略を12減少（1ターン持続）",
+    "vars": {}
+  },
+  "陽動の策": {
+    "name": "陽動の策",
+    "name_jp": "陽動の策",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "major",
+    "description": "",
+    "description_jp": "4ターン目以降、自身が戦法攻撃の対象となる確率を増加",
+    "vars": {}
+  },
+  "慧眼": {
+    "name": "慧眼",
+    "name_jp": "慧眼",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "自身が大将の場合、3ターン目終了まで、回避を2.5%/5%獲得",
+    "vars": {}
+  },
+  "兵心": {
+    "name": "兵心",
+    "name_jp": "兵心",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "指揮戦法および受動戦法による被ダメージを3.5%/7%低下",
+    "vars": {}
+  },
+  "不敵": {
+    "name": "不敵",
+    "name_jp": "不敵",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "能動戦法による被ダメージを3.5%/7%低下",
+    "vars": {}
+  },
+  "逆境": {
+    "name": "逆境",
+    "name_jp": "逆境",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "通常攻撃および突撃戦法による被ダメージを3%/6%低下",
+    "vars": {}
+  },
+  "才気": {
+    "name": "才気",
+    "name_jp": "才気",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "計略による被ダメージを1.8%/3.6%低下",
+    "vars": {}
+  },
+  "俊才": {
+    "name": "俊才",
+    "name_jp": "俊才",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "兵刃による被ダメージを1%/2%低下",
+    "vars": {}
+  },
+  "兵勢連鎖": {
+    "name": "兵勢連鎖",
+    "name_jp": "兵勢連鎖",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "突撃戦法の与ダメージが5%上昇。突撃戦法が発動するたびに、その与ダメージが次回からさらに5%上昇（このダメージ上昇効果は最大4回発動可能）",
+    "vars": {}
+  },
+  "舟中敵国": {
+    "name": "舟中敵国",
+    "name_jp": "舟中敵国",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "毎ターン行動前、50%の確率で離反を6%獲得（1ターン持続）",
+    "vars": {}
+  },
+  "当意即妙": {
+    "name": "当意即妙",
+    "name_jp": "当意即妙",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "通常攻撃後、50%の確率で自身の兵力を回復（回復率60%、同ターン中2回目以降は発動確率半減）",
+    "vars": {}
+  },
+  "胆力": {
+    "name": "胆力",
+    "name_jp": "胆力",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "突撃戦法発動後、自身の被ダメージを3%/6%低下（1ターン持続）",
+    "vars": {}
+  },
+  "活路": {
+    "name": "活路",
+    "name_jp": "活路",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "突撃戦法の発動確率を1%/2%増加、突撃戦法による与ダメージを2%/4%低下",
+    "vars": {}
+  },
+  "突貫": {
+    "name": "突貫",
+    "name_jp": "突貫",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "会心ダメージ率を2.5%/5%増加",
+    "vars": {}
+  },
+  "妙策": {
+    "name": "妙策",
+    "name_jp": "妙策",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "2%/4%の奇策を獲得（知略依存）",
+    "vars": {}
+  },
+  "豪勇": {
+    "name": "豪勇",
+    "name_jp": "豪勇",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "2%/4%の会心を獲得",
+    "vars": {}
+  },
+  "剛力": {
+    "name": "剛力",
+    "name_jp": "剛力",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "通常攻撃の与ダメージを3%/6%上昇",
+    "vars": {}
+  },
+  "破陣の勢い": {
+    "name": "破陣の勢い",
+    "name_jp": "破陣の勢い",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "major",
+    "description": "",
+    "description_jp": "兵力が最も高い敵軍単体への与ダメージを6%上昇",
+    "vars": {}
+  },
+  "離間の計": {
+    "name": "離間の計",
+    "name_jp": "離間の計",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "major",
+    "description": "",
+    "description_jp": "能動戦法発動後、1%の離反・心攻効果を付与（最大5回まで重ねがけ可能）",
+    "vars": {}
+  },
+  "軍律擾乱": {
+    "name": "軍律擾乱",
+    "name_jp": "軍律擾乱",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "major",
+    "description": "",
+    "description_jp": "制御状態を付与した後、60%の確率で対象の統率・知略を8%低下（2ターン持続）",
+    "vars": {}
+  },
+  "強靭": {
+    "name": "強靭",
+    "name_jp": "強靭",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "5ターン目に、兵力が50%を超えている場合、自身の与ダメージを2%/4%上昇。兵力が50%以下の場合は被ダメージを2%/4%低下",
+    "vars": {}
+  },
+  "神秘": {
+    "name": "神秘",
+    "name_jp": "神秘",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "毎ターン行動時に自身の兵刃または計略被ダメージを3%/6%低下（1ターン持続）",
+    "vars": {}
+  },
+  "早駆": {
+    "name": "早駆",
+    "name_jp": "早駆",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "初ターン時の自身の速度を20/40増加",
+    "vars": {}
+  },
+  "大勇": {
+    "name": "大勇",
+    "name_jp": "大勇",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "準備が必要な能動戦法の与ダメージを1.5%/3%上昇",
+    "vars": {}
+  },
+  "鬼気": {
+    "name": "鬼気",
+    "name_jp": "鬼気",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "与ダメージを1%/2%上昇",
+    "vars": {}
+  },
+  "神算": {
+    "name": "神算",
+    "name_jp": "神算",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "能動戦法の与ダメージが1.25%/2.5%上昇",
+    "vars": {}
+  },
+  "搦手の策": {
+    "name": "搦手の策",
+    "name_jp": "搦手の策",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "制御状態を付与する際、60%の確率で対象の被ダメージを8%上昇（2ターン持続）",
+    "vars": {}
+  },
+  "達人大観": {
+    "name": "達人大観",
+    "name_jp": "達人大観",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "4ターン目に友軍単体の弱体化効果を2個浄化",
+    "vars": {}
+  },
+  "手当の心得": {
+    "name": "手当の心得",
+    "name_jp": "手当の心得",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "兵力が最も低い自軍単体を戦法回復する時、1ターンの間、その被ダメージが6%低下",
+    "vars": {}
+  },
+  "不惑": {
+    "name": "不惑",
+    "name_jp": "不惑",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "友軍単体が制御状態を付与された際、その被ダメージを4.5%/9%低下（1ターン持続。1ターンにつき最大1回発動）",
+    "vars": {}
+  },
+  "明鏡": {
+    "name": "明鏡",
+    "name_jp": "明鏡",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "1ターン目以降、自身が制御された際、友軍単体の兵力を回復（回復率25%/50%、2回のみ発動可能）",
+    "vars": {}
+  },
+  "天時": {
+    "name": "天時",
+    "name_jp": "天時",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "自身の与ダメージと被ダメージを2%/4%低下",
+    "vars": {}
+  },
+  "機動": {
+    "name": "機動",
+    "name_jp": "機動",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "自身の速度を10/20増加",
+    "vars": {}
+  },
+  "地利": {
+    "name": "地利",
+    "name_jp": "地利",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "自身の回避を1.5%/3%増加",
+    "vars": {}
+  },
+  "協同": {
+    "name": "協同",
+    "name_jp": "協同",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "ランダムな友軍単体の与ダメージを1.5%/3%上昇",
+    "vars": {}
+  },
+  "返り討ちの計": {
+    "name": "返り討ちの計",
+    "name_jp": "返り討ちの計",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "major",
+    "description": "",
+    "description_jp": "制御状態を付与された際、90%の確率で敵軍単体にダメージ（ダメージ率100%、武勇・知略の高い方に応じて兵刃または計略ダメージとなる。各戦闘につき3回まで発動可能）",
+    "vars": {}
+  },
+  "乱戦": {
+    "name": "乱戦",
+    "name_jp": "乱戦",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "不利兵種による被ダメージを3%/6%低下",
+    "vars": {}
+  },
+  "恩顧": {
+    "name": "恩顧",
+    "name_jp": "恩顧",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "自身が受ける回復効果を4%/8%上昇",
+    "vars": {}
+  },
+  "冷静沈着": {
+    "name": "冷静沈着",
+    "name_jp": "冷静沈着",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "行動終了後、自身が封撃状態の場合、80%の確率で封撃耐性を獲得（1ターン持続）",
+    "vars": {}
+  },
+  "表裏一体": {
+    "name": "表裏一体",
+    "name_jp": "表裏一体",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "毎ターン行動前、自身に10%の確率（知略依存）で連撃を付与",
+    "vars": {}
+  },
+  "奇謀": {
+    "name": "奇謀",
+    "name_jp": "奇謀",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "奇策ダメージ率を2.5%/5%増加",
+    "vars": {}
+  },
+  "詭計百出": {
+    "name": "詭計百出",
+    "name_jp": "詭計百出",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "major",
+    "description": "",
+    "description_jp": "自身が付与した継続ダメージを18%上昇",
+    "vars": {}
+  },
+  "多謀": {
+    "name": "多謀",
+    "name_jp": "多謀",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "計略与ダメージを1%/2%上昇（知略依存）",
+    "vars": {}
+  },
+  "心頭滅却": {
+    "name": "心頭滅却",
+    "name_jp": "心頭滅却",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "3ターン目に自身の弱体化効果を1個浄化",
+    "vars": {}
+  },
+  "臨機応変": {
+    "name": "臨機応変",
+    "name_jp": "臨機応変",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "major",
+    "description": "",
+    "description_jp": "準備が必要な能動戦法発動時、40%の確率で先攻状態付与（1ターン持続）",
+    "vars": {}
+  },
+  "鼓舞激励": {
+    "name": "鼓舞激励",
+    "name_jp": "鼓舞激励",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "戦法で友軍を回復する際、その与ダメージを4%上昇（1ターン持続）",
+    "vars": {}
+  },
+  "智勇兼備": {
+    "name": "智勇兼備",
+    "name_jp": "智勇兼備",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "毎ターン行動前、75%の確率で知略を増加（武勇の8%分、1回限り）",
+    "vars": {}
+  },
+  "仁愛": {
+    "name": "仁愛",
+    "name_jp": "仁愛",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "自身が付与する回復効果を2.5%/5%上昇",
+    "vars": {}
+  },
+  "練磨": {
+    "name": "練磨",
+    "name_jp": "練磨",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "能動戦法を発動しなかった場合、行動終了後に自身の与ダメージを2.5%/5%上昇または被ダメージを2.5%/5%低下（1ターン持続）",
+    "vars": {}
+  },
+  "果敢": {
+    "name": "果敢",
+    "name_jp": "果敢",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "固有能動戦法の発動確率を1%/2%増加",
+    "vars": {}
+  },
+  "脱兎の如し": {
+    "name": "脱兎の如し",
+    "name_jp": "脱兎の如し",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "自身の被ダメージを3%低下（速度依存）",
+    "vars": {}
+  },
+  "警戒": {
+    "name": "警戒",
+    "name_jp": "警戒",
+    "direction": "武略",
+    "direction_jp": "武略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "突撃戦法を発動しなかった場合、行動終了後に自身の与ダメージを3%/6%上昇または被ダメージを3%/6%低下（1ターン持続）",
+    "vars": {}
+  },
+  "兵家": {
+    "name": "兵家",
+    "name_jp": "兵家",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "固有突撃戦法の発動確率を1%/2%増加",
+    "vars": {}
+  },
+  "勇猛果敢": {
+    "name": "勇猛果敢",
+    "name_jp": "勇猛果敢",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "major",
+    "description": "",
+    "description_jp": "謀略による被ダメージを8%減少（武勇依存）",
+    "vars": {}
+  },
+  "七転八起": {
+    "name": "七転八起",
+    "name_jp": "七転八起",
+    "direction": "臨戦",
+    "direction_jp": "臨戦",
+    "tier": "major",
+    "description": "",
+    "description_jp": "準備が必要な固有能動戦法の発動失敗時、次回発動で70%の確率で準備1ターン短縮",
+    "vars": {}
+  },
+  "先陣誘導": {
+    "name": "先陣誘導",
+    "name_jp": "先陣誘導",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "major",
+    "description": "",
+    "description_jp": "3ターン目終了まで、自身が通常攻撃を受ける確率が増加",
+    "vars": {}
+  },
+  "右往左往": {
+    "name": "右往左往",
+    "name_jp": "右往左往",
+    "direction": "陣立",
+    "direction_jp": "陣立",
+    "tier": "major",
+    "description": "",
+    "description_jp": "制御状態を付与する際、対象の与ダメージを8%低下（2ターン持続）",
+    "vars": {}
+  },
+  "殿軍救護": {
+    "name": "殿軍救護",
+    "name_jp": "殿軍救護",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "major",
+    "description": "",
+    "description_jp": "友軍複数の与ダメージを4%上昇、自身の被ダメージを10%上昇",
+    "vars": {}
+  },
+  "内助": {
+    "name": "内助",
+    "name_jp": "内助",
+    "direction": "機略",
+    "direction_jp": "機略",
+    "tier": "minor",
+    "description": "",
+    "description_jp": "自身の被ダメージを1.5%/3%上昇し、大将の被ダメージを2.5%/5%低下",
+    "vars": {}
+  }
+}

@@ -38,7 +38,8 @@ from tqdm import tqdm
 
 from paths import (
     CRAWL_CACHE_DIR, HERO_INDEX_CACHE,
-    HEROES_CRAWLED, SKILLS_CRAWLED, ASSEMBLY_CRAWLED, BINGXUE_CRAWLED,
+    HEROES_CRAWLED, SKILLS_CRAWLED, TRAITS_CRAWLED,
+    ASSEMBLY_CRAWLED, BINGXUE_CRAWLED,
     SKILLS_CANONICAL, TRAITS_CANONICAL, BINGXUE_CANONICAL,
 )
 
@@ -475,6 +476,7 @@ def save_outputs(
     heroes: list[dict],
     heroes_path: str,
     skills_path: str,
+    traits_path: str,
     assembly_path: str,
     bingxue_path: str,
 ):
@@ -485,6 +487,7 @@ def save_outputs(
     - bingxue YAML (canonical 兵学 option definitions, deduped across heroes)
     """
     skills_db: dict[str, dict] = {}
+    traits_db: dict[str, dict] = {}
     assembly_db: dict[str, dict] = {}
     bingxue_db: dict[str, dict] = {}
     hero_list = []
@@ -492,6 +495,19 @@ def save_outputs(
     for h in heroes:
         raw_skills = h.pop("_raw_skills", [])
         raw_bingxue = h.pop("_raw_bingxue", None)
+
+        for trait in h.get("traits") or []:
+            name = trait.get("name")
+            if not name:
+                continue
+            if name not in traits_db:
+                traits_db[name] = {
+                    "name": name,
+                    "description": trait.get("description", ""),
+                    "source_heroes": [h["name"]],
+                }
+            elif h["name"] not in traits_db[name]["source_heroes"]:
+                traits_db[name]["source_heroes"].append(h["name"])
 
         for sk in raw_skills:
             sk_name = sk["name"]
@@ -563,6 +579,7 @@ def save_outputs(
     for path, data in [
         (heroes_path, hero_list),
         (skills_path, skills_db),
+        (traits_path, traits_db),
         (assembly_path, assembly_db),
         (bingxue_path, bingxue_db),
     ]:
@@ -570,10 +587,15 @@ def save_outputs(
         with open(path, "w", encoding="utf-8") as f:
             yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
-    return hero_list, skills_db, assembly_db, bingxue_db
+    return hero_list, skills_db, traits_db, assembly_db, bingxue_db
 
 
-def sync_canonical(hero_list: list[dict], skills_db: dict[str, dict], bingxue_db: dict[str, dict]):
+def sync_canonical(
+    hero_list: list[dict],
+    skills_db: dict[str, dict],
+    traits_db: dict[str, dict],
+    bingxue_db: dict[str, dict],
+):
     """Update canonical files' raw sections with freshly crawled data.
 
     Preserves existing text/vars/battle/passive sections — only overwrites raw.
@@ -599,25 +621,6 @@ def sync_canonical(hero_list: list[dict], skills_db: dict[str, dict], bingxue_db
     tqdm.write(f"[sync] {len(skills_db)} skills → {SKILLS_CANONICAL} ({new_skills} new)")
 
     # --- Traits (collected from hero detail pages) ---
-    traits_db: dict[str, dict] = {}
-    for h in hero_list:
-        for t in h.get("traits") or []:
-            name = t.get("name")
-            if not name or name in traits_db:
-                continue
-            traits_db[name] = {
-                "name": name,
-                "description": t.get("description", ""),
-                "source_heroes": [h["name"]],
-            }
-
-    # Append additional source heroes for duplicate traits
-    for h in hero_list:
-        for t in h.get("traits") or []:
-            name = t.get("name")
-            if name and name in traits_db and h["name"] not in traits_db[name]["source_heroes"]:
-                traits_db[name]["source_heroes"].append(h["name"])
-
     if TRAITS_CANONICAL.exists():
         canonical_t = yaml.safe_load(TRAITS_CANONICAL.read_text("utf-8")) or {}
     else:
@@ -667,6 +670,7 @@ def crawl(
     timeout: float = DEFAULT_TIMEOUT,
     heroes_path: str = str(HEROES_CRAWLED),
     skills_path: str = str(SKILLS_CRAWLED),
+    traits_path: str = str(TRAITS_CRAWLED),
     assembly_path: str = str(ASSEMBLY_CRAWLED),
     bingxue_path: str = str(BINGXUE_CRAWLED),
 ):
@@ -738,18 +742,19 @@ def crawl(
             tqdm.write(f"[warn] {len(failed)} failed — re-run to retry (cache preserved)")
 
     # --- Save ---
-    hero_list, skills_db, assembly_db, bingxue_db = save_outputs(
-        heroes, heroes_path, skills_path, assembly_path, bingxue_path
+    hero_list, skills_db, traits_db, assembly_db, bingxue_db = save_outputs(
+        heroes, heroes_path, skills_path, traits_path, assembly_path, bingxue_path
     )
     tqdm.write(f"\n[done] {len(hero_list)} heroes → {heroes_path}")
     tqdm.write(f"[done] {len(skills_db)} skills → {skills_path}")
+    tqdm.write(f"[done] {len(traits_db)} traits → {traits_path}")
     tqdm.write(f"[done] {len(assembly_db)} assembly skills → {assembly_path}")
     tqdm.write(f"[done] {len(bingxue_db)} bingxue options → {bingxue_path}")
 
     # Sync raw sections into canonical files
-    sync_canonical(hero_list, skills_db, bingxue_db)
+    sync_canonical(hero_list, skills_db, traits_db, bingxue_db)
 
-    return hero_list, skills_db, assembly_db, bingxue_db
+    return hero_list, skills_db, traits_db, assembly_db, bingxue_db
 
 
 def main():
@@ -757,6 +762,7 @@ def main():
     p.add_argument("--url", default=DEFAULT_INDEX_URL, help="Hero list page URL")
     p.add_argument("--heroes-out", default=str(HEROES_CRAWLED), help="Heroes YAML output path")
     p.add_argument("--skills-out", default=str(SKILLS_CRAWLED), help="Skills YAML output path")
+    p.add_argument("--traits-out", default=str(TRAITS_CRAWLED), help="Traits YAML output path")
     p.add_argument("--assembly-out", default=str(ASSEMBLY_CRAWLED), help="Assembly skills YAML output path")
     p.add_argument("--bingxue-out", default=str(BINGXUE_CRAWLED), help="Bingxue (兵学) options YAML output path")
     p.add_argument("--detail", action="store_true", help="Enable stage 2 (crawl detail pages)")
@@ -777,6 +783,7 @@ def main():
         timeout=args.timeout,
         heroes_path=args.heroes_out,
         skills_path=args.skills_out,
+        traits_path=args.traits_out,
         assembly_path=args.assembly_out,
         bingxue_path=args.bingxue_out,
     )

@@ -93,9 +93,15 @@ def _page_url(category_url: str, page: int) -> str:
 
 
 def extract_article_links(soup: BeautifulSoup) -> list[str]:
+    """Return only article cards rendered by the requested category page.
+
+    Hatena also renders recent posts and navigation links on category pages.
+    Restricting the selector to the category's post-list cards guarantees that
+    fallback data never comes from another category.
+    """
     links: list[str] = []
     seen: set[str] = set()
-    for anchor in soup.select("a[href]"):
+    for anchor in soup.select("a.p-postList__link[href]"):
         href = anchor.get("href", "")
         parsed = urlparse(href)
         if parsed.netloc != SOURCE_HOST or not parsed.path.startswith("/entry/"):
@@ -368,6 +374,13 @@ def crawl(
         if not result or (name_filter and name_filter not in result["name"]):
             continue
         heroes[result["name"]] = result
+
+    # A targeted refresh must not erase previously crawled category heroes.
+    # Full refreshes still mirror the currently discoverable category pages.
+    if name_filter and output_path.exists():
+        existing = yaml.safe_load(output_path.read_text("utf-8")) or {}
+        existing.update(heroes)
+        heroes = existing
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(

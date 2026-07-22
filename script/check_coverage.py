@@ -1,13 +1,12 @@
-"""
-Override-aware translation-coverage check.
+"""Override-aware source coverage check.
 
-Cross-references crawled-vs-translated keys per kind (skills, traits, heroes),
+Cross-references crawled skills and traits against their canonical files,
 subtracting anything that `overrides.yaml` deliberately replaces or deletes.
-Fails when a genuinely missing translation is detected — not when an entry
-has been intentionally superseded by an override.
+Hero translation coverage is intentionally not checked because the application
+uses Game8's Japanese hero names directly.
 
 Coverage semantics:
-  missing = crawled_keys - translated_keys - override_handled_keys
+  missing = crawled_keys - canonical_keys - override_handled_keys
 
 where override_handled_keys covers all three replacement patterns:
   - `_action: delete` — crawled entry removed from build
@@ -23,7 +22,7 @@ import sys
 import yaml
 
 from paths import (
-    HEROES_CRAWLED, HEROES_TRANSLATED,
+    HEROES_CRAWLED,
     SKILLS_CRAWLED, SKILLS_CANONICAL,
     TRAITS_CRAWLED, TRAITS_CANONICAL,
     OVERRIDES_YAML,
@@ -70,8 +69,6 @@ def check() -> list[str]:
     overrides = _load_yaml(OVERRIDES_YAML)
 
     skill_handled = _override_handled_keys(overrides.get("skills", {}))
-    hero_handled = _override_handled_keys(overrides.get("heroes", {}))
-
     # ---- Skills: crawled vs canonical -------------------------------------
     crawled_skills = set(_load_yaml(SKILLS_CRAWLED))
     canonical_skills = set(_load_yaml(SKILLS_CANONICAL))
@@ -86,13 +83,9 @@ def check() -> list[str]:
     for k in missing_traits:
         errors.append(f"Trait '{k}' is in traits_crawled.yaml but missing from traits.yaml")
 
-    # ---- Heroes: crawled vs translated ------------------------------------
+    # ---- Heroes: source names are used directly ----------------------------
     crawled_heroes_raw = yaml.safe_load(HEROES_CRAWLED.read_text("utf-8")) or []
     crawled_hero_names = {h.get("name") for h in crawled_heroes_raw if h.get("name")}
-    translated_hero_names = set(_load_yaml(HEROES_TRANSLATED))
-    missing_heroes = sorted(crawled_hero_names - translated_hero_names - hero_handled)
-    for k in missing_heroes:
-        errors.append(f"Hero '{k}' is in heroes_crawled.yaml but missing from heroes_translated.yaml")
 
     # ---- Sanity: replace/delete keys must point at something real -----------
     # Flags typos so users notice when a JP key doesn't match any crawled entry.
@@ -127,10 +120,9 @@ def main():
         for e in errors:
             print(f"  {e}")
         print("\n[suggested actions]")
-        print("  uv run script/llm_translate.py    # translate missing entries")
-        print("  — or add an override with _action: replace / delete for entries intentionally bypassing translation")
+        print("  Run the source refresh, or add an override with _action: replace/delete.")
         sys.exit(1)
-    print("[check-coverage] All translation coverage checks passed.")
+    print("[check-coverage] All source coverage checks passed.")
 
 
 if __name__ == "__main__":

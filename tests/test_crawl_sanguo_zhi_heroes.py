@@ -6,7 +6,11 @@ from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "script"))
 
-from crawl_sanguo_zhi_heroes import discover_article_links, extract_hero_article
+from crawl_sanguo_zhi_heroes import (
+    discover_article_links,
+    extract_article_links,
+    extract_hero_article,
+)
 
 
 SAMPLE_HTML = """
@@ -39,6 +43,21 @@ SAMPLE_HTML = """
 
 
 class ExtractHeroArticleTest(unittest.TestCase):
+    def test_category_links_exclude_navigation_and_other_lists(self):
+        soup = BeautifulSoup(
+            """
+            <a class="p-postList__link" href="https://www.sanguo-zhi.com/entry/date-masamune/">政宗</a>
+            <a href="https://www.sanguo-zhi.com/entry/unrelated/">別カテゴリの新着</a>
+            <a class="p-postList__link" href="https://www.sanguo-zhi.com/entry/category/other/">別カテゴリ</a>
+            """,
+            "html.parser",
+        )
+
+        self.assertEqual(
+            extract_article_links(soup),
+            ["https://www.sanguo-zhi.com/entry/date-masamune/"],
+        )
+
     def test_extracts_individual_hero_article(self):
         result = extract_hero_article(
             BeautifulSoup(SAMPLE_HTML, "html.parser"),

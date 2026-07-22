@@ -682,12 +682,31 @@ def _merge_sanguo_zhi_hero_fallbacks(heroes: list[dict]) -> tuple[list[dict], di
             continue
         stats["matched"] += 1
 
-        for field in ("faction", "clan", "cost", "unique_skill", "teachable_skill"):
+        for field in (
+            "faction",
+            "clan",
+            "gender",
+            "cost",
+            "portrait",
+            "unique_skill",
+            "teachable_skill",
+            "assembly_skill",
+            "bingxue",
+        ):
             if not hero.get(field) and source.get(field):
                 hero[field] = source[field]
                 stats["fields_filled"] += 1
         if not hero.get("detail_url") and source.get("source_url"):
             hero["detail_url"] = source["source_url"]
+            stats["fields_filled"] += 1
+
+        if not hero.get("stats") and source.get("level1_stats"):
+            level1 = source["level1_stats"]
+            growth = source.get("growth") or {}
+            hero["stats"] = {
+                key: round(float(value) + float(growth.get(key, 0)) * 49, 2)
+                for key, value in level1.items()
+            }
             stats["fields_filled"] += 1
 
         existing_traits = hero.setdefault("traits", [])
@@ -1281,6 +1300,7 @@ def build_heroes(
         cfg = (proto_heroes.get(jp) or {}).get("cfg") or {}
 
         name = ht.get("name", jp)
+        name_jp = jp
         faction = ht.get("faction", h.get("faction", ""))
         clan = ht.get("clan", h.get("clan", ""))
         cost = int(h.get("cost", 0))
@@ -1289,6 +1309,8 @@ def build_heroes(
         if CFG_AUTHORITATIVE and cfg:
             if cfg.get("name_zh_hant"):
                 name = cfg["name_zh_hant"]
+            if cfg.get("name_ja"):
+                name_jp = cfg["name_ja"]
             if cfg.get("camp_zh_hant"):
                 faction = cfg["camp_zh_hant"]
             if cfg.get("family_zh_hant"):
@@ -1304,7 +1326,7 @@ def build_heroes(
 
         entry = {
             "name": name,
-            "name_jp": jp,
+            "name_jp": name_jp,
             "rarity": rarity,
             "cost": cost,
             "faction": faction,
@@ -1530,10 +1552,8 @@ def main():
     # Post-process: normalize text, fix types, sort
     heroes, skills = postprocess(heroes, skills)
 
-    # Build bingxue catalog + re-key each hero's bingxue from JP direction to
-    # CHT direction (handles the 臨戦↔機略 localization swap) so the frontend
-    # can display without knowing about the swap. Done BEFORE writing heroes.json
-    # so a single write produces the final file.
+    # Build the bingxue catalog and normalize direction names before writing.
+    # Japanese source directions now pass through unchanged.
     bingxue_data = yaml.safe_load(BINGXUE_CANONICAL.read_text("utf-8")) if BINGXUE_CANONICAL.exists() else {}
     bingxue_out = {}
     for jp_name, entry in (bingxue_data or {}).items():
