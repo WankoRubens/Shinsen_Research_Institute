@@ -13,7 +13,7 @@ import { useProfiles } from './useProfiles'
 const activeProfile = ref<Profile | null>(null)
 
 export function useActiveProfile() {
-  const { ownedHeroes, ownedSkills, showOwnedOnly } = useInventory()
+  const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs, showOwnedOnly } = useInventory()
   const { heroes, skills } = useData()
 
   // Accept either JP key (canonical, stable) or CHT name (fallback for
@@ -41,6 +41,12 @@ export function useActiveProfile() {
     ownedSkills.value = p.inv_s
       .map(k => findSkill(k)?.name)
       .filter((n): n is string => !!n)
+    const ownedSet = new Set(ownedHeroes.value)
+    ownedHeroBreakthroughs.value = Object.fromEntries(
+      Object.entries(p.inv_bt ?? {})
+        .map(([key, count]) => [findHero(key)?.name, Math.min(5, Math.max(0, Math.trunc(Number(count) || 0)))] as const)
+        .filter((entry): entry is readonly [string, number] => !!entry[0] && ownedSet.has(entry[0]) && entry[1] > 0),
+    )
     showOwnedOnly.value = ownedHeroes.value.length > 0 || ownedSkills.value.length > 0
     activeProfile.value = p
     useProfiles().markUserTouched()
@@ -53,6 +59,7 @@ export function useActiveProfile() {
   const unloadProfile = (): void => {
     ownedHeroes.value = []
     ownedSkills.value = []
+    ownedHeroBreakthroughs.value = {}
     showOwnedOnly.value = false
     activeProfile.value = null
     useProfiles().markUserTouched()

@@ -82,16 +82,23 @@ const reset = (): void => {
 // pointing recipients at stale data.
 const shareSlugCache = new Map<string, { slug: string; fingerprint: string }>()
 
-const fingerprintInventory = (inv_h: string[], inv_s: string[]): string =>
-  JSON.stringify({ h: [...inv_h].sort(), s: [...inv_s].sort() })
+const fingerprintInventory = (
+  inv_h: string[],
+  inv_s: string[],
+  inv_bt: Record<string, number>,
+): string => JSON.stringify({
+  h: [...inv_h].sort(),
+  s: [...inv_s].sort(),
+  bt: Object.entries(inv_bt).sort(([a], [b]) => a.localeCompare(b)),
+})
 
 export const getOrCreateProfileShareSlug = async (p: Profile): Promise<string> => {
-  const fp = fingerprintInventory(p.inv_h, p.inv_s)
+  const fp = fingerprintInventory(p.inv_h, p.inv_s, p.inv_bt ?? {})
   const cached = shareSlugCache.get(p.id)
   if (cached && cached.fingerprint === fp) return cached.slug
 
   const slug = await createShare(
-    { inv_h: p.inv_h, inv_s: p.inv_s },
+    { inv_h: p.inv_h, inv_s: p.inv_s, inv_bt: p.inv_bt ?? {} },
     { kind: 'profile', displayName: `所持設定: ${p.name}` },
   )
   shareSlugCache.set(p.id, { slug, fingerprint: fp })

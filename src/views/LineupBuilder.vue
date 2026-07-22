@@ -56,8 +56,10 @@
         v-model:active-tab="inventoryActiveTab"
         :owned-heroes="tempOwnedHeroes"
         :owned-skills="tempOwnedSkills"
+        :hero-breakthroughs="tempOwnedHeroBreakthroughs"
         @update:ownedHeroes="val => tempOwnedHeroes = val"
         @update:ownedSkills="val => tempOwnedSkills = val"
+        @update:heroBreakthroughs="val => tempOwnedHeroBreakthroughs = val"
       />
     </el-main>
 
@@ -201,10 +203,12 @@ const {
 const {
   ownedHeroes,
   ownedSkills,
+  ownedHeroBreakthroughs,
   showOwnedOnly,
   isEditingInventory,
   tempOwnedHeroes,
   tempOwnedSkills,
+  tempOwnedHeroBreakthroughs,
   clearInventory,
 } = useInventory()
 
@@ -332,7 +336,7 @@ const assignHeroToRole = (role: Role, hero: Hero) => {
   // Fall back to defaultStats for any key the hero data is missing, so the
   // single source of truth lives in useLineups (no divergent literals).
   slot.stats = { ...defaultStats, ...heroLevel50Stats(hero) }
-  slot.breakthrough = 0
+  slot.breakthrough = ownedHeroBreakthroughs.value[hero.name] ?? 0
 }
 
 const selectHeroFromLibrary = (hero: Hero) => {
@@ -509,6 +513,11 @@ const shareLineup = async (type: ShareScope) => {
   if (type === 'inventory' || type === 'all') {
     data.inv_h = ownedHeroes.value.map(n => heroToJp(n) ?? n)
     data.inv_s = ownedSkills.value.map(n => skillToJp(n) ?? n)
+    data.inv_bt = Object.fromEntries(
+      Object.entries(ownedHeroBreakthroughs.value)
+        .filter(([, count]) => count > 0)
+        .map(([name, count]) => [heroToJp(name) ?? name, count]),
+    )
   }
   if (type === 'current') {
     data.lineups = [serializeLineup(currentLineup.value)]
@@ -593,6 +602,7 @@ const restoreFromBlob = (data: ShareableData) => {
     skills: skills.value,
     ownedHeroes,
     ownedSkills,
+    ownedHeroBreakthroughs,
     showOwnedOnly,
     lineups,
     ensureTeamCount,

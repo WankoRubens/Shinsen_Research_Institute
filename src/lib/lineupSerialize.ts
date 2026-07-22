@@ -265,6 +265,7 @@ const toChtArray = <T extends { name: string }>(
 export interface ApplyBlobDeps extends SerializeDeps {
   ownedHeroes: { value: string[] }
   ownedSkills: { value: string[] }
+  ownedHeroBreakthroughs: { value: Record<string, number> }
   showOwnedOnly: { value: boolean }
   lineups: Lineup[]
   ensureTeamCount: (target: number) => void
@@ -294,6 +295,18 @@ export const applyBlobToState = (
     deps.ownedSkills.value = toChtArray(data.inv_s, (k) =>
       findSkillByKey(deps.skills, k),
     )
+  }
+  if (data.inv_bt) {
+    const restored: Record<string, number> = {}
+    for (const [key, rawCount] of Object.entries(data.inv_bt)) {
+      const hero = findHeroByKey(deps.heroes, key)
+      const count = Math.min(5, Math.max(0, Math.trunc(Number(rawCount) || 0)))
+      if (hero && count > 0) restored[hero.name] = count
+    }
+    deps.ownedHeroBreakthroughs.value = restored
+  } else if (data.inv_h || data.inventory) {
+    // Legacy inventory links have no breakthrough payload.
+    deps.ownedHeroBreakthroughs.value = {}
   }
 
   if (

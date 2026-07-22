@@ -243,12 +243,13 @@ seedLocalGen()
 // (share-link, OAuth recovery snapshot) has already populated the UI.
 const isPristineDefaultState = (): boolean => {
   const { groups } = useGroups()
-  const { ownedHeroes, ownedSkills } = useInventory()
+  const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs } = useInventory()
   if (groups.length !== 1) return false
   const g = groups[0]
   if (g.teams.length > 1) return false
   if (g.teams.length === 1 && !isEmptyTeam(g.teams[0])) return false
   if (ownedHeroes.value.length > 0 || ownedSkills.value.length > 0) return false
+  if (Object.keys(ownedHeroBreakthroughs.value).length > 0) return false
   return true
 }
 
@@ -284,7 +285,7 @@ const firstNonEmptyGroupIndex = (groups: { teams: Lineup[] }[]): number => {
 const buildBlob = (bumpGen = true): ShareableData => {
   const { heroes, skills } = useData()
   const { groups, currentGroupIndex } = useGroups()
-  const { ownedHeroes, ownedSkills } = useInventory()
+  const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs } = useInventory()
 
   const serializer = makeSerializer({
     heroes: heroes.value,
@@ -300,6 +301,11 @@ const buildBlob = (bumpGen = true): ShareableData => {
     active_group_index: currentGroupIndex.value,
     inv_h: ownedHeroes.value.map((n) => serializer.toJpHero(n) ?? n),
     inv_s: ownedSkills.value.map((n) => serializer.toJpSkill(n) ?? n),
+    inv_bt: Object.fromEntries(
+      Object.entries(ownedHeroBreakthroughs.value)
+        .filter(([, count]) => count > 0)
+        .map(([name, count]) => [serializer.toJpHero(name) ?? name, count]),
+    ),
     groups: groups.map((g) => ({
       id: g.id,
       name: g.name,
@@ -317,12 +323,13 @@ const buildApplyDeps = (): ApplyBlobDeps => {
   const { heroes, skills } = useData()
   const { lineups, ensureTeamCount } = useLineups()
   const { replaceGroups } = useGroups()
-  const { ownedHeroes, ownedSkills, showOwnedOnly } = useInventory()
+  const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs, showOwnedOnly } = useInventory()
   return {
     heroes: heroes.value,
     skills: skills.value,
     ownedHeroes,
     ownedSkills,
+    ownedHeroBreakthroughs,
     showOwnedOnly,
     lineups,
     ensureTeamCount,
@@ -1159,10 +1166,10 @@ const enableAutosave = (): void => {
   postMountReady = true
 
   const { groups, currentGroupIndex } = useGroups()
-  const { ownedHeroes, ownedSkills } = useInventory()
+  const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs } = useInventory()
 
   watch(
-    [() => groups, currentGroupIndex, ownedHeroes, ownedSkills],
+    [() => groups, currentGroupIndex, ownedHeroes, ownedSkills, ownedHeroBreakthroughs],
     scheduleWrite,
     { deep: true },
   )

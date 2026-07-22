@@ -521,6 +521,7 @@ CREATE TABLE IF NOT EXISTS "public"."character_profiles" (
     "name" "text" NOT NULL,
     "inv_h" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
     "inv_s" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
+    "inv_bt" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "is_default" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL

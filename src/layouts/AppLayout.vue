@@ -159,6 +159,7 @@ const {
   saveInventory,
   ownedHeroes,
   ownedSkills,
+  ownedHeroBreakthroughs,
 } = useInventory()
 const { isLoggedIn, displayName, signIn, signOut, updateDisplayName } = useAuth()
 const { accessRole, checkingFullAccess } = useFeatureAccess()
@@ -214,9 +215,18 @@ const onSignIn = (provider: Parameters<typeof signIn>[0]) => {
 const serializer = computed(() =>
   makeSerializer({ heroes: heroes.value, skills: skills.value }),
 )
-const inventoryAsJP = (h: string[], s: string[]): { inv_h: string[]; inv_s: string[] } => ({
+const inventoryAsJP = (
+  h: string[],
+  s: string[],
+  bt: Record<string, number>,
+): { inv_h: string[]; inv_s: string[]; inv_bt: Record<string, number> } => ({
   inv_h: h.map(n => serializer.value.toJpHero(n) ?? n),
   inv_s: s.map(n => serializer.value.toJpSkill(n) ?? n),
+  inv_bt: Object.fromEntries(
+    Object.entries(bt)
+      .filter(([, count]) => count > 0)
+      .map(([name, count]) => [serializer.value.toJpHero(name) ?? name, count]),
+  ),
 })
 
 const onApplyProfile = (id: string) => {
@@ -253,9 +263,13 @@ const onSaveInventoryToActive = async () => {
   }
   saveInventory()
   try {
-    const { inv_h, inv_s } = inventoryAsJP(ownedHeroes.value, ownedSkills.value)
-    await updateProfileInventory(active.id, inv_h, inv_s)
-    syncActiveProfile({ ...active, inv_h, inv_s, updated_at: new Date().toISOString() })
+    const { inv_h, inv_s, inv_bt } = inventoryAsJP(
+      ownedHeroes.value,
+      ownedSkills.value,
+      ownedHeroBreakthroughs.value,
+    )
+    await updateProfileInventory(active.id, inv_h, inv_s, inv_bt)
+    syncActiveProfile({ ...active, inv_h, inv_s, inv_bt, updated_at: new Date().toISOString() })
     void refreshProfiles().catch(() => { /* swallow */ })
     ElMessage.success(`「${active.name}」を更新しました`)
   } catch (e) {
@@ -268,8 +282,12 @@ const onSaveInventoryToActive = async () => {
 const onSaveInventoryToNew = async (name: string) => {
   saveInventory()
   try {
-    const { inv_h, inv_s } = inventoryAsJP(ownedHeroes.value, ownedSkills.value)
-    const created: Profile = await createProfile({ name, inv_h, inv_s })
+    const { inv_h, inv_s, inv_bt } = inventoryAsJP(
+      ownedHeroes.value,
+      ownedSkills.value,
+      ownedHeroBreakthroughs.value,
+    )
+    const created: Profile = await createProfile({ name, inv_h, inv_s, inv_bt })
     applyProfile(created)
     void refreshProfiles().catch(() => { /* swallow */ })
     ElMessage.success(`「${name}」を作成して切り替えました`)

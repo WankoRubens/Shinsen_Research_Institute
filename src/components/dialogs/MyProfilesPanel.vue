@@ -208,7 +208,7 @@ const emit = defineEmits<{ (e: 'close-request'): void }>()
 const { heroes, skills } = useData()
 const router = useRouter()
 const {
-  ownedHeroes, ownedSkills, isEditingInventory, startEditingInventory,
+  ownedHeroes, ownedSkills, ownedHeroBreakthroughs, isEditingInventory, startEditingInventory,
 } = useInventory()
 const {
   applyProfile, syncActiveProfile, activeProfileId, activeProfile,
@@ -245,9 +245,14 @@ const serializer = computed(() =>
   makeSerializer({ heroes: heroes.value, skills: skills.value }),
 )
 
-const currentInventoryAsJP = (): { inv_h: string[]; inv_s: string[] } => ({
+const currentInventoryAsJP = (): { inv_h: string[]; inv_s: string[]; inv_bt: Record<string, number> } => ({
   inv_h: ownedHeroes.value.map(n => serializer.value.toJpHero(n) ?? n),
   inv_s: ownedSkills.value.map(n => serializer.value.toJpSkill(n) ?? n),
+  inv_bt: Object.fromEntries(
+    Object.entries(ownedHeroBreakthroughs.value)
+      .filter(([, count]) => count > 0)
+      .map(([hero, count]) => [serializer.value.toJpHero(hero) ?? hero, count]),
+  ),
 })
 
 const safeRefresh = async () => {
@@ -278,8 +283,8 @@ const submitCreate = async () => {
   }
   createSaving.value = true
   try {
-    const { inv_h, inv_s } = currentInventoryAsJP()
-    const created = await createProfile({ name, inv_h, inv_s })
+    const { inv_h, inv_s, inv_bt } = currentInventoryAsJP()
+    const created = await createProfile({ name, inv_h, inv_s, inv_bt })
     let defaultMarkFailed = false
     if (createAsDefault.value) {
       try {
@@ -413,6 +418,7 @@ const parseShareInput = (input: string): { slug?: string; base64?: string } => {
 interface ShareBlobLike {
   inv_h?: unknown
   inv_s?: unknown
+  inv_bt?: unknown
   inventory?: unknown
 }
 
@@ -441,10 +447,17 @@ const submitImport = async () => {
       : Array.isArray(blob.inventory) ? blob.inventory.filter((x): x is string => typeof x === 'string')
       : []
     const inv_s = Array.isArray(blob.inv_s) ? blob.inv_s.filter((x): x is string => typeof x === 'string') : []
+    const inv_bt: Record<string, number> = {}
+    if (blob.inv_bt && typeof blob.inv_bt === 'object' && !Array.isArray(blob.inv_bt)) {
+      for (const [hero, rawCount] of Object.entries(blob.inv_bt as Record<string, unknown>)) {
+        const count = Math.min(5, Math.max(0, Math.trunc(Number(rawCount) || 0)))
+        if (count > 0) inv_bt[hero] = count
+      }
+    }
     if (inv_h.length === 0 && inv_s.length === 0) {
       throw new Error('リンク内に所持データがありません')
     }
-    await createProfile({ name, inv_h, inv_s })
+    await createProfile({ name, inv_h, inv_s, inv_bt })
     importDialogVisible.value = false
     ElMessage.success(`「${name}」を取り込みました（${inv_h.length} 武将, ${inv_s.length} 戦法）`)
     safeRefresh()

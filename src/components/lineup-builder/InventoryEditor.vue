@@ -12,7 +12,9 @@
             mode="manage"
             :used-heroes="[]"
             :owned-heroes="ownedHeroes"
+            :hero-breakthroughs="heroBreakthroughs"
             @update:ownedHeroes="(val: string[]) => $emit('update:ownedHeroes', val)"
+            @update:heroBreakthroughs="(val: Record<string, number>) => $emit('update:heroBreakthroughs', val)"
           />
         </el-tab-pane>
         <el-tab-pane :label="t('skillInventory')" name="skills" class="h-full flex flex-col overflow-hidden">
@@ -39,10 +41,12 @@ defineProps<{
   activeTab: string
   ownedHeroes: string[]
   ownedSkills: string[]
+  heroBreakthroughs: Record<string, number>
 }>()
 defineEmits<{
   (e: 'update:activeTab', v: string): void
   (e: 'update:ownedHeroes', v: string[]): void
   (e: 'update:ownedSkills', v: string[]): void
+  (e: 'update:heroBreakthroughs', v: Record<string, number>): void
 }>()
 </script>

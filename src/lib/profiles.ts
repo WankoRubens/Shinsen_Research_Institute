@@ -15,6 +15,7 @@ export interface Profile {
   name: string
   inv_h: string[]              // JP names — stable across translation revisions
   inv_s: string[]
+  inv_bt: Record<string, number>
   is_default: boolean
   created_at: string
   updated_at: string
@@ -23,7 +24,7 @@ export interface Profile {
 export const listMyProfiles = async (): Promise<Profile[]> => {
   const { userId, token } = await requireAuth()
   const url = `${SUPABASE_URL}/rest/v1/character_profiles?user_id=eq.${userId}` +
-    `&select=id,name,inv_h,inv_s,is_default,created_at,updated_at` +
+    `&select=id,name,inv_h,inv_s,inv_bt,is_default,created_at,updated_at` +
     `&order=is_default.desc,updated_at.desc`
   const res = await fetchWithTimeout(url, { headers: restHeaders(token) })
   if (!res.ok) throw new Error(`list profiles failed: ${res.status}`)
@@ -34,6 +35,7 @@ export interface CreateProfileInput {
   name: string
   inv_h: string[]
   inv_s: string[]
+  inv_bt?: Record<string, number>
   is_default?: boolean
 }
 
@@ -44,9 +46,10 @@ export const createProfile = async (input: CreateProfileInput): Promise<Profile>
     name: input.name,
     inv_h: input.inv_h,
     inv_s: input.inv_s,
+    inv_bt: input.inv_bt ?? {},
     is_default: input.is_default ?? false,
   }
-  const url = `${SUPABASE_URL}/rest/v1/character_profiles?select=id,name,inv_h,inv_s,is_default,created_at,updated_at`
+  const url = `${SUPABASE_URL}/rest/v1/character_profiles?select=id,name,inv_h,inv_s,inv_bt,is_default,created_at,updated_at`
   const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { ...restHeaders(token), 'Content-Type': 'application/json', Prefer: 'return=representation' },
@@ -61,6 +64,7 @@ interface ProfilePatch {
   name?: string
   inv_h?: string[]
   inv_s?: string[]
+  inv_bt?: Record<string, number>
   is_default?: boolean
 }
 
@@ -77,8 +81,12 @@ const patchProfile = async (id: string, patch: ProfilePatch): Promise<void> => {
 
 export const renameProfile = (id: string, name: string) => patchProfile(id, { name })
 
-export const updateProfileInventory = (id: string, inv_h: string[], inv_s: string[]) =>
-  patchProfile(id, { inv_h, inv_s })
+export const updateProfileInventory = (
+  id: string,
+  inv_h: string[],
+  inv_s: string[],
+  inv_bt: Record<string, number>,
+) => patchProfile(id, { inv_h, inv_s, inv_bt })
 
 // Clear the is_default flag on every profile owned by this user. RLS scopes
 // the bulk PATCH to the caller's rows, so PostgREST's filter-then-PATCH does

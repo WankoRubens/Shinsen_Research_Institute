@@ -57,7 +57,7 @@
           </div>
 
           <!-- Variants view: sidebar list + main variants grid. -->
-          <div v-else class="split-layout">
+          <div v-else class="split-layout" @click.self="closeHeroSet">
             <aside class="set-sidebar">
               <header class="sidebar-head">
                 <span class="sidebar-title">武将組み合わせ</span>
@@ -530,9 +530,10 @@ const onDelete = async (p: Proposal): Promise<void> => {
 /* Full-width hero set grid (no variants view open). */
 .hero-set-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
 }
+@media (min-width: 640px)  { .hero-set-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 768px)  { .hero-set-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
 @media (min-width: 1024px) { .hero-set-grid { grid-template-columns: repeat(4, 1fr); } }
 @media (min-width: 1536px) { .hero-set-grid { grid-template-columns: repeat(5, 1fr); } }
@@ -549,6 +550,63 @@ const onDelete = async (p: Proposal): Promise<void> => {
 @media (max-width: 1023px) {
   .split-layout { grid-template-columns: 1fr; gap: 0; }
   .set-sidebar { display: none; }
+}
+
+@media (max-width: 767px) {
+  .toolbar {
+    align-items: stretch;
+    gap: 8px;
+  }
+  .hero-filter {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .split-layout {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: flex-end;
+    padding-top: max(36px, env(safe-area-inset-top));
+    background: rgba(15, 23, 42, 0.48);
+    backdrop-filter: blur(2px);
+  }
+  .variants-main {
+    width: 100%;
+    max-height: calc(100dvh - max(36px, env(safe-area-inset-top)));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    gap: 10px;
+    padding: 10px 10px calc(14px + env(safe-area-inset-bottom));
+    border-radius: 12px 12px 0 0;
+    background: rgb(var(--color-canvas));
+    box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.2);
+  }
+  .variants-head {
+    position: sticky;
+    top: -10px;
+    z-index: 4;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .head-row {
+    gap: 9px;
+  }
+  .head-portraits {
+    gap: 6px;
+  }
+  .head-stats {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+    margin-left: 0;
+    padding: 6px 8px;
+  }
+  .head-stat-label {
+    display: none;
+  }
 }
 
 /* Sidebar list ----------------------------------------------------------- */
@@ -801,5 +859,17 @@ const onDelete = async (p: Proposal): Promise<void> => {
 .empty-state--inline {
   grid-column: 1 / -1;
   padding: 60px 0;
+}
+
+/* Keep these overrides last: the base sidebar/main rules are declared after
+   the first responsive block and otherwise win on equal specificity. */
+@media (max-width: 767px) {
+  .split-layout .set-sidebar {
+    display: none;
+  }
+  .split-layout .variants-main {
+    flex: 1 1 100%;
+    width: 100%;
+  }
 }
 </style>

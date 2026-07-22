@@ -54,6 +54,7 @@ export interface ShareableData {
   v?: number  // 1 = CHT names, 2 = JP names, 3 = JP names + groups envelope, 4 = v3 + autosave metadata.
   inv_h?: string[]
   inv_s?: string[]
+  inv_bt?: Record<string, number> // JP hero name -> breakthrough count (1-5; missing = 0)
   inventory?: string[] // legacy v1 support
   lineups?: ShareableLineup[]  // v1/v2 — flat (single-group) team list
   groups?: ShareableGroup[]    // v3 — named-group envelope

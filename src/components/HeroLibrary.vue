@@ -25,7 +25,7 @@
         </button>
         <el-switch
           :model-value="filterOwned"
-          @update:model-value="val => $emit('update:filterOwned', val)"
+          @update:model-value="(val: string | number | boolean) => $emit('update:filterOwned', Boolean(val))"
           inline-prompt
           active-text="所持済み"
           inactive-text="すべて"
@@ -106,9 +106,24 @@
             >{{ f }}</button>
           </div>
         </div>
-        <div class="flex items-start gap-1">
-          <span class="text-xs text-gray-400 w-8 flex-shrink-0 mt-0.5">家門</span>
-          <div class="flex gap-1 flex-wrap">
+        <div class="flex items-start gap-1 flex-wrap md:flex-nowrap">
+          <span class="hidden md:block text-xs text-gray-400 w-8 flex-shrink-0 mt-0.5">家門</span>
+          <button
+            type="button"
+            class="md:hidden w-full min-h-8 flex items-center justify-between rounded border border-gray-200 bg-white px-2 text-xs text-gray-600"
+            :aria-expanded="mobileClanExpanded"
+            @click="mobileClanExpanded = !mobileClanExpanded"
+          >
+            <span>
+              家門
+              <strong v-if="selectedClan" class="ml-1 text-emerald-700">{{ selectedClan }}</strong>
+            </span>
+            <el-icon :class="mobileClanExpanded ? 'rotate-180' : ''" class="transition-transform"><ArrowDown /></el-icon>
+          </button>
+          <div
+            class="w-full md:w-auto gap-1 flex-wrap"
+            :class="mobileClanExpanded ? 'flex' : 'hidden md:flex'"
+          >
             <button
               v-for="c in clans"
               :key="'clan-' + c"
@@ -159,6 +174,34 @@
           @click="handleClick(hero)"
         >
           <HeroCard :hero="hero" :show-aptitude="mode !== 'manage'" :compact="mode === 'manage'" />
+
+          <div
+            v-if="mode === 'manage' && props.ownedHeroes.includes(hero.name)"
+            class="absolute left-1 right-1 top-1 z-30 grid h-6 grid-cols-[22px_minmax(24px,1fr)_22px] overflow-hidden rounded border border-amber-300 bg-white/95 shadow-sm"
+            @click.stop
+          >
+            <button
+              type="button"
+              class="flex items-center justify-center text-amber-800 disabled:text-gray-300"
+              :disabled="breakthroughOf(hero.name) === 0"
+              :aria-label="`${hero.name_jp || hero.name}の凸数を減らす`"
+              @click.stop="adjustBreakthrough(hero.name, -1)"
+            >
+              <el-icon><Minus /></el-icon>
+            </button>
+            <span class="flex items-center justify-center whitespace-nowrap border-x border-amber-200 text-[10px] font-bold text-amber-800">
+              {{ breakthroughOf(hero.name) }}凸
+            </span>
+            <button
+              type="button"
+              class="flex items-center justify-center text-amber-800 disabled:text-gray-300"
+              :disabled="breakthroughOf(hero.name) === 5"
+              :aria-label="`${hero.name_jp || hero.name}の凸数を増やす`"
+              @click.stop="adjustBreakthrough(hero.name, 1)"
+            >
+              <el-icon><Plus /></el-icon>
+            </button>
+          </div>
           
           <!-- Used Label (Select Mode) -->
           <div v-if="mode === 'select' && isUsed(hero.name)" class="absolute inset-0 flex items-center justify-center z-20">
@@ -179,22 +222,30 @@
 
 <script setup lang="ts">
 import { ref, computed, PropType, watch } from 'vue'
-import { Close } from '@element-plus/icons-vue'
+import { ArrowDown, Close, Minus, Plus } from '@element-plus/icons-vue'
 import { useData, Hero } from '../composables/useData'
 import { TROOP_TYPES } from '../constants/traits'
 import HeroCard from './HeroCard.vue'
 import { allHeroLabels, heroLabels } from '../lib/heroLabels'
 
 const { heroes } = useData()
-const emit = defineEmits(['select', 'browse', 'update:ownedHeroes', 'update:filterOwned', 'update:selectedLabel'])
+const emit = defineEmits([
+  'select',
+  'browse',
+  'update:ownedHeroes',
+  'update:heroBreakthroughs',
+  'update:filterOwned',
+  'update:selectedLabel',
+])
 
 const props = defineProps({
   usedHeroes: { type: Object as PropType<Set<string> | string[]>, default: () => [] },
   mode: { type: String as PropType<'browse' | 'select' | 'manage'>, default: 'select' },
   ownedHeroes: { type: Array as PropType<string[]>, default: () => [] },
+  heroBreakthroughs: { type: Object as PropType<Record<string, number>>, default: () => ({}) },
   filterOwned: { type: Boolean, default: false },
   allowedRarities: { type: Array as PropType<Array<number | string>>, default: () => [] },
-  showTroopFilter: { type: Boolean, default: true },
+  showTroopFilter: { type: Boolean, default: false },
   showLabelFilter: { type: Boolean, default: false },
   selectedLabel: { type: String, default: '' },
   labelOptions: { type: Array as PropType<string[]>, default: () => [] },
@@ -211,12 +262,12 @@ watch(searchQuery, (newVal) => {
   }, 200)
 })
 
-const showFilters = ref(false)
 const selectedCost = ref<number | null>(null)
 const selectedFaction = ref<string | null>(null)
 const selectedClan = ref<string | null>(null)
 const selectedTroopTypes = ref<Set<string>>(new Set())
 const showLabelOptions = ref(false)
+const mobileClanExpanded = ref(false)
 
 const allowedRaritySet = computed(() => new Set(props.allowedRarities.map((rarity) => Number(rarity))))
 const libraryHeroes = computed(() => heroes.value.filter((hero) => {
@@ -329,10 +380,25 @@ const toggleOwned = (name: string) => {
   const newOwned = [...props.ownedHeroes]
   if (newOwned.includes(name)) {
     newOwned.splice(newOwned.indexOf(name), 1)
+    const nextBreakthroughs = { ...props.heroBreakthroughs }
+    delete nextBreakthroughs[name]
+    emit('update:heroBreakthroughs', nextBreakthroughs)
   } else {
     newOwned.push(name)
   }
   emit('update:ownedHeroes', newOwned)
+}
+
+const breakthroughOf = (name: string): number =>
+  Math.min(5, Math.max(0, Math.trunc(Number(props.heroBreakthroughs[name]) || 0)))
+
+const adjustBreakthrough = (name: string, delta: number) => {
+  if (!props.ownedHeroes.includes(name)) return
+  const next = { ...props.heroBreakthroughs }
+  const value = Math.min(5, Math.max(0, breakthroughOf(name) + delta))
+  if (value === 0) delete next[name]
+  else next[name] = value
+  emit('update:heroBreakthroughs', next)
 }
 
 // Select-all toggle for manage mode: scopes the action to whatever the user
@@ -349,6 +415,9 @@ const toggleSelectAllFiltered = () => {
   if (allFilteredOwned.value) {
     const filteredSet = new Set(filteredNames)
     emit('update:ownedHeroes', props.ownedHeroes.filter(n => !filteredSet.has(n)))
+    const nextBreakthroughs = { ...props.heroBreakthroughs }
+    for (const name of filteredSet) delete nextBreakthroughs[name]
+    emit('update:heroBreakthroughs', nextBreakthroughs)
   } else {
     const ownedSet = new Set(props.ownedHeroes)
     const newOwned = [...props.ownedHeroes]
