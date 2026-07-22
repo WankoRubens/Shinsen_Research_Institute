@@ -871,5 +871,9 @@ const onDelete = async (p: Proposal): Promise<void> => {
     flex: 1 1 100%;
     width: 100%;
   }
+  .split-layout .head-stats,
+  .split-layout .head-row--controls {
+    display: none;
+  }
 }
 </style>

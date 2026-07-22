@@ -524,7 +524,7 @@ const hasAnyBingxue = computed(() =>
 
 /* Watermark — in-flow footer row instead of an absolute overlay so it never
    collides with the bingxue strip above. Echoes the sidebar brand glyph
-   (circled 猫) for visual identity. */
+   (circled 項) for visual identity. */
 .watermark {
   display: flex;
   align-items: center;
