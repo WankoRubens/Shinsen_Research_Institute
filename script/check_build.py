@@ -17,12 +17,14 @@ Usage:
 import json
 import sys
 
-from paths import ENEMY_FORMATIONS_JSON, HEROES_JSON, SKILLS_JSON
+from bingxue_categories import BINGXUE_OPTION_TO_DIRECTION
+from paths import BINGXUE_JSON, ENEMY_FORMATIONS_JSON, HEROES_JSON, SKILLS_JSON
 
 
 def check() -> list[str]:
     heroes = json.loads(HEROES_JSON.read_text("utf-8"))
     skills = json.loads(SKILLS_JSON.read_text("utf-8"))
+    bingxue = json.loads(BINGXUE_JSON.read_text("utf-8"))
     formations = json.loads(ENEMY_FORMATIONS_JSON.read_text("utf-8"))
     print(
         f"[check-build] heroes={len(heroes)} skills={len(skills)} "
@@ -69,6 +71,30 @@ def check() -> list[str]:
             errors.append(f"Duplicate skill name: '{n}'")
         if n:
             seen_names.add(n)
+
+    # ---- Bingxue category integrity --------------------------------------
+    for option_name, expected_direction in BINGXUE_OPTION_TO_DIRECTION.items():
+        option = bingxue.get(option_name)
+        if not option:
+            errors.append(f"Bingxue option '{option_name}' missing from bingxue.json")
+            continue
+        actual_direction = option.get("direction_jp") or option.get("direction")
+        if actual_direction != expected_direction:
+            errors.append(
+                f"Bingxue option '{option_name}' is '{actual_direction}', "
+                f"expected '{expected_direction}'"
+            )
+
+    for hero in heroes:
+        for direction, groups in (hero.get("bingxue") or {}).items():
+            for tier in ("major", "minor"):
+                for option_name in (groups or {}).get(tier, []):
+                    expected_direction = BINGXUE_OPTION_TO_DIRECTION.get(option_name)
+                    if expected_direction and direction != expected_direction:
+                        errors.append(
+                            f"Hero '{hero['name']}' has bingxue '{option_name}' under "
+                            f"'{direction}', expected '{expected_direction}'"
+                        )
 
     # ---- Enemy formation completeness ------------------------------------
     def build_lookup(items: list[dict]) -> dict[str, dict]:

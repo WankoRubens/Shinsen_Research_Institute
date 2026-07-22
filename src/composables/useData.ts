@@ -386,6 +386,25 @@ const normalizeHeroBingxue = (bingxue: HeroBingxue | null | undefined): HeroBing
   }, {} as HeroBingxue)
 }
 
+// Old saved lineups may contain the swapped Game8 heading (機略 <-> 臨戦).
+// Resolve the active direction from the selected option and the hero's newly
+// normalized availability so those saves heal automatically when loaded.
+export const resolveHeroBingxueDirection = (
+  hero: Hero | null | undefined,
+  optionName: string | null | undefined,
+  fallback: string | null | undefined,
+): BingxueDirection | null => {
+  if (hero?.bingxue && optionName) {
+    for (const direction of BINGXUE_DIRECTIONS) {
+      const groups = hero.bingxue[direction]
+      if (groups?.major.includes(optionName) || groups?.minor.includes(optionName)) {
+        return direction
+      }
+    }
+  }
+  return normalizeBingxueDirection(fallback)
+}
+
 // Clan data comes from multiple sources and can contain both "織田" and
 // "織田家", plus traditional-character variants. Keep one Japanese label so
 // filters and hero details never show duplicate entries for the same clan.

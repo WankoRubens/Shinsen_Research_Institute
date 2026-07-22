@@ -7,7 +7,7 @@
 // regardless of caller, and so the healing-pass behaviour (soft-null on
 // unresolved JP keys) is enforced everywhere — not just in one codepath.
 
-import type { Hero, Skill } from '../composables/useData'
+import { resolveHeroBingxueDirection, type Hero, type Skill } from '../composables/useData'
 import {
   emptyRole,
   makeTeam,
@@ -194,8 +194,9 @@ const restoreRoleInto = (
     | { d?: string; m?: string; n?: { n: string; l: number }[] }
     | undefined
   if (bx?.d) {
+    const optionName = bx.m ?? bx.n?.[0]?.n
     role.bingxue = {
-      direction: bx.d as BingxueActive['direction'],
+      direction: resolveHeroBingxueDirection(role.hero, optionName, bx.d),
       major: bx.m ?? null,
       minors: Array.isArray(bx.n)
         ? bx.n.map((mi) => ({ name: mi.n, level: mi.l as 1 | 2 }))

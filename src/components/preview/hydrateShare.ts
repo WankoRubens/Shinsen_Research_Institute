@@ -4,7 +4,7 @@
 // the preview is read-only and must not perturb the active group.
 
 import type { ShareableData, ShareableLineup } from '../../constants/gameData'
-import type { Hero, Skill } from '../../composables/useData'
+import { resolveHeroBingxueDirection, type Hero, type Skill } from '../../composables/useData'
 import type { Lineup, RoleData } from '../../composables/useLineups'
 import { makeTeam } from '../../composables/useLineups'
 
@@ -36,8 +36,9 @@ const restoreRole = (
   if (typeof bt === 'number') role.breakthrough = Math.max(0, Math.min(5, bt))
   const bx = safeL[`${prefix}_bx`] as { d?: string; m?: string; n?: { n: string; l: number }[] } | undefined
   if (bx?.d) {
+    const optionName = bx.m ?? bx.n?.[0]?.n
     role.bingxue = {
-      direction: bx.d as RoleData['bingxue']['direction'],
+      direction: resolveHeroBingxueDirection(role.hero, optionName, bx.d),
       major: bx.m ?? null,
       minors: Array.isArray(bx.n) ? bx.n.map(mi => ({ name: mi.n, level: mi.l as 1 | 2 })) : [],
     }

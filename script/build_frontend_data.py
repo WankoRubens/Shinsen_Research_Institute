@@ -34,6 +34,7 @@ from paths import (
     SHINSEN_SIM_API_JSON, S3_CODOMO_TEMPLATES_JSON, GAME8_SKILLS_INDEX_JSON,
     SANGUO_ZHI_HEROES_YAML,
 )
+from bingxue_categories import canonical_bingxue_direction
 
 # When CFG_AUTHORITATIVE=1 (default), cfg.json wins over LLM output for
 # names and top-level metadata (skill names, target, brief_description,
@@ -1213,6 +1214,26 @@ def postprocess(heroes: list[dict], skills: list[dict]) -> tuple[list[dict], lis
     return heroes, skills
 
 
+def normalize_hero_bingxue(hero_bingxue: dict) -> dict:
+    """Re-group a hero's available options under their verified categories."""
+    normalized: dict[str, dict[str, list[str]]] = {}
+    for source_direction, groups in hero_bingxue.items():
+        fallback_direction = BINGXUE_JP_TO_CHT_DIR.get(source_direction, source_direction)
+        for tier in ("major", "minor"):
+            for option_name in (groups or {}).get(tier, []):
+                direction = canonical_bingxue_direction(option_name, fallback_direction)
+                target = normalized.setdefault(direction, {"major": [], "minor": []})[tier]
+                if option_name not in target:
+                    target.append(option_name)
+
+    direction_order = ("武略", "陣立", "機略", "臨戦")
+    return {
+        direction: normalized[direction]
+        for direction in direction_order
+        if direction in normalized
+    }
+
+
 def infer_trait_rank(name: str) -> str:
     """Rule-based tier from trait name suffix:
     III → A, II → B, I → C, anything else → S.
@@ -1552,19 +1573,21 @@ def main():
     # Post-process: normalize text, fix types, sort
     heroes, skills = postprocess(heroes, skills)
 
-    # Build the bingxue catalog and normalize direction names before writing.
-    # Japanese source directions now pass through unchanged.
+    # Build the bingxue catalog using the verified Japanese category list.
+    # Known options are resolved by name because Game8 currently exposes the
+    # contents of 機略 and 臨戦 under the opposite heading.
     bingxue_data = yaml.safe_load(BINGXUE_CANONICAL.read_text("utf-8")) if BINGXUE_CANONICAL.exists() else {}
     bingxue_out = {}
     for jp_name, entry in (bingxue_data or {}).items():
         raw = entry.get("raw", {})
         jp_dir = raw.get("direction", "")
-        cht_dir = BINGXUE_JP_TO_CHT_DIR.get(jp_dir, jp_dir)
+        fallback_dir = BINGXUE_JP_TO_CHT_DIR.get(jp_dir, jp_dir)
+        normalized_dir = canonical_bingxue_direction(jp_name, fallback_dir)
         bingxue_out[jp_name] = {
             "name": entry.get("name") or jp_name,
             "name_jp": jp_name,
-            "direction": cht_dir,
-            "direction_jp": jp_dir,
+            "direction": normalized_dir,
+            "direction_jp": normalized_dir,
             "tier": raw.get("tier", ""),
             "description": (entry.get("text") or {}).get("description", ""),
             "description_jp": raw.get("effect", ""),
@@ -1575,10 +1598,7 @@ def main():
         hero_bx = h.get("bingxue")
         if not hero_bx:
             continue
-        h["bingxue"] = {
-            BINGXUE_JP_TO_CHT_DIR.get(jp_dir, jp_dir): groups
-            for jp_dir, groups in hero_bx.items()
-        }
+        h["bingxue"] = normalize_hero_bingxue(hero_bx)
 
     # Write all build artifacts
     enemy_formations = _build_enemy_formations(heroes, skills)
