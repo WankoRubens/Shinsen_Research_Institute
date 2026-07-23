@@ -41,6 +41,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   疾風迅雷: defineBattleSkillMeta({ type: '指揮' }),
   表裏比興: defineBattleSkillMeta({ type: '能動' }),
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
+  沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
   風林火山: defineBattleSkillMeta({ type: '指揮' }),
   無想掃討: defineBattleSkillMeta({ type: '能動' }),
@@ -1913,14 +1914,18 @@ export const applyNamedSkillEffect = (
     case '沈魚落雁': {
       // 戦法タイプ: 受動
       // 自身が通常攻撃を受けた際、18%→36%の確率で1ターンの間、攻撃者に以下の状態を1つ付与：混乱（攻撃と戦法の目標ランダムに選択）、無策（能動戦法が発動不能）、
-      // 無策・混乱・疲弊を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","混乱","疲弊"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
+      // 通常攻撃を受けた時以外は効果を処理しない
+      if (ctx.trigger !== 'onNormalAttackReceived') return true
+
+      // 直前に通常攻撃を行った攻撃者を対象にする
+      const attacker = ctx.target
+      if (!attacker || attacker.side === ctx.caster.side) return true
+
+      // 36%の確率で状態異常を1つだけ付与する
+      if (!h.roll(ctx.rng, 0.36)) return true
+      const controls = ['混乱', '無策', '疲弊']
+      const control = controls[Math.floor(ctx.rng() * controls.length)] ?? controls[0]
+      h.addControl(ctx, attacker, control, 1)
       return true
     }
     case '死中求活': {
