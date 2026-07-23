@@ -46,7 +46,14 @@
         "description_jp": "部隊の騎兵レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "気勢Ⅰ",
@@ -181,7 +188,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -307,7 +321,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -433,7 +454,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -559,7 +587,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -685,7 +721,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -802,7 +845,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "弓砲術Ⅱ",
@@ -811,7 +861,15 @@
         "description_jp": "部隊の弓兵・鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "弓兵",
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -937,7 +995,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -1063,7 +1128,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -1171,7 +1243,14 @@
         "description_jp": "部隊の弓兵レベルが3、レベル上限が1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 1
+        }
       },
       {
         "name": "善戦Ⅱ",
@@ -1297,7 +1376,14 @@
         "description_jp": "部隊の足軽レベルが3、レベル上限が1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 3,
+          "level_cap_bonus": 1
+        }
       },
       {
         "name": "攻勢Ⅱ",
@@ -1432,7 +1518,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "尽力Ⅲ",
@@ -1558,7 +1651,14 @@
         "description_jp": "部隊の鉄砲レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "心尽Ⅰ",
@@ -1666,7 +1766,14 @@
         "description_jp": "部隊の騎兵レベルが3、レベル上限が1増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 1
+        }
       },
       {
         "name": "血気Ⅲ",
@@ -1819,7 +1926,15 @@
         "description_jp": "部隊の足軽・鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -1936,7 +2051,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "器術Ⅱ",
@@ -1945,7 +2067,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -2071,7 +2200,14 @@
         "description_jp": "部隊の騎兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -2179,7 +2315,14 @@
         "description_jp": "部隊の足軽レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅱ",
@@ -2289,7 +2432,14 @@
         "name_jp": "騎兵大将",
         "description_jp": "部隊の騎兵レベルが3、レベル上限が1増加",
         "unlock": "無凸",
-        "rank": "S"
+        "rank": "S",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 1
+        }
       },
       {
         "name": "先驅",
@@ -2430,7 +2580,15 @@
         "name_jp": "槍砲術Ⅱ",
         "description_jp": "部隊の足軽・鉄砲レベル+2",
         "unlock": "3凸",
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "武威I",
@@ -2559,7 +2717,15 @@
         "name_jp": "弓砲術Ⅱ",
         "description_jp": "弓兵・鉄砲レベル+2",
         "unlock": "3凸",
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "弓兵",
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "智慧I",
@@ -2687,7 +2853,15 @@
         "description_jp": "部隊の騎兵・鉄砲レベルが3増加する。",
         "active": true,
         "unlock": "1凸",
-        "rank": "S"
+        "rank": "S",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "鉄砲"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "善戰II",
@@ -2752,7 +2926,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが2増加する。",
         "active": true,
         "unlock": "1凸",
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "剛猛II",
@@ -2817,7 +2999,15 @@
         "description_jp": "部隊の弓兵・鉄砲レベルが2増加する。",
         "active": true,
         "unlock": "1凸",
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "弓兵",
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "堅固I",
@@ -2872,7 +3062,15 @@
         "name": "馬槍術II",
         "description": "部隊的騎兵、足輕等級上升2級",
         "active": true,
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "守勢II",
@@ -2983,7 +3181,15 @@
         "name": "弓槍術II",
         "description": "部隊的足輕、弓兵等級上升2級",
         "active": true,
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "攻勢II",
@@ -3109,7 +3315,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "忍耐Ⅰ",
@@ -3244,7 +3457,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -3352,7 +3573,15 @@
         "description_jp": "部隊の騎兵・足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "武威Ⅱ",
@@ -3496,7 +3725,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -3613,7 +3849,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "防護Ⅱ",
@@ -3730,7 +3973,14 @@
         "description_jp": "部隊の騎兵レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "武威Ⅱ",
@@ -3865,7 +4115,15 @@
         "description_jp": "部隊の騎兵・鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "攻勢Ⅰ",
@@ -3982,7 +4240,15 @@
         "description_jp": "部隊の騎兵・足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "奮戦Ⅲ",
@@ -4117,7 +4383,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "武威Ⅱ",
@@ -4225,7 +4498,14 @@
         "description_jp": "部隊の騎兵レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "急速Ⅱ",
@@ -4360,7 +4640,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "知謀Ⅱ",
@@ -4495,7 +4783,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "謀攻Ⅱ",
@@ -4621,7 +4916,14 @@
         "description_jp": "部隊の弓兵レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "看破Ⅱ",
@@ -4738,7 +5040,15 @@
         "description_jp": "部隊の騎兵・弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "猛攻Ⅱ",
@@ -4873,7 +5183,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "知恵Ⅱ",
@@ -5008,7 +5325,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -5125,7 +5449,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "馬術Ⅰ",
@@ -5134,7 +5466,14 @@
         "description_jp": "部隊の騎兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -5260,7 +5599,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -5386,7 +5732,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -5503,7 +5856,14 @@
         "description_jp": "部隊の兵器レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "攻勢Ⅰ",
@@ -5611,7 +5971,14 @@
         "description_jp": "部隊の足軽レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "破敵Ⅱ",
@@ -5746,7 +6113,14 @@
         "description_jp": "部隊の騎兵レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "血気Ⅲ",
@@ -5890,7 +6264,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -5989,7 +6370,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "知恵Ⅲ",
@@ -6142,7 +6530,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -6250,7 +6645,14 @@
         "description_jp": "部隊の鉄砲レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "奮戦Ⅱ",
@@ -6385,7 +6787,14 @@
         "description_jp": "部隊の足軽レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "弓術Ⅰ",
@@ -6394,7 +6803,14 @@
         "description_jp": "部隊の弓兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -6511,7 +6927,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -6637,7 +7060,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -6763,7 +7193,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -6979,7 +7417,14 @@
         "description_jp": "部隊の鉄砲レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "守勢Ⅱ",
@@ -7105,7 +7550,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "血気Ⅲ",
@@ -7231,7 +7683,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "固守Ⅱ",
@@ -7258,7 +7718,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -7351,7 +7818,14 @@
           "cap_up": 1
         },
         "active": true,
-        "rank": "S"
+        "rank": "S",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 3,
+          "level_cap_bonus": 1
+        }
       },
       {
         "name": "牢固III",
@@ -7474,7 +7948,15 @@
         "name_jp": "馬槍術Ⅰ",
         "description_jp": "騎兵・足軽レベル+1",
         "unlock": "1凸",
-        "rank": "C"
+        "rank": "C",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "足軽"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "隱忍II",
@@ -7608,7 +8090,14 @@
         "description_jp": "部隊の鉄砲レベルが3増加する。",
         "active": true,
         "unlock": "1凸",
-        "rank": "A"
+        "rank": "A",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "固守II",
@@ -7669,7 +8158,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "知恵Ⅲ",
@@ -7687,7 +8183,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -7786,7 +8289,14 @@
         "description_jp": "部隊の騎兵レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "攻勢Ⅱ",
@@ -7939,7 +8449,14 @@
         "description_jp": "部隊の兵器レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -8038,7 +8555,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "知恵Ⅲ",
@@ -8164,7 +8688,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "看破Ⅲ",
@@ -8317,7 +8848,14 @@
         "description_jp": "部隊の騎兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -8416,7 +8954,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "剛猛Ⅱ",
@@ -8677,7 +9222,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "血気Ⅱ",
@@ -8794,7 +9346,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅱ",
@@ -9199,7 +9758,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -9298,7 +9864,14 @@
         "description_jp": "部隊の足軽レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "攻勢Ⅱ",
@@ -9325,7 +9898,14 @@
         "description_jp": "部隊の兵器レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -9424,7 +10004,15 @@
         "description_jp": "部隊の弓兵・鉄砲レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "弓兵",
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "急速Ⅱ",
@@ -9568,7 +10156,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "守勢Ⅰ",
@@ -9676,7 +10272,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "知恵Ⅲ",
@@ -9802,7 +10405,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "看破Ⅱ",
@@ -9937,7 +10547,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "牢固Ⅱ",
@@ -10054,7 +10671,14 @@
         "description_jp": "部隊の足軽レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "武威Ⅱ",
@@ -10180,7 +10804,14 @@
         "description_jp": "部隊の鉄砲レベルが3、レベル上限が1増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 3,
+          "level_cap_bonus": 1
+        }
       },
       {
         "name": "武威Ⅱ",
@@ -10296,7 +10927,14 @@
         "name": "弓術III",
         "description": "部隊的弓兵等級上升3級",
         "active": true,
-        "rank": "A"
+        "rank": "A",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "固守III",
@@ -10413,7 +11051,15 @@
         "name": "馬炮術I",
         "description": "部隊的騎兵、鐵炮等級上升1級",
         "active": true,
-        "rank": "C"
+        "rank": "C",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "鉄砲"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "防護III",
@@ -10532,7 +11178,15 @@
         "description": "部隊的足輕、弓兵等級+2",
         "description_jp": "部隊の足軽・弓兵レベルが2増加する。",
         "active": true,
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "血氣II",
@@ -10593,7 +11247,14 @@
         "description": "部隊的騎兵等級+2",
         "description_jp": "部隊の騎兵レベルが2増加する。",
         "active": true,
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "智慧II",
@@ -10662,7 +11323,15 @@
         "description": "部隊的騎兵、足輕等級上升1級",
         "description_jp": "部隊の騎兵・足軽レベルが1増加する。",
         "active": true,
-        "rank": "C"
+        "rank": "C",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "足軽"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "威勢II",
@@ -10712,7 +11381,15 @@
         "description_jp": "部隊の足軽・弓兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅱ",
@@ -10865,7 +11542,14 @@
         "description_jp": "部隊の騎兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -10973,7 +11657,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "看破Ⅰ",
@@ -11117,7 +11808,14 @@
         "description_jp": "部隊の足軽レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -11345,7 +12043,14 @@
         "description": "弓兵等級+3",
         "description_jp": "部隊の弓兵レベルが3増加する。",
         "active": true,
-        "rank": "A"
+        "rank": "A",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "智慧II",
@@ -11403,7 +12108,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "牢固Ⅲ",
@@ -11421,7 +12133,14 @@
         "description_jp": "部隊の足軽レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "器術Ⅱ",
@@ -11430,7 +12149,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "4"
+        "sim_level": "4",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": {
@@ -11519,7 +12245,15 @@
         "name": "弓槍術II",
         "description": "部隊的足輕、弓兵等級上升2級",
         "active": true,
-        "rank": "B"
+        "rank": "B",
+        "affinity": {
+          "troop_types": [
+            "足軽",
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "武威II",
@@ -11658,7 +12392,15 @@
         "description_jp": "部隊の騎兵・足軽レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "足軽"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -11696,7 +12438,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "器術Ⅲ",
@@ -11705,7 +12454,14 @@
         "description_jp": "部隊の兵器レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "謀攻Ⅱ",
@@ -11752,7 +12508,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "猛闘Ⅲ",
@@ -11808,7 +12571,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "血気Ⅱ",
@@ -11882,7 +12652,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -11920,7 +12697,14 @@
         "description_jp": "部隊の足軽レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "急速Ⅱ",
@@ -11985,7 +12769,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅱ",
@@ -12050,7 +12841,14 @@
         "description_jp": "部隊の足軽レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -12088,7 +12886,14 @@
         "description_jp": "部隊の弓兵レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "固守Ⅱ",
@@ -12162,7 +12967,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -12200,7 +13012,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "血気Ⅱ",
@@ -12256,7 +13075,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅱ",
@@ -12368,7 +13194,14 @@
         "description_jp": "部隊の兵器レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "武威Ⅲ",
@@ -12442,7 +13275,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -12480,7 +13320,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "血気Ⅱ",
@@ -12536,7 +13383,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "馬術Ⅰ",
@@ -12545,7 +13399,14 @@
         "description_jp": "部隊の騎兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅲ",
@@ -12601,7 +13462,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅰ",
@@ -12648,7 +13516,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "馬術Ⅱ",
@@ -12657,7 +13532,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "攻陣Ⅲ",
@@ -12713,7 +13595,14 @@
         "description_jp": "部隊の弓兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "守勢Ⅲ",
@@ -12760,7 +13649,14 @@
         "description_jp": "部隊の兵器レベルが3増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "馬術Ⅱ",
@@ -12769,7 +13665,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "急速Ⅱ",
@@ -12816,7 +13719,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "謀攻Ⅲ",
@@ -12881,7 +13791,14 @@
         "description_jp": "部隊の弓兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "知恵Ⅲ",
@@ -12928,7 +13845,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "破敵Ⅲ",
@@ -12946,7 +13870,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -12984,7 +13915,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "弓術Ⅱ",
@@ -12993,7 +13931,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "器術Ⅲ",
@@ -13002,7 +13947,14 @@
         "description_jp": "部隊の兵器レベルが3増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 3,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "-",
@@ -13049,7 +14001,15 @@
         "description_jp": "部隊の騎兵・鉄砲レベルが1増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵",
+            "鉄砲"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅰ",
@@ -13123,7 +14083,14 @@
         "description_jp": "部隊の騎兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -13179,7 +14146,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -13235,7 +14209,14 @@
         "description_jp": "部隊の弓兵レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -13282,7 +14263,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "1"
+        "sim_level": "1",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅱ",
@@ -13347,7 +14335,14 @@
         "description_jp": "部隊の弓兵レベルが1増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "弓兵"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -13385,7 +14380,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "統帥Ⅱ",
@@ -13441,7 +14443,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "堅固Ⅲ",
@@ -13459,7 +14468,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -13515,7 +14531,14 @@
         "description_jp": "部隊の鉄砲レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -13553,7 +14576,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "猛攻Ⅲ",
@@ -13609,7 +14639,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "牢固Ⅱ",
@@ -13721,7 +14758,14 @@
         "description_jp": "部隊の足軽レベルが1増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "攻陣Ⅲ",
@@ -13739,7 +14783,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,
@@ -13777,7 +14828,14 @@
         "description_jp": "部隊の足軽レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "足軽"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "破敵Ⅱ",
@@ -13833,7 +14891,14 @@
         "description_jp": "部隊の騎兵レベルが2増加",
         "rank": "S",
         "active": true,
-        "sim_level": "0"
+        "sim_level": "0",
+        "affinity": {
+          "troop_types": [
+            "騎兵"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "攻勢Ⅱ",
@@ -13851,7 +14916,14 @@
         "description_jp": "部隊の兵器レベルが2増加",
         "rank": "A",
         "active": true,
-        "sim_level": "2"
+        "sim_level": "2",
+        "affinity": {
+          "troop_types": [
+            "器械"
+          ],
+          "level": 2,
+          "level_cap_bonus": 0
+        }
       }
     ],
     "bingxue": null,

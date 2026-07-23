@@ -35,6 +35,7 @@ from paths import (
     SANGUO_ZHI_HEROES_YAML,
 )
 from bingxue_categories import canonical_bingxue_direction
+from trait_affinity import infer_troop_affinity
 
 # When CFG_AUTHORITATIVE=1 (default), cfg.json wins over LLM output for
 # names and top-level metadata (skill names, target, brief_description,
@@ -1203,6 +1204,13 @@ def postprocess_hero(hero: dict) -> dict:
         # Overrides that explicitly set "rank" still win (deep_merge already applied).
         if not t.get("rank"):
             t["rank"] = infer_trait_rank(t.get("name") or t.get("name_jp", ""))
+        if not t.get("affinity"):
+            affinity = (
+                infer_troop_affinity(t.get("description_jp", ""), t.get("vars"))
+                or infer_troop_affinity(t.get("description", ""), t.get("vars"))
+            )
+            if affinity:
+                t["affinity"] = affinity
     return hero
 
 
@@ -1289,6 +1297,10 @@ def _flatten_trait(jp_name: str, tr: dict) -> dict:
     passive = tr.get("passive")
     if isinstance(passive, dict) and passive.get("affinity"):
         result["affinity"] = passive["affinity"]
+    else:
+        affinity = infer_troop_affinity(desc_jp, vars_dict) or infer_troop_affinity(desc, vars_dict)
+        if affinity:
+            result["affinity"] = affinity
 
     return result
 

@@ -19,6 +19,7 @@ import sys
 
 from bingxue_categories import BINGXUE_OPTION_TO_DIRECTION
 from paths import BINGXUE_JSON, ENEMY_FORMATIONS_JSON, HEROES_JSON, SKILLS_JSON
+from trait_affinity import infer_troop_affinity
 
 
 def check() -> list[str]:
@@ -26,9 +27,15 @@ def check() -> list[str]:
     skills = json.loads(SKILLS_JSON.read_text("utf-8"))
     bingxue = json.loads(BINGXUE_JSON.read_text("utf-8"))
     formations = json.loads(ENEMY_FORMATIONS_JSON.read_text("utf-8"))
+    affinity_traits = sum(
+        1
+        for hero in heroes
+        for trait in (hero.get("traits") or [])
+        if trait.get("affinity")
+    )
     print(
         f"[check-build] heroes={len(heroes)} skills={len(skills)} "
-        f"enemy_formations={len(formations)}"
+        f"enemy_formations={len(formations)} affinity_traits={affinity_traits}"
     )
 
     errors: list[str] = []
@@ -55,6 +62,17 @@ def check() -> list[str]:
             ref = h.get(ref_field)
             if ref and not find_skill(ref):
                 errors.append(f"Hero '{h['name']}' {ref_field}='{ref}' not found in skills.json")
+
+        for trait in h.get("traits") or []:
+            expected_affinity = (
+                infer_troop_affinity(trait.get("description_jp", ""), trait.get("vars"))
+                or infer_troop_affinity(trait.get("description", ""), trait.get("vars"))
+            )
+            if expected_affinity and trait.get("affinity") != expected_affinity:
+                errors.append(
+                    f"Hero '{h['name']}' trait '{trait.get('name_jp') or trait.get('name')}' "
+                    f"has invalid troop affinity: {trait.get('affinity')} expected {expected_affinity}"
+                )
 
     for s in skills:
         if not s.get("name"):
