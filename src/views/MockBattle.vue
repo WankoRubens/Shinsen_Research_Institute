@@ -181,7 +181,7 @@
                   </div>
                   <div v-if="block.actor" class="action-metrics">
                     <span>兵力 <b>{{ formatNumber(actorHp(block)) }}</b></span>
-                    <span>撃破数 <b>{{ blockKills(block) }}</b></span>
+                    <span>撃破数 <b>{{ formatNumber(blockKills(block)) }}</b></span>
                     <span>救援 <b>{{ formatNumber(blockHealing(block)) }}</b></span>
                   </div>
                 </header>
@@ -508,9 +508,23 @@ const actorSpeed = (block: ActionBlock): string => {
 }
 const actorHp = (block: ActionBlock): number => block.troops
 const blockHealing = (block: ActionBlock): number =>
-  block.entries.reduce((sum, entry) => sum + (entry.valueType === 'healing' ? entry.amount ?? 0 : 0), 0)
+  block.entries.reduce(
+    (sum, entry) =>
+      sum +
+      (entry.valueType === 'healing'
+        ? entry.amount ?? Math.max(0, (entry.afterHp ?? 0) - (entry.beforeHp ?? 0))
+        : 0),
+    0,
+  )
 const blockKills = (block: ActionBlock): number =>
-  block.entries.filter((entry) => entry.valueType === 'damage' && entry.afterHp === 0 && (entry.beforeHp ?? 0) > 0).length
+  block.entries.reduce(
+    (sum, entry) =>
+      sum +
+      (entry.valueType === 'damage'
+        ? entry.amount ?? Math.max(0, (entry.beforeHp ?? 0) - (entry.afterHp ?? 0))
+        : 0),
+    0,
+  )
 
 const cloneRole = (role: RoleData): RoleData => ({
   hero: role.hero,
