@@ -823,6 +823,16 @@ const teamActionBattleSkills = (allies: BattleFighter[]): Skill[] => {
   )
 }
 
+// 竜騎兵の行動後装填は、役割ではなく伊達政宗本人が戦法を装備していることが条件。
+const dateMasamuneHasDragonCavalry = (allies: BattleFighter[]): boolean =>
+  allies.some((ally) =>
+    ally.name === '伊達政宗'
+    && ally.skills.some((skill) =>
+      TEAM_ACTION_BATTLE_SKILL_NAMES.has(skillDisplayName(skill))
+      || TEAM_ACTION_BATTLE_SKILL_NAMES.has(skill.name),
+    ),
+  )
+
 const fireBeforeUniqueSkill = (
   owner: BattleFighter,
   uniqueSkill: Skill,
@@ -1423,10 +1433,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
         }
         fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-        const commanderIsDateMasamune = allies.some(
-          (allyFighter) => allyFighter.role === 'main' && allyFighter.name === '伊達政宗' && isAlive(allyFighter),
-        )
-        if (commanderIsDateMasamune && grantedActionSkills.length > 0) {
+        if (dateMasamuneHasDragonCavalry(allies) && grantedActionSkills.length > 0) {
           fireTriggeredSkillList(
             actor,
             grantedActionSkills,

@@ -11929,7 +11929,7 @@
     "raw_text": "適應兵種：鐵炮 將鐵炮進階為縱橫無盡的龍騎兵：部隊移動速度提升50%。每回合開始時，若我軍武將沒有彈丸，則該回合裝填1發彈丸，25%機率（受武勇和速度影響）裝填2發。若我軍持有彈丸，則該回合有35%->70%機率（受速度影響）消耗1發彈丸，對敵軍單體造成一次傷害（傷害率52%->104%，類型由武勇或智略較高一項決定）；若由伊達政宗統領，我軍武將行動後有20%->40%機率（受武勇 and 智略影響）裝填一發彈丸",
     "description": "適應兵種：鐵炮。將鐵炮進階為龍騎兵，部隊移動速度提升{var:move_speed_buff}。 每回合開始時，若無彈丸則裝填1發，{var:double_ammo_chance}機率裝填2發（{scale:武勇}/{scale:速度}）。 若持有彈丸，則有{var:ammo_consume_chance}機率（{scale:速度}）消耗1發對敵軍單體造成{var:dmg_rate}傷害（由武勇或智略較高者決定）。 若由伊達政宗統領，行動後有{var:commander_fill_chance}機率（{scale:武勇}/{scale:智略}）裝填1發彈丸。",
     "brief_description": "鐵炮進階兵種，機率消耗彈丸造成傷害",
-    "description_jp": "適応兵種：鉄砲。鉄砲を竜騎兵に進化させ、部隊の移動速度を{var:move_speed_buff}上昇させる。毎ターン開始時、自軍武将が弾丸を持っていない場合、弾丸を1発装填し、{var:double_ammo_chance}の確率で2発装填する（{scale:武勇}/{scale:速度}）。弾丸を持つ場合、{var:ammo_consume_chance}の確率（{scale:速度}）で弾丸を1発消費し、敵軍単体に{var:dmg_rate}のダメージを与える。ダメージ種別は武勇または知略の高いほうで決まる。伊達政宗が統率している場合、自軍武将は行動後に{var:commander_fill_chance}の確率（{scale:武勇}/{scale:知略}）で弾丸を1発装填する。",
+    "description_jp": "適応兵種：鉄砲。鉄砲を竜騎兵に進化させ、部隊の移動速度を{var:move_speed_buff}上昇させる。毎ターン開始時、自軍武将が弾丸を持っていない場合、弾丸を1発装填し、{var:double_ammo_chance}の確率で2発装填する（{scale:武勇}/{scale:速度}）。弾丸を持つ場合、{var:ammo_consume_chance}の確率（{scale:速度}）で弾丸を1発消費し、敵軍単体に{var:dmg_rate}のダメージを与える。ダメージ種別は武勇または知略の高いほうで決まる。伊達政宗にこの戦法をセットしている場合、自軍武将は行動後に{var:commander_fill_chance}の確率（{scale:武勇}/{scale:知略}）で弾丸を1発装填する。",
     "brief_description_jp": "鉄砲を竜騎兵に進化させ、弾丸を消費してダメージを与える",
     "tags": [
       "兵刃傷害",

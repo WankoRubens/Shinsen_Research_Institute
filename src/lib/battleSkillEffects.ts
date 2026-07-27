@@ -762,12 +762,15 @@ export const applyNamedSkillEffect = (
         return true
       }
 
-      // 効果3: 伊達政宗が大将なら、各武将の行動後に武勇と知略依存の40%で1発装填する。
+      // 効果3: 伊達政宗本人に竜騎兵がセットされていれば、各武将の行動後に40%で1発装填する。
       if (ctx.trigger === 'afterAction') {
-        const commanderIsDateMasamune = ctx.allies.some(
-          (ally) => ally.role === 'main' && ally.name === '伊達政宗' && ally.hp > 0,
+        const dateMasamuneHasDragonCavalry = ctx.allies.some(
+          (ally) => ally.name === '伊達政宗' && ally.skills.some(
+            (skill) => TEAM_ACTION_BATTLE_SKILL_NAMES.has(skill.name_jp || skill.name)
+              || TEAM_ACTION_BATTLE_SKILL_NAMES.has(skill.name),
+          ),
         )
-        if (!commanderIsDateMasamune) return true
+        if (!dateMasamuneHasDragonCavalry) return true
 
         const reloadChance = attributeDependentChance(0.4, [
           h.statOf(ctx.caster, 'val'),
@@ -776,9 +779,9 @@ export const applyNamedSkillEffect = (
         if (h.roll(ctx.rng, reloadChance)) {
           const nextAmmo = (ctx.caster.specialState[ammoKey] ?? 0) + 1
           ctx.caster.specialState[ammoKey] = nextAmmo
-          log(ctx.logs, ctx, `竜騎兵: 伊達政宗の大将効果で弾丸を1発装填(残り${nextAmmo})`)
+          log(ctx.logs, ctx, `竜騎兵: 伊達政宗の装備効果で弾丸を1発装填(残り${nextAmmo})`)
         } else {
-          log(ctx.logs, ctx, '竜騎兵: 伊達政宗の大将効果による装填は不発')
+          log(ctx.logs, ctx, '竜騎兵: 伊達政宗の装備効果による装填は不発')
         }
         return true
       }
