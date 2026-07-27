@@ -43,6 +43,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
   伊達の粋: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn', 'beforeAction'] }),
+  文武両道: defineBattleSkillMeta({ type: '受動', triggers: ['onPhysicalDamageDealt', 'onStrategyDamageDealt'] }),
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
   風林火山: defineBattleSkillMeta({ type: '指揮' }),
   無想掃討: defineBattleSkillMeta({ type: '能動' }),
@@ -171,7 +172,7 @@ const dateIkiSkill = (fighter: BattleFighter): Skill | null =>
   fighter.skills.find((skill) => DATE_IKI_SKILL_NAMES.has(skill.name_jp || skill.name)) ?? null
 
 // 伊達の粋は、自身の戦法以外で与えた兵刃・計略ダメージも属性上昇の回数へ含める。
-export const recordDateIkiDamageHit = (
+const recordDateIkiDamageHit = (
   fighter: BattleFighter,
   kind: 'physical' | 'strategy',
   turn: number,
@@ -223,6 +224,59 @@ export const recordDateIkiDamageHit = (
       message: `伊達の粋: 属性上昇が最大のため粋を1獲得(残り${fighter.specialState.dateIkiStacks})`,
     })
   }
+}
+
+const BUNBU_SKILL_NAMES = new Set(['文武両道', '文武雙全'])
+const hasBunbuSkill = (fighter: BattleFighter): boolean =>
+  fighter.skills.some((skill) => BUNBU_SKILL_NAMES.has(skill.name_jp || skill.name))
+
+const recordBunbuDamageHit = (
+  fighter: BattleFighter,
+  kind: 'physical' | 'strategy',
+  turn: number,
+  logs: BattleLogEntry[],
+) => {
+  if (!hasBunbuSkill(fighter)) return
+
+  const stackKey = kind === 'strategy' ? 'bunbuStrategyStacks' : 'bunbuPhysicalStacks'
+  const stacks = fighter.specialState[stackKey] ?? 0
+  if (stacks >= 5) return
+
+  const nextStacks = stacks + 1
+  fighter.specialState[stackKey] = nextStacks
+  if (kind === 'strategy') {
+    fighter.buffs.val = (fighter.buffs.val ?? 0) + 30
+    logs.push({
+      turn,
+      side: fighter.side,
+      actor: fighter.name,
+      actorHp: fighter.hp,
+      effect: '文武両道',
+      message: `文武両道: 計略ダメージで武勇+30(${nextStacks}/5)`,
+    })
+    return
+  }
+
+  fighter.buffs.int = (fighter.buffs.int ?? 0) + 30
+  logs.push({
+    turn,
+    side: fighter.side,
+    actor: fighter.name,
+    actorHp: fighter.hp,
+    effect: '文武両道',
+    message: `文武両道: 兵刃ダメージで知略+30(${nextStacks}/5)`,
+  })
+}
+
+// ダメージを与えた時に反応する受動戦法を、すべてのダメージ経路から同じ順序で処理する。
+export const recordDamageDealtSkillEffects = (
+  fighter: BattleFighter,
+  kind: 'physical' | 'strategy',
+  turn: number,
+  logs: BattleLogEntry[],
+) => {
+  recordDateIkiDamageHit(fighter, kind, turn, logs)
+  recordBunbuDamageHit(fighter, kind, turn, logs)
 }
 
 const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string) => {
@@ -2047,8 +2101,9 @@ export const applyNamedSkillEffect = (
     }
     case '文武両道': {
       // 戦法タイプ: 受動
-      // 戦闘中、自身は計略ダメージを与えるたびに武勇が15→30増加（最大5回まで重ねがけ可能）、兵刃ダメージを与えるたびに知略が15→30増加（最大5回まで重ねがけ可
-      return applyDatabaseSkillEffect(ctx, h)
+      // 計略ダメージを与えるたびに武勇+30、兵刃ダメージを与えるたびに知略+30
+      // 実ダメージ発生時の処理は recordDamageDealtSkillEffects に集約し、それぞれ最大5回まで加算する
+      return true
     }
     case '戦意消沈': {
       // 戦法タイプ: 指揮
