@@ -47,6 +47,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   竜騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
   龍騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
   攻其不備: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
+  乱世の華: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
   風林火山: defineBattleSkillMeta({ type: '指揮' }),
   無想掃討: defineBattleSkillMeta({ type: '能動' }),
@@ -127,6 +128,7 @@ export interface BattleSkillEffectHelpers {
     target: BattleFighter,
     rate: number,
     kind?: 'physical' | 'strategy',
+    defenseStat?: Stat,
   ) => number
   healBySkill: (
     ctx: SkillResolveContext,
@@ -2534,11 +2536,15 @@ export const applyNamedSkillEffect = (
     }
     case '乱世の華': {
       // 戦法タイプ: 突撃
-      // 通常攻撃後、攻撃対象にもう一度兵刃ダメージ （ダメージ率79%→158%）と計略ダメージ（ダメージ率79%→158%、知略依存）を与える、このダメージは双方の属
-      // 敵軍単体に計略ダメージ（ダメージ率158%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 158, 'strategy')
-      })
+      // 通常攻撃対象がすでに倒れている場合、別の敵へ対象を変更しない。
+      const attackTarget = ctx.target
+      if (!attackTarget || attackTarget.hp <= 0) return true
+
+      // 通常攻撃対象へ、攻撃側武勇と対象統率の差を使う158%兵刃ダメージを与える。
+      h.dealSkillDamage(ctx, attackTarget, 158, 'physical', 'lea')
+
+      // 同じ対象へ、攻撃側知略と対象速度の差を使う158%計略ダメージを与える。
+      h.dealSkillDamage(ctx, attackTarget, 158, 'strategy', 'spd')
       return true
     }
     case '静動自在': {

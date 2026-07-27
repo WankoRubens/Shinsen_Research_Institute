@@ -631,11 +631,14 @@ const baseDamage = (
   skill: Skill | null,
   rng: () => number,
   kind: 'normal' | 'physical' | 'strategy',
+  defenseStatOverride?: Stat,
 ) => {
   const actualKind = kind === 'normal' ? 'physical' : kind
   const rate = damageRate(skill)
   const attackStat = actualKind === 'strategy' ? statOf(caster, 'int') : statOf(caster, 'val')
-  const defenseStat = actualKind === 'strategy' ? statOf(target, 'int') : statOf(target, 'lea')
+  const defenseStat = defenseStatOverride
+    ? statOf(target, defenseStatOverride)
+    : actualKind === 'strategy' ? statOf(target, 'int') : statOf(target, 'lea')
   const variance = 0.9 + rng() * 0.2
   const modifier = damageModifier(caster, true, actualKind) * damageModifier(target, false, actualKind)
   const raw = battleDamageBase(attackStat, defenseStat, caster.hp) * (rate / 100) * modifier * troopAffinityModifier() * variance
@@ -866,13 +869,21 @@ const dealSkillDamage = (
   target: BattleFighter,
   rate: number,
   kind: 'physical' | 'strategy' = damageKind(ctx.skill),
+  defenseStat?: Stat,
 ) => {
   if (ctx.trigger === 'preparationTurn') return 0
   if (!isAlive(target)) return 0
   const beforeHp = target.hp
   const beforeWounded = target.wounded
   const beforeDead = target.dead
-  const actual = applyDamage(target, baseDamage(ctx.caster, target, withRate(ctx.skill, rate, kind === 'strategy' ? 'strategy' : 'bravery'), ctx.rng, kind))
+  const actual = applyDamage(target, baseDamage(
+    ctx.caster,
+    target,
+    withRate(ctx.skill, rate, kind === 'strategy' ? 'strategy' : 'bravery'),
+    ctx.rng,
+    kind,
+    defenseStat,
+  ))
   const afterHp = target.hp
   const woundedDelta = target.wounded - beforeWounded
   const deadDelta = target.dead - beforeDead
