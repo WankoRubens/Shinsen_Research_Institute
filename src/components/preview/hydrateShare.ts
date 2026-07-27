@@ -7,6 +7,7 @@ import type { ShareableData, ShareableLineup } from '../../constants/gameData'
 import { resolveHeroBingxueDirection, type Hero, type Skill } from '../../composables/useData'
 import type { Lineup, RoleData } from '../../composables/useLineups'
 import { makeTeam } from '../../composables/useLineups'
+import { normalizeTroopType } from '../../constants/traits'
 
 export interface HydrateInputs {
   heroes: Hero[]
@@ -48,6 +49,7 @@ const restoreRole = (
 const hydrateTeam = (l: ShareableLineup, idx: number, inputs: HydrateInputs): Lineup => {
   const team = makeTeam(idx)
   if (l.name) team.name = l.name
+  team.troopType = normalizeTroopType(l.tt ?? '')
   restoreRole('m', team.main, l, inputs)
   restoreRole('v1', team.vice1, l, inputs)
   restoreRole('v2', team.vice2, l, inputs)

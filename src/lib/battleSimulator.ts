@@ -2,6 +2,8 @@
 import type { Skill, Stat, TriggerEvent } from '../composables/useData'
 import skillsData from '../../.build/skills.json'
 import { heroLevel50Stats } from './heroStats'
+import { selectedTroopLevel, selectedTroopStatMultiplier } from './troopLevels'
+import type { TroopType } from '../constants/traits'
 import {
   BATTLE_SKILL_EFFECT_TRIGGERS,
   HEAL_STOCK_DAMAGE_SKILL_NAMES,
@@ -85,6 +87,9 @@ export interface BattleFighter {
   specialState: Record<string, number>
   skills: Skill[]
   bingxue: BingxueActive
+  troopType: TroopType | null
+  troopLevel: number
+  troopStatMultiplier: number
   troopAffinityModifier: number
 }
 
@@ -336,12 +341,13 @@ const preparationTurns = (skill: Skill): number => {
   return /準備後|準備期間|準備が必要/.test(text) ? 1 : 0
 }
 
-const roleStats = (role: RoleData): Record<Stat, number> => {
+const roleStats = (role: RoleData, troopStatMultiplier: number): Record<Stat, number> => {
   const out = {} as Record<Stat, number>
   const level50Stats = heroLevel50Stats(role.hero)
   CORE_STATS.forEach((stat) => {
     const statValue = Number(role.stats[stat] ?? level50Stats[stat] ?? 100)
-    out[stat] = Math.round(statValue + role.breakthrough * 2)
+    const existingBattleStat = Math.round(statValue + role.breakthrough * 2)
+    out[stat] = Math.round(existingBattleStat * troopStatMultiplier * 100) / 100
   })
   out.damageDealt = 0
   out.damageTaken = 0
@@ -404,6 +410,9 @@ const makeFighter = (
   roleKey: BattleFighter['role'],
   role: RoleData,
   troopAffinity: BattleTroopAffinity,
+  troopType: TroopType | null,
+  troopLevel: number,
+  troopStatMultiplier: number,
 ): BattleFighter | null => {
   if (!role.hero) return null
   const fighter: BattleFighter = {
@@ -416,7 +425,7 @@ const makeFighter = (
     hp: BASE_TROOPS,
     wounded: 0,
     dead: 0,
-    baseStats: roleStats(role),
+    baseStats: roleStats(role, troopStatMultiplier),
     buffs: {},
     statuses: {},
     timedStatuses: [],
@@ -426,18 +435,25 @@ const makeFighter = (
     specialState: {},
     skills: battleSkillsForRole(role),
     bingxue: role.bingxue,
+    troopType,
+    troopLevel,
+    troopStatMultiplier,
     troopAffinityModifier: affinityMultiplier(troopAffinity),
   }
   applyBingxuePassive(fighter)
   return fighter
 }
 
-const makeSide = (side: BattleSide, lineup: Lineup, troopAffinity: BattleTroopAffinity): BattleFighter[] =>
-  ([
-    makeFighter(side, 'main', lineup.main, troopAffinity),
-    makeFighter(side, 'vice1', lineup.vice1, troopAffinity),
-    makeFighter(side, 'vice2', lineup.vice2, troopAffinity),
-  ].filter(Boolean) as BattleFighter[])
+const makeSide = (side: BattleSide, lineup: Lineup, troopAffinity: BattleTroopAffinity): BattleFighter[] => {
+  const troopType = lineup.troopType ?? null
+  const troopLevel = selectedTroopLevel(lineup)
+  const troopStatMultiplier = selectedTroopStatMultiplier(lineup)
+  return [
+    makeFighter(side, 'main', lineup.main, troopAffinity, troopType, troopLevel, troopStatMultiplier),
+    makeFighter(side, 'vice1', lineup.vice1, troopAffinity, troopType, troopLevel, troopStatMultiplier),
+    makeFighter(side, 'vice2', lineup.vice2, troopAffinity, troopType, troopLevel, troopStatMultiplier),
+  ].filter(Boolean) as BattleFighter[]
+}
 
 export type SkillStatMap = Map<string, SkillBattleStat>
 const skillStatKey = (caster: BattleFighter, skill: Skill): string =>
@@ -1331,6 +1347,22 @@ const markActionLogs = (
   })
 }
 
+const logTroopStatBonus = (
+  logs: BattleLogEntry[],
+  label: string,
+  fighters: BattleFighter[],
+): void => {
+  if (logs === NO_LOGS) return
+  const fighter = fighters[0]
+  if (!fighter?.troopType) return
+  const bonusPercent = fighter.troopLevel * 2
+  logs.push({
+    turn: 0,
+    side: 'system',
+    message: `${label}兵種: ${fighter.troopType} Lv${fighter.troopLevel} / 戦闘開始時の全属性+${bonusPercent}%`,
+  })
+}
+
 export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options: BattleOptions): BattleResult => {
   const rng = makeRng(`${options.seed}:${allyLineup.name}:${enemyLineup.name}`)
   const ally = makeSide('ally', allyLineup, options.allyTroopAffinity ?? 'neutral')
@@ -1362,6 +1394,8 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
   }
 
   if (logs !== NO_LOGS) logs.push({ turn: 0, side: 'system', message: `${allyLineup.name} vs ${enemyLineup.name} 開始` })
+  logTroopStatBonus(logs, '自軍', ally)
+  logTroopStatBonus(logs, '敵軍', enemy)
   if (logs !== NO_LOGS) logs.push({ turn: 0, side: 'system', message: '準備ターン: 指揮・受動・兵種戦法を処理' })
 
   // 準備ターン: 指揮・受動・兵種など、戦闘開始時に解決する戦法を処理する。

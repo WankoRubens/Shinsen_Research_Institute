@@ -142,7 +142,10 @@
       <TroopLevelSummary
         v-if="!isEditingInventory"
         :levels="troopLevels"
+        :selected="troopType"
+        selectable
         class="hidden sm:inline-grid"
+        @select="$emit('update:troopType', $event)"
       />
     </div>
 
@@ -251,6 +254,7 @@ import TroopLevelSummary from './TroopLevelSummary.vue'
 
 const props = defineProps<{
   teamName: string
+  troopType: TroopType | null
   totalCost: number
   troopLevels: Record<TroopType, number>
   isEditingInventory: boolean
@@ -261,6 +265,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
   (e: 'update:teamName', v: string): void
+  (e: 'update:troopType', v: TroopType | null): void
   (e: 'open-mobile-sidebar'): void
   (e: 'open-mobile-team-drawer'): void
   (e: 'start-editing-inventory'): void

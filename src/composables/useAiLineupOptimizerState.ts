@@ -34,6 +34,7 @@ export const emptyAiOptimizerRole = (): RoleData => ({
 
 const seedTeam = reactive<Lineup>({
   name: 'AI探索編成',
+  troopType: null,
   main: emptyAiOptimizerRole(),
   vice1: emptyAiOptimizerRole(),
   vice2: emptyAiOptimizerRole(),

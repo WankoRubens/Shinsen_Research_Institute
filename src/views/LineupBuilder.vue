@@ -4,6 +4,15 @@
 
       <!-- View 1: Lineup Builder (Default) -->
       <div v-if="!isEditingInventory" class="flex flex-col md:flex-row h-full">
+        <div class="mobile-troop-selector sm:hidden">
+          <TroopLevelSummary
+            :levels="builderTroopLevels"
+            :selected="currentLineup.troopType"
+            selectable
+            @select="currentLineup.troopType = $event"
+          />
+        </div>
+
         <TeamListPanel
           :lineups="lineups"
           :current-team-index="currentTeamIndex"
@@ -141,6 +150,7 @@ import MobileTeamDrawer from '../components/lineup-builder/MobileTeamDrawer.vue'
 import MobileSlotDetailDrawer from '../components/lineup-builder/MobileSlotDetailDrawer.vue'
 import InventoryEditor from '../components/lineup-builder/InventoryEditor.vue'
 import LineupWorkspace, { type Role } from '../components/lineup-builder/LineupWorkspace.vue'
+import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
 import type { ResetTarget } from '../components/dialogs/ResetDialog.vue'
 import type { ShareScope, ShareEventPayload } from '../components/dialogs/ShareDialog.vue'
 import TeamListPanel from '../components/lineup-builder/TeamListPanel.vue'
@@ -168,6 +178,7 @@ import { useChangelog } from '../composables/useChangelog'
 import { useProfiles } from '../composables/useProfiles'
 import { consumeInitialHash } from '../lib/initial-hash'
 import { heroLevel50Stats } from '../lib/heroStats'
+import { useTroopLevels } from '../composables/useTroopLevels'
 
 const router = useRouter()
 
@@ -194,6 +205,7 @@ const {
   removeTeamFromCurrent,
   ensureTeamCount,
 } = useLineups()
+const builderTroopLevels = useTroopLevels(currentLineup)
 
 const {
   groups,
@@ -1123,6 +1135,14 @@ html.el-popup-parent--hidden {
 }
 .lineup-shake {
   animation: lineup-shake 0.4s ease-in-out;
+}
+
+.mobile-troop-selector {
+  flex: none;
+  padding: 5px 8px;
+  border-bottom: 1px solid rgb(var(--color-divider));
+  background: #fff;
+  text-align: center;
 }
 
 </style>

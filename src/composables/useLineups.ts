@@ -2,6 +2,7 @@ import { reactive, ref, computed, watch } from 'vue'
 import { Hero, Skill, BingxueDirection } from './useData'
 import { useGroups } from './useGroups'
 import { MAX_TEAMS_PER_GROUP } from '../types/group'
+import type { TroopType } from '../constants/traits'
 
 // Active bingxue selection for a hero. A hero activates one direction at a time,
 // picks 1 of 3 majors (1 pt), plus minors from 6 available using a 5-point budget.
@@ -37,6 +38,7 @@ export interface RoleData {
 
 export interface Lineup {
   name: string
+  troopType: TroopType | null
   main: RoleData
   vice1: RoleData
   vice2: RoleData
@@ -62,6 +64,7 @@ export const emptyRole = (): RoleData => ({
 
 export const makeTeam = (idx: number): Lineup => ({
   name: `部隊 ${idx + 1}`,
+  troopType: null,
   main: emptyRole(),
   vice1: emptyRole(),
   vice2: emptyRole(),
@@ -174,6 +177,11 @@ const currentTeamName = computed({
   set: (val) => { currentLineup.value.name = val }
 })
 
+const currentTroopType = computed({
+  get: () => currentLineup.value.troopType ?? null,
+  set: (value: TroopType | null) => { currentLineup.value.troopType = value },
+})
+
 const allUsedHeroNames = computed(() => {
   const names = new Set<string>()
   lineups.forEach((team) => {
@@ -222,12 +230,14 @@ const swapRoles = (roleA: 'main' | 'vice1' | 'vice2', roleB: 'main' | 'vice1' | 
 //  it requires recreating the groups[] array, which useLineups doesn't own.)
 const clearLineup = (type: 'team' | 'group') => {
   if (type === 'team') {
+    currentLineup.value.troopType = null
     currentLineup.value.main = emptyRole()
     currentLineup.value.vice1 = emptyRole()
     currentLineup.value.vice2 = emptyRole()
   }
   if (type === 'group') {
     lineups.forEach(l => {
+      l.troopType = null
       l.main = emptyRole()
       l.vice1 = emptyRole()
       l.vice2 = emptyRole()
@@ -241,6 +251,7 @@ export function useLineups() {
     currentTeamIndex,
     currentLineup,
     currentTeamName,
+    currentTroopType,
     allUsedHeroNames,
     allUsedSkillNames,
     totalCost,

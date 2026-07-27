@@ -17,7 +17,12 @@
         <div class="side-title">
           <h3>自軍編成</h3>
           <div class="side-metrics">
-            <TroopLevelSummary :levels="allyTroopLevels" />
+            <TroopLevelSummary
+              :levels="allyTroopLevels"
+              :selected="allyTeam.troopType"
+              selectable
+              @select="setTroopType('ally', $event)"
+            />
             <span>Cost {{ teamCost(allyTeam) }}</span>
           </div>
         </div>
@@ -78,7 +83,12 @@
         <div class="side-title">
           <h3>敵軍編成</h3>
           <div class="side-metrics">
-            <TroopLevelSummary :levels="enemyTroopLevels" />
+            <TroopLevelSummary
+              :levels="enemyTroopLevels"
+              :selected="enemyTeam.troopType"
+              selectable
+              @select="setTroopType('enemy', $event)"
+            />
             <span>Cost {{ teamCost(enemyTeam) }}</span>
           </div>
         </div>
@@ -259,6 +269,8 @@ import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
 import { useTroopLevels } from '../composables/useTroopLevels'
 import { buildTemplateLookup, useData, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
 import { heroLevel50Stats } from '../lib/heroStats'
+import { normalizeTroopType } from '../constants/traits'
+import type { TroopType } from '../constants/traits'
 
 type RoleKey = 'main' | 'vice1' | 'vice2'
 type BattleSideKey = 'ally' | 'enemy'
@@ -324,6 +336,7 @@ const hydratedStats = (role: RoleData): RoleData['stats'] => {
 
 const makeBattleTeam = (name: string): Lineup => ({
   name,
+  troopType: null,
   main: emptyRole(),
   vice1: emptyRole(),
   vice2: emptyRole(),
@@ -367,6 +380,10 @@ const templateLineupOptions = computed(() => enemyFormations.value.map((formatio
 
 const selectedTeam = (side: BattleSideKey): Lineup => side === 'ally' ? allyTeam : enemyTeam
 const rolesOf = (team: Lineup): RoleData[] => [team.main, team.vice1, team.vice2]
+const setTroopType = (side: BattleSideKey, troopType: TroopType | null): void => {
+  selectedTeam(side).troopType = troopType
+  result.value = null
+}
 const canRun = computed(() => rolesOf(allyTeam).some((role) => role.hero) && rolesOf(enemyTeam).some((role) => role.hero))
 const usedHeroNamesForSide = (side: BattleSideKey | null): Set<string> => {
   if (!side) return new Set()
@@ -624,6 +641,7 @@ const cloneRole = (role: RoleData): RoleData => ({
 
 const copyLineupInto = (target: Lineup, source: Lineup, fallbackName: string) => {
   target.name = source.name || fallbackName
+  target.troopType = source.troopType ?? null
   target.main = cloneRole(source.main)
   target.vice1 = cloneRole(source.vice1)
   target.vice2 = cloneRole(source.vice2)
@@ -653,6 +671,7 @@ const roleFromTemplateMember = (member: EnemyFormation['members'][number]): Role
 
 const lineupFromTemplate = (formation: EnemyFormation): Lineup => ({
   name: formation.name,
+  troopType: normalizeTroopType(formation.troop_types?.[0] ?? ''),
   main: roleFromTemplateMember(formation.members[0]),
   vice1: roleFromTemplateMember(formation.members[1]),
   vice2: roleFromTemplateMember(formation.members[2]),

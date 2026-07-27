@@ -8,7 +8,12 @@
             <h2>シミュレーション用編成</h2>
           </div>
           <div class="builder-metrics">
-            <TroopLevelSummary :levels="simTroopLevels" />
+            <TroopLevelSummary
+              :levels="simTroopLevels"
+              :selected="simTeam.troopType"
+              selectable
+              @select="simTeam.troopType = $event"
+            />
             <div class="cost-pill">Cost {{ teamCost }}</div>
           </div>
         </div>
@@ -368,6 +373,7 @@ import { simulateBattleBatch, type BattleBatchResult, type BattleTurnStat } from
 import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { BINGXUE_DIRECTIONS, buildTemplateLookup, useData, type BingxueDirection, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
 import { heroLevel50Stats } from '../lib/heroStats'
+import { normalizeTroopType } from '../constants/traits'
 
 type RoleKey = 'main' | 'vice1' | 'vice2'
 
@@ -437,6 +443,7 @@ const statsWithFocus = (hero: Hero | null, focus?: string, breakthrough = templa
 
 const simTeam = reactive<Lineup>({
   name: 'シミュレーター編成',
+  troopType: null,
   main: emptyBattleRole(),
   vice1: emptyBattleRole(),
   vice2: emptyBattleRole(),
@@ -466,7 +473,7 @@ const roleSignature = (role: RoleData): string => JSON.stringify({
 })
 
 watch(
-  () => roleConfigs.map((role) => roleSignature(simTeam[role.key])).join('|'),
+  () => `${simTeam.troopType ?? ''}|${roleConfigs.map((role) => roleSignature(simTeam[role.key])).join('|')}`,
   () => {
     batchResult.value = null
     matchupRows.value = []
@@ -553,6 +560,7 @@ const roleFromTemplateMember = (member: EnemyFormation['members'][number]): Role
 const lineupFromTemplate = (formation: EnemyFormation): Lineup => {
   const lineup: Lineup = {
     name: formation.name,
+    troopType: normalizeTroopType(formation.troop_types?.[0] ?? ''),
     main: roleFromTemplateMember(formation.members[0]),
     vice1: roleFromTemplateMember(formation.members[1]),
     vice2: roleFromTemplateMember(formation.members[2]),

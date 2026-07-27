@@ -29,6 +29,7 @@ export interface ShareableBingxue {
 
 export interface ShareableLineup {
   name?: string
+  tt?: string
   m?: string; m_s1?: string; m_s2?: string; m_st?: any; m_bt?: number; m_bx?: ShareableBingxue
   v1?: string; v1_s1?: string; v1_s2?: string; v1_st?: any; v1_bt?: number; v1_bx?: ShareableBingxue
   v2?: string; v2_s1?: string; v2_s2?: string; v2_st?: any; v2_bt?: number; v2_bx?: ShareableBingxue

@@ -8,6 +8,7 @@
       <LineupHeader
         v-if="isLineupRoute"
         v-model:team-name="currentTeamName"
+        v-model:troop-type="currentTroopType"
         :total-cost="totalCost"
         :troop-levels="troopLevels"
         :is-editing-inventory="isEditingInventory"
@@ -151,7 +152,7 @@ const pageDescription = computed<string | undefined>(() => {
   return typeof d === 'string' ? d : undefined
 })
 
-const { currentLineup, currentTeamName, totalCost } = useLineups()
+const { currentLineup, currentTeamName, currentTroopType, totalCost } = useLineups()
 const troopLevels = useTroopLevels(currentLineup)
 
 // The two lineup routes reuse the same view component. Re-run catalogue-based

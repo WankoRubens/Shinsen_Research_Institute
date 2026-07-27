@@ -9,7 +9,12 @@
         <span class="title-bar" />
         <span class="title font-brand">{{ resolvedTitle }}</span>
         <div v-if="activeTroops.length > 0" class="troop-chips">
-          <span v-for="t in activeTroops" :key="t.key" class="troop-chip">
+          <span
+            v-for="t in activeTroops"
+            :key="t.key"
+            class="troop-chip"
+            :class="{ 'troop-chip--selected': t.selected }"
+          >
             {{ t.label }}{{ t.lv }}
           </span>
         </div>
@@ -185,8 +190,13 @@ const teamRef = computed(() => props.team)
 const troopLevels = useTroopLevels(teamRef)
 const activeTroops = computed(() =>
   TROOP_TYPES
-    .filter(tt => troopLevels.value[tt] > 0)
-    .map(tt => ({ key: tt, label: TROOP_LABELS[tt], lv: troopLevels.value[tt] })),
+    .filter(tt => troopLevels.value[tt] > 0 || props.team.troopType === tt)
+    .map(tt => ({
+      key: tt,
+      label: TROOP_LABELS[tt],
+      lv: troopLevels.value[tt],
+      selected: props.team.troopType === tt,
+    })),
 )
 
 const rarityStars = (rarity: number | string): string => {
@@ -277,6 +287,12 @@ const hasAnyBingxue = computed(() =>
   letter-spacing: 0.3px;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+}
+.troop-chip--selected {
+  outline: 2px solid #d97706;
+  outline-offset: 1px;
+  background: #fff7d6;
+  color: #9a4d00;
 }
 .team-preview--compact .troop-chip { font-size: 11px; padding: 2px 6px; }
 

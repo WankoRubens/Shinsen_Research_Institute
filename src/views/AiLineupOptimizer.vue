@@ -20,7 +20,12 @@
             <h3>指定した枠は固定、空欄は探索対象</h3>
           </div>
           <div class="lineup-metrics">
-            <TroopLevelSummary :levels="seedTroopLevels" />
+            <TroopLevelSummary
+              :levels="seedTroopLevels"
+              :selected="seedTeam.troopType"
+              selectable
+              @select="setSeedTroopType"
+            />
             <span class="cost-pill">Cost {{ teamCost(seedTeam) }}</span>
           </div>
         </div>
@@ -200,6 +205,8 @@ import {
 } from '../lib/battleSimulator'
 import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { heroLevel50Stats } from '../lib/heroStats'
+import { normalizeTroopType } from '../constants/traits'
+import type { TroopType } from '../constants/traits'
 
 type RoleKey = 'main' | 'vice1' | 'vice2'
 type SkillSlotKey = 'skill1' | 'skill2'
@@ -235,6 +242,12 @@ const skillPickerVisible = ref(false)
 const emptyConflictSet = new Set<string>()
 const autoBreakthrough = 5
 const finalistCount = 8
+
+const setSeedTroopType = (troopType: TroopType | null): void => {
+  seedTeam.troopType = troopType
+  topResults.value = []
+  resultPhase.value = 'idle'
+}
 
 const heroByKey = computed(() => new Map(heroOptions.value.map((hero) => [heroKey(hero), hero])))
 const skillByKey = computed(() => new Map(skillOptions.value.map((skill) => [skillKey(skill), skill])))
@@ -540,6 +553,7 @@ const roleFromTemplateMember = (member: EnemyFormation['members'][number]): Role
 const lineupFromTemplate = (formation: EnemyFormation): Lineup => {
   const lineup: Lineup = {
     name: formation.name,
+    troopType: normalizeTroopType(formation.troop_types?.[0] ?? ''),
     main: roleFromTemplateMember(formation.members[0]),
     vice1: roleFromTemplateMember(formation.members[1]),
     vice2: roleFromTemplateMember(formation.members[2]),
@@ -591,6 +605,7 @@ const cloneRole = (role: RoleData): RoleData => ({
 
 const cloneLineup = (lineup: Lineup): Lineup => ({
   name: lineup.name,
+  troopType: lineup.troopType ?? null,
   main: cloneRole(lineup.main),
   vice1: cloneRole(lineup.vice1),
   vice2: cloneRole(lineup.vice2),
@@ -598,6 +613,7 @@ const cloneLineup = (lineup: Lineup): Lineup => ({
 
 const emptyLineup = (name: string): Lineup => ({
   name,
+  troopType: seedTeam.troopType ?? null,
   main: emptyRole(),
   vice1: emptyRole(),
   vice2: emptyRole(),
@@ -687,11 +703,14 @@ const teamCost = (team: Lineup): number => roleKeys.reduce((sum, role) => sum + 
 const formatNumber = (value: number): string => Math.round(value).toLocaleString()
 const formatLargeNumber = (value: number): string => value >= 1_000_000_000 ? value.toExponential(2) : formatNumber(value)
 const formatPercent = (value: number): string => `${(value * 100).toFixed(1)}%`
-const lineupSignature = (lineup: Lineup): string => roleKeys.map((role) => [
-  heroIdentity(lineup[role].hero as Hero),
-  lineup[role].skill1 ? skillIdentity(lineup[role].skill1) : '',
-  lineup[role].skill2 ? skillIdentity(lineup[role].skill2) : '',
-].join(':')).join('|')
+const lineupSignature = (lineup: Lineup): string => [
+  lineup.troopType ?? '',
+  ...roleKeys.map((role) => [
+    heroIdentity(lineup[role].hero as Hero),
+    lineup[role].skill1 ? skillIdentity(lineup[role].skill1) : '',
+    lineup[role].skill2 ? skillIdentity(lineup[role].skill2) : '',
+  ].join(':')),
+].join('|')
 const shortFormationName = (name: string): string => {
   const cleaned = name.replace(/（.*?）/g, '')
   const parts = cleaned.split(/[・,、/]/).map((part) => part.trim()).filter(Boolean)

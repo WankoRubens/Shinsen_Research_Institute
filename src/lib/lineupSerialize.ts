@@ -16,6 +16,7 @@ import {
   type BingxueActive,
 } from '../composables/useLineups'
 import { MAX_TEAMS_PER_GROUP } from '../types/group'
+import { normalizeTroopType } from '../constants/traits'
 import type {
   ShareableBingxue,
   ShareableData,
@@ -68,6 +69,7 @@ export function makeSerializer(deps: SerializeDeps) {
 
   const serializeLineup = (l: Lineup): ShareableLineup => ({
     name: l.name,
+    tt: l.troopType ?? undefined,
     ...serializeRole(l.main, 'm'),
     ...serializeRole(l.vice1, 'v1'),
     ...serializeRole(l.vice2, 'v2'),
@@ -215,6 +217,7 @@ const buildTeamFromShareable = (
 ): Lineup => {
   const team = makeTeam(idx)
   if (l.name) team.name = l.name
+  team.troopType = normalizeTroopType(l.tt ?? '')
   restoreRoleInto('m', team.main, l, deps, report)
   restoreRoleInto('v1', team.vice1, l, deps, report)
   restoreRoleInto('v2', team.vice2, l, deps, report)
@@ -247,6 +250,7 @@ const hydrateTeamInPlace = (
   report: string[],
 ): void => {
   if (l.name) target.name = l.name
+  target.troopType = normalizeTroopType(l.tt ?? '')
   restoreRoleInto('m', target.main, l, deps, report)
   restoreRoleInto('v1', target.vice1, l, deps, report)
   restoreRoleInto('v2', target.vice2, l, deps, report)
