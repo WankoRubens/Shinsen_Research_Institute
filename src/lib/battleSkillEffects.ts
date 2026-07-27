@@ -42,6 +42,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   表裏比興: defineBattleSkillMeta({ type: '能動' }),
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
+  伊達の粋: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn', 'beforeAction'] }),
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
   風林火山: defineBattleSkillMeta({ type: '指揮' }),
   無想掃討: defineBattleSkillMeta({ type: '能動' }),
@@ -163,6 +164,65 @@ export const removeDebuffs = (fighter: BattleFighter, count: number): string[] =
     return false
   })
   return removed
+}
+
+const DATE_IKI_SKILL_NAMES = new Set(['伊達の粋', '伊達風采'])
+const dateIkiSkill = (fighter: BattleFighter): Skill | null =>
+  fighter.skills.find((skill) => DATE_IKI_SKILL_NAMES.has(skill.name_jp || skill.name)) ?? null
+
+// 伊達の粋は、自身の戦法以外で与えた兵刃・計略ダメージも属性上昇の回数へ含める。
+export const recordDateIkiDamageHit = (
+  fighter: BattleFighter,
+  kind: 'physical' | 'strategy',
+  turn: number,
+  logs: BattleLogEntry[],
+) => {
+  const skill = dateIkiSkill(fighter)
+  if (!skill) return
+
+  const hitKey = kind === 'physical' ? 'dateIkiPhysicalHits' : 'dateIkiStrategyHits'
+  fighter.specialState[hitKey] = (fighter.specialState[hitKey] ?? 0) + 1
+
+  while (
+    (fighter.specialState.dateIkiPhysicalHits ?? 0) >= 2
+    && (fighter.specialState.dateIkiStrategyHits ?? 0) >= 2
+  ) {
+    fighter.specialState.dateIkiPhysicalHits -= 2
+    fighter.specialState.dateIkiStrategyHits -= 2
+
+    const buffStacks = fighter.specialState.dateIkiBuffStacks ?? 0
+    if (buffStacks < 4) {
+      const valorIncrease = Number(((fighter.baseStats.val ?? 0) * 0.05).toFixed(2))
+      const intelligenceIncrease = Number(((fighter.baseStats.int ?? 0) * 0.05).toFixed(2))
+      fighter.buffs.val = (fighter.buffs.val ?? 0) + valorIncrease
+      fighter.buffs.int = (fighter.buffs.int ?? 0) + intelligenceIncrease
+
+      const nextBuffStacks = buffStacks + 1
+      fighter.specialState.dateIkiBuffStacks = nextBuffStacks
+      if (fighter.role === 'main' && nextBuffStacks === 4) {
+        fighter.specialState.dateIkiCommanderReady = 1
+      }
+      logs.push({
+        turn,
+        side: fighter.side,
+        actor: fighter.name,
+        actorHp: fighter.hp,
+        effect: '伊達の粋',
+        message: `伊達の粋: 武勇+${valorIncrease.toFixed(2)}、知略+${intelligenceIncrease.toFixed(2)}(属性上昇${nextBuffStacks}/4)`,
+      })
+      continue
+    }
+
+    fighter.specialState.dateIkiStacks = (fighter.specialState.dateIkiStacks ?? 0) + 1
+    logs.push({
+      turn,
+      side: fighter.side,
+      actor: fighter.name,
+      actorHp: fighter.hp,
+      effect: '伊達の粋',
+      message: `伊達の粋: 属性上昇が最大のため粋を1獲得(残り${fighter.specialState.dateIkiStacks})`,
+    })
+  }
 }
 
 const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string) => {
@@ -544,6 +604,54 @@ export const applyNamedSkillEffect = (
       // 発動判定後、蓄積された回復量をリセット
       log(ctx.logs, ctx, `回復蓄積をリセット(${stock})`)
       ctx.caster.specialState.healingStock = 0
+      return true
+    }
+
+    case '伊達の粋': {
+      // 戦法タイプ: 指揮
+      // 効果1: 戦闘開始時に粋を5スタック獲得
+      if (ctx.trigger === 'preparationTurn') {
+        ctx.caster.specialState.dateIkiStacks = 5
+        ctx.caster.specialState.dateIkiPhysicalHits = 0
+        ctx.caster.specialState.dateIkiStrategyHits = 0
+        ctx.caster.specialState.dateIkiBuffStacks = 0
+        ctx.caster.specialState.dateIkiCommanderReady = 0
+        log(ctx.logs, ctx, '伊達の粋: 粋を5獲得(残り5)')
+        return true
+      }
+
+      // 効果2: 行動開始時以外は粋を消費しない
+      if (ctx.trigger !== 'beforeAction') return true
+      const stacks = ctx.caster.specialState.dateIkiStacks ?? 0
+      if (stacks <= 0) return true
+
+      // 大将追加攻撃は、属性上昇4回到達後の「次の粋消費」時に予約分を使う
+      const useCommanderExtra = ctx.caster.role === 'main'
+        && (ctx.caster.specialState.dateIkiCommanderReady ?? 0) > 0
+      if (useCommanderExtra) ctx.caster.specialState.dateIkiCommanderReady = 0
+
+      // 粋を1スタック消費
+      ctx.caster.specialState.dateIkiStacks = stacks - 1
+      log(ctx.logs, ctx, `伊達の粋: 粋を1消費(残り${ctx.caster.specialState.dateIkiStacks})`)
+
+      // ランダムな敵軍単体に92%の兵刃・計略ダメージをそれぞれ与える
+      const aliveEnemies = ctx.enemies.filter((enemy) => enemy.hp > 0)
+      const target = aliveEnemies[Math.floor(ctx.rng() * aliveEnemies.length)]
+      if (target) {
+        h.dealSkillDamage(ctx, target, 92, 'physical')
+        h.dealSkillDamage(ctx, target, 92, 'strategy')
+      }
+
+      // 大将時、属性上昇4回到達後の次の粋消費で134%の兵刃・計略ダメージを追加
+      if (useCommanderExtra) {
+        const extraEnemies = ctx.enemies.filter((enemy) => enemy.hp > 0)
+        const extraTarget = extraEnemies[Math.floor(ctx.rng() * extraEnemies.length)]
+        if (extraTarget) {
+          log(ctx.logs, ctx, '伊達の粋: 大将効果の追加攻撃')
+          h.dealSkillDamage(ctx, extraTarget, 134, 'physical')
+          h.dealSkillDamage(ctx, extraTarget, 134, 'strategy')
+        }
+      }
       return true
     }
 

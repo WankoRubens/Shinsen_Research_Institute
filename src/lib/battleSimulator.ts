@@ -8,6 +8,7 @@ import {
   IMPLEMENTED_BATTLE_SKILL_NAMES,
   applyNamedSkillEffect,
   compareBattleSkillPriority,
+  recordDateIkiDamageHit,
   type BattleSkillEffectHelpers,
 } from './battleSkillEffects'
 
@@ -841,6 +842,7 @@ const dealSkillDamage = (
     message: `${skillDisplayName(ctx.skill)}で${target.name}に${actual.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
   })
   if (actual > 0) {
+    recordDateIkiDamageHit(ctx.caster, kind, ctx.turn, ctx.logs)
     const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
     const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
     fireTriggeredSkills(
@@ -1013,6 +1015,7 @@ const resolveSkill = (
         effect: skillName,
         message: `${skillName}で${fighter.name}に${actual.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
       })
+      if (actual > 0) recordDateIkiDamageHit(caster, kind, turn, logs)
     })
   }
 
@@ -1180,6 +1183,7 @@ const processDots = (
         effect: status.name,
         message: `${status.name}で${fighter.name}に${amount.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
       })
+      if (amount > 0) recordDateIkiDamageHit(source, status.dotType ?? 'physical', turn, logs)
     }
     status.turns -= 1
     if (status.turns > 0) remaining.push(status)
@@ -1353,6 +1357,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           message: `${actor.name}の通常攻撃: ${target.name}に${normalDamage.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
         })
         if (normalDamage > 0) {
+          recordDateIkiDamageHit(actor, 'physical', turn, logs)
           fireTriggeredSkills(target, 'onNormalAttackReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
           fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
         }
