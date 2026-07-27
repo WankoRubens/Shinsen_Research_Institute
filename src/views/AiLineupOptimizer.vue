@@ -19,7 +19,10 @@
             <p class="eyebrow">固定条件</p>
             <h3>指定した枠は固定、空欄は探索対象</h3>
           </div>
-          <span class="cost-pill">Cost {{ teamCost(seedTeam) }}</span>
+          <div class="lineup-metrics">
+            <TroopLevelSummary :levels="seedTroopLevels" />
+            <span class="cost-pill">Cost {{ teamCost(seedTeam) }}</span>
+          </div>
         </div>
 
         <div class="lineup-grid">
@@ -181,7 +184,9 @@ import { VideoPlay } from '@element-plus/icons-vue'
 import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
+import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
+import { useTroopLevels } from '../composables/useTroopLevels'
 import { buildTemplateLookup, useData, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
 import {
   emptyAiOptimizerRole,
@@ -219,6 +224,7 @@ const {
   scoutRuns,
   finalRuns,
 } = useAiLineupOptimizerState()
+const seedTroopLevels = useTroopLevels(computed(() => seedTeam))
 
 const picker = reactive<{ role: RoleKey | null; skillSlot: number | null }>({
   role: null,
@@ -777,6 +783,14 @@ function waitForPaint(): Promise<void> {
 
 .lineup-grid > * {
   min-width: 0;
+}
+
+.lineup-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .cost-pill,

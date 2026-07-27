@@ -139,15 +139,11 @@
         <span class="text-gray-500 mr-1">Cost:</span>
         <span :class="{ 'text-red-500': totalCost > 20, 'text-gray-800': totalCost <= 20 }" class="text-sm">{{ totalCost }}/20</span>
       </div>
-      <div v-if="!isEditingInventory" class="text-xs font-bold bg-gray-100 px-2 py-1 rounded-sm border border-gray-200 items-center gap-1 hidden sm:flex">
-        <span class="text-gray-500 mr-0.5">兵:</span>
-        <span
-          v-for="tt in TROOP_TYPES"
-          :key="tt"
-          class="px-1 rounded-sm"
-          :class="troopLevels[tt] > 0 ? 'text-focus bg-highlight' : 'text-gray-400'"
-        >{{ TROOP_LABELS[tt] }}{{ troopLevels[tt] }}</span>
-      </div>
+      <TroopLevelSummary
+        v-if="!isEditingInventory"
+        :levels="troopLevels"
+        class="hidden sm:inline-grid"
+      />
     </div>
 
     <div class="flex items-center gap-1 md:gap-1 pr-1 md:pr-0">
@@ -246,12 +242,12 @@
 import { ref, watch } from 'vue'
 import { Edit, Share, Delete, Menu, User, ArrowDown, Close, Check, Plus, CircleClose, StarFilled, Avatar, Setting, Link } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { TROOP_TYPES, TROOP_LABELS } from '../../constants/traits'
 import type { TroopType } from '../../constants/traits'
 import { useGroups } from '../../composables/useGroups'
 import { useProfiles } from '../../composables/useProfiles'
 import { useActiveProfile } from '../../composables/useActiveProfile'
 import UserControls, { type UserMenuCmd } from '../layout/UserControls.vue'
+import TroopLevelSummary from './TroopLevelSummary.vue'
 
 const props = defineProps<{
   teamName: string

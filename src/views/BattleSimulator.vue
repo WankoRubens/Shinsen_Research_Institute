@@ -7,7 +7,10 @@
             <p class="eyebrow">自軍編成</p>
             <h2>シミュレーション用編成</h2>
           </div>
-          <div class="cost-pill">Cost {{ teamCost }}</div>
+          <div class="builder-metrics">
+            <TroopLevelSummary :levels="simTroopLevels" />
+            <div class="cost-pill">Cost {{ teamCost }}</div>
+          </div>
         </div>
 
         <div class="sim-lineup-grid">
@@ -357,8 +360,10 @@ import { VideoPlay } from '@element-plus/icons-vue'
 import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
+import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
 import { useLineups, isEmptyTeam } from '../composables/useLineups'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
+import { useTroopLevels } from '../composables/useTroopLevels'
 import { simulateBattleBatch, type BattleBatchResult, type BattleTurnStat } from '../lib/battleSimulator'
 import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { BINGXUE_DIRECTIONS, buildTemplateLookup, useData, type BingxueDirection, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
@@ -436,6 +441,7 @@ const simTeam = reactive<Lineup>({
   vice1: emptyBattleRole(),
   vice2: emptyBattleRole(),
 })
+const simTroopLevels = useTroopLevels(computed(() => simTeam))
 
 const selectedHeroes = reactive<Record<RoleKey, string>>({ main: '', vice1: '', vice2: '' })
 const selectedSkill1 = reactive<Record<RoleKey, string>>({ main: '', vice1: '', vice2: '' })
@@ -952,6 +958,7 @@ const LineSeries = defineComponent({
 .simulator-lineup-panel { padding: 14px; }
 .builder-head, .score-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .builder-head h2 { margin: 0; font-size: 22px; font-weight: 900; }
+.builder-metrics { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .eyebrow { margin: 0 0 4px; font-size: 14px; font-weight: 800; }
 .cost-pill { color: #b45309; font-weight: 900; font-variant-numeric: tabular-nums; }
 .sim-lineup-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; align-items: stretch; }

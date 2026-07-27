@@ -85,7 +85,7 @@ import AuthDialog from '../components/dialogs/AuthDialog.vue'
 import type { UserMenuCmd } from '../components/layout/UserControls.vue'
 import { useLineups } from '../composables/useLineups'
 import { useInventory } from '../composables/useInventory'
-import { useTroopLevels } from '../composables/useTroopLevels'
+import { refreshTroopLevels, useTroopLevels } from '../composables/useTroopLevels'
 import { useAuth } from '../composables/useAuth'
 import { useFeatureAccess } from '../composables/useFeatureAccess'
 import { useActiveProfile } from '../composables/useActiveProfile'
@@ -153,6 +153,11 @@ const pageDescription = computed<string | undefined>(() => {
 
 const { currentLineup, currentTeamName, totalCost } = useLineups()
 const troopLevels = useTroopLevels(currentLineup)
+
+// The two lineup routes reuse the same view component. Re-run catalogue-based
+// troop aggregation on every route change so newly updated trait data appears
+// when moving between 共存編成 and 自由編成 without a browser reload.
+watch(() => route.fullPath, () => refreshTroopLevels())
 const {
   isEditingInventory,
   startEditingInventory,

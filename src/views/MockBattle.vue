@@ -16,7 +16,10 @@
       <section class="side-block">
         <div class="side-title">
           <h3>自軍編成</h3>
-          <span>Cost {{ teamCost(allyTeam) }}</span>
+          <div class="side-metrics">
+            <TroopLevelSummary :levels="allyTroopLevels" />
+            <span>Cost {{ teamCost(allyTeam) }}</span>
+          </div>
         </div>
         <div class="load-row">
           <el-select
@@ -74,7 +77,10 @@
       <section class="side-block">
         <div class="side-title">
           <h3>敵軍編成</h3>
-          <span>Cost {{ teamCost(enemyTeam) }}</span>
+          <div class="side-metrics">
+            <TroopLevelSummary :levels="enemyTroopLevels" />
+            <span>Cost {{ teamCost(enemyTeam) }}</span>
+          </div>
         </div>
         <div class="load-row">
           <el-select
@@ -245,10 +251,12 @@ import { VideoPlay } from '@element-plus/icons-vue'
 import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
+import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
 import { simulateBattle, type BattleLogEntry, type BattleResult } from '../lib/battleSimulator'
 import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { useLineups } from '../composables/useLineups'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
+import { useTroopLevels } from '../composables/useTroopLevels'
 import { buildTemplateLookup, useData, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
 import { heroLevel50Stats } from '../lib/heroStats'
 
@@ -323,6 +331,8 @@ const makeBattleTeam = (name: string): Lineup => ({
 
 const allyTeam = reactive<Lineup>(makeBattleTeam('自軍編成'))
 const enemyTeam = reactive<Lineup>(makeBattleTeam('敵軍編成'))
+const allyTroopLevels = useTroopLevels(computed(() => allyTeam))
+const enemyTroopLevels = useTroopLevels(computed(() => enemyTeam))
 const result = ref<BattleResult | null>(null)
 const running = ref(false)
 const heroPickerVisible = ref(false)
@@ -787,6 +797,14 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
 
 .side-title {
   margin-bottom: 12px;
+}
+
+.side-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .load-row {
