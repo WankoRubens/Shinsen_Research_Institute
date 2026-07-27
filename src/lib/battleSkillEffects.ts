@@ -128,7 +128,7 @@ export interface BattleSkillEffectHelpers {
     target: BattleFighter,
     rate: number,
     kind?: 'physical' | 'strategy',
-    defenseStat?: Stat,
+    statRule?: SkillDamageStatRule,
   ) => number
   healBySkill: (
     ctx: SkillResolveContext,
@@ -138,6 +138,12 @@ export interface BattleSkillEffectHelpers {
   ) => number
   addControl: (ctx: SkillResolveContext, target: BattleFighter, name: string, duration: number) => void
   statOf: (fighter: BattleFighter, stat: Stat) => number
+}
+
+export interface SkillDamageStatRule {
+  attackStats: Stat[]
+  defenseStats: Stat[]
+  coefficient: number
 }
 
 const DEBUFF_NAMES = [
@@ -2541,10 +2547,14 @@ export const applyNamedSkillEffect = (
       if (!attackTarget || attackTarget.hp <= 0) return true
 
       // 通常攻撃対象へ、攻撃側武勇と対象統率の差を使う158%兵刃ダメージを与える。
-      h.dealSkillDamage(ctx, attackTarget, 158, 'physical', 'lea')
+      h.dealSkillDamage(ctx, attackTarget, 158, 'physical')
 
-      // 同じ対象へ、攻撃側知略と対象速度の差を使う158%計略ダメージを与える。
-      h.dealSkillDamage(ctx, attackTarget, 158, 'strategy', 'spd')
+      // 同じ対象へ、双方の知略差と速度差を合わせた158%計略ダメージを与える。
+      h.dealSkillDamage(ctx, attackTarget, 158, 'strategy', {
+        attackStats: ['int', 'spd'],
+        defenseStats: ['int', 'spd'],
+        coefficient: 0.9,
+      })
       return true
     }
     case '静動自在': {

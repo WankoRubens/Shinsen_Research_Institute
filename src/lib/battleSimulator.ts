@@ -11,11 +11,13 @@ import {
   compareBattleSkillPriority,
   recordDamageDealtSkillEffects,
   type BattleSkillEffectHelpers,
+  type SkillDamageStatRule,
 } from './battleSkillEffects'
 
 export type BattleSide = 'ally' | 'enemy'
 export type BattleOutcome = 'ally' | 'enemy' | 'draw'
 export type BattleTrigger = Extract<TriggerEvent, string>
+export type BattleTroopAffinity = 'advantage' | 'neutral' | 'disadvantage'
 
 export const BATTLE_TURN_LIMIT = 8
 const BASE_TROOPS = 10000
@@ -23,6 +25,8 @@ const BASE_TROOPS = 10000
 export interface BattleOptions {
   seed: string
   collectLogs?: boolean
+  allyTroopAffinity?: BattleTroopAffinity
+  enemyTroopAffinity?: BattleTroopAffinity
 }
 
 export interface BattleLogEntry {
@@ -81,6 +85,7 @@ export interface BattleFighter {
   specialState: Record<string, number>
   skills: Skill[]
   bingxue: BingxueActive
+  troopAffinityModifier: number
 }
 
 export interface BattleSummary {
@@ -388,7 +393,18 @@ const applyBingxuePassive = (fighter: BattleFighter) => {
   })
 }
 
-const makeFighter = (side: BattleSide, roleKey: BattleFighter['role'], role: RoleData): BattleFighter | null => {
+const affinityMultiplier = (affinity: BattleTroopAffinity = 'neutral'): number => {
+  if (affinity === 'advantage') return 1.125
+  if (affinity === 'disadvantage') return 0.875
+  return 1
+}
+
+const makeFighter = (
+  side: BattleSide,
+  roleKey: BattleFighter['role'],
+  role: RoleData,
+  troopAffinity: BattleTroopAffinity,
+): BattleFighter | null => {
   if (!role.hero) return null
   const fighter: BattleFighter = {
     id: `${side}-${roleKey}`,
@@ -410,16 +426,17 @@ const makeFighter = (side: BattleSide, roleKey: BattleFighter['role'], role: Rol
     specialState: {},
     skills: battleSkillsForRole(role),
     bingxue: role.bingxue,
+    troopAffinityModifier: affinityMultiplier(troopAffinity),
   }
   applyBingxuePassive(fighter)
   return fighter
 }
 
-const makeSide = (side: BattleSide, lineup: Lineup): BattleFighter[] =>
+const makeSide = (side: BattleSide, lineup: Lineup, troopAffinity: BattleTroopAffinity): BattleFighter[] =>
   ([
-    makeFighter(side, 'main', lineup.main),
-    makeFighter(side, 'vice1', lineup.vice1),
-    makeFighter(side, 'vice2', lineup.vice2),
+    makeFighter(side, 'main', lineup.main, troopAffinity),
+    makeFighter(side, 'vice1', lineup.vice1, troopAffinity),
+    makeFighter(side, 'vice2', lineup.vice2, troopAffinity),
   ].filter(Boolean) as BattleFighter[])
 
 export type SkillStatMap = Map<string, SkillBattleStat>
@@ -597,12 +614,6 @@ const damageModifier = (fighter: BattleFighter, outgoing: boolean, kind: 'physic
   return Math.max(0.1, modifier)
 }
 
-const troopAffinityModifier = () => {
-  // 現在の編成データは兵種を保持していないため、兵種相性は等倍で扱う。
-  // 兵種選択を追加したら、ここで有利/不利の倍率に差し替える。
-  return 1
-}
-
 const battleDamageBase = (
   attackStat: number,
   defenseStat: number,
@@ -631,19 +642,24 @@ const baseDamage = (
   skill: Skill | null,
   rng: () => number,
   kind: 'normal' | 'physical' | 'strategy',
-  defenseStatOverride?: Stat,
+  statRule?: SkillDamageStatRule,
 ) => {
   const actualKind = kind === 'normal' ? 'physical' : kind
   const rate = damageRate(skill)
   const attackStat = actualKind === 'strategy' ? statOf(caster, 'int') : statOf(caster, 'val')
-  const defenseStat = defenseStatOverride
-    ? statOf(target, defenseStatOverride)
-    : actualKind === 'strategy' ? statOf(target, 'int') : statOf(target, 'lea')
+  const defenseStat = actualKind === 'strategy' ? statOf(target, 'int') : statOf(target, 'lea')
+  const damageBase = statRule
+    ? statRule.coefficient * (
+        statRule.attackStats.reduce((sum, stat) => sum + statOf(caster, stat), 0)
+        - statRule.defenseStats.reduce((sum, stat) => sum + statOf(target, stat), 0)
+      ) + (0.037 * caster.hp + 175)
+    : battleDamageBase(attackStat, defenseStat, caster.hp)
   const variance = 0.9 + rng() * 0.2
   const modifier = damageModifier(caster, true, actualKind) * damageModifier(target, false, actualKind)
-  const raw = battleDamageBase(attackStat, defenseStat, caster.hp) * (rate / 100) * modifier * troopAffinityModifier() * variance
+  const raw = damageBase * (rate / 100) * modifier * variance
   const floor = guaranteedDamageFloor(caster.hp, rate, Boolean(skill)) * variance
-  return Math.max(floor, raw)
+  // 兵種相性は、最低保証を含むダメージが確定した後に全体へ掛ける。
+  return Math.max(floor, raw) * caster.troopAffinityModifier
 }
 
 const baseHeal = (caster: BattleFighter, skill: Skill, rng: () => number): number => {
@@ -869,7 +885,7 @@ const dealSkillDamage = (
   target: BattleFighter,
   rate: number,
   kind: 'physical' | 'strategy' = damageKind(ctx.skill),
-  defenseStat?: Stat,
+  statRule?: SkillDamageStatRule,
 ) => {
   if (ctx.trigger === 'preparationTurn') return 0
   if (!isAlive(target)) return 0
@@ -882,7 +898,7 @@ const dealSkillDamage = (
     withRate(ctx.skill, rate, kind === 'strategy' ? 'strategy' : 'bravery'),
     ctx.rng,
     kind,
-    defenseStat,
+    statRule,
   ))
   const afterHp = target.hp
   const woundedDelta = target.wounded - beforeWounded
@@ -1317,8 +1333,8 @@ const markActionLogs = (
 
 export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options: BattleOptions): BattleResult => {
   const rng = makeRng(`${options.seed}:${allyLineup.name}:${enemyLineup.name}`)
-  const ally = makeSide('ally', allyLineup)
-  const enemy = makeSide('enemy', enemyLineup)
+  const ally = makeSide('ally', allyLineup, options.allyTroopAffinity ?? 'neutral')
+  const enemy = makeSide('enemy', enemyLineup, options.enemyTroopAffinity ?? 'neutral')
   const collectLogs = options.collectLogs !== false
   const logs: BattleLogEntry[] = collectLogs ? [] : NO_LOGS
   const skillStats = new Map<string, SkillBattleStat>()
