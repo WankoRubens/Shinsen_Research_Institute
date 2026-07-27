@@ -46,6 +46,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   文武両道: defineBattleSkillMeta({ type: '受動', triggers: ['onPhysicalDamageDealt', 'onStrategyDamageDealt'] }),
   竜騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
   龍騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
+  攻其不備: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
   風林火山: defineBattleSkillMeta({ type: '指揮' }),
   無想掃討: defineBattleSkillMeta({ type: '能動' }),
@@ -2574,8 +2575,24 @@ export const applyNamedSkillEffect = (
     }
     case '攻其不備': {
       // 戦法タイプ: 能動
-      // 統率が最も低い敵軍単体に兵刃ダメージ（ダメージ率84%→168%）を与え、知略が最も低い敵軍単体に計略ダメージ（ダメージ率84%→168%、知略依存）を与える
-      return applyDatabaseSkillEffect(ctx, h)
+      const aliveEnemies = ctx.enemies.filter((enemy) => enemy.hp > 0)
+
+      // 指定した属性が最も低い敵を抽出し、同値が複数いる場合はランダムに1名を選ぶ。
+      const lowestStatTarget = (stat: 'lea' | 'int'): BattleFighter | null => {
+        if (aliveEnemies.length === 0) return null
+        const lowestValue = Math.min(...aliveEnemies.map((enemy) => h.statOf(enemy, stat)))
+        const candidates = aliveEnemies.filter((enemy) => h.statOf(enemy, stat) === lowestValue)
+        return candidates[Math.floor(ctx.rng() * candidates.length)] ?? null
+      }
+
+      // 統率が最も低い敵軍単体に168%の兵刃ダメージを与える。
+      const lowestLeadershipTarget = lowestStatTarget('lea')
+      if (lowestLeadershipTarget) h.dealSkillDamage(ctx, lowestLeadershipTarget, 168, 'physical')
+
+      // 知略が最も低い敵軍単体に168%の計略ダメージを与える。
+      const lowestIntelligenceTarget = lowestStatTarget('int')
+      if (lowestIntelligenceTarget) h.dealSkillDamage(ctx, lowestIntelligenceTarget, 168, 'strategy')
+      return true
     }
     case '回山倒海': {
       // 戦法タイプ: 突撃
