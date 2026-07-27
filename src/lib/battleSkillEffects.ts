@@ -44,6 +44,8 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
   伊達の粋: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn', 'beforeAction'] }),
   文武両道: defineBattleSkillMeta({ type: '受動', triggers: ['onPhysicalDamageDealt', 'onStrategyDamageDealt'] }),
+  竜騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
+  龍騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
   風林火山: defineBattleSkillMeta({ type: '指揮' }),
   無想掃討: defineBattleSkillMeta({ type: '能動' }),
@@ -96,6 +98,9 @@ const NAMED_BATTLE_SKILL_NAMES = [
   '無想掃討',
   ...HEAL_STOCK_DAMAGE_SKILL_NAMES,
 ]
+
+// 所持者だけでなく、部隊内の各武将の行動を起点に発動する兵種戦法。
+export const TEAM_ACTION_BATTLE_SKILL_NAMES = new Set(['竜騎兵', '龍騎兵'])
 
 const DESCRIPTION_BASED_BATTLE_SKILL_NAMES = (skillsData as Skill[])
   .flatMap((skill) => [skill.name_jp, skill.name])
@@ -281,6 +286,12 @@ export const recordDamageDealtSkillEffects = (
 
 const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string) => {
   logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, actorHp: ctx.caster.hp, message })
+}
+
+// 「確率（能力依存）」は基礎確率へ、能力100を超えた平均値1につき0.1%を加算する。
+const attributeDependentChance = (baseChance: number, stats: number[]): number => {
+  const average = stats.reduce((sum, value) => sum + value, 0) / Math.max(1, stats.length)
+  return Math.min(0.95, baseChance + Math.max(0, average - 100) * 0.001)
 }
 
 const textOfSkill = (skill: Skill): string =>
@@ -706,6 +717,72 @@ export const applyNamedSkillEffect = (
           h.dealSkillDamage(ctx, extraTarget, 134, 'strategy')
         }
       }
+      return true
+    }
+
+    case '竜騎兵':
+    case '龍騎兵': {
+      // 戦法タイプ: 兵種
+      // このcaseのcasterは戦法所持者ではなく、現在行動している自軍武将を指す。
+      const ammoKey = 'dragonCavalryAmmo'
+
+      // 効果1・2: 各武将の行動開始時に、装填と弾丸攻撃を順番に処理する。
+      if (ctx.trigger === 'beforeAction') {
+        let ammo = ctx.caster.specialState[ammoKey] ?? 0
+
+        // 弾丸を持っていない場合は1発、武勇と速度依存の25%判定に成功すると2発装填する。
+        if (ammo <= 0) {
+          const doubleAmmoChance = attributeDependentChance(0.25, [
+            h.statOf(ctx.caster, 'val'),
+            h.statOf(ctx.caster, 'spd'),
+          ])
+          const loadedAmmo = h.roll(ctx.rng, doubleAmmoChance) ? 2 : 1
+          ammo = loadedAmmo
+          ctx.caster.specialState[ammoKey] = ammo
+          log(ctx.logs, ctx, `竜騎兵: 弾丸を${loadedAmmo}発装填(残り${ammo})`)
+        }
+
+        // 弾丸を持っている場合、速度依存の70%判定に成功すると1発消費して攻撃する。
+        const fireChance = attributeDependentChance(0.7, [h.statOf(ctx.caster, 'spd')])
+        if (ammo > 0 && h.roll(ctx.rng, fireChance)) {
+          ammo -= 1
+          ctx.caster.specialState[ammoKey] = ammo
+          log(ctx.logs, ctx, `竜騎兵: 弾丸を1発消費(残り${ammo})`)
+
+          // 武勇と知略を比較し、高い能力に対応する種類で104%ダメージを与える。
+          const damageKind = h.statOf(ctx.caster, 'val') >= h.statOf(ctx.caster, 'int')
+            ? 'physical'
+            : 'strategy'
+          const aliveEnemies = ctx.enemies.filter((enemy) => enemy.hp > 0)
+          const target = aliveEnemies[Math.floor(ctx.rng() * aliveEnemies.length)]
+          if (target) h.dealSkillDamage(ctx, target, 104, damageKind)
+        } else if (ammo > 0) {
+          log(ctx.logs, ctx, `竜騎兵: 射撃は不発(弾丸${ammo})`)
+        }
+        return true
+      }
+
+      // 効果3: 伊達政宗が大将なら、各武将の行動後に武勇と知略依存の40%で1発装填する。
+      if (ctx.trigger === 'afterAction') {
+        const commanderIsDateMasamune = ctx.allies.some(
+          (ally) => ally.role === 'main' && ally.name === '伊達政宗' && ally.hp > 0,
+        )
+        if (!commanderIsDateMasamune) return true
+
+        const reloadChance = attributeDependentChance(0.4, [
+          h.statOf(ctx.caster, 'val'),
+          h.statOf(ctx.caster, 'int'),
+        ])
+        if (h.roll(ctx.rng, reloadChance)) {
+          const nextAmmo = (ctx.caster.specialState[ammoKey] ?? 0) + 1
+          ctx.caster.specialState[ammoKey] = nextAmmo
+          log(ctx.logs, ctx, `竜騎兵: 伊達政宗の大将効果で弾丸を1発装填(残り${nextAmmo})`)
+        } else {
+          log(ctx.logs, ctx, '竜騎兵: 伊達政宗の大将効果による装填は不発')
+        }
+        return true
+      }
+
       return true
     }
 

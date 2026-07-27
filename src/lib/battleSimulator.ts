@@ -6,6 +6,7 @@ import {
   BATTLE_SKILL_EFFECT_TRIGGERS,
   HEAL_STOCK_DAMAGE_SKILL_NAMES,
   IMPLEMENTED_BATTLE_SKILL_NAMES,
+  TEAM_ACTION_BATTLE_SKILL_NAMES,
   applyNamedSkillEffect,
   compareBattleSkillPriority,
   recordDamageDealtSkillEffects,
@@ -759,6 +760,27 @@ const roll = (rng: () => number, chance: number): boolean => rng() < clamp(chanc
 const orderedBattleSkills = (skills: Skill[]): Skill[] =>
   [...skills].sort((a, b) => compareBattleSkillPriority(a, b) || skillDisplayName(a).localeCompare(skillDisplayName(b), 'ja'))
 
+const fireTriggeredSkillList = (
+  owner: BattleFighter,
+  skills: Skill[],
+  trigger: BattleTrigger,
+  target: BattleFighter | null,
+  allies: BattleFighter[],
+  enemies: BattleFighter[],
+  turn: number,
+  logs: BattleLogEntry[],
+  rng: () => number,
+  stats: SkillStatMap,
+  turnStat: BattleTurnStat,
+  controlStats: Record<string, number>,
+  skipSkill?: Skill,
+) => {
+  orderedBattleSkills(skills).forEach((skill) => {
+    if (skipSkill && isSameSkill(skill, skipSkill)) return
+    trySkill(skill, trigger, owner, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
+  })
+}
+
 const fireTriggeredSkills = (
   owner: BattleFighter,
   trigger: BattleTrigger,
@@ -773,10 +795,32 @@ const fireTriggeredSkills = (
   controlStats: Record<string, number>,
   skipSkill?: Skill,
 ) => {
-  orderedBattleSkills(owner.skills).forEach((skill) => {
-    if (skipSkill && isSameSkill(skill, skipSkill)) return
-    trySkill(skill, trigger, owner, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
-  })
+  fireTriggeredSkillList(
+    owner,
+    owner.skills,
+    trigger,
+    target,
+    allies,
+    enemies,
+    turn,
+    logs,
+    rng,
+    stats,
+    turnStat,
+    controlStats,
+    skipSkill,
+  )
+}
+
+// 部隊内の誰かが持つ「全武将の行動を起点にする戦法」を、重複なしで取得する。
+const teamActionBattleSkills = (allies: BattleFighter[]): Skill[] => {
+  const skills = allies.flatMap((ally) => ally.skills).filter((skill) =>
+    TEAM_ACTION_BATTLE_SKILL_NAMES.has(skillDisplayName(skill))
+    || TEAM_ACTION_BATTLE_SKILL_NAMES.has(skill.name),
+  )
+  return skills.filter((skill, index) =>
+    skills.findIndex((candidate) => isSameSkill(candidate, skill)) === index,
+  )
 }
 
 const fireBeforeUniqueSkill = (
@@ -1325,7 +1369,24 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           continue
         }
 
-        fireTriggeredSkills(actor, 'beforeAction', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+        const grantedActionSkills = teamActionBattleSkills(allies)
+        const inheritedActionSkills = grantedActionSkills.filter(
+          (skill) => !actor.skills.some((ownSkill) => isSameSkill(ownSkill, skill)),
+        )
+        fireTriggeredSkillList(
+          actor,
+          [...actor.skills, ...inheritedActionSkills],
+          'beforeAction',
+          target,
+          allies,
+          enemies,
+          turn,
+          logs,
+          rng,
+          skillStats,
+          turnStat,
+          controlStats,
+        )
         if (!isAlive(target)) continue
 
         fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
@@ -1362,10 +1423,42 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
         }
         fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+        const commanderIsDateMasamune = allies.some(
+          (allyFighter) => allyFighter.role === 'main' && allyFighter.name === '伊達政宗' && isAlive(allyFighter),
+        )
+        if (commanderIsDateMasamune && grantedActionSkills.length > 0) {
+          fireTriggeredSkillList(
+            actor,
+            grantedActionSkills,
+            'afterAction',
+            chooseTarget(enemies, rng),
+            allies,
+            enemies,
+            turn,
+            logs,
+            rng,
+            skillStats,
+            turnStat,
+            controlStats,
+          )
+        }
         const afterActionOwners = actor.role === 'main' ? allies : []
         afterActionOwners.forEach((owner) => {
           if (!isAlive(owner)) return
-          fireTriggeredSkills(owner, 'afterAction', chooseTarget(enemies, rng), allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+          fireTriggeredSkills(
+            owner,
+            'afterAction',
+            chooseTarget(enemies, rng),
+            allies,
+            enemies,
+            turn,
+            logs,
+            rng,
+            skillStats,
+            turnStat,
+            controlStats,
+            grantedActionSkills[0],
+          )
         })
 
         if (living(enemy).length === 0 || living(ally).length === 0) break
