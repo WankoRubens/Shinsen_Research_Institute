@@ -176,7 +176,7 @@
                   />
                   <div class="action-title">
                     <span class="log-side">{{ sideLabel(block.side) }}</span>
-                    <strong>{{ block.actor ? `${block.actor}の行動` : 'SYSTEM' }}</strong>
+                    <strong>{{ actionBlockTitle(block) }}</strong>
                     <small v-if="block.actor">速度 {{ actorSpeed(block) }}</small>
                   </div>
                   <div v-if="block.actor" class="action-metrics">
@@ -191,8 +191,14 @@
                     :key="`${block.id}-${index}`"
                     :class="[{ 'is-damage': entry.valueType === 'damage', 'is-healing': entry.valueType === 'healing' }]"
                   >
-                    <span class="log-effect">{{ entry.effect || entry.target || '効果' }}</span>
-                    <span class="log-message">{{ entry.message }}</span>
+                    <span class="log-effect">{{ entry.effect || '' }}</span>
+                    <span class="log-message">
+                      <span
+                        v-for="(part, partIndex) in logMessageParts(entry)"
+                        :key="`${block.id}-${index}-${partIndex}`"
+                        :class="`log-part--${part.tone}`"
+                      >{{ part.text }}</span>
+                    </span>
                   </li>
                 </ol>
               </section>
@@ -251,7 +257,16 @@ type BattleSideKey = 'ally' | 'enemy'
 type LogSide = BattleLogEntry['side']
 type PrepRow = { side: LogSide; message: string }
 type PrepSection = { title: string; rows: PrepRow[] }
-type ActionBlock = { id: string; side: LogSide; actor: string; troops: number; entries: BattleLogEntry[] }
+type ActionBlock = {
+  id: string
+  side: LogSide
+  actor: string
+  troops: number
+  isAction: boolean
+  entries: BattleLogEntry[]
+}
+type LogMessageTone = 'text' | 'ally-name' | 'enemy-name' | 'damage' | 'healing'
+type LogMessagePart = { text: string; tone: LogMessageTone }
 
 const { lineups } = useLineups()
 const { heroes, skills, enemyFormations } = useData()
@@ -404,6 +419,19 @@ const rolesWithSide = () => [
   ...rolesOf(enemyTeam).map((role) => ({ side: 'enemy' as const, role })),
 ].filter((item) => item.role.hero)
 
+const heroNameSides = computed(() => {
+  const names = new Map<string, Set<BattleSideKey>>()
+  rolesWithSide().forEach(({ side, role }) => {
+    const heroNames = [role.hero?.name_jp, role.hero?.name].filter(Boolean) as string[]
+    heroNames.forEach((name) => {
+      const sides = names.get(name) ?? new Set<BattleSideKey>()
+      sides.add(side)
+      names.set(name, sides)
+    })
+  })
+  return names
+})
+
 const makePrepSections = (entries: BattleLogEntry[]): PrepSection[] => {
   const battleStartRows = entries
     .filter((entry) => entry.side === 'system' && !/準備ターン/.test(entry.message))
@@ -471,9 +499,11 @@ const groupedLogs = computed(() => {
   return [...groups.entries()].sort((a, b) => a[0] - b[0]).map(([turn, entries]) => {
     const blocks: ActionBlock[] = []
     entries.forEach((entry, index) => {
-      const actor = entry.actor || ''
+      const actor = entry.actionActor || entry.actor || ''
+      const side = entry.actionSide || entry.side
+      const isAction = Boolean(entry.actionActor)
       const previous = blocks[blocks.length - 1]
-      if (previous && previous.side === entry.side && previous.actor === actor) {
+      if (previous && previous.side === side && previous.actor === actor && previous.isAction === isAction) {
         previous.entries.push(entry)
         if (entry.target && entry.targetSide && typeof entry.afterHp === 'number') {
           currentTroops.set(troopKey(entry.targetSide, entry.target), entry.afterHp)
@@ -481,10 +511,11 @@ const groupedLogs = computed(() => {
         return
       }
       blocks.push({
-        id: `${turn}-${index}-${entry.side}-${actor || 'system'}`,
-        side: entry.side,
+        id: `${turn}-${index}-${side}-${actor || 'system'}`,
+        side,
         actor,
-        troops: entry.actorHp ?? currentTroops.get(troopKey(entry.side, actor)) ?? 0,
+        troops: entry.actionActorHp ?? entry.actorHp ?? currentTroops.get(troopKey(side, actor)) ?? 0,
+        isAction,
         entries: [entry],
       })
 
@@ -507,6 +538,48 @@ const actorSpeed = (block: ActionBlock): string => {
   return Number(role?.stats.spd ?? 0).toFixed(1)
 }
 const actorHp = (block: ActionBlock): number => block.troops
+const actionBlockTitle = (block: ActionBlock): string => {
+  if (!block.actor) return 'SYSTEM'
+  return block.isAction ? `${block.actor}の行動` : `${block.actor}のターン開始効果`
+}
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const normalizedLogMessage = (entry: BattleLogEntry): string => {
+  const message = entry.message.replace(
+    /^(?:味方|敵|自軍|敵軍)\s+(?:大将|副将)の通常攻撃[:：]\s*/,
+    entry.actor ? `${entry.actor}の通常攻撃：` : '通常攻撃：',
+  )
+  return message
+}
+const heroNameTone = (name: string, entry: BattleLogEntry): LogMessageTone => {
+  if (entry.actor === name && entry.side !== 'system') return entry.side === 'ally' ? 'ally-name' : 'enemy-name'
+  if (entry.target === name && entry.targetSide) return entry.targetSide === 'ally' ? 'ally-name' : 'enemy-name'
+  if (entry.actionActor === name && entry.actionSide) return entry.actionSide === 'ally' ? 'ally-name' : 'enemy-name'
+  const sides = heroNameSides.value.get(name)
+  if (sides?.size === 1) return sides.has('ally') ? 'ally-name' : 'enemy-name'
+  return 'text'
+}
+const logMessageParts = (entry: BattleLogEntry): LogMessagePart[] => {
+  const message = normalizedLogMessage(entry)
+  const heroNames = [...heroNameSides.value.keys()].sort((a, b) => b.length - a.length)
+  const tokens = [
+    ...heroNames.map(escapeRegExp),
+    '\\d[\\d,]*(?:\\.\\d+)?\\s*ダメージ',
+    '\\d[\\d,]*(?:\\.\\d+)?\\s*(?:回復|蓄積|復帰)',
+    '合計\\d[\\d,]*',
+    '負傷(?:兵)?\\d[\\d,]*(?:・戦死\\d[\\d,]*)?',
+    '戦死\\d[\\d,]*',
+  ]
+  if (tokens.length === 0) return [{ text: message, tone: 'text' }]
+  const tokenPattern = new RegExp(`(${tokens.join('|')})`, 'g')
+  return message.split(tokenPattern).filter(Boolean).map((text): LogMessagePart => {
+    if (heroNameSides.value.has(text)) return { text, tone: heroNameTone(text, entry) }
+    if (/ダメージ|負傷|戦死/.test(text)) return { text, tone: 'damage' }
+    if (/回復|蓄積|復帰|合計/.test(text)) return { text, tone: 'healing' }
+    return { text, tone: 'text' }
+  })
+}
+
 const blockHealing = (block: ActionBlock): number =>
   block.entries.reduce(
     (sum, entry) =>
@@ -920,10 +993,14 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
 }
 
 .log-side,
-.action-block strong,
-.log-effect {
+.action-block strong {
   font-weight: 800;
   color: #546579;
+}
+
+.log-effect {
+  color: #263238;
+  font-weight: 800;
 }
 
 .side-ally .log-side {
@@ -939,8 +1016,7 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
 }
 
 .side-ally .prep-side,
-.side-ally .action-title strong,
-.side-ally .log-message {
+.side-ally .action-title strong {
   color: #1f7ed6;
 }
 
@@ -954,16 +1030,35 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
   color: #263238;
 }
 
-.side-enemy .log-message {
-  color: #8f453d;
+.log-part--ally-name,
+.log-part--enemy-name,
+.log-part--damage,
+.log-part--healing {
+  font-weight: 800;
+}
+
+.log-part--ally-name {
+  color: #1672d4;
+}
+
+.log-part--enemy-name {
+  color: #c4473a;
+}
+
+.log-part--damage {
+  color: #d83b2d;
+}
+
+.log-part--healing {
+  color: #79a900;
 }
 
 .is-damage .log-effect {
-  color: #d85b27;
+  color: #d83b2d;
 }
 
 .is-healing .log-effect {
-  color: #168a57;
+  color: #79a900;
 }
 
 .picker-body {

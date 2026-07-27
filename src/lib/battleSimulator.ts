@@ -28,6 +28,9 @@ export interface BattleLogEntry {
   side: BattleSide | 'system'
   actor?: string
   actorHp?: number
+  actionActor?: string
+  actionSide?: BattleSide
+  actionActorHp?: number
   message: string
   target?: string
   targetSide?: BattleSide
@@ -171,11 +174,6 @@ const ROLE_LABELS: Record<BattleFighter['role'], string> = {
 
 type CoreStat = keyof RoleData['stats']
 const CORE_STATS: CoreStat[] = ['lea', 'val', 'int', 'pol', 'cha', 'spd']
-
-const SIDE_LABEL: Record<BattleSide, string> = {
-  ally: '味方',
-  enemy: '敵',
-}
 
 const makeRng = (seed: string) => {
   let h = 2166136261
@@ -881,7 +879,13 @@ const addHealingStock = (
     .filter((ally) => hasAnySkillNamed(ally, HEAL_STOCK_DAMAGE_SKILL_NAMES))
     .forEach((owner) => {
       owner.specialState.healingStock = (owner.specialState.healingStock ?? 0) + stockAmount
-      if (logs !== NO_LOGS) logs.push({ turn, side: owner.side, actor: owner.name, actorHp: owner.hp, message: `回復蓄積: ${stockAmount}蓄積(合計${owner.specialState.healingStock})` })
+      if (logs !== NO_LOGS) logs.push({
+        turn,
+        side: owner.side,
+        actor: owner.name,
+        actorHp: owner.hp,
+        message: `${owner.name}の回復蓄積: ${stockAmount}蓄積(合計${owner.specialState.healingStock})`,
+      })
     })
 }
 
@@ -1228,6 +1232,20 @@ const processTurnStartWoundedDeaths = (fighters: BattleFighter[], turn: number, 
   })
 }
 
+const markActionLogs = (
+  logs: BattleLogEntry[],
+  startIndex: number,
+  actor: BattleFighter,
+  actionActorHp: number,
+) => {
+  if (logs === NO_LOGS) return
+  logs.slice(startIndex).forEach((entry) => {
+    entry.actionActor = actor.name
+    entry.actionSide = actor.side
+    entry.actionActorHp = actionActorHp
+  })
+}
+
 export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options: BattleOptions): BattleResult => {
   const rng = makeRng(`${options.seed}:${allyLineup.name}:${enemyLineup.name}`)
   const ally = makeSide('ally', allyLineup)
@@ -1293,56 +1311,62 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
       const enemies = actor.side === 'ally' ? enemy : ally
       const target = chooseTarget(enemies, rng)
       if (!target) break
+      const actionLogStart = logs === NO_LOGS ? 0 : logs.length
+      const actionActorHp = actor.hp
 
-      const blocked = isActionBlocked(actor, rng)
-      if (blocked) {
-        if (logs !== NO_LOGS) logs.push({ turn, side: actor.side, actor: actor.name, actorHp: actor.hp, message: `${actor.name}は${blocked}で行動できない` })
-        continue
+      try {
+        const blocked = isActionBlocked(actor, rng)
+        if (blocked) {
+          if (logs !== NO_LOGS) logs.push({ turn, side: actor.side, actor: actor.name, actorHp: actor.hp, message: `${actor.name}は${blocked}で行動できない` })
+          continue
+        }
+
+        fireTriggeredSkills(actor, 'beforeAction', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+        if (!isAlive(target)) continue
+
+        fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+        if (!isAlive(target)) continue
+
+        const beforeHp = target.hp
+        const beforeWounded = target.wounded
+        const beforeDead = target.dead
+        const normalDamage = applyDamage(target, baseDamage(actor, target, null, rng, 'normal'))
+        const afterHp = target.hp
+        const woundedDelta = target.wounded - beforeWounded
+        const deadDelta = target.dead - beforeDead
+        if (actor.side === 'ally') turnStat.allyDamage += normalDamage
+        else turnStat.enemyDamage += normalDamage
+        if (logs !== NO_LOGS) logs.push({
+          turn,
+          side: actor.side,
+          actor: actor.name,
+          actorHp: actor.hp,
+          target: target.name,
+          targetSide: target.side,
+          amount: normalDamage,
+          beforeHp,
+          afterHp,
+          woundedDelta,
+          deadDelta,
+          valueType: 'damage',
+          effect: '通常攻撃',
+          message: `${actor.name}の通常攻撃: ${target.name}に${normalDamage.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
+        })
+        if (normalDamage > 0) {
+          fireTriggeredSkills(target, 'onNormalAttackReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
+          fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
+        }
+        fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+        const afterActionOwners = actor.role === 'main' ? allies : []
+        afterActionOwners.forEach((owner) => {
+          if (!isAlive(owner)) return
+          fireTriggeredSkills(owner, 'afterAction', chooseTarget(enemies, rng), allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+        })
+
+        if (living(enemy).length === 0 || living(ally).length === 0) break
+      } finally {
+        markActionLogs(logs, actionLogStart, actor, actionActorHp)
       }
-
-      fireTriggeredSkills(actor, 'beforeAction', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-      if (!isAlive(target)) continue
-
-      fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-      if (!isAlive(target)) continue
-
-      const beforeHp = target.hp
-      const beforeWounded = target.wounded
-      const beforeDead = target.dead
-      const normalDamage = applyDamage(target, baseDamage(actor, target, null, rng, 'normal'))
-      const afterHp = target.hp
-      const woundedDelta = target.wounded - beforeWounded
-      const deadDelta = target.dead - beforeDead
-      if (actor.side === 'ally') turnStat.allyDamage += normalDamage
-      else turnStat.enemyDamage += normalDamage
-      if (logs !== NO_LOGS) logs.push({
-        turn,
-        side: actor.side,
-        actor: actor.name,
-        actorHp: actor.hp,
-        target: target.name,
-        targetSide: target.side,
-        amount: normalDamage,
-        beforeHp,
-        afterHp,
-        woundedDelta,
-        deadDelta,
-        valueType: 'damage',
-        effect: '通常攻撃',
-        message: `${SIDE_LABEL[actor.side]} ${actor.roleLabel}の通常攻撃: ${target.name}に${normalDamage.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
-      })
-      if (normalDamage > 0) {
-        fireTriggeredSkills(target, 'onNormalAttackReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
-        fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
-      }
-      fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-      const afterActionOwners = actor.role === 'main' ? allies : []
-      afterActionOwners.forEach((owner) => {
-        if (!isAlive(owner)) return
-        fireTriggeredSkills(owner, 'afterAction', chooseTarget(enemies, rng), allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-      })
-
-      if (living(enemy).length === 0 || living(ally).length === 0) break
     }
 
     turnStat.allyHp = sideHp(ally)
