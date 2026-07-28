@@ -16,6 +16,7 @@ LLM_CACHE_DIR = DATA_DIR / ".llm_cache"
 # constants below remain as the canonical paths for one migration cycle.
 GAME8_DIR = DATA_DIR / "game8"
 SANGUO_ZHI_DIR = DATA_DIR / "sanguo_zhi"
+SLGSIM_DIR = DATA_DIR / "slgsim"
 CFG_DIR = DATA_DIR / "cfg"
 CFG_HISTORY_DIR = DATA_DIR / ".cfg_history"
 PROTOTYPE_DIR = DATA_DIR / "prototype"
@@ -29,6 +30,7 @@ TEMPLATES_DIR = DATA_DIR / "templates"
 S3_CODOMO_TEMPLATES_JSON = TEMPLATES_DIR / "s3_codomo.json"
 GAME8_SKILLS_INDEX_JSON = GAME8_DIR / "skills_index.json"
 SANGUO_ZHI_HEROES_YAML = SANGUO_ZHI_DIR / "heroes.yaml"
+SLGSIM_BINGXUE_HEROES_YAML = SLGSIM_DIR / "bingxue_heroes.yaml"
 
 # Manual files for the three-layer override system.
 CFG_ALIASES_PATH = DATA_DIR / "cfg_aliases.yaml"

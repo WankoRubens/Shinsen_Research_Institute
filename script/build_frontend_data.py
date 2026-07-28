@@ -33,6 +33,7 @@ from paths import (
     PROTOTYPE_DIR,
     SHINSEN_SIM_API_JSON, S3_CODOMO_TEMPLATES_JSON, GAME8_SKILLS_INDEX_JSON,
     SANGUO_ZHI_HEROES_YAML,
+    SLGSIM_BINGXUE_HEROES_YAML,
 )
 from bingxue_categories import canonical_bingxue_direction
 from trait_affinity import infer_troop_affinity
@@ -756,6 +757,41 @@ def _merge_sanguo_zhi_hero_fallbacks(heroes: list[dict]) -> tuple[list[dict], di
             existing_traits.append(trait)
             existing_by_name[key] = trait
             stats["traits_added"] += 1
+
+    return heroes, stats
+
+
+def _merge_slgsim_bingxue_fallbacks(heroes: list[dict]) -> tuple[list[dict], dict]:
+    """Fill only missing per-hero bingxue tables from the structured source."""
+    stats = {
+        "available": 0,
+        "matched": 0,
+        "filled": 0,
+        "preserved": 0,
+        "unmatched": [],
+        "unresolved": [],
+    }
+    if not SLGSIM_BINGXUE_HEROES_YAML.exists():
+        return heroes, stats
+
+    payload = yaml.safe_load(SLGSIM_BINGXUE_HEROES_YAML.read_text("utf-8")) or {}
+    fallback = payload.get("heroes", payload)
+    stats["unresolved"] = payload.get("unresolved", [])
+    stats["available"] = len(fallback)
+    hero_index = _index_by_names(heroes)
+
+    for source_name, source in fallback.items():
+        hero = hero_index.get(_norm_name(source.get("name") or source_name))
+        if hero is None:
+            stats["unmatched"].append(source_name)
+            continue
+        stats["matched"] += 1
+        if hero.get("bingxue"):
+            stats["preserved"] += 1
+            continue
+        if source.get("bingxue"):
+            hero["bingxue"] = source["bingxue"]
+            stats["filled"] += 1
 
     return heroes, stats
 
@@ -1568,6 +1604,7 @@ def main():
     heroes, skills, sim_merge_stats = _merge_shinsen_sim_data(heroes, skills)
     skills, game8_skill_count = _merge_game8_skill_index(skills)
     heroes, sanguo_zhi_merge_stats = _merge_sanguo_zhi_hero_fallbacks(heroes)
+    heroes, slgsim_bingxue_stats = _merge_slgsim_bingxue_fallbacks(heroes)
 
     # Enrich override-added hero traits with affinity from canonical traits.yaml.
     # Override heroes have inline trait dicts that lack affinity; the canonical
@@ -1642,6 +1679,17 @@ def main():
             f"{sim_merge_stats['skills']} skills, "
             f"{sim_merge_stats['enemy_formations']} enemy formations available"
         )
+    if slgsim_bingxue_stats["available"]:
+        print(
+            "[info] per-hero bingxue fallback merged: "
+            f"{slgsim_bingxue_stats['filled']} filled, "
+            f"{slgsim_bingxue_stats['preserved']} existing preserved"
+        )
+        if slgsim_bingxue_stats["unresolved"]:
+            print(
+                "[warn] verified bingxue table unavailable: "
+                + ", ".join(slgsim_bingxue_stats["unresolved"])
+            )
     if game8_skill_count:
         print(f"[info] Game8 skill descriptions merged: {game8_skill_count}")
     if sanguo_zhi_merge_stats["available"]:

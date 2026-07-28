@@ -1,0 +1,2495 @@
+sources:
+  roster: https://www.sanguo-zhi.com/wiki/general/
+  rules:
+  - https://game8.jp/nobunaga-shinsen/764614
+  - https://www.sanguo-zhi.com/entry/nobunaga-heigaku/
+  full_tables:
+  - https://slgsim.com/generals
+  - https://github.com/davidjaw/Shinsei-Lineup
+unresolved:
+- 堀直政
+heroes:
+  長野業正:
+    name: 長野業正
+    source_name: 長野業正
+    source_url: https://raw.githubusercontent.com/davidjaw/Shinsei-Lineup/main/data/overrides.yaml
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 当意即妙
+        - 冷静沈着
+        minor:
+        - 剛力
+        - 豪勇
+        - 妙策
+        - 奇謀
+        - 胆力
+        - 活路
+      機略:
+        major:
+        - 離間の計
+        - 軍律擾乱
+        - 破陣の勢い
+        minor:
+        - 神算
+        - 鬼気
+        - 早駆
+        - 神秘
+        - 練磨
+        - 強靭
+      陣立:
+        major:
+        - 右往左往
+        - 先陣誘導
+        - 生々流転
+        minor:
+        - 俊才
+        - 才気
+        - 逆境
+        - 不敵
+        - 兵心
+        - 恩顧
+      臨戦:
+        major:
+        - 達人大観
+        - 殿軍救護
+        - 搦手の策
+        minor:
+        - 機動
+        - 協同
+        - 仁愛
+        - 天時
+        - 内助
+        - 明鏡
+  佐竹義重:
+    name: 佐竹義重
+    source_name: 佐竹義重
+    source_url: https://raw.githubusercontent.com/davidjaw/Shinsei-Lineup/main/data/overrides.yaml
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 舟中敵国
+        - 当意即妙
+        - 冷静沈着
+        minor:
+        - 剛力
+        - 豪勇
+        - 妙策
+        - 突貫
+        - 胆力
+        - 活路
+      機略:
+        major:
+        - 離間の計
+        - 軍律擾乱
+        - 破陣の勢い
+        minor:
+        - 神算
+        - 鬼気
+        - 早駆
+        - 神秘
+        - 練磨
+        - 強靭
+      陣立:
+        major:
+        - 勇猛果敢
+        - 返り討ちの計
+        - 生々流転
+        minor:
+        - 乱戦
+        - 俊才
+        - 才気
+        - 不敵
+        - 逆境
+        - 恩顧
+      臨戦:
+        major:
+        - 搦手の策
+        - 心頭滅却
+        - 達人大観
+        minor:
+        - 果敢
+        - 機動
+        - 協同
+        - 地利
+        - 明鏡
+        - 天時
+  三好実休:
+    name: 三好実休
+    source_name: 三好實休
+    source_url: https://raw.githubusercontent.com/davidjaw/Shinsei-Lineup/main/data/overrides.yaml
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 当意即妙
+        - 冷静沈着
+        minor:
+        - 剛力
+        - 豪勇
+        - 妙策
+        - 奇謀
+        - 胆力
+        - 活路
+      機略:
+        major:
+        - 臨機応変
+        - 軍律擾乱
+        - 破陣の勢い
+        minor:
+        - 神算
+        - 鬼気
+        - 早駆
+        - 神秘
+        - 練磨
+        - 強靭
+      陣立:
+        major:
+        - 陽動の策
+        - 気勢崩し
+        - 生々流転
+        minor:
+        - 俊才
+        - 才気
+        - 逆境
+        - 不敵
+        - 兵心
+        - 恩顧
+      臨戦:
+        major:
+        - 手当の心得
+        - 鼓舞激励
+        - 達人大観
+        minor:
+        - 協同
+        - 地利
+        - 仁愛
+        - 天時
+        - 明鏡
+        - 不惑
+  藤林正保:
+    name: 藤林正保
+    source_name: 藤林正保
+    source_url: https://raw.githubusercontent.com/davidjaw/Shinsei-Lineup/main/data/overrides.yaml
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 舟中敵国
+        - 当意即妙
+        - 冷静沈着
+        minor:
+        - 剛力
+        - 豪勇
+        - 妙策
+        - 突貫
+        - 胆力
+        - 活路
+      機略:
+        major:
+        - 離間の計
+        - 軍律擾乱
+        - 破陣の勢い
+        minor:
+        - 神算
+        - 鬼気
+        - 早駆
+        - 神秘
+        - 練磨
+        - 強靭
+      陣立:
+        major:
+        - 陽動の策
+        - 気勢崩し
+        - 生々流転
+        minor:
+        - 俊才
+        - 才気
+        - 逆境
+        - 不敵
+        - 兵心
+        - 恩顧
+      臨戦:
+        major:
+        - 搦手の策
+        - 心頭滅却
+        - 達人大観
+        minor:
+        - 果敢
+        - 機動
+        - 協同
+        - 地利
+        - 明鏡
+        - 天時
+  大久保長安:
+    name: 大久保長安
+    source_name: 大久保長安
+    source_url: https://raw.githubusercontent.com/davidjaw/Shinsei-Lineup/main/data/overrides.yaml
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 舟中敵国
+        - 当意即妙
+        - 冷静沈着
+        minor:
+        - 剛力
+        - 豪勇
+        - 妙策
+        - 突貫
+        - 胆力
+        - 活路
+      機略:
+        major:
+        - 離間の計
+        - 軍律擾乱
+        - 破陣の勢い
+        minor:
+        - 神算
+        - 鬼気
+        - 早駆
+        - 神秘
+        - 練磨
+        - 強靭
+      陣立:
+        major:
+        - 陽動の策
+        - 気勢崩し
+        - 生々流転
+        minor:
+        - 俊才
+        - 才気
+        - 逆境
+        - 不敵
+        - 兵心
+        - 恩顧
+      臨戦:
+        major:
+        - 達人大観
+        - 手当の心得
+        - 脱兎の如し
+        minor:
+        - 機動
+        - 協同
+        - 地利
+        - 仁愛
+        - 天時
+        - 内助
+  浦上宗景:
+    name: 浦上宗景
+    source_name: 浦上宗景
+    source_url: https://raw.githubusercontent.com/davidjaw/Shinsei-Lineup/main/data/overrides.yaml
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 当意即妙
+        - 冷静沈着
+        minor:
+        - 剛力
+        - 豪勇
+        - 妙策
+        - 奇謀
+        - 胆力
+        - 活路
+      機略:
+        major:
+        - 臨機応変
+        - 軍律擾乱
+        - 離間の計
+        minor:
+        - 神算
+        - 鬼気
+        - 大勇
+        - 早駆
+        - 神秘
+        - 多謀
+      陣立:
+        major:
+        - 陽動の策
+        - 気勢崩し
+        - 生々流転
+        minor:
+        - 俊才
+        - 才気
+        - 逆境
+        - 不敵
+        - 兵心
+        - 恩顧
+      臨戦:
+        major:
+        - 搦手の策
+        - 心頭滅却
+        - 達人大観
+        minor:
+        - 協同
+        - 地利
+        - 天時
+        - 機動
+        - 明鏡
+        - 不惑
+  九戸政実:
+    name: 九戸政実
+    source_name: 九戸政実
+    source_url: https://slgsim.com/hero/kunohemasazane.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 冷静沈着
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 殿軍救護
+        - 搦手の策
+        minor:
+        - 内助
+        - 明鏡
+        - 天時
+        - 機動
+        - 仁愛
+        - 協同
+  鈴木重朝:
+    name: 鈴木重朝
+    source_name: 鈴木重朝
+    source_url: https://slgsim.com/hero/suzukishigetomo.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 詭計百出
+        minor:
+        - 練磨
+        - 神秘
+        - 早駆
+        - 多謀
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 乱戦
+        - 俊才
+      臨戦:
+        major:
+        - 搦手の策
+        - 心頭滅却
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  斎藤利三:
+    name: 斎藤利三
+    source_name: 斎藤利三
+    source_url: https://slgsim.com/hero/saitoutoshimitsu.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 陽動の策
+        - 気勢崩し
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  福留親政:
+    name: 福留親政
+    source_name: 福留親政
+    source_url: https://slgsim.com/hero/fukudomechikamasa.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 先陣誘導
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 兵家
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  鬼庭左月斎:
+    name: 鬼庭左月斎
+    source_name: 鬼庭左月斎
+    source_url: https://slgsim.com/hero/oniniwasagetsusai.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 表裏一体
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 右往左往
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 搦手の策
+        - 手当の心得
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  下方貞清:
+    name: 下方貞清
+    source_name: 下方貞清
+    source_url: https://slgsim.com/hero/shimokatasadakiyo.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 智勇兼備
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 陽動の策
+        - 気勢崩し
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  毛利輝元:
+    name: 毛利輝元
+    source_name: 毛利輝元
+    source_url: https://slgsim.com/hero/mouriterumoto.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 臨機応変
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 多謀
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 陽動の策
+        - 気勢崩し
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 搦手の策
+        - 手当の心得
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  遠藤直経:
+    name: 遠藤直経
+    source_name: 遠藤直経
+    source_url: https://slgsim.com/hero/endounaotsune.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 臨機応変
+        - 破陣の勢い
+        - 七転八起
+        minor:
+        - 強靭
+        - 神秘
+        - 練磨
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 勇猛果敢
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  太田牛一:
+    name: 太田牛一
+    source_name: 太田牛一
+    source_url: https://slgsim.com/hero/ootagyuuichi.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 先陣誘導
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 搦手の策
+        - 心頭滅却
+        - 達人大観
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  池田輝政:
+    name: 池田輝政
+    source_name: 池田輝政
+    source_url: https://slgsim.com/hero/ikedaterumasa.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  仙石権兵衛:
+    name: 仙石権兵衛
+    source_name: 仙石権兵衛
+    source_url: https://slgsim.com/hero/sengokugonbee.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 勇猛果敢
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  保科正俊:
+    name: 保科正俊
+    source_name: 保科正俊
+    source_url: https://slgsim.com/hero/hoshinamasatoshi.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 右往左往
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  氏家卜全:
+    name: 氏家卜全
+    source_name: 氏家卜全
+    source_url: https://slgsim.com/hero/ujiiebokuzen.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 表裏一体
+        - 当意即妙
+        minor:
+        - 奇謀
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 気勢崩し
+        - 先陣誘導
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 殿軍救護
+        minor:
+        - 果敢
+        - 仁愛
+        - 天時
+        - 機動
+        - 内助
+        - 協同
+  坂井政尚:
+    name: 坂井政尚
+    source_name: 坂井政尚
+    source_url: https://slgsim.com/hero/sakaimasahisa.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  安藤守就:
+    name: 安藤守就
+    source_name: 安藤守就
+    source_url: https://slgsim.com/hero/andoumorinari.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 詭計百出
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 多謀
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 右往左往
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  佐久間盛政:
+    name: 佐久間盛政
+    source_name: 佐久間盛政
+    source_url: https://slgsim.com/hero/sakumamorimasa.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 智勇兼備
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  水原親憲:
+    name: 水原親憲
+    source_name: 水原親憲
+    source_url: https://slgsim.com/hero/suibarachikanori.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 智勇兼備
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 搦手の策
+        - 手当の心得
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  鳥居元忠:
+    name: 鳥居元忠
+    source_name: 鳥居元忠
+    source_url: https://slgsim.com/hero/toriimototada.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 詭計百出
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 多謀
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 先陣誘導
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 殿軍救護
+        - 搦手の策
+        minor:
+        - 内助
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  池田恒興:
+    name: 池田恒興
+    source_name: 池田恒興
+    source_url: https://slgsim.com/hero/ikedatsuneoki.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 先陣誘導
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 兵家
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  岩城親隆:
+    name: 岩城親隆
+    source_name: 岩城親隆
+    source_url: https://slgsim.com/hero/iwakichikataka.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 臨機応変
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 多謀
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 右往左往
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 鼓舞激励
+        - 手当の心得
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 仁愛
+        - 地利
+        - 協同
+  小山田信茂:
+    name: 小山田信茂
+    source_name: 小山田信茂
+    source_url: https://slgsim.com/hero/oyamadanobushige.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 勇猛果敢
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  福原貞俊:
+    name: 福原貞俊
+    source_name: 福原貞俊
+    source_url: https://slgsim.com/hero/fukuharasadatoshi.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 臨機応変
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 搦手の策
+        - 手当の心得
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  栗山善助:
+    name: 栗山善助
+    source_name: 栗山善助
+    source_url: https://slgsim.com/hero/kuriyamazensuke.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 臨機応変
+        - 七転八起
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 勇猛果敢
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  国司元相:
+    name: 国司元相
+    source_name: 国司元相
+    source_url: https://slgsim.com/hero/kunishimotosuke.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 先陣誘導
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 兵家
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  多田三八郎:
+    name: 多田三八郎
+    source_name: 多田三八郎
+    source_url: https://slgsim.com/hero/tadasanpachirou.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 陽動の策
+        - 気勢崩し
+        - 生々流転
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  結城秀康:
+    name: 結城秀康
+    source_name: 結城秀康
+    source_url: https://slgsim.com/hero/yuukihideyasu.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 先陣誘導
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  新発田重家:
+    name: 新発田重家
+    source_name: 新発田重家
+    source_url: https://slgsim.com/hero/shibatashigeie.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 右往左往
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  磯野員昌:
+    name: 磯野員昌
+    source_name: 磯野員昌
+    source_url: https://slgsim.com/hero/isonokazumasa.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  小幡景憲:
+    name: 小幡景憲
+    source_name: 小幡景憲
+    source_url: https://slgsim.com/hero/obatakagenori.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 表裏一体
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 詭計百出
+        minor:
+        - 多謀
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 陽動の策
+        - 気勢崩し
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 殿軍救護
+        - 搦手の策
+        minor:
+        - 内助
+        - 果敢
+        - 天時
+        - 機動
+        - 仁愛
+        - 協同
+  三枝昌貞:
+    name: 三枝昌貞
+    source_name: 三枝昌貞
+    source_url: https://slgsim.com/hero/saegusamasasada.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 心頭滅却
+        - 搦手の策
+        minor:
+        - 内助
+        - 明鏡
+        - 天時
+        - 機動
+        - 仁愛
+        - 協同
+  吉川広家:
+    name: 吉川広家
+    source_name: 吉川広家
+    source_url: https://slgsim.com/hero/kikkawahiroie.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 智勇兼備
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 詭計百出
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 多謀
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 先陣誘導
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 搦手の策
+        - 殿軍救護
+        - 達人大観
+        minor:
+        - 内助
+        - 明鏡
+        - 天時
+        - 機動
+        - 仁愛
+        - 協同
+  大久保忠世:
+    name: 大久保忠世
+    source_name: 大久保忠世
+    source_url: https://slgsim.com/hero/ookubotadayo.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 七転八起
+        - 破陣の勢い
+        - 臨機応変
+        minor:
+        - 強靭
+        - 神秘
+        - 練磨
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 勇猛果敢
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  池田せん:
+    name: 池田せん
+    source_name: 池田せん
+    source_url: https://slgsim.com/hero/ikedasen.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 表裏一体
+        - 当意即妙
+        minor:
+        - 奇謀
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 搦手の策
+        - 達人大観
+        - 手当の心得
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  蜂須賀家政:
+    name: 蜂須賀家政
+    source_name: 蜂須賀家政
+    source_url: https://slgsim.com/hero/hachisukaiemasa.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 表裏一体
+        - 当意即妙
+        minor:
+        - 奇謀
+        - 活路
+        - 豪勇
+        - 妙策
+        - 胆力
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 臨機応変
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 右往左往
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 鼓舞激励
+        - 達人大観
+        - 手当の心得
+        minor:
+        - 内助
+        - 果敢
+        - 天時
+        - 機動
+        - 仁愛
+        - 協同
+  武田義信:
+    name: 武田義信
+    source_name: 武田義信
+    source_url: https://slgsim.com/hero/takedayoshinobu.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 右往左往
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 達人大観
+        - 搦手の策
+        minor:
+        - 兵家
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  山内一豊:
+    name: 山内一豊
+    source_name: 山内一豊
+    source_url: https://slgsim.com/hero/yamauchikazutoyo.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 冷静沈着
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 臨機応変
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 右往左往
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 搦手の策
+        - 手当の心得
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  横山喜内:
+    name: 横山喜内
+    source_name: 横山喜内
+    source_url: https://slgsim.com/hero/yokoyamakinai.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 奇謀
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 詭計百出
+        minor:
+        - 多謀
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 気勢崩し
+        - 陽動の策
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 鼓舞激励
+        - 手当の心得
+        minor:
+        - 内助
+        - 果敢
+        - 天時
+        - 機動
+        - 仁愛
+        - 協同
+  甘粕景継:
+    name: 甘粕景継
+    source_name: 甘粕景継
+    source_url: https://slgsim.com/hero/amakasukagetsugu.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 兵勢連鎖
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 詭計百出
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 勇猛果敢
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 兵家
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  脇坂安治:
+    name: 脇坂安治
+    source_name: 脇坂安治
+    source_url: https://slgsim.com/hero/wakizakayasuharu.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 表裏一体
+        - 冷静沈着
+        - 当意即妙
+        minor:
+        - 奇謀
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 練磨
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 生々流転
+        - 勇猛果敢
+        - 返り討ちの計
+        minor:
+        - 乱戦
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 心頭滅却
+        - 搦手の策
+        - 達人大観
+        minor:
+        - 果敢
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
+  小山田茂誠:
+    name: 小山田茂誠
+    source_name: 小山田茂誠
+    source_url: https://slgsim.com/hero/oyamadashigemasa.html
+    wiki_verified: true
+    bingxue:
+      武略:
+        major:
+        - 智勇兼備
+        - 舟中敵国
+        - 当意即妙
+        minor:
+        - 胆力
+        - 活路
+        - 突貫
+        - 妙策
+        - 豪勇
+        - 剛力
+      機略:
+        major:
+        - 破陣の勢い
+        - 離間の計
+        - 軍律擾乱
+        minor:
+        - 強靭
+        - 神秘
+        - 早駆
+        - 大勇
+        - 鬼気
+        - 神算
+      陣立:
+        major:
+        - 先陣誘導
+        - 気勢崩し
+        - 返り討ちの計
+        minor:
+        - 兵心
+        - 恩顧
+        - 不敵
+        - 逆境
+        - 才気
+        - 俊才
+      臨戦:
+        major:
+        - 達人大観
+        - 搦手の策
+        - 手当の心得
+        minor:
+        - 不惑
+        - 明鏡
+        - 天時
+        - 機動
+        - 地利
+        - 協同
