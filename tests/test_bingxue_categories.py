@@ -1,4 +1,5 @@
 import sys
+import re
 import unittest
 from pathlib import Path
 
@@ -40,6 +41,12 @@ class BingxueCategoryTest(unittest.TestCase):
                 "臨戦": {"major": ["手当の心得"], "minor": ["仁愛"]},
             },
         )
+
+    def test_battle_engine_registers_every_bingxue_option(self):
+        source = (ROOT / "src" / "lib" / "battleBingxueEffects.ts").read_text(encoding="utf-8")
+        registered_block = source.split("IMPLEMENTED_BINGXUE_NAMES = new Set([", 1)[1].split("])", 1)[0]
+        registered = set(re.findall(r"'([^']+)'", registered_block))
+        self.assertEqual(registered, set(BINGXUE_OPTION_TO_DIRECTION))
 
 
 if __name__ == "__main__":

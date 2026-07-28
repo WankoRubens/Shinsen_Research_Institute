@@ -10,11 +10,36 @@ import {
   IMPLEMENTED_BATTLE_SKILL_NAMES,
   TEAM_ACTION_BATTLE_SKILL_NAMES,
   applyNamedSkillEffect,
+  battleSkillType,
   compareBattleSkillPriority,
   recordDamageDealtSkillEffects,
   type BattleSkillEffectHelpers,
   type SkillDamageStatRule,
 } from './battleSkillEffects'
+import {
+  bingxueActivationChanceBonus,
+  bingxueHealMultiplier,
+  bingxueLifeStealPercent,
+  bingxueStatBonus,
+  consumeBingxuePreparationReduction,
+  controlBlockedByBingxue,
+  initializeBingxueBattle,
+  markBingxueSkillUsed,
+  preferredBingxueTarget,
+  recordBingxueSkillFailure,
+  recordBingxueSkillResolved,
+  resolveBingxueDamage,
+  runBingxueAfterAction,
+  runBingxueAfterNormalAttack,
+  runBingxueBeforeAction,
+  runBingxueControlApplied,
+  runBingxueNormalAttackReceived,
+  runBingxueSkillHeal,
+  runBingxueTurnStart,
+  tickBingxueTurn,
+  type BingxueActionHelpers,
+  type BingxueRuntimeState,
+} from './battleBingxueEffects'
 
 export type BattleSide = 'ally' | 'enemy'
 export type BattleOutcome = 'ally' | 'enemy' | 'draw'
@@ -87,6 +112,7 @@ export interface BattleFighter {
   specialState: Record<string, number>
   skills: Skill[]
   bingxue: BingxueActive
+  bingxueRuntime: BingxueRuntimeState
   troopType: TroopType | null
   troopLevel: number
   troopStatMultiplier: number
@@ -379,26 +405,6 @@ const battleSkillsForRole = (role: RoleData): Skill[] => {
     .sort((a, b) => compareBattleSkillPriority(a, b) || skillKeyForDedup(a).localeCompare(skillKeyForDedup(b), 'ja'))
 }
 
-// 兵学はまだ完全な効果データが揃っていないため、名称から近いステータス補正へ簡易変換する。
-const applyBingxuePassive = (fighter: BattleFighter) => {
-  const names = [
-    fighter.bingxue.major,
-    ...fighter.bingxue.minors.flatMap((minor) => Array.from({ length: minor.level }, () => minor.name)),
-  ].filter(Boolean) as string[]
-
-  names.forEach((name) => {
-    if (/剛|勇|猛|突|武|刃|舟中敵国|当意即妙/.test(name)) fighter.buffs.val = (fighter.buffs.val ?? 0) + 6
-    if (/才|智|算|鬼|謀|策|計|機|離間|擾乱|破陣/.test(name)) fighter.buffs.int = (fighter.buffs.int ?? 0) + 6
-    if (/胆|強|警|不敵|盾|返り討ち|生々流転/.test(name)) {
-      fighter.buffs.lea = (fighter.buffs.lea ?? 0) + 5
-      fighter.buffs.damageTaken = (fighter.buffs.damageTaken ?? 0) - 1.5
-    }
-    if (/早|機動|駆|速/.test(name)) fighter.buffs.spd = (fighter.buffs.spd ?? 0) + 5
-    if (/仁|手当|活路|恩顧|心頭|滅却/.test(name)) fighter.buffs.damageTaken = (fighter.buffs.damageTaken ?? 0) - 1
-    if (/兵勢|連鎖|乱戦|搦手|達人|天時|協同/.test(name)) fighter.buffs.damageDealt = (fighter.buffs.damageDealt ?? 0) + 1.5
-  })
-}
-
 const affinityMultiplier = (affinity: BattleTroopAffinity = 'neutral'): number => {
   if (affinity === 'advantage') return 1.125
   if (affinity === 'disadvantage') return 0.875
@@ -435,12 +441,12 @@ const makeFighter = (
     specialState: {},
     skills: battleSkillsForRole(role),
     bingxue: role.bingxue,
+    bingxueRuntime: { timedModifiers: [] },
     troopType,
     troopLevel,
     troopStatMultiplier,
     troopAffinityModifier: affinityMultiplier(troopAffinity),
   }
-  applyBingxuePassive(fighter)
   return fighter
 }
 
@@ -510,12 +516,19 @@ const sideMaxHp = (fighters: BattleFighter[]) => fighters.reduce((sum, fighter) 
 const sideMainAlive = (fighters: BattleFighter[]) => fighters.some((fighter) => fighter.role === 'main' && isAlive(fighter))
 
 const statOf = (fighter: BattleFighter, stat: Stat): number =>
-  Math.max(0, (fighter.baseStats[stat] ?? 0) + (fighter.buffs[stat] ?? 0))
+  Math.max(0, (fighter.baseStats[stat] ?? 0) + (fighter.buffs[stat] ?? 0) + bingxueStatBonus(fighter, stat))
 
 // 基本ターゲットは残兵割合が低い候補を優先しつつ、上位2名からランダムに選ぶ。
-const chooseTarget = (candidates: BattleFighter[], rng: () => number): BattleFighter | null => {
+const chooseTarget = (
+  candidates: BattleFighter[],
+  rng: () => number,
+  mode: 'normal' | 'skill' = 'skill',
+): BattleFighter | null => {
   const live = living(candidates)
   if (live.length === 0) return null
+  const turn = Math.max(0, ...live.map(fighter => fighter.specialState.bingxueCurrentTurn ?? 0))
+  const preferred = preferredBingxueTarget(live, mode, turn)
+  if (preferred) return preferred
   const sorted = [...live].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))
   return sorted[Math.floor(rng() * Math.min(2, sorted.length))] ?? sorted[0]
 }
@@ -659,6 +672,12 @@ const baseDamage = (
   rng: () => number,
   kind: 'normal' | 'physical' | 'strategy',
   statRule?: SkillDamageStatRule,
+  bingxueContext?: {
+    candidates?: BattleFighter[]
+    dot?: boolean
+    skillType?: ReturnType<typeof battleSkillType> | null
+    prepared?: boolean
+  },
 ) => {
   const actualKind = kind === 'normal' ? 'physical' : kind
   const rate = damageRate(skill)
@@ -674,15 +693,30 @@ const baseDamage = (
   const modifier = damageModifier(caster, true, actualKind) * damageModifier(target, false, actualKind)
   const raw = damageBase * (rate / 100) * modifier * variance
   const floor = guaranteedDamageFloor(caster.hp, rate, Boolean(skill)) * variance
+  const resolvedSkillType = bingxueContext?.skillType === undefined
+    ? skill ? battleSkillType(skill) : null
+    : bingxueContext.skillType
+  const bingxueDamage = resolveBingxueDamage({
+    attacker: caster,
+    target,
+    kind: actualKind,
+    skill,
+    skillType: resolvedSkillType,
+    prepared: bingxueContext?.prepared ?? Boolean(skill && preparationTurns(skill) > 0),
+    dot: bingxueContext?.dot ?? false,
+    candidates: bingxueContext?.candidates ?? [target],
+    rng,
+  })
+  if (bingxueDamage.evaded) return 0
   // 兵種相性は、最低保証を含むダメージが確定した後に全体へ掛ける。
-  return Math.max(floor, raw) * caster.troopAffinityModifier
+  return Math.max(floor, raw) * bingxueDamage.multiplier * caster.troopAffinityModifier
 }
 
-const baseHeal = (caster: BattleFighter, skill: Skill, rng: () => number): number => {
+const baseHeal = (caster: BattleFighter, target: BattleFighter, skill: Skill, rng: () => number): number => {
   const rate = healRate(skill)
   const mainStat = skill.battle_type === 'bravery' ? statOf(caster, 'val') : statOf(caster, 'int')
   const variance = 0.92 + rng() * 0.16
-  return Math.max(20, (mainStat * 7.5 + 480) * (rate / 100) * variance)
+  return Math.max(20, (mainStat * 7.5 + 480) * (rate / 100) * variance) * bingxueHealMultiplier(caster, target)
 }
 
 const applyGenericBuffs = (
@@ -720,13 +754,10 @@ const applyGenericBuffs = (
 }
 
 const applyControl = (
-  skill: Skill,
+  ctx: SkillResolveContext,
   targets: BattleFighter[],
-  logs: BattleLogEntry[],
-  turn: number,
-  caster: BattleFighter,
-  controlStats: Record<string, number>,
 ) => {
+  const { skill, caster, allies, enemies, logs, turn, rng, stats, turnStat, controlStats } = ctx
   const inferred = ['無策', '封撃', '麻痺', '混乱', '挑発', '畏縮', '疲弊', '威圧', '回復不可']
     .filter((name) => textOfSkill(skill).includes(name))
   const controlNames = [
@@ -737,9 +768,30 @@ const applyControl = (
   const duration = Math.max(1, Math.round(skill.control_turns ?? 1))
   for (const name of controlNames) {
     targets.forEach((target) => {
+      if (controlBlockedByBingxue(target, name)) {
+        if (logs !== NO_LOGS) logs.push({
+          turn,
+          side: target.side,
+          actor: target.name,
+          actorHp: target.hp,
+          message: `兵学の耐性で${name}を防いだ`,
+        })
+        return
+      }
       target.statuses[name] = Math.max(target.statuses[name] ?? 0, duration)
       controlStats[name] = (controlStats[name] ?? 0) + 1
       if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}: ${target.name}に${name}(${duration}T)` })
+      const targetAllies = target.side === caster.side ? allies : enemies
+      const targetEnemies = target.side === caster.side ? enemies : allies
+      runBingxueControlApplied(
+        caster,
+        target,
+        targetAllies,
+        targetEnemies,
+        turn,
+        rng,
+        createBingxueHelpers(allies, enemies, turn, logs, rng, stats, turnStat, controlStats),
+      )
     })
   }
 }
@@ -896,6 +948,41 @@ const withHealRate = (skill: Skill, rate: number, kind?: 'bravery' | 'strategy')
   battle_type: kind ?? skill.battle_type,
 })
 
+const applyBingxueLifeSteal = (
+  source: BattleFighter,
+  damage: number,
+  turn: number,
+  logs: BattleLogEntry[],
+  turnStat: BattleTurnStat,
+): number => {
+  const percent = bingxueLifeStealPercent(source)
+  if (damage <= 0 || percent <= 0 || !isAlive(source)) return 0
+  const beforeHp = source.hp
+  const beforeWounded = source.wounded
+  const actual = applyHeal(source, damage * percent / 100)
+  if (actual <= 0) return 0
+  const healedWounded = beforeWounded - source.wounded
+  if (source.side === 'ally') turnStat.allyHealing += actual
+  else turnStat.enemyHealing += actual
+  if (logs !== NO_LOGS) logs.push({
+    turn,
+    side: source.side,
+    actor: source.name,
+    actorHp: source.hp,
+    target: source.name,
+    targetSide: source.side,
+    amount: actual,
+    beforeHp,
+    afterHp: source.hp,
+    woundedDelta: -healedWounded,
+    deadDelta: 0,
+    valueType: 'healing',
+    effect: '兵学・離反/心攻',
+    message: `兵学の離反・心攻で${source.name}を${actual.toLocaleString()}回復 ${hpChangeText(beforeHp, source.hp)} / 負傷兵${healedWounded.toLocaleString()}復帰`,
+  })
+  return actual
+}
+
 const dealSkillDamage = (
   ctx: SkillResolveContext,
   target: BattleFighter,
@@ -915,6 +1002,7 @@ const dealSkillDamage = (
     ctx.rng,
     kind,
     statRule,
+    { candidates: ctx.enemies, skillType: battleSkillType(ctx.skill) },
   ))
   const afterHp = target.hp
   const woundedDelta = target.wounded - beforeWounded
@@ -940,6 +1028,7 @@ const dealSkillDamage = (
   })
   if (actual > 0) {
     recordDamageDealtSkillEffects(ctx.caster, kind, ctx.turn, ctx.logs)
+    applyBingxueLifeSteal(ctx.caster, actual, ctx.turn, ctx.logs, ctx.turnStat)
     const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
     const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
     fireTriggeredSkills(
@@ -993,7 +1082,9 @@ const healBySkill = (ctx: SkillResolveContext, target: BattleFighter, rate: numb
   if (!isAlive(target)) return 0
   const beforeHp = target.hp
   const beforeWounded = target.wounded
-  const actual = applyHeal(target, baseHeal(ctx.caster, withHealRate(ctx.skill, rate, kind), ctx.rng))
+  const lowestRatioBeforeHeal = Math.min(...living(ctx.allies).map(ally => ally.hp / Math.max(1, ally.maxHp)))
+  const wasLowestBeforeHeal = target.hp / Math.max(1, target.maxHp) <= lowestRatioBeforeHeal
+  const actual = applyHeal(target, baseHeal(ctx.caster, target, withHealRate(ctx.skill, rate, kind), ctx.rng))
   const afterHp = target.hp
   const healedWounded = beforeWounded - target.wounded
   recordHealing(ctx.stats, ctx.caster, ctx.skill, actual)
@@ -1017,6 +1108,14 @@ const healBySkill = (ctx: SkillResolveContext, target: BattleFighter, rate: numb
   })
   if (actual > 0) {
     addHealingStock(ctx.allies, actual, ctx.turn, ctx.logs)
+    runBingxueSkillHeal(
+      ctx.caster,
+      target,
+      ctx.allies,
+      ctx.turn,
+      createBingxueHelpers(ctx.allies, ctx.enemies, ctx.turn, ctx.logs, ctx.rng, ctx.stats, ctx.turnStat, ctx.controlStats),
+      wasLowestBeforeHeal,
+    )
     const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
     const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
     fireTriggeredSkills(
@@ -1036,11 +1135,155 @@ const healBySkill = (ctx: SkillResolveContext, target: BattleFighter, rate: numb
   return actual
 }
 
+const createBingxueHelpers = (
+  allies: BattleFighter[],
+  enemies: BattleFighter[],
+  turn: number,
+  logs: BattleLogEntry[],
+  rng: () => number,
+  stats: SkillStatMap,
+  turnStat: BattleTurnStat,
+  controlStats: Record<string, number>,
+): BingxueActionHelpers => ({
+  statOf,
+  log: (owner, message) => {
+    if (logs !== NO_LOGS) logs.push({
+      turn,
+      side: owner.side,
+      actor: owner.name,
+      actorHp: owner.hp,
+      effect: '兵学',
+      message,
+    })
+  },
+  heal: (owner, target, rate, effect) => {
+    if (!isAlive(owner) || !isAlive(target)) return 0
+    const pseudoSkill = {
+      id: `bingxue:${effect}`,
+      name: effect,
+      name_jp: effect,
+      battle_type: 'strategy',
+      heal_rate_max: rate,
+    } as Skill
+    const beforeHp = target.hp
+    const beforeWounded = target.wounded
+    const actual = applyHeal(target, baseHeal(owner, target, pseudoSkill, rng))
+    if (actual <= 0) return 0
+    const healedWounded = beforeWounded - target.wounded
+    if (owner.side === 'ally') turnStat.allyHealing += actual
+    else turnStat.enemyHealing += actual
+    if (logs !== NO_LOGS) logs.push({
+      turn,
+      side: owner.side,
+      actor: owner.name,
+      actorHp: owner.hp,
+      target: target.name,
+      targetSide: target.side,
+      amount: actual,
+      beforeHp,
+      afterHp: target.hp,
+      woundedDelta: -healedWounded,
+      deadDelta: 0,
+      valueType: 'healing',
+      effect,
+      message: `${effect}で${target.name}を${actual.toLocaleString()}回復 ${hpChangeText(beforeHp, target.hp)} / 負傷兵${healedWounded.toLocaleString()}復帰`,
+    })
+    return actual
+  },
+  damage: (owner, target, rate, kind, effect) => {
+    if (!isAlive(owner) || !isAlive(target)) return 0
+    const pseudoSkill = {
+      id: `bingxue:${effect}`,
+      name: effect,
+      name_jp: effect,
+      battle_type: kind === 'strategy' ? 'strategy' : 'bravery',
+      damage_rate_max: rate,
+    } as Skill
+    const beforeHp = target.hp
+    const beforeWounded = target.wounded
+    const beforeDead = target.dead
+    const allFighters = [...allies, ...enemies]
+    const targetCandidates = allFighters.filter(fighter => fighter.side === target.side)
+    const actual = applyDamage(target, baseDamage(owner, target, pseudoSkill, rng, kind, undefined, {
+      candidates: targetCandidates,
+      skillType: null,
+    }))
+    if (owner.side === 'ally') turnStat.allyDamage += actual
+    else turnStat.enemyDamage += actual
+    const woundedDelta = target.wounded - beforeWounded
+    const deadDelta = target.dead - beforeDead
+    if (logs !== NO_LOGS) logs.push({
+      turn,
+      side: owner.side,
+      actor: owner.name,
+      actorHp: owner.hp,
+      target: target.name,
+      targetSide: target.side,
+      amount: actual,
+      beforeHp,
+      afterHp: target.hp,
+      woundedDelta,
+      deadDelta,
+      valueType: 'damage',
+      effect,
+      message: `${effect}で${target.name}に${actual.toLocaleString()}ダメージ ${hpChangeText(beforeHp, target.hp)} / ${casualtyText(woundedDelta, deadDelta)}`,
+    })
+    if (actual > 0) {
+      recordDamageDealtSkillEffects(owner, kind, turn, logs)
+      applyBingxueLifeSteal(owner, actual, turn, logs, turnStat)
+      const targetAllies = allFighters.filter(fighter => fighter.side === target.side)
+      const targetEnemies = allFighters.filter(fighter => fighter.side !== target.side)
+      fireTriggeredSkills(
+        target,
+        kind === 'strategy' ? 'onStrategyDamageReceived' : 'onPhysicalDamageReceived',
+        owner,
+        targetAllies,
+        targetEnemies,
+        turn,
+        logs,
+        rng,
+        stats,
+        turnStat,
+        controlStats,
+      )
+    }
+    return actual
+  },
+  cleanse: (target, count) => {
+    const removed = Object.keys(target.statuses)
+      .filter(name => name !== '先攻' && !name.endsWith('耐性'))
+      .slice(0, count)
+    removed.forEach(name => delete target.statuses[name])
+    return removed
+  },
+})
+
 const addControl = (ctx: SkillResolveContext, target: BattleFighter, name: string, duration: number) => {
   if (!isAlive(target)) return
+  if (controlBlockedByBingxue(target, name)) {
+    if (ctx.logs !== NO_LOGS) ctx.logs.push({
+      turn: ctx.turn,
+      side: target.side,
+      actor: target.name,
+      actorHp: target.hp,
+      message: `兵学の耐性で${name}を防いだ`,
+    })
+    return
+  }
   target.statuses[name] = Math.max(target.statuses[name] ?? 0, duration)
   ctx.controlStats[name] = (ctx.controlStats[name] ?? 0) + 1
   if (ctx.logs !== NO_LOGS) ctx.logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, actorHp: ctx.caster.hp, message: `${skillDisplayName(ctx.skill)}: ${target.name}に${name}(${duration}T)` })
+  const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
+  const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
+  runBingxueControlApplied(
+    ctx.caster,
+    target,
+    targetAllies,
+    targetEnemies,
+    ctx.turn,
+    ctx.rng,
+    createBingxueHelpers(ctx.allies, ctx.enemies, ctx.turn, ctx.logs, ctx.rng, ctx.stats, ctx.turnStat, ctx.controlStats),
+  )
 }
 
 const namedSkillHelpers: BattleSkillEffectHelpers = {
@@ -1089,7 +1332,15 @@ const resolveSkill = (
       const beforeHp = fighter.hp
       const beforeWounded = fighter.wounded
       const beforeDead = fighter.dead
-      const actual = applyDamage(fighter, baseDamage(caster, fighter, skill, rng, kind))
+      const actual = applyDamage(fighter, baseDamage(
+        caster,
+        fighter,
+        skill,
+        rng,
+        kind,
+        undefined,
+        { candidates: fighter.side === caster.side ? allies : enemies, skillType: battleSkillType(skill) },
+      ))
       const afterHp = fighter.hp
       const woundedDelta = fighter.wounded - beforeWounded
       const deadDelta = fighter.dead - beforeDead
@@ -1112,7 +1363,25 @@ const resolveSkill = (
         effect: skillName,
         message: `${skillName}で${fighter.name}に${actual.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
       })
-      if (actual > 0) recordDamageDealtSkillEffects(caster, kind, turn, logs)
+      if (actual > 0) {
+        recordDamageDealtSkillEffects(caster, kind, turn, logs)
+        applyBingxueLifeSteal(caster, actual, turn, logs, turnStat)
+        const targetAllies = fighter.side === caster.side ? allies : enemies
+        const targetEnemies = fighter.side === caster.side ? enemies : allies
+        fireTriggeredSkills(
+          fighter,
+          kind === 'strategy' ? 'onStrategyDamageReceived' : 'onPhysicalDamageReceived',
+          caster,
+          targetAllies,
+          targetEnemies,
+          turn,
+          logs,
+          rng,
+          stats,
+          turnStat,
+          controlStats,
+        )
+      }
     })
   }
 
@@ -1123,7 +1392,9 @@ const resolveSkill = (
     healTargets.forEach((fighter) => {
       const beforeHp = fighter.hp
       const beforeWounded = fighter.wounded
-      const actual = applyHeal(fighter, baseHeal(caster, skill, rng))
+      const lowestRatioBeforeHeal = Math.min(...living(allies).map(ally => ally.hp / Math.max(1, ally.maxHp)))
+      const wasLowestBeforeHeal = fighter.hp / Math.max(1, fighter.maxHp) <= lowestRatioBeforeHeal
+      const actual = applyHeal(fighter, baseHeal(caster, fighter, skill, rng))
       const afterHp = fighter.hp
       const healedWounded = beforeWounded - fighter.wounded
       recordHealing(stats, caster, skill, actual)
@@ -1147,6 +1418,14 @@ const resolveSkill = (
       })
       if (actual > 0) {
         addHealingStock(allies, actual, turn, logs)
+        runBingxueSkillHeal(
+          caster,
+          fighter,
+          allies,
+          turn,
+          createBingxueHelpers(allies, enemies, turn, logs, rng, stats, turnStat, controlStats),
+          wasLowestBeforeHeal,
+        )
         const targetAllies = fighter.side === caster.side ? allies : enemies
         const targetEnemies = fighter.side === caster.side ? enemies : allies
         fireTriggeredSkills(fighter, 'onHealed', caster, targetAllies, targetEnemies, turn, logs, rng, stats, turnStat, controlStats)
@@ -1155,7 +1434,7 @@ const resolveSkill = (
   }
 
   applyGenericBuffs(skill, caster, targets)
-  applyControl(skill, targets, logs, turn, caster, controlStats)
+  applyControl({ caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats }, targets)
   applyDot(skill, targets, caster, turn, logs)
 
   if (rate === 0 && hRate === 0 && !skill.control_type && !skill.dot_name && (skill.buff_types || skill.debuff_types)) {
@@ -1181,19 +1460,39 @@ const trySkill = (
   if (!isAlive(caster) || !skillSupportsTrigger(skill, trigger)) return
   if ((caster.skillCooldowns[skill.id || skill.name] ?? 0) > 0) return
   if (skill.maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= skill.maxPerTurn) return
-  if (rng() > extractRate(skill)) {
+  const resolvedSkillType = battleSkillType(skill)
+  const unique = isUniqueBattleSkill(skill)
+  const prepared = preparationTurns(skill) > 0
+  const activationRate = clamp(
+    extractRate(skill) + bingxueActivationChanceBonus(caster, resolvedSkillType, unique),
+    0,
+    1,
+  )
+  if (rng() > activationRate) {
+    recordBingxueSkillFailure(caster, resolvedSkillType, unique, prepared)
     if (trigger === 'beforeAction' || trigger === 'afterNormalAttack') {
       if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}は不発` })
     }
     return
   }
 
+  markBingxueSkillUsed(caster, resolvedSkillType)
   const skillKey = skill.id || skill.name
   caster.skillUsesThisTurn[skillKey] = (caster.skillUsesThisTurn[skillKey] ?? 0) + 1
   if (skill.cooldown) caster.skillCooldowns[skillKey] = skill.cooldown
   recordActivation(stats, caster, skill)
 
-  const prep = trigger === 'beforeAction' ? preparationTurns(skill) : 0
+  let prep = trigger === 'beforeAction' ? preparationTurns(skill) : 0
+  if (prep > 0 && consumeBingxuePreparationReduction(caster, resolvedSkillType, unique, prepared, rng)) {
+    prep = Math.max(0, prep - 1)
+    if (logs !== NO_LOGS) logs.push({
+      turn,
+      side: caster.side,
+      actor: caster.name,
+      actorHp: caster.hp,
+      message: '七転八起: 準備ターンを1短縮',
+    })
+  }
   if (prep > 0) {
     caster.pendingSkills.push({ skill, remainingTurns: prep })
     if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}の準備を開始(${prep}T)` })
@@ -1204,6 +1503,7 @@ const trySkill = (
   }
   if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}発動` })
   resolveSkill(caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats)
+  recordBingxueSkillResolved(caster, resolvedSkillType, prepared, turn, rng)
 }
 
 const processPendingSkills = (
@@ -1232,7 +1532,15 @@ const processPendingSkills = (
       if (isUniqueBattleSkill(pending.skill)) {
         fireBeforeUniqueSkill(fighter, pending.skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
       }
+      markBingxueSkillUsed(fighter, battleSkillType(pending.skill))
       resolveSkill(fighter, target, allies, enemies, pending.skill, 'beforeAction', turn, logs, rng, stats, turnStat, controlStats)
+      recordBingxueSkillResolved(
+        fighter,
+        battleSkillType(pending.skill),
+        preparationTurns(pending.skill) > 0,
+        turn,
+        rng,
+      )
     })
 }
 
@@ -1257,7 +1565,11 @@ const processDots = (
         ...pseudoSkill,
         damage_rate_max: status.dotRate,
         battle_type: status.dotType === 'strategy' ? 'strategy' : 'bravery',
-      }, rng, status.dotType ?? 'physical'))
+      }, rng, status.dotType ?? 'physical', undefined, {
+        candidates: all.filter(candidate => candidate.side === fighter.side),
+        dot: true,
+        skillType: null,
+      }))
       const afterHp = fighter.hp
       const woundedDelta = fighter.wounded - beforeWounded
       const deadDelta = fighter.dead - beforeDead
@@ -1280,7 +1592,10 @@ const processDots = (
         effect: status.name,
         message: `${status.name}で${fighter.name}に${amount.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
       })
-      if (amount > 0) recordDamageDealtSkillEffects(source, status.dotType ?? 'physical', turn, logs)
+      if (amount > 0) {
+        recordDamageDealtSkillEffects(source, status.dotType ?? 'physical', turn, logs)
+        applyBingxueLifeSteal(source, amount, turn, logs, turnStat)
+      }
     }
     status.turns -= 1
     if (status.turns > 0) remaining.push(status)
@@ -1297,6 +1612,7 @@ const isActionBlocked = (fighter: BattleFighter, rng: () => number): string | nu
 }
 
 const tickFighter = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[]) => {
+  tickBingxueTurn(fighter, turn)
   Object.keys(fighter.skillCooldowns).forEach((key) => {
     fighter.skillCooldowns[key] = Math.max(0, fighter.skillCooldowns[key] - 1)
   })
@@ -1396,6 +1712,26 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
   if (logs !== NO_LOGS) logs.push({ turn: 0, side: 'system', message: `${allyLineup.name} vs ${enemyLineup.name} 開始` })
   logTroopStatBonus(logs, '自軍', ally)
   logTroopStatBonus(logs, '敵軍', enemy)
+  ;[
+    { fighters: ally, allies: ally },
+    { fighters: enemy, allies: enemy },
+  ].forEach(({ fighters, allies }) => {
+    fighters.forEach((fighter) => initializeBingxueBattle(
+      fighter,
+      allies,
+      rng,
+      (owner, message) => {
+        if (logs !== NO_LOGS) logs.push({
+          turn: 0,
+          side: owner.side,
+          actor: owner.name,
+          actorHp: owner.hp,
+          effect: '兵学',
+          message,
+        })
+      },
+    ))
+  })
   if (logs !== NO_LOGS) logs.push({ turn: 0, side: 'system', message: '準備ターン: 指揮・受動・兵種戦法を処理' })
 
   // 準備ターン: 指揮・受動・兵種など、戦闘開始時に解決する戦法を処理する。
@@ -1418,17 +1754,30 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
     all.forEach((fighter) => {
       const allies = fighter.side === 'ally' ? ally : enemy
       const enemies = fighter.side === 'ally' ? enemy : ally
+      runBingxueTurnStart({
+        owner: fighter,
+        allies,
+        enemies,
+        currentTarget: chooseTarget(enemies, rng),
+        turn,
+        rng,
+        helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
+      })
       processDots(fighter, turn, logs, rng, skillStats, all, turnStat)
       processPendingSkills(fighter, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
       fireTriggeredSkills(fighter, 'turnStart', chooseTarget(enemies, rng), allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
     })
 
-    const order = living(all).sort((a, b) => statOf(b, 'spd') - statOf(a, 'spd') || (rng() > 0.5 ? 1 : -1))
+    const order = living(all).sort((a, b) =>
+      Number((b.statuses['先攻'] ?? 0) > 0) - Number((a.statuses['先攻'] ?? 0) > 0)
+      || statOf(b, 'spd') - statOf(a, 'spd')
+      || (rng() > 0.5 ? 1 : -1),
+    )
     for (const actor of order) {
       if (!isAlive(actor)) continue
       const allies = actor.side === 'ally' ? ally : enemy
       const enemies = actor.side === 'ally' ? enemy : ally
-      const target = chooseTarget(enemies, rng)
+      let target = chooseTarget(enemies, rng)
       if (!target) break
       const actionLogStart = logs === NO_LOGS ? 0 : logs.length
       const actionActorHp = actor.hp
@@ -1439,6 +1788,16 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           if (logs !== NO_LOGS) logs.push({ turn, side: actor.side, actor: actor.name, actorHp: actor.hp, message: `${actor.name}は${blocked}で行動できない` })
           continue
         }
+
+        runBingxueBeforeAction({
+          owner: actor,
+          allies,
+          enemies,
+          currentTarget: target,
+          turn,
+          rng,
+          helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
+        })
 
         const grantedActionSkills = teamActionBattleSkills(allies)
         const inheritedActionSkills = grantedActionSkills.filter(
@@ -1460,13 +1819,21 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         )
         if (!isAlive(target)) continue
 
+        target = chooseTarget(enemies, rng, 'normal')
+        if (!target) break
         fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         if (!isAlive(target)) continue
 
         const beforeHp = target.hp
         const beforeWounded = target.wounded
         const beforeDead = target.dead
-        const normalDamage = applyDamage(target, baseDamage(actor, target, null, rng, 'normal'))
+        const normalDamage = applyDamage(
+          target,
+          baseDamage(actor, target, null, rng, 'normal', undefined, {
+            candidates: enemies,
+            skillType: null,
+          }),
+        )
         const afterHp = target.hp
         const woundedDelta = target.wounded - beforeWounded
         const deadDelta = target.dead - beforeDead
@@ -1490,9 +1857,26 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         })
         if (normalDamage > 0) {
           recordDamageDealtSkillEffects(actor, 'physical', turn, logs)
+          applyBingxueLifeSteal(actor, normalDamage, turn, logs, turnStat)
+          runBingxueNormalAttackReceived(
+            target,
+            actor,
+            turn,
+            rng,
+            createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
+          )
           fireTriggeredSkills(target, 'onNormalAttackReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
           fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
         }
+        runBingxueAfterNormalAttack({
+          owner: actor,
+          allies,
+          enemies,
+          currentTarget: target,
+          turn,
+          rng,
+          helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
+        })
         fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         if (dateMasamuneHasDragonCavalry(allies) && grantedActionSkills.length > 0) {
           fireTriggeredSkillList(
@@ -1528,9 +1912,17 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             grantedActionSkills[0],
           )
         })
-
         if (living(enemy).length === 0 || living(ally).length === 0) break
       } finally {
+        runBingxueAfterAction({
+          owner: actor,
+          allies,
+          enemies,
+          currentTarget: chooseTarget(enemies, rng),
+          turn,
+          rng,
+          helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
+        })
         markActionLogs(logs, actionLogStart, actor, actionActorHp)
       }
     }
