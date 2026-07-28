@@ -948,6 +948,7 @@ const withHealRate = (skill: Skill, rate: number, kind?: 'bravery' | 'strategy')
   battle_type: kind ?? skill.battle_type,
 })
 
+// 兵学で得た離反・心攻を、実際に与えたダメージを基準に回復へ変換する。
 const applyBingxueLifeSteal = (
   source: BattleFighter,
   damage: number,
@@ -1135,6 +1136,10 @@ const healBySkill = (ctx: SkillResolveContext, target: BattleFighter, rate: numb
   return actual
 }
 
+/**
+ * 兵学専用ファイルから、戦闘本体のダメージ・回復・ログ処理を安全に呼ぶための窓口。
+ * 兵学側ではHPや負傷兵を直接書き換えず、必ずこのヘルパーを経由する。
+ */
 const createBingxueHelpers = (
   allies: BattleFighter[],
   enemies: BattleFighter[],
@@ -1712,6 +1717,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
   if (logs !== NO_LOGS) logs.push({ turn: 0, side: 'system', message: `${allyLineup.name} vs ${enemyLineup.name} 開始` })
   logTroopStatBonus(logs, '自軍', ally)
   logTroopStatBonus(logs, '敵軍', enemy)
+  // 戦闘開始時に一度だけ発動する兵学を、自軍・敵軍の全武将へ適用する。
   ;[
     { fighters: ally, allies: ally },
     { fighters: enemy, allies: enemy },
@@ -1754,6 +1760,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
     all.forEach((fighter) => {
       const allies = fighter.side === 'ally' ? ally : enemy
       const enemies = fighter.side === 'ally' ? enemy : ally
+      // 負傷兵死亡や通常のターン開始戦法と同じ段階で、ターン開始兵学を処理する。
       runBingxueTurnStart({
         owner: fighter,
         allies,
@@ -1789,6 +1796,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           continue
         }
 
+        // 行動不能判定を通過した武将へ、行動開始前の兵学を処理する。
         runBingxueBeforeAction({
           owner: actor,
           allies,
@@ -1868,6 +1876,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           fireTriggeredSkills(target, 'onNormalAttackReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
           fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
         }
+        // 通常攻撃の結果が確定してから、通常攻撃後の兵学を処理する。
         runBingxueAfterNormalAttack({
           owner: actor,
           allies,
@@ -1914,6 +1923,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         })
         if (living(enemy).length === 0 || living(ally).length === 0) break
       } finally {
+        // 途中で行動が終了した場合も finally で必ず行動後兵学を1回だけ処理する。
         runBingxueAfterAction({
           owner: actor,
           allies,
