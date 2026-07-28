@@ -57,6 +57,10 @@ class BingxueCategoryTest(unittest.TestCase):
         self.assertEqual(bingxue["陣立"]["major"], ["気勢崩し", "返り討ちの計", "生々流転"])
         self.assertEqual(bingxue["臨戦"]["major"], ["搦手の策", "心頭滅却", "達人大観"])
         self.assertEqual(bingxue["機略"]["major"], ["離間の計", "詭計百出", "破陣の勢い"])
+        self.assertEqual(bingxue["武略"]["minor"], ["剛力", "豪勇", "妙策", "突貫", "胆力", "活路"])
+        self.assertEqual(bingxue["陣立"]["minor"], ["慧眼", "俊才", "兵心", "乱戦", "逆境", "恩顧"])
+        self.assertEqual(bingxue["臨戦"]["minor"], ["協同", "地利", "天時", "機動", "明鏡", "不惑"])
+        self.assertEqual(bingxue["機略"]["minor"], ["神算", "鬼気", "早駆", "神秘", "多謀", "強靭"])
 
 
 if __name__ == "__main__":
