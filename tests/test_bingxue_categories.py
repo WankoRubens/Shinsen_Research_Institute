@@ -3,6 +3,8 @@ import re
 import unittest
 from pathlib import Path
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "script"))
@@ -47,6 +49,14 @@ class BingxueCategoryTest(unittest.TestCase):
         registered_block = source.split("IMPLEMENTED_BINGXUE_NAMES = new Set([", 1)[1].split("])", 1)[0]
         registered = set(re.findall(r"'([^']+)'", registered_block))
         self.assertEqual(registered, set(BINGXUE_OPTION_TO_DIRECTION))
+
+    def test_date_masamune_has_requested_major_options(self):
+        overrides = yaml.safe_load((ROOT / "data" / "overrides.yaml").read_text(encoding="utf-8"))
+        bingxue = overrides["heroes"]["伊達政宗"]["bingxue"]
+        self.assertEqual(bingxue["武略"]["major"], ["舟中敵国", "当意即妙", "智勇兼備"])
+        self.assertEqual(bingxue["陣立"]["major"], ["気勢崩し", "返り討ちの計", "生々流転"])
+        self.assertEqual(bingxue["臨戦"]["major"], ["搦手の策", "心頭滅却", "達人大観"])
+        self.assertEqual(bingxue["機略"]["major"], ["離間の計", "詭計百出", "破陣の勢い"])
 
 
 if __name__ == "__main__":

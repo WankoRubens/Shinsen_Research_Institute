@@ -2797,6 +2797,31 @@ heroes:
     unique_skill: 伊達風采
     teachable_skill: 龍騎兵
     assembly_skill: ''
+    bingxue:
+      武略:
+        major:
+        - 舟中敵国
+        - 当意即妙
+        - 智勇兼備
+        minor: []
+      陣立:
+        major:
+        - 気勢崩し
+        - 返り討ちの計
+        - 生々流転
+        minor: []
+      臨戦:
+        major:
+        - 搦手の策
+        - 心頭滅却
+        - 達人大観
+        minor: []
+      機略:
+        major:
+        - 離間の計
+        - 詭計百出
+        - 破陣の勢い
+        minor: []
     traits:
     - name: 獨眼龍
       name_jp: 独眼竜
