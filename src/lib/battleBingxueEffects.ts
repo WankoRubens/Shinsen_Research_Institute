@@ -549,14 +549,13 @@ export const runBingxueControlApplied = (
     helpers.log(controller, `右往左往: ${target.name}の与ダメージ-8%`)
   }
 
-  // 返り討ちの計: 自身が状態異常を受けた時、最大3回まで敵へ反撃する。
+  // 返り討ちの計: 自身が制御状態を受けた直後、90%の確率でランダムな敵へ反撃する。
   if (hasBingxue(target, '返り討ちの計')) {
-    const uses = target.specialState.bingxueCounterUses ?? 0
-    const retaliationTarget = alive(targetEnemies)[Math.floor(rng() * alive(targetEnemies).length)]
-    if (uses < 3 && retaliationTarget && roll(rng, 0.9)) {
-      target.specialState.bingxueCounterUses = uses + 1
-      // 武勇と知略の高い方に合わせて、反撃を兵刃・計略から選ぶ。
-      const kind: DamageKind = helpers.statOf(target, 'val') >= helpers.statOf(target, 'int') ? 'physical' : 'strategy'
+    const livingEnemies = alive(targetEnemies)
+    const retaliationTarget = livingEnemies[Math.floor(rng() * livingEnemies.length)]
+    if (retaliationTarget && roll(rng, 0.9)) {
+      // 武勇が知略を上回る場合は兵刃、それ以外（同値を含む）は計略ダメージにする。
+      const kind: DamageKind = helpers.statOf(target, 'val') > helpers.statOf(target, 'int') ? 'physical' : 'strategy'
       helpers.damage(target, retaliationTarget, 100, kind, '返り討ちの計')
     }
   }

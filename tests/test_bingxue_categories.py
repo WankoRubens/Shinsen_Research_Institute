@@ -50,6 +50,13 @@ class BingxueCategoryTest(unittest.TestCase):
         registered = set(re.findall(r"'([^']+)'", registered_block))
         self.assertEqual(registered, set(BINGXUE_OPTION_TO_DIRECTION))
 
+    def test_counterattack_strategy_uses_control_hook_without_use_limit(self):
+        source = (ROOT / "src" / "lib" / "battleBingxueEffects.ts").read_text(encoding="utf-8")
+        effect_block = source.split("// 返り討ちの計:", 1)[1].split("// 不惑:", 1)[0]
+        self.assertIn("roll(rng, 0.9)", effect_block)
+        self.assertIn("'val') > helpers.statOf(target, 'int')", effect_block)
+        self.assertNotIn("bingxueCounterUses", effect_block)
+
     def test_date_masamune_has_requested_major_options(self):
         overrides = yaml.safe_load((ROOT / "data" / "overrides.yaml").read_text(encoding="utf-8"))
         bingxue = overrides["heroes"]["伊達政宗"]["bingxue"]
