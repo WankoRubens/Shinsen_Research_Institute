@@ -494,11 +494,11 @@ export const runBingxueNormalAttackReceived = (
   rng: () => number,
   helpers: BingxueActionHelpers,
 ): void => {
-  // 気勢崩し: 攻撃者の武勇と知略を、そのターン中だけ低下させる。
+  // 気勢崩し: 通常攻撃を受けた時、50%の確率で攻撃者の武勇と知略を1ターン低下させる。
   if (!hasBingxue(defender, '気勢崩し') || !roll(rng, 0.5)) return
-  addTimedModifier(attacker, `${stateKey('気勢崩し')}:val`, 'val', -12, turn)
-  addTimedModifier(attacker, `${stateKey('気勢崩し')}:int`, 'int', -12, turn)
-  helpers.log(defender, `気勢崩し: ${attacker.name}の武勇・知略-12`)
+  addTimedModifier(attacker, `${stateKey('気勢崩し')}:val`, 'val', -12, turn + 1)
+  addTimedModifier(attacker, `${stateKey('気勢崩し')}:int`, 'int', -12, turn + 1)
+  helpers.log(defender, `気勢崩し: ${attacker.name}の武勇・知略-12(1T)`)
 }
 
 // 戦法による回復が実際に1以上入った直後に呼ばれる兵学効果。

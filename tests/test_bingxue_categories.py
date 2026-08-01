@@ -57,6 +57,13 @@ class BingxueCategoryTest(unittest.TestCase):
         self.assertIn("'val') > helpers.statOf(target, 'int')", effect_block)
         self.assertNotIn("bingxueCounterUses", effect_block)
 
+    def test_morale_break_reduces_attacker_stats_for_one_turn(self):
+        source = (ROOT / "src" / "lib" / "battleBingxueEffects.ts").read_text(encoding="utf-8")
+        effect_block = source.split("// 気勢崩し:", 1)[1].split("// 戦法による回復", 1)[0]
+        self.assertIn("roll(rng, 0.5)", effect_block)
+        self.assertIn("'val', -12, turn + 1", effect_block)
+        self.assertIn("'int', -12, turn + 1", effect_block)
+
     def test_date_masamune_has_requested_major_options(self):
         overrides = yaml.safe_load((ROOT / "data" / "overrides.yaml").read_text(encoding="utf-8"))
         bingxue = overrides["heroes"]["伊達政宗"]["bingxue"]
