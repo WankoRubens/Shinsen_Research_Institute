@@ -47,6 +47,8 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   竜騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
   龍騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
   攻其不備: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
+  追い崩し: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
+  追亡逐北: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   乱世の華: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
   風林火山: defineBattleSkillMeta({ type: '指揮' }),
@@ -1258,21 +1260,18 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
+    case '追い崩し':
     case '追亡逐北': {
       // 戦法タイプ: 能動
-      // 単体計略ダメージと畏縮付与
-      // 敵軍単体に計略ダメージ（ダメージ率146%）を与える
-      // 畏縮を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 146, 'strategy')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["畏縮"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
+      // 生存している敵軍から、兵力などに偏らずランダムな1名を選択する。
+      const livingEnemies = ctx.enemies.filter((enemy) => enemy.hp > 0)
+      const target = livingEnemies[Math.floor(ctx.rng() * livingEnemies.length)]
+      if (!target) return true
+
+      // 選んだ対象へ146%（知略依存）の計略ダメージを与える。
+      h.dealSkillDamage(ctx, target, 146, 'strategy')
+      // 既存の畏縮は指揮・受動戦法を止める状態。洞察による防御判定は通さない。
+      h.addControl(ctx, target, '畏縮', 1)
       return true
     }
     case '伊達風采': {

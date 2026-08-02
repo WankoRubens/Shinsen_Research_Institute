@@ -11693,12 +11693,15 @@
   },
   {
     "name": "追亡逐北",
+    "name_jp": "追い崩し",
     "type": "主動",
     "rarity": "S",
     "target": "敵軍單體",
     "activation_rate": "35%",
     "description": "對敵軍單體造成{var:dmg_rate}謀略傷害（{scale:智略}）， 並施加{status:畏縮}狀態，持續1回合。",
     "brief_description": "單體謀略傷害並施加畏縮",
+    "description_jp": "ランダムな敵軍単体に{var:dmg_rate}の計略ダメージを与え（{scale:知略}）、1ターンの間、{status:畏縮}を付与する。畏縮は指揮・受動戦法を発動不可にし、洞察状態でも防げない。",
+    "brief_description_jp": "単体計略ダメージと防御不能の畏縮付与",
     "tags": [
       "謀略傷害",
       "單體傷害",
@@ -11737,7 +11740,6 @@
       ]
     },
     "is_event_skill": true,
-    "name_jp": null,
     "commander_description": "",
     "source_hero": "",
     "unique_hero": "",

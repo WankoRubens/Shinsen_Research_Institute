@@ -279,9 +279,9 @@ const SKILL_JP_OVERRIDES: Record<string, Partial<Skill>> = {
     brief_description_jp: '騎兵を進化させ、速度上昇と確率回復を付与',
   },
   '追亡逐北': {
-    name_jp: '追亡逐北',
-    description_jp: '敵軍単体に{var:dmg_rate}の計略ダメージを与え（{scale:知略}）、{status:畏縮}状態を1ターン付与する。',
-    brief_description_jp: '単体計略ダメージと畏縮付与',
+    name_jp: '追い崩し',
+    description_jp: 'ランダムな敵軍単体に{var:dmg_rate}の計略ダメージを与え（{scale:知略}）、1ターンの間、{status:畏縮}を付与する。畏縮は指揮・受動戦法を発動不可にし、洞察状態でも防げない。',
+    brief_description_jp: '単体計略ダメージと防御不能の畏縮付与',
   },
   '伊達風采': {
     name_jp: '伊達の粋',

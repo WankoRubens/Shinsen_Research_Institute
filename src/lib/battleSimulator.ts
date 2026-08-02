@@ -1463,9 +1463,20 @@ const trySkill = (
 ) => {
   // 発動タイミング、クールダウン、ターン内回数、確率判定をまとめて見る入口。
   if (!isAlive(caster) || !skillSupportsTrigger(skill, trigger)) return
+  const resolvedSkillType = battleSkillType(skill)
+  // 畏縮は洞察の有無にかかわらず、指揮・受動戦法の新たな発動を禁止する。
+  if ((caster.statuses['畏縮'] ?? 0) > 0 && (resolvedSkillType === '指揮' || resolvedSkillType === '受動')) {
+    if (logs !== NO_LOGS) logs.push({
+      turn,
+      side: caster.side,
+      actor: caster.name,
+      actorHp: caster.hp,
+      message: `${skill.name_jp || skill.name}は畏縮で発動できない`,
+    })
+    return
+  }
   if ((caster.skillCooldowns[skill.id || skill.name] ?? 0) > 0) return
   if (skill.maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= skill.maxPerTurn) return
-  const resolvedSkillType = battleSkillType(skill)
   const unique = isUniqueBattleSkill(skill)
   const prepared = preparationTurns(skill) > 0
   const activationRate = clamp(
@@ -1622,6 +1633,8 @@ const tickFighter = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[
     fighter.skillCooldowns[key] = Math.max(0, fighter.skillCooldowns[key] - 1)
   })
   Object.keys(fighter.statuses).forEach((key) => {
+    // 畏縮は付与された対象の次の行動終了時に消費し、行動済みの相手にも1回分確実に作用させる。
+    if (key === '畏縮') return
     fighter.statuses[key] -= 1
     if (fighter.statuses[key] <= 0) delete fighter.statuses[key]
   })
@@ -1933,6 +1946,11 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           rng,
           helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
         })
+        // 畏縮の1ターンは、この武将の行動機会が終了した時点で消費する。
+        if ((actor.statuses['畏縮'] ?? 0) > 0) {
+          actor.statuses['畏縮'] -= 1
+          if (actor.statuses['畏縮'] <= 0) delete actor.statuses['畏縮']
+        }
         markActionLogs(logs, actionLogStart, actor, actionActorHp)
       }
     }

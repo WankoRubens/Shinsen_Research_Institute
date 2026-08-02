@@ -45,7 +45,7 @@
     "id": "flinch",
     "name": "畏縮",
     "category": "action_restriction",
-    "description": "禁用指揮與被動戰法"
+    "description": "指揮・受動戦法を発動できない。洞察状態でも防げない"
   },
   "閃避": {
     "id": "dodge",
