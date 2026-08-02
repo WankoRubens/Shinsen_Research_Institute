@@ -217,13 +217,16 @@ const recordDateIkiDamageHit = (
       if (fighter.role === 'main' && nextBuffStacks === 4) {
         fighter.specialState.dateIkiCommanderReady = 1
       }
+      // ログには「何回目」ではなく、伊達の粋だけで現在上昇している累計値を表示する。
+      const totalValorIncrease = Number((valorIncrease * nextBuffStacks).toFixed(2))
+      const totalIntelligenceIncrease = Number((intelligenceIncrease * nextBuffStacks).toFixed(2))
       logs.push({
         turn,
         side: fighter.side,
         actor: fighter.name,
         actorHp: fighter.hp,
         effect: '伊達の粋',
-        message: `伊達の粋: 武勇+${valorIncrease.toFixed(2)}、知略+${intelligenceIncrease.toFixed(2)}(属性上昇${nextBuffStacks}/4)`,
+        message: `伊達の粋: 武勇+${totalValorIncrease.toFixed(2)}、知略+${totalIntelligenceIncrease.toFixed(2)}`,
       })
       continue
     }
@@ -260,25 +263,29 @@ const recordBunbuDamageHit = (
   fighter.specialState[stackKey] = nextStacks
   if (kind === 'strategy') {
     fighter.buffs.val = (fighter.buffs.val ?? 0) + 30
+    // 回数ではなく、文武両道による現在の累計上昇値を表示する。
+    const totalValorIncrease = nextStacks * 30
     logs.push({
       turn,
       side: fighter.side,
       actor: fighter.name,
       actorHp: fighter.hp,
       effect: '文武両道',
-      message: `文武両道: 計略ダメージで武勇+30(${nextStacks}/5)`,
+      message: `文武両道: 計略ダメージで武勇+${totalValorIncrease}`,
     })
     return
   }
 
   fighter.buffs.int = (fighter.buffs.int ?? 0) + 30
+  // 回数ではなく、文武両道による現在の累計上昇値を表示する。
+  const totalIntelligenceIncrease = nextStacks * 30
   logs.push({
     turn,
     side: fighter.side,
     actor: fighter.name,
     actorHp: fighter.hp,
     effect: '文武両道',
-    message: `文武両道: 兵刃ダメージで知略+30(${nextStacks}/5)`,
+    message: `文武両道: 兵刃ダメージで知略+${totalIntelligenceIncrease}`,
   })
 }
 
@@ -633,7 +640,8 @@ export const applyNamedSkillEffect = (
         ctx.caster.specialState.josuiKisakuStacks = nextStacks
         // 奇策1スタックにつき計略与ダメージを5%上げる
         ctx.caster.buffs.strategyDamageDealt = (ctx.caster.buffs.strategyDamageDealt ?? 0) + 5
-        log(ctx.logs, ctx, `如水: ${reason}で奇策を獲得(${nextStacks}/8)`)
+        // 回数ではなく、如水による現在の累計上昇値を表示する。
+        log(ctx.logs, ctx, `如水: ${reason}で奇策を獲得（計略与ダメージ+${nextStacks * 5}%）`)
       }
 
       // 効果1: 毎ターン自分の行動開始前に奇策獲得判定
