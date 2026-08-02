@@ -393,8 +393,8 @@ export const runBingxueTurnStart = (ctx: BingxueActionContext): void => {
 export const runBingxueBeforeAction = (ctx: BingxueActionContext): void => {
   const { owner, turn, rng, helpers } = ctx
 
-  // 生々流転: 確率で自身を回復する。
-  if (hasBingxue(owner, '生々流転') && roll(rng, 0.4)) {
+  // 生々流転: 本戦1～8ターンの行動開始時、40%の確率で自身を回復する。
+  if (turn >= 1 && turn <= 8 && hasBingxue(owner, '生々流転') && roll(rng, 0.4)) {
     helpers.heal(owner, owner, 50, '生々流転')
   }
   // 舟中敵国: 発動ターン中だけ離反・心攻を6%得る。

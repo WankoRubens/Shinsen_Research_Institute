@@ -64,6 +64,13 @@ class BingxueCategoryTest(unittest.TestCase):
         self.assertIn("'val', -12, turn + 1", effect_block)
         self.assertIn("'int', -12, turn + 1", effect_block)
 
+    def test_continuous_cycle_heals_only_during_turns_one_to_eight(self):
+        source = (ROOT / "src" / "lib" / "battleBingxueEffects.ts").read_text(encoding="utf-8")
+        effect_block = source.split("// 生々流転:", 1)[1].split("// 舟中敵国:", 1)[0]
+        self.assertIn("turn >= 1 && turn <= 8", effect_block)
+        self.assertIn("roll(rng, 0.4)", effect_block)
+        self.assertIn("helpers.heal(owner, owner, 50, '生々流転')", effect_block)
+
     def test_date_masamune_has_requested_major_options(self):
         overrides = yaml.safe_load((ROOT / "data" / "overrides.yaml").read_text(encoding="utf-8"))
         bingxue = overrides["heroes"]["伊達政宗"]["bingxue"]
