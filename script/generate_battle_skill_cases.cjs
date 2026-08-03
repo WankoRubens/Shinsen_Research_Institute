@@ -12,7 +12,8 @@ if (existingStart >= 0) {
   text = text.slice(0, existingStart) + text.slice(afterEndLine + 1)
 }
 
-const existingManualCases = [...text.matchAll(/case '([^']+)': \{/g)].map((match) => match[1])
+// 複数の別名を同じ実装へ流す fall-through case も手書きcaseとして保持する。
+const existingManualCases = [...text.matchAll(/case '([^']+)':(?: \{)?/g)].map((match) => match[1])
 const manualSet = new Set(existingManualCases)
 const seen = new Set()
 

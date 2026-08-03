@@ -415,10 +415,21 @@
     "target": "敵軍全体（3名）",
     "activation_rate": "100%",
     "description": "友軍複数（2名）が通常攻撃を受けると、攻撃者の全属性に1.25%→2.5%（統率依存）の低下効果を付与（最大8回まで重ねがけ可能）大将技：自身が通常攻撃を受けると1ターンの間、40%→80%の確率で武勇が最も高い友軍単体が自身を援護",
-    "description_jp": "友軍複数（2名）が通常攻撃を受けると、攻撃者の全属性に1.25%→2.5%（統率依存）の低下効果を付与（最大8回まで重ねがけ可能）\n大将技：自身が通常攻撃を受けると1ターンの間、40%→80%の確率で武勇が最も高い友軍単体が自身を援護",
+    "description_jp": "友軍二人（自身以外の自軍武将）が通常攻撃を受けると、攻撃者の全属性を{var:stat_reduction_rate}低下させる（統率依存、最大{var:max_stacks}回まで重ねがけ可能）。",
     "commander_description": "",
-    "commander_description_jp": "",
-    "vars": {},
+    "commander_description_jp": "自身が通常攻撃を受けると、1ターンの間、{var:guard_chance}の確率で武勇が最も高い自軍単体が自身を援護する。",
+    "vars": {
+      "stat_reduction_rate": {
+        "base": 0.0125,
+        "max": 0.025
+      },
+      "max_stacks": 8,
+      "guard_chance": {
+        "base": 0.4,
+        "max": 0.8
+      },
+      "guard_duration": 1
+    },
     "source_hero": "徳川家康",
     "unique_hero": "徳川家康",
     "is_unique": true,
@@ -430,8 +441,9 @@
       "leader_skill"
     ],
     "brief_description": "友軍受到普通攻擊後使攻擊者屬性降低",
-    "brief_description_jp": "友軍複数（2名）が通常攻撃を受けると、攻撃者の全属性に1.25%→2.5%（統率依存）の低下効果を付与（最大8回まで重ねがけ可能）\n大将技：自身が通常攻撃を受け",
+    "brief_description_jp": "友軍への通常攻撃に反応して攻撃者の全属性を下げ、大将時は援護を得る",
     "cfg_id": 20003,
+    "trigger": "onNormalAttackReceived",
     "sim_id": "t51",
     "probability": 1,
     "category": "command",
@@ -452,7 +464,6 @@
     ],
     "effect_value": "",
     "target_jp": "敵軍全体（3名）",
-    "trigger": "battleStart",
     "category_jp": "指揮",
     "game8_kind": "固有戦法：",
     "game8_source_url": "https://game8.jp/nobunaga-shinsen/746982",

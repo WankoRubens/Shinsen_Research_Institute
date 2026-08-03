@@ -9,6 +9,7 @@ import {
   HEAL_STOCK_DAMAGE_SKILL_NAMES,
   IMPLEMENTED_BATTLE_SKILL_NAMES,
   TEAM_ACTION_BATTLE_SKILL_NAMES,
+  TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES,
   applyNamedSkillEffect,
   battleSkillType,
   compareBattleSkillPriority,
@@ -547,6 +548,38 @@ const chooseTarget = (
   return sorted[Math.floor(rng() * Math.min(2, sorted.length))] ?? sorted[0]
 }
 
+const redirectGuardedNormalAttack = (
+  target: BattleFighter,
+  defenders: BattleFighter[],
+  attacker: BattleFighter,
+  turn: number,
+  logs: BattleLogEntry[],
+): BattleFighter => {
+  if ((target.statuses['援護'] ?? 0) <= 0) return target
+  const guardianRole = target.specialState.mikawaGuardianRole
+  const guardian = defenders.find((fighter) =>
+    fighter.id !== target.id
+    && isAlive(fighter)
+    && ((guardianRole === 1 && fighter.role === 'vice1') || (guardianRole === 2 && fighter.role === 'vice2')),
+  )
+  if (!guardian) {
+    delete target.statuses['援護']
+    delete target.specialState.mikawaGuardianRole
+    return target
+  }
+  if (logs !== NO_LOGS) logs.push({
+    turn,
+    side: target.side,
+    actor: target.name,
+    actorHp: target.hp,
+    target: guardian.name,
+    targetSide: guardian.side,
+    effect: '三河魂',
+    message: `${guardian.name}が${target.name}を援護し、${attacker.name}の通常攻撃を引き受ける`,
+  })
+  return guardian
+}
+
 const targetCountOf = (skill: Skill, fallback = 1): number | [number, number] => {
   const text = `${skill.target_jp ?? ''} ${skill.target ?? ''} ${skill.description_jp ?? ''}`
   const range = text.match(/(\d+)\s*[〜～-]\s*(\d+)\s*名|(\d+)\s*[〜～-]\s*(\d+)\s*人/)
@@ -846,6 +879,8 @@ export interface SkillResolveContext {
   stats: SkillStatMap
   turnStat: BattleTurnStat
   controlStats: Record<string, number>
+  // 受撃・回復などのイベントが実際に発生した武将。targetは効果の発生源を指す。
+  eventSubject?: BattleFighter
 }
 
 const isSameSkill = (a: Skill, b: Skill): boolean => skillKeyForDedup(a) === skillKeyForDedup(b)
@@ -876,10 +911,11 @@ const fireTriggeredSkillList = (
   turnStat: BattleTurnStat,
   controlStats: Record<string, number>,
   skipSkill?: Skill,
+  eventSubject?: BattleFighter,
 ) => {
   orderedBattleSkills(skills).forEach((skill) => {
     if (skipSkill && isSameSkill(skill, skipSkill)) return
-    trySkill(skill, trigger, owner, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
+    trySkill(skill, trigger, owner, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats, eventSubject)
   })
 }
 
@@ -896,6 +932,7 @@ const fireTriggeredSkills = (
   turnStat: BattleTurnStat,
   controlStats: Record<string, number>,
   skipSkill?: Skill,
+  eventSubject?: BattleFighter,
 ) => {
   fireTriggeredSkillList(
     owner,
@@ -911,6 +948,7 @@ const fireTriggeredSkills = (
     turnStat,
     controlStats,
     skipSkill,
+    eventSubject,
   )
 }
 
@@ -1369,6 +1407,7 @@ const resolveSkill = (
   stats: SkillStatMap,
   turnStat: BattleTurnStat,
   controlStats: Record<string, number>,
+  eventSubject?: BattleFighter,
 ) => {
   const targets = resolveTargets(skill, caster, target, allies, enemies, rng)
   const skillName = skill.name_jp || skill.name
@@ -1379,7 +1418,7 @@ const resolveSkill = (
   const canApplyDirectTroopChange = trigger !== 'preparationTurn'
 
   // 個別実装がある戦法を優先し、未対応の戦法だけ汎用ダメージ/回復/制御へ流す。
-  if (applyNamedSkill({ caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats })) return
+  if (applyNamedSkill({ caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats, eventSubject })) return
 
   if (canApplyDirectTroopChange && rate > 0 && !isHeal) {
     targets.forEach((fighter) => {
@@ -1509,6 +1548,7 @@ const trySkill = (
   stats: SkillStatMap,
   turnStat: BattleTurnStat,
   controlStats: Record<string, number>,
+  eventSubject?: BattleFighter,
 ) => {
   // 発動タイミング、クールダウン、ターン内回数、確率判定をまとめて見る入口。
   if (!isAlive(caster) || !skillSupportsTrigger(skill, trigger)) return
@@ -1569,7 +1609,7 @@ const trySkill = (
     fireBeforeUniqueSkill(caster, skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
   }
   if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}発動` })
-  resolveSkill(caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats)
+  resolveSkill(caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats, eventSubject)
   recordBingxueSkillResolved(caster, resolvedSkillType, prepared, turn, rng)
 }
 
@@ -1699,6 +1739,7 @@ const tickFighter = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[
     fighter.statuses[key] -= 1
     if (fighter.statuses[key] <= 0) delete fighter.statuses[key]
   })
+  if ((fighter.statuses['援護'] ?? 0) <= 0) delete fighter.specialState.mikawaGuardianRole
   fighter.skillUsesThisTurn = {}
 }
 
@@ -1906,6 +1947,9 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         if (!isAlive(target)) continue
 
+        // 援護中の大将が狙われた場合、指定された友軍が通常攻撃を引き受ける。
+        target = redirectGuardedNormalAttack(target, enemies, actor, turn, logs)
+
         const beforeHp = target.hp
         const beforeWounded = target.wounded
         const beforeDead = target.dead
@@ -1947,7 +1991,47 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             rng,
             createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
           )
-          fireTriggeredSkills(target, 'onNormalAttackReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
+          fireTriggeredSkills(
+            target,
+            'onNormalAttackReceived',
+            actor,
+            enemies,
+            allies,
+            turn,
+            logs,
+            rng,
+            skillStats,
+            turnStat,
+            controlStats,
+            undefined,
+            target,
+          )
+          // 三河魂など、所持者以外の友軍が通常攻撃を受けた時に反応する指揮戦法も処理する。
+          enemies
+            .filter((owner) => owner.id !== target.id && isAlive(owner))
+            .forEach((owner) => {
+              const reactiveSkills = owner.skills.filter((skill) =>
+                TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES.has(skillDisplayName(skill))
+                || TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES.has(skill.name),
+              )
+              if (reactiveSkills.length === 0) return
+              fireTriggeredSkillList(
+                owner,
+                reactiveSkills,
+                'onNormalAttackReceived',
+                actor,
+                enemies,
+                allies,
+                turn,
+                logs,
+                rng,
+                skillStats,
+                turnStat,
+                controlStats,
+                undefined,
+                target,
+              )
+            })
           fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
         }
         // 通常攻撃の結果が確定してから、通常攻撃後の兵学を処理する。

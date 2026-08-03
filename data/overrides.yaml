@@ -2136,6 +2136,20 @@ skills:
     name_jp: 速戦
     description_jp: 自身の速度を{1}上昇させる。
     brief_description_jp: 速度上昇
+  三河魂:
+    description_jp: 友軍二人（自身以外の自軍武将）が通常攻撃を受けると、攻撃者の全属性を{var:stat_reduction_rate}低下させる（統率依存、最大{var:max_stacks}回まで重ねがけ可能）。
+    commander_description_jp: 自身が通常攻撃を受けると、1ターンの間、{var:guard_chance}の確率で武勇が最も高い自軍単体が自身を援護する。
+    brief_description_jp: 友軍への通常攻撃に反応して攻撃者の全属性を下げ、大将時は援護を得る
+    trigger: onNormalAttackReceived
+    vars:
+      stat_reduction_rate:
+        base: 0.0125
+        max: 0.025
+      max_stacks: 8
+      guard_chance:
+        base: 0.4
+        max: 0.8
+      guard_duration: 1
 heroes:
   柿崎景家:
     _action: add

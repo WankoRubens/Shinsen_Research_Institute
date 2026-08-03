@@ -42,6 +42,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   表裏比興: defineBattleSkillMeta({ type: '能動' }),
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
+  三河魂: defineBattleSkillMeta({ type: '指揮', triggers: ['onNormalAttackReceived'] }),
   伊達の粋: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn', 'beforeAction'] }),
   文武両道: defineBattleSkillMeta({ type: '受動', triggers: ['onPhysicalDamageDealt', 'onStrategyDamageDealt'] }),
   竜騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
@@ -106,6 +107,9 @@ const NAMED_BATTLE_SKILL_NAMES = [
 
 // 所持者だけでなく、部隊内の各武将の行動を起点に発動する兵種戦法。
 export const TEAM_ACTION_BATTLE_SKILL_NAMES = new Set(['竜騎兵', '龍騎兵'])
+
+// 所持者本人ではなく、同じ部隊の友軍が通常攻撃を受けた時にも反応する戦法。
+export const TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂'])
 
 const DESCRIPTION_BASED_BATTLE_SKILL_NAMES = (skillsData as unknown as Skill[])
   .flatMap((skill) => [skill.name_jp, skill.name])
@@ -1416,6 +1420,51 @@ export const applyNamedSkillEffect = (
       return true
     }
 
+    case '三河魂': {
+      // 戦法タイプ: 指揮。通常攻撃を受けた武将はeventSubject、攻撃者はtargetで受け取る。
+      const attacked = ctx.eventSubject ?? ctx.caster
+      const attacker = ctx.target
+      if (!attacker || attacker.side === ctx.caster.side) return true
+
+      if (attacked.id !== ctx.caster.id) {
+        // 所持者本人を除く友軍が受撃した時だけ、攻撃者へ全属性低下を積む。
+        const stackKey = `mikawaSoulStacks:${ctx.caster.id}`
+        const stacks = attacker.specialState[stackKey] ?? 0
+        const maxStacks = Math.round(h.varNumber(ctx.skill, 'max_stacks', 8))
+        if (stacks >= maxStacks) return true
+
+        // 最大レベルの2.5%へ、所持者の統率依存補正を加える。
+        const leadershipScale = 1 + Math.max(0, h.statOf(ctx.caster, 'lea') - 100) * 0.001
+        const reductionRate = h.varNumber(ctx.skill, 'stat_reduction_rate', 0.025) * leadershipScale
+        const allStats: Stat[] = ['lea', 'val', 'int', 'pol', 'cha', 'spd']
+        allStats.forEach((stat) => {
+          const reduction = Number(((attacker.baseStats[stat] ?? 0) * reductionRate).toFixed(2))
+          attacker.buffs[stat] = (attacker.buffs[stat] ?? 0) - reduction
+        })
+        attacker.specialState[stackKey] = stacks + 1
+        const totalPercent = Number((reductionRate * 100 * (stacks + 1)).toFixed(2))
+        log(ctx.logs, ctx, `三河魂: ${attacker.name}の全属性が累計${totalPercent}%低下`)
+        return true
+      }
+
+      // 大将本人が受撃した時は80%で、武勇が最も高い生存友軍へ援護を依頼する。
+      if (ctx.caster.role === 'main' && h.roll(ctx.rng, h.varNumber(ctx.skill, 'guard_chance', 0.8))) {
+        const guardian = living(ctx.allies)
+          .filter((ally) => ally.id !== ctx.caster.id)
+          .sort((a, b) => h.statOf(b, 'val') - h.statOf(a, 'val'))[0]
+        if (guardian) {
+          const duration = Math.max(1, Math.round(h.varNumber(ctx.skill, 'guard_duration', 1)))
+          ctx.caster.statuses['援護'] = Math.max(ctx.caster.statuses['援護'] ?? 0, duration)
+          ctx.caster.specialState.mikawaGuardianRole = guardian.role === 'vice1' ? 1 : 2
+          log(ctx.logs, ctx, `三河魂: ${guardian.name}が${ctx.caster.name}を援護(${duration}T)`)
+        }
+      }
+      return true
+    }
+
+
+
+
 
 
 
@@ -1480,11 +1529,6 @@ export const applyNamedSkillEffect = (
         h.dealSkillDamage(ctx, target, 40, 'strategy')
       })
       return true
-    }
-    case '三河魂': {
-      // 戦法タイプ: 指揮
-      // 友軍複数（2名）が通常攻撃を受けると、攻撃者の全属性に1.25%→2.5%（統率依存）の低下効果を付与（最大8回まで重ねがけ可能） 大将技：自身が通常攻撃を受け
-      return applyDatabaseSkillEffect(ctx, h)
     }
     case '盤石耽々': {
       // 戦法タイプ: 受動
@@ -3358,32 +3402,6 @@ export const applyNamedSkillEffect = (
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'heal').forEach((target) => {
         h.healBySkill(ctx, target, 78, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '追い崩し': {
-      // 戦法タイプ: 能動
-      // 単体計略ダメージと防御不能の畏縮付与
-      // 敵軍單體に計略ダメージ（ダメージ率146%）を与える
-      // 畏縮を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 146, 'strategy')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["畏縮"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '竜騎兵': {
-      // 戦法タイプ: 兵種
-      // 鉄砲を竜騎兵に進化させ、弾丸を消費してダメージを与える
-      // 自軍全體に兵刃ダメージ（ダメージ率104%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 104, 'physical')
       })
       return true
     }
