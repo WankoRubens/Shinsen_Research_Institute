@@ -1601,6 +1601,21 @@ def main():
     if CFG_AUTHORITATIVE:
         heroes, skills = _append_cfg_supplements(heroes, skills)
 
+        # cfgだけに存在する補完項目は最初のoverride適用より後で追加されるため、
+        # modify指定だけを再適用して日本語名・説明などの手修正を反映する。
+        late_skill_modifiers = {
+            key: value for key, value in overrides.get("skills", {}).items()
+            if value.get("_action", "modify") == "modify"
+        }
+        late_hero_modifiers = {
+            key: value for key, value in overrides.get("heroes", {}).items()
+            if value.get("_action", "modify") == "modify"
+        }
+        if late_skill_modifiers:
+            skills = apply_skill_overrides(skills, late_skill_modifiers)
+        if late_hero_modifiers:
+            heroes = apply_hero_overrides(heroes, late_hero_modifiers)
+
     heroes, skills, sim_merge_stats = _merge_shinsen_sim_data(heroes, skills)
     skills, game8_skill_count = _merge_game8_skill_index(skills)
     heroes, sanguo_zhi_merge_stats = _merge_sanguo_zhi_hero_fallbacks(heroes)

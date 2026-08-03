@@ -973,6 +973,7 @@ skills:
     _action: add
   出奇制勝:
     name: 出奇制勝
+    name_jp: 出奇制勝
     type: 被動
     rarity: S
     target: 自身
@@ -981,6 +982,8 @@ skills:
     description: 戰鬥中，自帶主動戰法造成傷害提高{var:damage_buff}（{scale:智略}）。 自身成功發動自帶主動戰法後，有{var:crit_chance}機率使自身獲得{var:crit_effect}{status:攻心}效果
       （{scale:智略}，可疊加{var:crit_stack_max}次）。
     brief_description: 提高主動戰法傷害，機率獲得會心
+    description_jp: 戦闘中、自身の固有能動戦法による与ダメージが{var:damage_buff}上昇する（{scale:知略}）。自身が固有能動戦法の発動に成功した後、{var:crit_chance}の確率で自身に{var:crit_effect}{status:攻心}を付与する（{scale:知略}、最大{var:crit_stack_max}回まで重ねがけ可能）。
+    brief_description_jp: 固有能動戦法の与ダメージを上げ、確率で攻心を獲得
     tags:
     - 增益
     - 施加狀態
@@ -1086,6 +1089,7 @@ skills:
     _action: add
   越後先手組:
     name: 越後先手組
+    name_jp: 越後先手組
     type: 兵種
     rarity: S
     target: 自軍全體
@@ -1093,6 +1097,8 @@ skills:
     description: 將騎兵進階為先手製勝的越後先手組。 戰鬥中，自軍全體速度增加{var:speed_buff}； 第2回合起，自軍全體每回合行動前，有{var:activation_rate}的機率（受武勇和速度影響）恢復自軍單體兵力（恢復率{var:recovery_rate}，{scale:武勇}）。
       若為上杉謙信統領，自軍武勇最高武將透過普通攻擊擊敗目標時，額外觸發一次兵力恢復效果。
     brief_description: 騎兵進階，提速並機率恢復兵力
+    description_jp: 騎兵を先手必勝の越後先手組に進化させる。戦闘中、自軍全体の速度が{var:speed_buff}上昇する。第2ターン以降、自軍全体は毎ターン行動前、{var:activation_rate}の確率（武勇と速度依存）で自軍単体の兵力を回復する（回復率{var:recovery_rate}、{scale:武勇}）。上杉謙信が統率している場合、自軍で武勇が最も高い武将が通常攻撃で目標を撃破した時、追加で兵力回復効果を発動する。
+    brief_description_jp: 騎兵を進化させ、速度上昇と確率回復を付与
     tags:
     - 增益
     - 兵種
@@ -2122,6 +2128,14 @@ skills:
     unique_hero: 浦上宗景
     is_unique: true
     _action: add
+  臨時槍之鈴:
+    name_jp: 臨時槍の鈴
+    description_jp: 通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率{1%}）を与える。第3ターン以降、追加で自身の兵力を回復する（回復率{2%}、武勇依存）。
+    brief_description_jp: 兵刃ダメージを与え、条件付きで自身を回復
+  速戰:
+    name_jp: 速戦
+    description_jp: 自身の速度を{1}上昇させる。
+    brief_description_jp: 速度上昇
 heroes:
   柿崎景家:
     _action: add

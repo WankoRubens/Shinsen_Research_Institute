@@ -27,7 +27,10 @@ export type TriggerEvent =
 export type Formula = number | string;
 
 // Stats include leadership, valor, intelligence, politics, charm, and speed.
-export type Stat = 'lea' | 'val' | 'int' | 'pol' | 'cha' | 'spd' | 'damageDealt' | 'damageTaken' | 'strategyDamageDealt' | 'attackDamage';
+export type Stat =
+  | 'lea' | 'val' | 'int' | 'pol' | 'cha' | 'spd'
+  | 'damageDealt' | 'damageTaken' | 'strategyDamageDealt' | 'attackDamage'
+  | 'healingReceived' | 'activationRate';
 
 export interface Scaling {
   stat: Stat;
@@ -81,6 +84,44 @@ export interface Action {
   else?: Action[];
 }
 
+// 戦法データの battle 定義は、単純な効果だけでなく条件分岐・確率分岐・
+// 複数タイミングを含む。新しい戦法をJSONへ追加しても型変更を要求しないよう、
+// 既知の共通項目を型付けしつつ固有項目も保持できる形にしている。
+export interface StructuredBattleNode {
+  type?: string;
+  trigger?: TriggerEvent;
+  when?: string;
+  condition?: string;
+  to?: string;
+  target?: string;
+  targetRole?: string;
+  count?: number | string;
+  countMin?: number | string;
+  countMax?: number | string;
+  count_min?: number | string;
+  count_max?: number | string;
+  do?: StructuredBattleNode[];
+  steps?: StructuredBattleNode[];
+  actions?: StructuredBattleNode[];
+  on_true?: StructuredBattleNode[];
+  on_false?: StructuredBattleNode[];
+  on_success?: StructuredBattleNode[];
+  on_failure?: StructuredBattleNode[];
+  [key: string]: unknown;
+}
+
+export interface SkillBattleDefinition {
+  type?: string;
+  trigger?: TriggerEvent;
+  rate?: number;
+  prepTurns?: number;
+  when?: string;
+  condition?: string;
+  do?: StructuredBattleNode[];
+  bonus?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 export interface SkillVar {
   base: number;
   max: number;
@@ -88,7 +129,8 @@ export interface SkillVar {
 }
 
 export interface Skill {
-  id: string;
+  // cfg由来の戦法にはidがないため、参照側は名称をフォールバックキーに使う。
+  id?: string;
   name: string;
   // null for override-added skills not yet on game8.jp — distinguishes "no JP
   // key" from "JP key not loaded yet" so the CHT⇄JP fallback can fire correctly
@@ -141,6 +183,7 @@ export interface Skill {
   trigger?: TriggerEvent;
   triggers?: TriggerEvent[];
   do?: Action[];
+  battle?: SkillBattleDefinition;
   bonus?: {
     commander?: Action[];
     characters?: Record<string, Action[]>;

@@ -11436,6 +11436,7 @@
   },
   {
     "name": "出奇制勝",
+    "name_jp": "出奇制勝",
     "type": "被動",
     "rarity": "S",
     "target": "自身",
@@ -11443,6 +11444,8 @@
     "raw_text": "戰鬥中，自帶主動戰法造成傷害提高14%-28%（受智略影響）。自身成功發動自帶主動戰法後，有35%-70%機率使自身獲得2%→4%攻心效果（受智略影響，可疊加4次）",
     "description": "戰鬥中，自帶主動戰法造成傷害提高{var:damage_buff}（{scale:智略}）。 自身成功發動自帶主動戰法後，有{var:crit_chance}機率使自身獲得{var:crit_effect}{status:攻心}效果 （{scale:智略}，可疊加{var:crit_stack_max}次）。",
     "brief_description": "提高主動戰法傷害，機率獲得會心",
+    "description_jp": "戦闘中、自身の固有能動戦法による与ダメージが{var:damage_buff}上昇する（{scale:知略}）。自身が固有能動戦法の発動に成功した後、{var:crit_chance}の確率で自身に{var:crit_effect}{status:攻心}を付与する（{scale:知略}、最大{var:crit_stack_max}回まで重ねがけ可能）。",
+    "brief_description_jp": "固有能動戦法の与ダメージを上げ、確率で攻心を獲得",
     "tags": [
       "增益",
       "施加狀態",
@@ -11505,7 +11508,6 @@
       ]
     },
     "is_event_skill": true,
-    "name_jp": null,
     "commander_description": "",
     "source_hero": "",
     "unique_hero": "",
@@ -11611,12 +11613,15 @@
   },
   {
     "name": "越後先手組",
+    "name_jp": "越後先手組",
     "type": "兵種",
     "rarity": "S",
     "target": "自軍全體",
     "activation_rate": "100%",
     "description": "將騎兵進階為先手製勝的越後先手組。 戰鬥中，自軍全體速度增加{var:speed_buff}； 第2回合起，自軍全體每回合行動前，有{var:activation_rate}的機率（受武勇和速度影響）恢復自軍單體兵力（恢復率{var:recovery_rate}，{scale:武勇}）。 若為上杉謙信統領，自軍武勇最高武將透過普通攻擊擊敗目標時，額外觸發一次兵力恢復效果。",
     "brief_description": "騎兵進階，提速並機率恢復兵力",
+    "description_jp": "騎兵を先手必勝の越後先手組に進化させる。戦闘中、自軍全体の速度が{var:speed_buff}上昇する。第2ターン以降、自軍全体は毎ターン行動前、{var:activation_rate}の確率（武勇と速度依存）で自軍単体の兵力を回復する（回復率{var:recovery_rate}、{scale:武勇}）。上杉謙信が統率している場合、自軍で武勇が最も高い武将が通常攻撃で目標を撃破した時、追加で兵力回復効果を発動する。",
+    "brief_description_jp": "騎兵を進化させ、速度上昇と確率回復を付与",
     "tags": [
       "增益",
       "兵種",
@@ -11682,7 +11687,6 @@
       ]
     },
     "is_event_skill": true,
-    "name_jp": null,
     "commander_description": "",
     "source_hero": "",
     "unique_hero": "",
@@ -13111,13 +13115,13 @@
   },
   {
     "name": "臨時槍之鈴",
-    "name_jp": null,
+    "name_jp": "臨時槍の鈴",
     "type": "突擊",
     "rarity": "A",
     "target": "敵軍單體",
     "activation_rate": "",
     "description": "普通攻擊之後，對敵軍單體造成兵刃傷害（傷害率{1%}），第3回合起，額外會恢復自身兵力（治療率{2%}，受武勇影響）",
-    "description_jp": "",
+    "description_jp": "通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率{1%}）を与える。第3ターン以降、追加で自身の兵力を回復する（回復率{2%}、武勇依存）。",
     "commander_description": "",
     "commander_description_jp": "",
     "vars": {},
@@ -13131,7 +13135,7 @@
       "兵刃單體"
     ],
     "brief_description": "造成兵刃傷害並有條件額外恢復兵力",
-    "brief_description_jp": "",
+    "brief_description_jp": "兵刃ダメージを与え、条件付きで自身を回復",
     "cfg_id": 24046,
     "is_event_skill": false
   },
@@ -13345,13 +13349,13 @@
   },
   {
     "name": "速戰",
-    "name_jp": null,
+    "name_jp": "速戦",
     "type": "被動",
     "rarity": "C",
     "target": "自己",
     "activation_rate": "",
     "description": "使自己的速度增加{1}點",
-    "description_jp": "",
+    "description_jp": "自身の速度を{1}上昇させる。",
     "commander_description": "",
     "commander_description_jp": "",
     "vars": {},
@@ -13365,7 +13369,7 @@
       "增益"
     ],
     "brief_description": "速度提升",
-    "brief_description_jp": "",
+    "brief_description_jp": "速度上昇",
     "cfg_id": 29803,
     "is_event_skill": false
   }

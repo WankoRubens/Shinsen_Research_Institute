@@ -119,7 +119,11 @@ for (const skill of skills) {
   ])
 
   const target = skill.target_jp || skill.target || '対象'
-  const kind = skill.damage_type === '計略' || /計略|謀略|智略|知略/.test(summary) ? '計略' : '兵刃'
+  const fullDescription = [skill.description_jp, skill.description].filter(Boolean).join(' ')
+  const hasPhysicalAndStrategy = /兵刃ダメージ/.test(fullDescription) && /(?:計略|謀略)ダメージ/.test(fullDescription)
+  const kind = hasPhysicalAndStrategy
+    ? '兵刃・計略'
+    : skill.damage_type === '計略' || /計略|謀略|智略|知略/.test(summary) ? '計略' : '兵刃'
 
   if (damageRate != null) comments.push(`${target}に${kind}ダメージ（ダメージ率${damageRate}%）を与える`)
   if (extraDamageRate != null) comments.push(`追加効果として別判定のダメージ（ダメージ率${extraDamageRate}%）を扱う`)
@@ -135,17 +139,19 @@ for (const skill of skills) {
     .join('\n')
 
   const body = []
-  const damageKind = kind === '計略' ? 'strategy' : 'physical'
+  const damageKinds = hasPhysicalAndStrategy ? ['physical', 'strategy'] : [kind === '計略' ? 'strategy' : 'physical']
   if (buffValue != null) body.push('      applyDatabaseBuffs(ctx, h)')
   if (damageRate != null) {
     body.push(`      databaseTargets(ctx, h, 'damage').forEach((target) => {`)
-    body.push(`        h.dealSkillDamage(ctx, target, ${damageRate}, '${damageKind}')`)
+    damageKinds.forEach((damageKind) => {
+      body.push(`        h.dealSkillDamage(ctx, target, ${damageRate}, '${damageKind}')`)
+    })
     body.push('      })')
   }
   if (extraDamageRate != null) {
     body.push(`      if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['extra_trigger_chance', 'extra_prob', 'extra_chance'], 1))) {`)
     body.push(`        const target = h.chooseTarget(ctx.enemies, ctx.rng)`)
-    body.push(`        if (target) h.dealSkillDamage(ctx, target, ${extraDamageRate}, '${damageKind}')`)
+    body.push(`        if (target) h.dealSkillDamage(ctx, target, ${extraDamageRate}, '${damageKinds[0]}')`)
     body.push('      }')
   }
   if (healRate != null) {

@@ -13,6 +13,7 @@ import {
   battleSkillType,
   compareBattleSkillPriority,
   recordDamageDealtSkillEffects,
+  structuredBattleTriggers,
   type BattleSkillEffectHelpers,
   type SkillDamageStatRule,
 } from './battleSkillEffects'
@@ -87,6 +88,14 @@ interface TimedStatus {
   dotType?: 'physical' | 'strategy'
 }
 
+export interface TimedBattleModifier {
+  key: string
+  stat: Stat
+  value: number
+  expiresTurn: number
+  sourceSkill: string
+}
+
 interface PendingSkill {
   skill: Skill
   remainingTurns: number
@@ -106,6 +115,7 @@ export interface BattleFighter {
   buffs: Partial<Record<Stat, number>>
   statuses: Record<string, number>
   timedStatuses: TimedStatus[]
+  timedModifiers: TimedBattleModifier[]
   pendingSkills: PendingSkill[]
   skillCooldowns: Record<string, number>
   skillUsesThisTurn: Record<string, number>
@@ -255,6 +265,7 @@ const pickMaxVarRate = (skill: Skill, keys: string[]): number | null => {
 const extractRate = (skill: Skill): number => {
   if (typeof skill.probability === 'number') return clamp(skill.probability, 0, 1)
   if (Array.isArray(skill.rate) && skill.rate.length > 0) return clamp(skill.rate[skill.rate.length - 1], 0, 1)
+  if (typeof skill.battle?.rate === 'number') return clamp(skill.battle.rate, 0, 1)
   const raw = skill.activation_rate ?? ''
   const percentMatches = [...raw.matchAll(/(\d+(?:\.\d+)?)\s*%/g)]
   if (percentMatches.length > 0) {
@@ -351,7 +362,8 @@ const triggerEventsForSkill = (skill: Skill): BattleTrigger[] => {
   const skillName = skill.name_jp || skill.name
   const registered = BATTLE_SKILL_EFFECT_TRIGGERS[skillName] ?? []
   const explicit = skill.triggers ?? []
-  const triggers = uniqueTriggers([...registered, ...explicit])
+  const structured = structuredBattleTriggers(skill)
+  const triggers = uniqueTriggers([...registered, ...explicit, ...structured])
   return triggers.length > 0 ? triggers : [triggerForSkill(skill)]
 }
 
@@ -361,6 +373,7 @@ const skillSupportsTrigger = (skill: Skill, trigger: BattleTrigger): boolean => 
 }
 
 const preparationTurns = (skill: Skill): number => {
+  if (typeof skill.battle?.prepTurns === 'number') return Math.max(0, Math.round(skill.battle.prepTurns))
   const text = textOfSkill(skill)
   const match = text.match(/(\d+)\s*ターンの準備|(\d+)\s*T準備|(\d+)\s*ターンの準備期間|(\d+)\s*ターン準備/)
   if (match) return Number(match[1] ?? match[2])
@@ -382,7 +395,7 @@ const roleStats = (role: RoleData, troopStatMultiplier: number): Record<Stat, nu
   return out
 }
 
-const allSkills = skillsData as Skill[]
+const allSkills = skillsData as unknown as Skill[]
 
 const skillKeyForDedup = (skill: Skill) => skill.sim_id || skill.id || skill.name_jp || skill.name
 
@@ -435,6 +448,7 @@ const makeFighter = (
     buffs: {},
     statuses: {},
     timedStatuses: [],
+    timedModifiers: [],
     pendingSkills: [],
     skillCooldowns: {},
     skillUsesThisTurn: {},
@@ -716,7 +730,8 @@ const baseHeal = (caster: BattleFighter, target: BattleFighter, skill: Skill, rn
   const rate = healRate(skill)
   const mainStat = skill.battle_type === 'bravery' ? statOf(caster, 'val') : statOf(caster, 'int')
   const variance = 0.92 + rng() * 0.16
-  return Math.max(20, (mainStat * 7.5 + 480) * (rate / 100) * variance) * bingxueHealMultiplier(caster, target)
+  const receivedMultiplier = Math.max(0, 1 + (target.buffs.healingReceived ?? 0) / 100)
+  return Math.max(20, (mainStat * 7.5 + 480) * (rate / 100) * variance) * bingxueHealMultiplier(caster, target) * receivedMultiplier
 }
 
 const applyGenericBuffs = (
@@ -811,7 +826,7 @@ const applyDot = (
       turns: duration,
       sourceSkill: skill.name_jp || skill.name,
       sourceActor: caster.name,
-      dotRate: normalizeRate(skill.dot_rate_max),
+      dotRate: normalizeRate(skill.dot_rate_max!),
       dotType: damageKind(skill),
     })
     if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${target.name}に${skill.dot_name}(${duration}T)` })
@@ -1291,6 +1306,39 @@ const addControl = (ctx: SkillResolveContext, target: BattleFighter, name: strin
   )
 }
 
+const addTimedModifier = (
+  ctx: SkillResolveContext,
+  target: BattleFighter,
+  stat: Stat,
+  value: number,
+  duration: number,
+  maxStacks = Number.POSITIVE_INFINITY,
+) => {
+  if (!isAlive(target) || value === 0) return
+  const sourceSkill = skillDisplayName(ctx.skill)
+  const key = `${sourceSkill}:${stat}`
+  const sameModifiers = target.timedModifiers.filter((modifier) => modifier.key === key)
+
+  // 上限へ達した場合は最も早く切れる古い1層を外してから、新しい1層を加える。
+  if (sameModifiers.length >= maxStacks) {
+    const oldest = [...sameModifiers].sort((a, b) => a.expiresTurn - b.expiresTurn)[0]
+    if (oldest) {
+      target.buffs[oldest.stat] = (target.buffs[oldest.stat] ?? 0) - oldest.value
+      target.timedModifiers = target.timedModifiers.filter((modifier) => modifier !== oldest)
+    }
+  }
+
+  target.buffs[stat] = (target.buffs[stat] ?? 0) + value
+  target.timedModifiers.push({
+    key,
+    stat,
+    value,
+    // 準備ターン(0)で付与した1ターン効果も、第1ターン中は有効にする。
+    expiresTurn: Math.max(1, ctx.turn) + Math.max(1, Math.round(duration)),
+    sourceSkill,
+  })
+}
+
 const namedSkillHelpers: BattleSkillEffectHelpers = {
   skillDisplayName,
   chooseTarget,
@@ -1302,6 +1350,7 @@ const namedSkillHelpers: BattleSkillEffectHelpers = {
   dealSkillDamage,
   healBySkill,
   addControl,
+  addTimedModifier,
   statOf,
 }
 
@@ -1480,7 +1529,9 @@ const trySkill = (
   const unique = isUniqueBattleSkill(skill)
   const prepared = preparationTurns(skill) > 0
   const activationRate = clamp(
-    extractRate(skill) + bingxueActivationChanceBonus(caster, resolvedSkillType, unique),
+    extractRate(skill)
+      + (caster.buffs.activationRate ?? 0) / 100
+      + bingxueActivationChanceBonus(caster, resolvedSkillType, unique),
     0,
     1,
   )
@@ -1629,6 +1680,16 @@ const isActionBlocked = (fighter: BattleFighter, rng: () => number): string | nu
 
 const tickFighter = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[]) => {
   tickBingxueTurn(fighter, turn)
+  const activeModifiers: TimedBattleModifier[] = []
+  fighter.timedModifiers.forEach((modifier) => {
+    if (turn < modifier.expiresTurn) {
+      activeModifiers.push(modifier)
+      return
+    }
+    fighter.buffs[modifier.stat] = (fighter.buffs[modifier.stat] ?? 0) - modifier.value
+    if (Math.abs(fighter.buffs[modifier.stat] ?? 0) < 0.0001) delete fighter.buffs[modifier.stat]
+  })
+  fighter.timedModifiers = activeModifiers
   Object.keys(fighter.skillCooldowns).forEach((key) => {
     fighter.skillCooldowns[key] = Math.max(0, fighter.skillCooldowns[key] - 1)
   })
@@ -1916,7 +1977,9 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             controlStats,
           )
         }
-        const afterActionOwners = actor.role === 'main' ? allies : []
+        // 行動後戦法は行動した本人なら役割に関係なく発動する。
+        // 大将の行動終了を監視する比翼連理などは、従来通り部隊全員から拾う。
+        const afterActionOwners = actor.role === 'main' ? allies : [actor]
         afterActionOwners.forEach((owner) => {
           if (!isAlive(owner)) return
           fireTriggeredSkills(

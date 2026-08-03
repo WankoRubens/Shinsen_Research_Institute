@@ -1,4 +1,4 @@
-import type { Skill, Stat, TriggerEvent } from '../composables/useData'
+import type { Skill, Stat, StructuredBattleNode, TriggerEvent } from '../composables/useData'
 import type { BattleFighter, BattleLogEntry, SkillResolveContext } from './battleSimulator'
 import skillsData from '../../.build/skills.json'
 
@@ -68,6 +68,7 @@ const battleSkillEffectMeta = (skill: Skill): BattleSkillEffectMeta | null =>
 
 export const battleSkillType = (skill: Skill): BattleSkillType =>
   normalizeBattleSkillType(battleSkillEffectMeta(skill)?.type)
+  ?? normalizeBattleSkillType(skill.battle?.type)
   ?? normalizeBattleSkillType(skill.type)
   ?? normalizeBattleSkillType(skill.category)
   ?? normalizeBattleSkillType(skill.category_jp)
@@ -106,7 +107,7 @@ const NAMED_BATTLE_SKILL_NAMES = [
 // 所持者だけでなく、部隊内の各武将の行動を起点に発動する兵種戦法。
 export const TEAM_ACTION_BATTLE_SKILL_NAMES = new Set(['竜騎兵', '龍騎兵'])
 
-const DESCRIPTION_BASED_BATTLE_SKILL_NAMES = (skillsData as Skill[])
+const DESCRIPTION_BASED_BATTLE_SKILL_NAMES = (skillsData as unknown as Skill[])
   .flatMap((skill) => [skill.name_jp, skill.name])
   .filter((name): name is string => Boolean(name))
 
@@ -116,6 +117,40 @@ export const IMPLEMENTED_BATTLE_SKILL_NAMES = new Set([
   ...DESCRIPTION_BASED_BATTLE_SKILL_NAMES,
   ...NAMED_BATTLE_SKILL_NAMES,
 ])
+
+const normalizeStructuredTrigger = (trigger?: string): TriggerEvent => {
+  if (trigger === 'battleStart') return 'preparationTurn'
+  if (trigger === 'afterAttack') return 'afterNormalAttack'
+  if (trigger === 'onHeal') return 'onHealed'
+  if (trigger === 'onDamaged') return 'onPhysicalDamageReceived'
+  return trigger || 'beforeAction'
+}
+
+const collectStructuredTriggers = (nodes: StructuredBattleNode[], output: TriggerEvent[]) => {
+  nodes.forEach((node) => {
+    if (node.trigger) output.push(normalizeStructuredTrigger(node.trigger))
+    collectStructuredTriggers(node.do ?? [], output)
+    collectStructuredTriggers(node.steps ?? [], output)
+    collectStructuredTriggers(node.actions ?? [], output)
+    collectStructuredTriggers(node.on_true ?? [], output)
+    collectStructuredTriggers(node.on_false ?? [], output)
+    collectStructuredTriggers(node.on_success ?? [], output)
+    collectStructuredTriggers(node.on_failure ?? [], output)
+  })
+}
+
+// battle.do 内の複数タイミングを、戦闘エンジンが事前に購読できる形へ展開する。
+export const structuredBattleTriggers = (skill: Skill): TriggerEvent[] => {
+  if (!skill.battle) return []
+  const triggers: TriggerEvent[] = []
+  const rootTrigger = normalizeStructuredTrigger(skill.battle.trigger)
+  if (rootTrigger !== 'always') triggers.push(rootTrigger)
+  if (rootTrigger === 'always' && (skill.battle.do ?? []).some((node) => !node.trigger)) {
+    triggers.push('preparationTurn')
+  }
+  collectStructuredTriggers(skill.battle.do ?? [], triggers)
+  return [...new Set(triggers)]
+}
 
 export interface BattleSkillEffectHelpers {
   skillDisplayName: (skill: Skill) => string
@@ -139,6 +174,14 @@ export interface BattleSkillEffectHelpers {
     kind?: 'bravery' | 'strategy',
   ) => number
   addControl: (ctx: SkillResolveContext, target: BattleFighter, name: string, duration: number) => void
+  addTimedModifier: (
+    ctx: SkillResolveContext,
+    target: BattleFighter,
+    stat: Stat,
+    value: number,
+    duration: number,
+    maxStacks?: number,
+  ) => void
   statOf: (fighter: BattleFighter, stat: Stat) => number
 }
 
@@ -419,8 +462,354 @@ const controlNamesFromDatabase = (skill: Skill): string[] => {
 const durationFromDatabase = (skill: Skill, fallback = 1): number =>
   Math.max(1, Math.round(firstVar(skill, ['duration', 'status_duration', 'debuff_duration', 'buff_duration', 'dur']) ?? skill.control_turns ?? fallback))
 
+const PRECISE_HANDCRAFTED_SKILLS = new Set([
+  '回天転運',
+  '千成瓢箪',
+  '如水',
+  '比翼連理',
+  '奇策縦横',
+  '南蛮渡来',
+  '一舟軒',
+  '弾嵐雨霰',
+  '越後二天',
+  '疾風迅雷',
+  '表裏比興',
+  '瞬息万変',
+  '沈魚落雁',
+  '伊達の粋',
+  '伊達風采',
+  '文武両道',
+  '竜騎兵',
+  '龍騎兵',
+  '攻其不備',
+  '乱世の華',
+  '追い崩し',
+  '追亡逐北',
+  '三河武士',
+])
+
+const structuredArray = (value: unknown): StructuredBattleNode[] =>
+  Array.isArray(value) ? value.filter((item): item is StructuredBattleNode => Boolean(item && typeof item === 'object')) : []
+
+const structuredNumber = (skill: Skill, value: unknown, fallback = 0): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value !== 'string') return fallback
+  const source = value.trim()
+  const variableMatch = source.match(/^(-?)\$([\w\u3040-\u30ff\u3400-\u9fff]+)$/)
+  if (variableMatch) {
+    const resolved = varValue(skill, variableMatch[2] ?? '') ?? fallback
+    return variableMatch[1] === '-' ? -resolved : resolved
+  }
+  const numeric = Number(source.replace(/%$/, ''))
+  if (!Number.isFinite(numeric)) return fallback
+  return source.endsWith('%') ? numeric / 100 : numeric
+}
+
+const normalizeStructuredStatus = (name: string): string => ({
+  封擊: '封撃',
+  混亂: '混乱',
+  威壓: '威圧',
+  消沉: '消沈',
+  挑釁: '挑発',
+  牽制: '挑発',
+  閃避: '回避',
+  會心: '会心',
+  謀略: '無策',
+}[name] ?? name)
+
+const normalizeStackKey = (name: string): string => ({
+  彈丸: 'dragonCavalryAmmo',
+  弾丸: 'dragonCavalryAmmo',
+  風采: 'dateIkiStacks',
+  屬性提升: 'dateIkiBuffStacks',
+  傷害計數: 'dateIkiDamageHits',
+}[name] ?? `skillStack:${name}`)
+
+const structuredStat = (name: string): Stat | null => {
+  if (/^武勇$|^武力$/.test(name)) return 'val'
+  if (/^知略$|^智略$/.test(name)) return 'int'
+  if (/^統率$/.test(name)) return 'lea'
+  if (/^速度$|move_speed/.test(name)) return 'spd'
+  if (/謀略傷害|計略傷害|strategy/.test(name)) return 'strategyDamageDealt'
+  if (/兵刃傷害|通常攻撃|attack/.test(name)) return 'attackDamage'
+  if (/damage_reduction/.test(name)) return 'damageTaken'
+  if (/damage_output|outgoing_damage|^damage$/.test(name)) return 'damageDealt'
+  if (/heal_received/.test(name)) return 'healingReceived'
+  if (/activation_rate/.test(name)) return 'activationRate'
+  return null
+}
+
+const structuredScaleStats = (scale: unknown): Stat[] => {
+  const text = Array.isArray(scale) ? scale.join(',') : String(scale ?? '')
+  const stats: Stat[] = []
+  if (/武勇|武力/.test(text)) stats.push('val')
+  if (/知略|智略/.test(text)) stats.push('int')
+  if (/統率/.test(text)) stats.push('lea')
+  if (/速度/.test(text)) stats.push('spd')
+  return stats
+}
+
+const structuredChance = (
+  ctx: SkillResolveContext,
+  h: BattleSkillEffectHelpers,
+  rawChance: unknown,
+  scale?: unknown,
+): number => {
+  const chance = Math.max(0, Math.min(1, toChance(structuredNumber(ctx.skill, rawChance, 1))))
+  const stats = structuredScaleStats(scale).map((stat) => h.statOf(ctx.caster, stat))
+  return stats.length > 0 ? attributeDependentChance(chance, stats) : chance
+}
+
+const structuredCondition = (
+  ctx: SkillResolveContext,
+  h: BattleSkillEffectHelpers,
+  raw: unknown,
+  target?: BattleFighter,
+): boolean => {
+  if (raw === undefined || raw === null || raw === '') return true
+  const text = String(raw).trim().replace(/^\((.*)\)$/, '$1')
+  const orParts = text.split(/\s*\|\|\s*/)
+  if (orParts.length > 1) return orParts.some((part) => structuredCondition(ctx, h, part, target))
+  const andParts = text.split(/\s*(?:&&|\bAND\b)\s*/i)
+  if (andParts.length > 1) return andParts.every((part) => structuredCondition(ctx, h, part, target))
+  if (/^not\s+/i.test(text)) return !structuredCondition(ctx, h, text.replace(/^not\s+/i, ''), target)
+
+  const turnComparison = text.match(/^turn\s*(>=|<=|==|>|<)\s*(\d+)$/)
+  if (turnComparison) {
+    const value = Number(turnComparison[2])
+    if (turnComparison[1] === '>=') return ctx.turn >= value
+    if (turnComparison[1] === '<=') return ctx.turn <= value
+    if (turnComparison[1] === '>') return ctx.turn > value
+    if (turnComparison[1] === '<') return ctx.turn < value
+    return ctx.turn === value
+  }
+  const turnModulo = text.match(/^turn\s*%\s*(\d+)\s*==\s*(\d+)$/)
+  if (turnModulo) return ctx.turn % Number(turnModulo[1]) === Number(turnModulo[2])
+
+  const statusMatch = text.match(/^(?:target_)?has_status[_(]([^\s)]+)\)?$/)
+  if (statusMatch) return Boolean(target && (target.statuses[normalizeStructuredStatus(statusMatch[1] ?? '')] ?? 0) > 0)
+  const selfStatusMatch = text.match(/^self_has_status[_(]([^\s)]+)\)?$/)
+  if (selfStatusMatch) return (ctx.caster.statuses[normalizeStructuredStatus(selfStatusMatch[1] ?? '')] ?? 0) > 0
+
+  const stackMatch = text.match(/^stack(?:\(([^)]+)\)|_([^\s]+))\s*(>=|<=|==|>|<)\s*(\$?[\w\u3040-\u30ff\u3400-\u9fff]+)$/)
+  if (stackMatch) {
+    const current = ctx.caster.specialState[normalizeStackKey(stackMatch[1] ?? stackMatch[2] ?? '')] ?? 0
+    const expected = structuredNumber(ctx.skill, stackMatch[4], 0)
+    if (stackMatch[3] === '>=') return current >= expected
+    if (stackMatch[3] === '<=') return current <= expected
+    if (stackMatch[3] === '>') return current > expected
+    if (stackMatch[3] === '<') return current < expected
+    return current === expected
+  }
+  if (/^(?:ammo|has_intel_stack)\s*>\s*0$/.test(text)) {
+    const key = text.startsWith('ammo') ? 'dragonCavalryAmmo' : 'skillStack:密報'
+    return (ctx.caster.specialState[key] ?? 0) > 0
+  }
+  if (/^ammo\s*==\s*0$/.test(text)) return (ctx.caster.specialState.dragonCavalryAmmo ?? 0) === 0
+  if (text === 'self_not_lowest_hp') {
+    const lowest = Math.min(...living(ctx.allies).map((ally) => ally.hp / Math.max(1, ally.maxHp)))
+    return ctx.caster.hp / Math.max(1, ctx.caster.maxHp) > lowest
+  }
+  if (text === 'target_hp > other_deputy_hp' && target) {
+    const other = living(ctx.allies).find((ally) => ally.role !== 'main' && ally.id !== target.id)
+    return !other || target.hp > other.hp
+  }
+  if (/leader\s*==\s*伊達政宗/.test(text)) return ctx.allies.some((ally) => ally.role === 'main' && ally.name === '伊達政宗')
+  if (/ability_type|skill_type/.test(text)) return ['beforeAction', 'afterNormalAttack'].includes(ctx.trigger)
+  if (/ability_triggered_success/.test(text)) return true
+  if (/is_prep_active_strategy/.test(text)) return ctx.trigger === 'beforeAction'
+  if (/commander_strategy_type/.test(text)) return ctx.caster.role === 'main'
+  if (/all_three_affiliations_different|is_assembly_member|target_is_barbarian|prev_turn_attacked_by_normal/.test(text)) return true
+
+  // 未知の付帯条件だけを理由に戦法全体を無効化せず、既知の効果は実行する。
+  return true
+}
+
+const structuredTargets = (
+  ctx: SkillResolveContext,
+  h: BattleSkillEffectHelpers,
+  node: StructuredBattleNode,
+  inherited: BattleFighter[],
+): BattleFighter[] => {
+  const destination = String(node.to ?? node.target ?? '')
+  let candidates: BattleFighter[]
+  if (!destination) candidates = inherited.length > 0 ? inherited : [ctx.caster]
+  else if (destination === 'self') candidates = [ctx.caster]
+  else if (/^ally/.test(destination)) candidates = living(ctx.allies)
+  else if (/^enemy/.test(destination)) candidates = living(ctx.enemies)
+  else candidates = inherited.length > 0 ? inherited : [ctx.caster]
+
+  if (node.targetRole === 'commander') candidates = candidates.filter((fighter) => fighter.role === 'main')
+  if (node.targetRole === 'deputy') candidates = candidates.filter((fighter) => fighter.role !== 'main')
+  if (node.order_by) {
+    const stat = structuredStat(String(node.order_by))
+    if (stat) candidates = [...candidates].sort((a, b) => h.statOf(b, stat) - h.statOf(a, stat))
+  }
+  if (/All$/.test(destination)) return candidates
+
+  const min = Math.max(1, Math.round(structuredNumber(ctx.skill, node.countMin ?? node.count_min ?? node.count, 1)))
+  const max = Math.max(min, Math.round(structuredNumber(ctx.skill, node.countMax ?? node.count_max ?? node.count, min)))
+  const count = min + Math.floor(ctx.rng() * (max - min + 1))
+  if (candidates.length <= count) return candidates
+  return h.aliveRandom(candidates, ctx.rng).slice(0, count)
+}
+
+const applyStructuredModifier = (
+  ctx: SkillResolveContext,
+  h: BattleSkillEffectHelpers,
+  node: StructuredBattleNode,
+  targets: BattleFighter[],
+  debuff: boolean,
+) => {
+  const rawStat = String(node.stat ?? '')
+  const stat = structuredStat(rawStat)
+  if (!stat) return
+  let value = toPercent(structuredNumber(ctx.skill, node.value, 0))
+  if (debuff) value *= -1
+  if (!debuff && stat === 'damageTaken' && /damage_reduction/.test(rawStat)) value *= -1
+  const duration = structuredNumber(ctx.skill, node.duration, 0)
+  const maxStacks = Math.max(1, Math.round(structuredNumber(ctx.skill, node.maxStacks ?? node.max_stacks, Number.POSITIVE_INFINITY)))
+  targets.forEach((target) => {
+    if (duration > 0 && duration < 999) h.addTimedModifier(ctx, target, stat, value, duration, maxStacks)
+    else target.buffs[stat] = (target.buffs[stat] ?? 0) + value
+    const direction = value >= 0 ? '上昇' : '低下'
+    log(ctx.logs, ctx, `${target.name}の${rawStat}が${Math.abs(value).toFixed(2)}${direction}${duration > 0 && duration < 999 ? `(${Math.round(duration)}T)` : ''}`)
+  })
+}
+
+const executeStructuredNodes = (
+  ctx: SkillResolveContext,
+  h: BattleSkillEffectHelpers,
+  nodes: StructuredBattleNode[],
+  inheritedTargets: BattleFighter[],
+): boolean => {
+  let applied = false
+  nodes.forEach((node) => {
+    if (node.trigger && normalizeStructuredTrigger(node.trigger) !== ctx.trigger) return
+    const targets = structuredTargets(ctx, h, node, inheritedTargets)
+    const condition = node.condition ?? node.when
+    const type = String(node.type ?? '')
+    if (type !== 'conditional' && !structuredCondition(ctx, h, condition, targets[0])) return
+
+    if (!type && node.do) {
+      applied = executeStructuredNodes(ctx, h, node.do, targets) || applied
+      return
+    }
+    if (type === 'sequence') {
+      applied = executeStructuredNodes(ctx, h, structuredArray(node.do ?? node.steps ?? node.actions), targets) || applied
+      return
+    }
+    if (type === 'conditional') {
+      const branch = structuredCondition(ctx, h, node.condition ?? node.when, targets[0])
+        ? node.on_true ?? node.do
+        : node.on_false
+      applied = executeStructuredNodes(ctx, h, structuredArray(branch), targets) || applied
+      return
+    }
+    if (type === 'roll') {
+      const success = h.roll(ctx.rng, structuredChance(ctx, h, node.chance, node.scale))
+      applied = executeStructuredNodes(ctx, h, structuredArray(success ? node.on_success : node.on_failure), targets) || applied
+      return
+    }
+    if (type === 'damage') {
+      const rate = toPercent(structuredNumber(ctx.skill, node.value, 0))
+      const damageType = String(node.damage_type ?? '')
+      const kind = /謀略|計略|strategy/.test(damageType) ? 'strategy' : 'physical'
+      const damageTargets = node.target_type ? structuredTargets(ctx, h, { ...node, to: String(node.target_type) }, targets) : targets
+      damageTargets.forEach((target) => h.dealSkillDamage(ctx, target, rate, kind))
+      applied = true
+      return
+    }
+    if (type === 'heal') {
+      const rate = toPercent(structuredNumber(ctx.skill, node.value, 0))
+      const healTargets = node.target ? structuredTargets(ctx, h, { ...node, to: String(node.target) }, targets) : targets
+      healTargets.forEach((target) => h.healBySkill(ctx, target, rate, /武勇/.test(String(node.scale ?? '')) ? 'bravery' : 'strategy'))
+      applied = true
+      return
+    }
+    if (type === 'buff' || type === 'debuff') {
+      applyStructuredModifier(ctx, h, node, targets, type === 'debuff')
+      applied = true
+      return
+    }
+    if (type === 'applyStatus') {
+      const status = normalizeStructuredStatus(String(node.status ?? ''))
+      const duration = Math.max(1, Math.round(structuredNumber(ctx.skill, node.duration, 1)))
+      const chance = structuredChance(ctx, h, node.chance, node.scale)
+      targets.forEach((target) => {
+        if (!h.roll(ctx.rng, chance)) return
+        if (DEBUFF_NAMES.includes(status)) h.addControl(ctx, target, status, duration)
+        else {
+          target.statuses[status] = Math.max(target.statuses[status] ?? 0, duration)
+          const strength = structuredNumber(ctx.skill, node.value, 0)
+          if (strength) target.specialState[`statusValue:${status}`] = toPercent(strength)
+          log(ctx.logs, ctx, `${target.name}に${status}(${duration}T)`)
+        }
+        const dotRate = structuredNumber(ctx.skill, node.damage_rate, 0)
+        if (dotRate > 0) target.timedStatuses.push({
+          name: status,
+          turns: duration,
+          sourceSkill: h.skillDisplayName(ctx.skill),
+          sourceActor: ctx.caster.name,
+          dotRate: toPercent(dotRate),
+          dotType: 'strategy',
+        })
+      })
+      applied = true
+      return
+    }
+    if (type === 'addStack' || type === 'applyStack') {
+      const name = String(node.stack_name ?? node.stack ?? '')
+      const key = normalizeStackKey(name)
+      const value = structuredNumber(ctx.skill, node.value ?? node.count, 1)
+      ctx.caster.specialState[key] = Math.max(0, (ctx.caster.specialState[key] ?? 0) + value)
+      log(ctx.logs, ctx, `${name}: ${value >= 0 ? '+' : ''}${value}(合計${ctx.caster.specialState[key]})`)
+      applied = true
+      return
+    }
+    if (type === 'resetCounter') {
+      ctx.caster.specialState[normalizeStackKey(String(node.counter ?? ''))] = 0
+      applied = true
+      return
+    }
+    if (node.do) applied = executeStructuredNodes(ctx, h, node.do, targets) || applied
+  })
+  return applied
+}
+
+const applyStructuredBattleSkillEffect = (ctx: SkillResolveContext, h: BattleSkillEffectHelpers): boolean => {
+  const battle = ctx.skill.battle
+  if (!battle) return false
+  const rootTrigger = normalizeStructuredTrigger(battle.trigger)
+  const rootMatches = rootTrigger === ctx.trigger || (rootTrigger === 'always' && ctx.trigger === 'preparationTurn')
+  if (!structuredCondition(ctx, h, battle.condition ?? battle.when, ctx.target ?? undefined)) return true
+
+  const directNodes = (battle.do ?? []).filter((node) => node.trigger || rootMatches)
+  executeStructuredNodes(ctx, h, directNodes, [ctx.caster])
+
+  if (rootMatches && ctx.caster.role === 'main' && battle.bonus && typeof battle.bonus === 'object') {
+    const commander = (battle.bonus as Record<string, unknown>).commander
+    if (commander && typeof commander === 'object') {
+      executeStructuredNodes(ctx, h, structuredArray((commander as Record<string, unknown>).do), [ctx.caster])
+    }
+  }
+  // 構造化定義がある戦法は、効果が条件不成立でも旧汎用推定へ二重実行させない。
+  return true
+}
+
 const applyDatabaseBuffs = (ctx: SkillResolveContext, h: BattleSkillEffectHelpers): boolean => {
   const text = textOfSkill(ctx.skill)
+  const durationText = text.match(/(\d+)\s*ターン(?:持続|の間)?/)
+  const duration = firstVar(ctx.skill, ['duration', 'buff_duration', 'debuff_duration', 'status_duration'])
+    ?? (durationText ? Number(durationText[1]) : null)
+  const maxStacks = Math.max(1, Math.round(firstVar(ctx.skill, ['max_stacks', 'stack_max', 'buff_stack_max']) ?? Number.POSITIVE_INFINITY))
+  const changeStat = (target: BattleFighter, stat: Stat, value: number) => {
+    if (duration !== null && duration > 0 && duration < 999) {
+      h.addTimedModifier(ctx, target, stat, value, duration, maxStacks)
+    } else {
+      target.buffs[stat] = (target.buffs[stat] ?? 0) + value
+    }
+  }
   const buffValue = firstVar(ctx.skill, [
     'stat_buff',
     'stat_inc',
@@ -455,10 +844,10 @@ const applyDatabaseBuffs = (ctx: SkillResolveContext, h: BattleSkillEffectHelper
   if (buffValue !== null) {
     const value = toPercent(buffValue)
     buffTargets.forEach((target) => {
-      if (/武勇|武力/.test(text)) target.buffs.val = (target.buffs.val ?? 0) + value
-      if (/知略|智略/.test(text)) target.buffs.int = (target.buffs.int ?? 0) + value
-      if (/統率|防御|防禦/.test(text)) target.buffs.lea = (target.buffs.lea ?? 0) + value
-      if (/速度/.test(text)) target.buffs.spd = (target.buffs.spd ?? 0) + value
+      if (/武勇|武力/.test(text)) changeStat(target, 'val', value)
+      if (/知略|智略/.test(text)) changeStat(target, 'int', value)
+      if (/統率|防御|防禦/.test(text)) changeStat(target, 'lea', value)
+      if (/速度/.test(text)) changeStat(target, 'spd', value)
     })
     applied = true
   }
@@ -466,9 +855,9 @@ const applyDatabaseBuffs = (ctx: SkillResolveContext, h: BattleSkillEffectHelper
   if (damageBuff !== null) {
     const value = toPercent(damageBuff)
     buffTargets.forEach((target) => {
-      if (/計略|謀略/.test(text)) target.buffs.strategyDamageDealt = (target.buffs.strategyDamageDealt ?? 0) + value
-      else if (/通常攻撃|普通攻撃|兵刃/.test(text)) target.buffs.attackDamage = (target.buffs.attackDamage ?? 0) + value
-      else target.buffs.damageDealt = (target.buffs.damageDealt ?? 0) + value
+      if (/計略|謀略/.test(text)) changeStat(target, 'strategyDamageDealt', value)
+      else if (/通常攻撃|普通攻撃|兵刃/.test(text)) changeStat(target, 'attackDamage', value)
+      else changeStat(target, 'damageDealt', value)
     })
     applied = true
   }
@@ -476,7 +865,7 @@ const applyDatabaseBuffs = (ctx: SkillResolveContext, h: BattleSkillEffectHelper
   if (reduction !== null) {
     const value = toPercent(reduction)
     buffTargets.forEach((target) => {
-      target.buffs.damageTaken = (target.buffs.damageTaken ?? 0) - value
+      changeStat(target, 'damageTaken', -value)
     })
     applied = true
   }
@@ -484,11 +873,11 @@ const applyDatabaseBuffs = (ctx: SkillResolveContext, h: BattleSkillEffectHelper
   if (debuffValue !== null) {
     const value = toPercent(debuffValue)
     debuffTargets.forEach((target) => {
-      if (/武勇|武力/.test(text)) target.buffs.val = (target.buffs.val ?? 0) - value
-      if (/知略|智略/.test(text)) target.buffs.int = (target.buffs.int ?? 0) - value
-      if (/統率|防御|防禦/.test(text)) target.buffs.lea = (target.buffs.lea ?? 0) - value
-      if (/速度/.test(text)) target.buffs.spd = (target.buffs.spd ?? 0) - value
-      if (/与ダメ|造成傷害|ダメージ/.test(text)) target.buffs.damageDealt = (target.buffs.damageDealt ?? 0) - value
+      if (/武勇|武力/.test(text)) changeStat(target, 'val', -value)
+      if (/知略|智略/.test(text)) changeStat(target, 'int', -value)
+      if (/統率|防御|防禦/.test(text)) changeStat(target, 'lea', -value)
+      if (/速度/.test(text)) changeStat(target, 'spd', -value)
+      if (/与ダメ|造成傷害|ダメージ/.test(text)) changeStat(target, 'damageDealt', -value)
     })
     applied = true
   }
@@ -541,20 +930,23 @@ const applyDatabaseSkillEffect = (ctx: SkillResolveContext, h: BattleSkillEffect
     const hitsMin = Math.round(firstVar(ctx.skill, ['hits_min']) ?? 1)
     const hitsMax = Math.round(firstVar(ctx.skill, ['hits_max']) ?? hitsMin)
     const hits = hitsMin + Math.floor(ctx.rng() * Math.max(1, hitsMax - hitsMin + 1))
-    const kind = databaseDamageKind(ctx.skill)
+    const skillText = textOfSkill(ctx.skill)
+    const kinds: Array<'physical' | 'strategy'> = /兵刃ダメージ/.test(skillText) && /(?:計略|謀略)ダメージ/.test(skillText)
+      ? ['physical', 'strategy']
+      : [databaseDamageKind(ctx.skill)]
     for (let hit = 0; hit < hits; hit += 1) {
-      targets.forEach((target) => h.dealSkillDamage(ctx, target, damageRates[0], kind))
+      targets.forEach((target) => kinds.forEach((kind) => h.dealSkillDamage(ctx, target, damageRates[0], kind)))
     }
     damageRates.slice(1).forEach((rate) => {
       if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['extra_trigger_chance', 'extra_prob', 'extra_chance'], 1))) {
         const target = h.aliveRandom(ctx.enemies, ctx.rng).find((enemy) => !targets.some((base) => base.id === enemy.id)) ?? targets[0]
-        if (target) h.dealSkillDamage(ctx, target, rate, kind)
+        if (target) h.dealSkillDamage(ctx, target, rate, kinds[0])
       }
     })
     extraDamageRates.forEach((rate) => {
       if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['extra_trigger_chance', 'extra_prob', 'extra_chance'], 1))) {
         const target = h.chooseTarget(ctx.enemies, ctx.rng)
-        if (target) h.dealSkillDamage(ctx, target, rate, kind)
+        if (target) h.dealSkillDamage(ctx, target, rate, kinds[0])
       }
     })
     applied = true
@@ -590,6 +982,12 @@ export const applyNamedSkillEffect = (
 ): boolean => {
   const name = h.skillDisplayName(ctx.skill)
   const currentTarget = ctx.target && ctx.target.hp > 0 ? ctx.target : h.chooseTarget(ctx.enemies, ctx.rng)
+
+  // 精密な個別caseがない戦法は、skills.json の battle.do を説明通りに実行する。
+  // battle定義側が条件不成立を返した場合も、旧来の単一効果へ二重実行しない。
+  if (ctx.skill.battle && !PRECISE_HANDCRAFTED_SKILLS.has(name) && !PRECISE_HANDCRAFTED_SKILLS.has(ctx.skill.name)) {
+    return applyStructuredBattleSkillEffect(ctx, h)
+  }
 
   switch (name) {
     case '回天転運': {
@@ -1004,12 +1402,1715 @@ export const applyNamedSkillEffect = (
       return true
     }
 
+    case '追い崩し':
+    case '追亡逐北': {
+      // 戦法タイプ: 能動。発動率35%の判定は battleSimulator.ts の trySkill で行う。
+      // 説明通り、残兵割合などで偏らせず生存中の敵から1名を無作為に選ぶ。
+      const target = h.aliveRandom(ctx.enemies, ctx.rng)[0]
+      if (!target) return true
+
+      // 対象へ146%（知略依存）の計略ダメージを与える。
+      h.dealSkillDamage(ctx, target, 146, 'strategy')
+      // 同じ対象へ、指揮・受動戦法を発動不能にする畏縮を1ターン付与する。
+      h.addControl(ctx, target, '畏縮', 1)
+      return true
+    }
+
+
+
+
 
 
 
 
     // DB戦法: ここから下は .build/skills.json から戦法名ごとに展開した個別case。
     // 精度を上げたい戦法は、該当case内を回天転運のような手書き処理に置き換える。
+    case '武田之赤備': {
+      // 戦法タイプ: 受動
+      // 戦闘中、10%→20%の会心を獲得
+      // 自身・敵軍単体に兵刃ダメージ（ダメージ率138%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 138, 'physical')
+      })
+      return true
+    }
+    case '縦横馳突': {
+      // 戦法タイプ: 能動
+      // 自身に連撃（1ターンに2回通常攻撃が可能）を付与し、さらに封撃（通常攻撃不可）耐性を獲得する
+      // 封撃を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["封撃"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '知者楽水': {
+      // 戦法タイプ: 指揮
+      // 戦闘開始後の3ターンの間、自軍複数（2人）が受ける兵刃及び計略ダメージを9%→18%から12%→24%（統率依存
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '新生': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、友軍複数（2名）の与ダメージが7%→14%（統率依存）上昇 大将技：ターン終了時に敵軍部隊の総兵力が初めて35%→70%以下になる場合、自身は毎ターン行
+      // 自軍全体（3名）を回復（回復率14%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 14, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '紅蓮の炎': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍全体に計略ダメージ（ダメージ率52%→104%、知略依存）を与え、2ターンの間、対象に火傷状態を付与し、毎ターン持続ダメージを与える（ダメ
+      // 敵軍全体（3名）に計略ダメージ（ダメージ率104%）を与える
+      // 火傷状態を付与し、継続ダメージ（ダメージ率74%）を処理する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 104, 'strategy')
+      })
+      applyDatabaseDot(ctx, h)
+      return true
+    }
+    case '御旗楯無': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身がダメージを受けると20%→40%の確率（武勇依存）で、今回の被ダメージが20%→40%（知略依存）低下
+      // 自分に計略ダメージ（ダメージ率40%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 40, 'strategy')
+      })
+      return true
+    }
+    case '三河魂': {
+      // 戦法タイプ: 指揮
+      // 友軍複数（2名）が通常攻撃を受けると、攻撃者の全属性に1.25%→2.5%（統率依存）の低下効果を付与（最大8回まで重ねがけ可能） 大将技：自身が通常攻撃を受け
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '盤石耽々': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身の被ダメージが（4.5%→9%、統率依存）低下
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '百万一心': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、敵軍複数（2名
+      // 敵軍複数（2名）に計略ダメージ（ダメージ率15%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 15, 'strategy')
+      })
+      return true
+    }
+    case '運勝の鼻': {
+      // 戦法タイプ: 受動
+      // 戦闘中、準備ターンが必要な固有能動戦法発動時、37.5%→75%の確率で準備時間を1ターンスキップ
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '水攻干計': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、敵軍全体に水攻め（毎ターン持続ダメージ
+      // 回復不可を付与する
+      // 水攻め状態を付与し、継続ダメージ（ダメージ率98%）を処理する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["回復不可"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      applyDatabaseDot(ctx, h)
+      return true
+    }
+    case '時は今': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）に、以下のいずれか1種を付与（既存と異なる状態を優先、ダメージ率56%）
+      // 火傷/水攻め/中毒/消沈/潰走状態を付与し、継続ダメージ（ダメージ率56%）を処理する
+      applyDatabaseDot(ctx, h)
+      return true
+    }
+    case '七十二の計': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身は25%→50%の奇策（発動時に計略ダメージが50%増加）を獲得し、奇策ダメージ率が15%→30%増加
+      // 自分に計略ダメージ（ダメージ率50%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 50, 'strategy')
+      })
+      return true
+    }
+    case '軍神': {
+      // 戦法タイプ: 受動
+      // 戦闘中、乱舞獲得不可
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '毘沙門天': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身の行動が終了するたびに20%→40%の確率（武勇依存）で自軍複数（2～3名）を回復（回復率27%→54%、武勇依存）
+      // 自軍複数（2〜3名）を回復（回復率54%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 54, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '海道一': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、射撃を2回行い、それぞれランダムな敵軍単体への兵刃ダメージ（ダメージ率134%）と計略ダメージ（ダメージ率134%・知略依存）
+      // 敵軍単体に兵刃・計略ダメージ（ダメージ率134%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 134, 'physical')
+        h.dealSkillDamage(ctx, target, 134, 'strategy')
+      })
+      return true
+    }
+    case '独立独歩': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身の突撃戦法の発動確率が8.5%→17%増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '鬼若子': {
+      // 戦法タイプ: 指揮
+      // 4ターン目まで、自軍複数（2～3名）は25%→50%の連撃を獲得し、統率が9→18（統率依存）増加 大将技：対象人数増加の確率が25%増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '一領具足': {
+      // 戦法タイプ: 指揮
+      // 最初の2ターンの間、自軍全体の兵力損害が6%→12%（武勇依存）低下
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '電光雷轟': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、対象とランダムな敵単体に麻痺付与（2ターン、毎ターン30%で行動不能）
+      // 敵軍単体に兵刃ダメージ（ダメージ率60%）を与える
+      // 麻痺・威圧を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 60, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["麻痺","威圧"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '霹靂一撃': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に114%→228%の兵刃ダメージを与え、2ターンの間麻痺（毎ターン30%の確率で行動不能）を付与
+      // 敵軍単体に兵刃ダメージ（ダメージ率228%）を与える
+      // 麻痺を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 228, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["麻痺"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '梟雄の計': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍複数（2～3名）に計略ダメージ（ダメージ率64%→128%、知略依存）
+      // 敵軍複数（2〜3名）に計略ダメージ（ダメージ率128%）を与える
+      // 混乱・疲弊を付与する
+      // 火傷/中毒状態を付与し、継続ダメージ（ダメージ率96%）を処理する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 128, 'strategy')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["混乱","疲弊"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      applyDatabaseDot(ctx, h)
+      return true
+    }
+    case '一行三昧': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身の能動戦法の発動確率が7%→14%増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '地黄八幡': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍全体に兵刃ダメージ（ダメージ率87%→174%）
+      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率174%）を与える
+      // 無策・封撃を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 174, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策","封撃"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '千軍辟易': {
+      // 戦法タイプ: 能動
+      // 1ターンの間、敵軍全体に53%→106%の兵刃ダメージ
+      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率106%）を与える
+      // 無策・封撃・威圧を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 106, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策","封撃","威圧"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '一切皆空': {
+      // 戦法タイプ: 受動
+      // 2ターン目以降、30%の確率（毎ターン発動の確率が40%増加）で一揆を発動
+      // 敵軍複数（2〜3名）を回復（回復率72%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 72, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '古今独歩': {
+      // 戦法タイプ: 受動
+      // 通常攻撃を受けると24%→48%の確率で攻撃者に兵刃ダメージ（ダメージ率35%→70%、通常攻撃効果と突撃を発動可能）を与え、2%→4%の離反を獲得（最大8回ま
+      // 敵軍単体に兵刃ダメージ（ダメージ率48%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 48, 'physical')
+      })
+      return true
+    }
+    case '血戦奮闘': {
+      // 戦法タイプ: 受動
+      // 自身の被回復効果が30%→60%上昇、さらに20%→40%の会心を獲得
+      // 自分を回復（回復率60%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 60, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '冷徹無情': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率71%→142%、さらに対象の兵力損失に応じて最大25%→50%増加）
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率142%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 142, 'physical')
+      })
+      return true
+    }
+    case '理非曲直': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、対象にもう一度兵刃ダメージ（ダメージ率192%）を与え、1ターンの間混乱を付与（攻撃と戦法の発動対象をランダムに選択）
+      // 敵軍単体に兵刃ダメージ（ダメージ率192%）を与える
+      // 混乱を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 192, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["混乱"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '破陣乱舞': {
+      // 戦法タイプ: 能動
+      // 1ターンの間、自身と武勇が最も高い友軍単体が23%→46%（武勇依存）の破陣を獲得
+      // 自軍複数（2名）に兵刃ダメージ（ダメージ率44%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 44, 'physical')
+      })
+      return true
+    }
+    case '三河弓兵隊': {
+      // 戦法タイプ: 兵種
+      // 弓兵が、百発百中の三河弓兵隊に進化
+      // 自軍全体（3名）を回復（回復率65%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 65, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '風姿綽約': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、友軍複数（2人）の武勇を2%→4%上昇（知略依存）、毎ターン1回重複、最大4層まで重ね掛け可能
+      // 無策・封撃・混乱・疲弊を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策","封撃","混乱","疲弊"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '攻其不備': {
+      // 戦法タイプ: 能動
+      // 統率が最も低い敵軍単体に兵刃ダメージ（ダメージ率84%→168%）を与え、知略が最も低い敵軍単体に計略ダメージ（ダメージ率84%→168%、知略依存）を与える
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '同気連枝': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、友軍複数が通常攻撃後に2.5→5のメイン属性を獲得（知略依存、最大5回まで重ねがけ可能）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '末世の道者': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、知略の最も高い自軍武将の計略ダメージを7%→14%（統率依存）増加させ、7%→14%の心攻状態を付与する
+      // 自軍全体（3名）に計略ダメージ（ダメージ率14%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 14, 'strategy')
+      })
+      return true
+    }
+    case '静動自在': {
+      // 戦法タイプ: 能動
+      // 自身より行動順が遅い自軍単体を選択し、洞察と先攻状態を付与し、2ターン持続
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '豊後の戦陣': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身が洞察状態を獲得し、自身の最も高い属性に応じた強化効果を獲得する（その属性に依存） 武勇：兵刃ダメージが6%→12%上昇
+      // 自分に兵刃・計略ダメージ（ダメージ率12%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 12, 'physical')
+        h.dealSkillDamage(ctx, target, 12, 'strategy')
+      })
+      return true
+    }
+    case '乱世の華': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、攻撃対象にもう一度兵刃ダメージ （ダメージ率79%→158%）と計略ダメージ（ダメージ率79%→158%、知略依存）を与える、このダメージは双方の属
+      // 敵軍單體に兵刃・計略ダメージ（ダメージ率158%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 158, 'physical')
+        h.dealSkillDamage(ctx, target, 158, 'strategy')
+      })
+      return true
+    }
+    case '天下御免': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、対象に追加で兵刃ダメージ（ダメージ率188%）を与える
+      // ?に兵刃ダメージ（ダメージ率188%）を与える
+      // 混乱を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 188, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["混乱"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '相模の獅子': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自軍複数（2～3名）に42.5%→85%の鉄壁（ダメージを無効化）を2回分付与
+      // 自軍複数（2〜3名）に計略ダメージ（ダメージ率85%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 85, 'strategy')
+      })
+      return true
+    }
+    case '所領役帳': {
+      // 戦法タイプ: 能動
+      // ランダムな自軍単体を回復し（回復率106%→212%、知略依存）、2ターンの間、最も兵力が少ない自軍単体に回生を付与し、ダメージを受けるたびに25%→50%の確
+      // 自軍単体を回復（回復率212%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 212, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '鬼美濃': {
+      // 戦法タイプ: 受動
+      // ダメージを受けると、17.5%→35%の確率で自身の弱体化効果を浄化し、自身の兵力を回復（回復率56%→112%、統率依存）
+      // 自分を回復（回復率112%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 112, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '以戦養戦': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身は12.5%→25%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得
+      // 自分に兵刃ダメージ（ダメージ率25%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 25, 'physical')
+      })
+      return true
+    }
+    case 'かかれ柴田': {
+      // 戦法タイプ: 能動
+      // 自身の弱体化効果を2個浄化し、敵軍全体に兵刃ダメージ（ダメージ率77%→154%）
+      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率154%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 154, 'physical')
+      })
+      return true
+    }
+    case '掃疑平乱': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自身と友軍単体が39%→78%の乱舞を獲得（速度依存）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '一力当先': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自身の通常攻撃ダメージが25%→50%上昇、乱舞（通常攻撃時、対象部隊の他武将へもダメージ
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '槍の又左': {
+      // 戦法タイプ: 受動
+      // 戦闘中、能動戦法を発動するたびに、45%→90%の確率で、次のターンの行動時までに自身が1回分の鉄壁を獲得（すでにこの戦法で付与された場合は回数増加）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '母衣武者': {
+      // 戦法タイプ: 兵種
+      // 騎兵が、剛勇無双の母衣武者に進化
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '破竹の勢い': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身が35%→70%の会心を獲得し、会心ダメージ率が15%→30%増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '所向無敵': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍全体に兵刃ダメージ（ダメージ率127%→254%）
+      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率254%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 254, 'physical')
+      })
+      return true
+    }
+    case '気勢衝天': {
+      // 戦法タイプ: 指揮
+      // 4ターン目まで、自身の行動時に80%の確率で1ターンの間、武勇が最も高い敵軍武将の兵刃与ダメージが15%→30%低下（武勇依存）、知略が最も高い敵軍武将の計略与
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '啄木鳥': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に計略ダメージ（ダメージ率78%→156%、知略依存）を与え、武勇が最も高い自軍単体が同じ対象に兵刃ダメージ（ダメージ率80%→160%、武勇と速度依存
+      // 敵軍単体に兵刃・計略ダメージ（ダメージ率156%）を与える
+      // 威圧を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 156, 'physical')
+        h.dealSkillDamage(ctx, target, 156, 'strategy')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["威圧"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '草木皆兵': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍複数（2名）に計略ダメージ（ダメージ率71%→142%）を与え、自軍複数（2名）の兵力を回復（回復率53%→106%、知略依存）
+      // 敵軍複数（2名）に計略ダメージ（ダメージ率142%）を与える
+      // 敵軍複数（2名）を回復（回復率106%）する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 142, 'strategy')
+      })
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 106, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '死灰復然': {
+      // 戦法タイプ: 能動
+      // 最も兵力が少ない自軍単体を回復（回復率138%→276%、知略依存）
+      // 自軍単体を回復（回復率276%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 276, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '十面埋伏': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、敵軍全体の被ダメージが9%→18%（知略依存）上昇
+      // 敵軍全体（3名）に計略ダメージ（ダメージ率18%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 18, 'strategy')
+      })
+      return true
+    }
+    case '大智不智': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）に消沈を付与し、2ターンの間、毎ターン持続ダメージ（ダメージ率52%→104%、知略依存）を与え、さらに対象の兵刃被ダメージが10%→20%上昇
+      // 消沈状態を付与し、継続ダメージ（ダメージ率104%）を処理する
+      applyDatabaseDot(ctx, h)
+      return true
+    }
+    case '東国無双の麗': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身は連撃（1ターンに2回通常攻撃）を獲得し、自身の武勇が3→30増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '前後挟撃': {
+      // 戦法タイプ: 能動
+      // 1ターンの間、自身と友軍単体は連撃（1ターンに2回通常攻撃）を獲得
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '沈魚落雁': {
+      // 戦法タイプ: 受動
+      // 自身が通常攻撃を受けた際、18%→36%の確率で1ターンの間、攻撃者に以下の状態を1つ付与：混乱（攻撃と戦法の目標ランダムに選択）、無策（能動戦法が発動不能）、
+      // 無策・混乱・疲弊を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策","混乱","疲弊"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '帰蝶の舞': {
+      // 戦法タイプ: 受動
+      // 戦闘中、奇数ターンに20%→40%の確率（知略依存）で1ターンの間、敵軍複数（2名）の統率と知略が11%→22%（知略依存）低下
+      // 混乱を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["混乱"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '五里霧中': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、敵軍複数（2名）に混乱（攻撃と戦法の発動対象をランダムに選択）を付与
+      // 混乱を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["混乱"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '越後流軍学': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、自身の能動戦法の発動確率が10%→20%増加
+      // 無策・封撃・疲弊・威圧を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策","封撃","疲弊","威圧"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '深慮遠謀': {
+      // 戦法タイプ: 指揮
+      // 3ターン目まで、敵軍複数（2名）の与ダメージが14%→28%低下（知略依存）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '疾風怒濤': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自身と友軍単体が22.5%→45%の会心を獲得し、敵軍複数（2名）に兵刃ダメージ（ダメージ率51%→102%）
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率45%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 45, 'physical')
+      })
+      return true
+    }
+    case '乗勝追撃': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、敵軍全体にもう一度兵刃ダメージ（ダメージ率68%→136%）
+      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率136%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 136, 'physical')
+      })
+      return true
+    }
+    case '三楽犬': {
+      // 戦法タイプ: 能動
+      // 1ターンの間、自軍複数（2～3名）が先攻・必中を獲得し、速度が最も高い敵軍単体に標記を付与
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '百戦錬磨': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身の武勇・知略・統率・速度が21→42増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '先手必勝': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）に計略ダメージ（ダメージ率67%→134%、知略依存）を与え、2ターンの間、対象が次に受ける能動戦法のダメージが26%→52%上昇
+      // 敵軍複数（2名）に計略ダメージ（ダメージ率134%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 134, 'strategy')
+      })
+      return true
+    }
+    case '奇謀独断': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、敵軍複数（2名）に無策（能動戦法発動不可）を付与
+      // 無策を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '剛の武者': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、攻撃対象に兵刃ダメージ（ダメージ率123%→246%）を与え、2ターンの間、その次の計略与ダメージが45%→90%低下
+      // 敵軍単体に計略ダメージ（ダメージ率246%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 246, 'strategy')
+      })
+      return true
+    }
+    case '剛毅果断': {
+      // 戦法タイプ: 能動
+      // 3ターンの間、自身の突撃戦法の与ダメージが17.5%→35%上昇、能動戦法の被ダメージが10%→20%低下（1ターン後に再発動可能）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '甲山猛虎': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率48%→96%）を与え、1ターンの間封撃を付与
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率96%）を与える
+      // 封撃を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 96, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["封撃"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '赤備え隊': {
+      // 戦法タイプ: 兵種
+      // 騎兵が、横掃千軍の赤備え隊に進化
+      // 自軍全体（3名）に兵刃ダメージ（ダメージ率35%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 35, 'physical')
+      })
+      return true
+    }
+    case '陣前無我': {
+      // 戦法タイプ: 能動
+      // 自身の兵力が自軍の最低値でない場合、1ターンの間、敵軍複数（2～3名）に挑発と牽制（強制的に敵軍の通常攻撃と戦法の発動対象を自身に固定）を付与
+      // 挑発を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["挑発"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '罵詈雑言': {
+      // 戦法タイプ: 指揮
+      // 3ターン目まで、敵軍複数（2～3名）に挑発（毎ターン45%→90%の確率で強制的に自身を通常攻撃の対象に固定）を付与
+      // 挑発を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["挑発"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '形影相弔': {
+      // 戦法タイプ: 能動
+      // 自身と知略が最も高い敵軍武将で同時にランダムな敵軍単体に計略ダメージ（ダメージ率96%→192%、知略依存）
+      // 敵軍単体に計略ダメージ（ダメージ率192%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 192, 'strategy')
+      })
+      return true
+    }
+    case '戦意消沈': {
+      // 戦法タイプ: 指揮
+      // 敵軍複数（2名）に対し、1ターン目に1名へ、3ターン目にもう1名へ、疲弊を付与（2ターンの間、与ダメージを25％→50％の確率で無効）
+      // 疲弊を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["疲弊"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '湖水渡り': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自身と友軍単体が奇策を65%獲得
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '死中求活': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身は兵刃ダメージを受けるたびに武勇が2.5→5増加（最大10回まで重ねがけ可能）
+      // 友軍複数（2名）に兵刃ダメージ（ダメージ率125%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 125, 'physical')
+      })
+      return true
+    }
+    case '内助の賢': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、友軍複数（2名）が継続状態を付与する際、その継続時間が25%→50%の確率（知略依存）で1ターン増加
+      // 友軍複数（2名）を回復（回復率92%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 92, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '帰還の凱歌': {
+      // 戦法タイプ: 能動
+      // 自軍複数（2名）の兵力を一定量回復（回復率66%→132%、知略依存）
+      // 自軍複数（2名）を回復（回復率152%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 152, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '七本槍筆頭': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身は46%→92%の乱舞（通常攻撃時、対象部隊の他武将へもダメージ）を獲得
+      // 自分に兵刃ダメージ（ダメージ率92%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 92, 'physical')
+      })
+      return true
+    }
+    case '勇志不抜': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、友軍複数（2名）の被ダメージの20%を肩代りし、自身の武勇が37.5→75増加し、12%→24%の離反を獲得
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '尼御台': {
+      // 戦法タイプ: 指揮
+      // 2ターン目まで、自軍大将は洞察を獲得し、被ダメージが9%→18%（知略依存）低下
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '月華鶴影': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、友軍複数（2名）が通常攻撃を受けると35%の確率で敵軍複数に兵刃ダメージ（ダメージ率51%→102%）
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率102%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 102, 'physical')
+      })
+      return true
+    }
+    case '信義貫徹': {
+      // 戦法タイプ: 能動
+      // 1ターンの間、7.5%→15%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得し、敵軍複数（2名）に兵刃ダメージ（ダメージ率78%→156%）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '金鼓連天': {
+      // 戦法タイプ: 能動
+      // 3ターンの間、自身の能動戦法与ダメージが24%→48%上昇、突撃戦法被ダメージが12.5%→25%低下（1ターン後に再発動可能）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '旋乾転坤': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2～3名）に計略ダメージ（ダメージ率63%→126%、知略依存）を与え、恐慌を付与
+      // 敵軍複数（2〜3名）に計略ダメージ（ダメージ率126%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 126, 'strategy')
+      })
+      return true
+    }
+    case '薩摩鉄砲兵': {
+      // 戦法タイプ: 兵種
+      // 鉄砲が、鉄火烈襲の薩摩鉄砲兵に進化
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '怪力無双': {
+      // 戦法タイプ: 能動
+      // 2ターンの準備後、敵軍複数（2～3名）に大量の兵刃ダメージ（ダメージ率166.5%→333%）
+      // 敵軍複数（2〜3名）に兵刃ダメージ（ダメージ率333%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 333, 'physical')
+      })
+      return true
+    }
+    case '大太刀力士隊': {
+      // 戦法タイプ: 兵種
+      // 足軽が、臨戦態勢の大太刀力士隊に進化
+      // 自軍全体（3名）に兵刃ダメージ（ダメージ率100%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 100, 'physical')
+      })
+      return true
+    }
+    case '積水成淵': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、自軍複数（2～3名）に11%→22%の心攻（計略ダメージを与えた際にダメージ量に応じて兵力回復）を付与
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '僧兵': {
+      // 戦法タイプ: 兵種
+      // 足軽が、不退転の僧兵に進化
+      // 自軍全体（3名）に兵刃ダメージ（ダメージ率60%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 60, 'physical')
+      })
+      return true
+    }
+    case '諸行無常': {
+      // 戦法タイプ: 指揮
+      // 戦闘開始後の3ターンの間、自軍全体の与ダメージを12%→24%（知略依存）上昇させる
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '先陣鼓舞': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に兵刃ダメージ （ダメージ率121%→242%）を与え、さらに自軍単体の固有戦法発動確率を8%→16%増加させる
+      // 敵軍単体に兵刃ダメージ（ダメージ率242%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 242, 'physical')
+      })
+      return true
+    }
+    case '境目奮戦': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、兵力の最も低い敵軍単体に計略ダメージ（ダメージ率130%→260%、知略依存）を与え、その敵軍が受ける回復効果を15%→30%低下させる
+      // 兵力最低の敵軍単体に計略ダメージ（ダメージ率260%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 260, 'strategy')
+      })
+      return true
+    }
+    case '斗星北天': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自身は洞察を獲得し、統率と知略が25→50増加し、敵軍複数（2～3名）に牽制（37.5%→75%の確率で自身を敵軍戦法の発動対象に固定、知略依存）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '文武両道': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身は計略ダメージを与えるたびに武勇が15→30増加（最大5回まで重ねがけ可能）、兵刃ダメージを与えるたびに知略が15→30増加（最大5回まで重ねがけ可
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '一心一徳': {
+      // 戦法タイプ: 能動
+      // 自軍複数（2～3名）を回復し（回復率30%→60%、知略依存）、1ターンの間休養（毎ターン兵力回復）を付与（回復率38%→76%、知略依存）
+      // 自軍複数（2〜3名）を回復（回復率60%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 60, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '非常の器': {
+      // 戦法タイプ: 指揮
+      // 2ターン目まで、自軍全体が17.5%→35%の回避（ダメージを無効化）を獲得
+      // 自軍全体（3名）を回復（回復率66%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 66, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '献身': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、自身の行動時に22%→44%の確率（知略依存）で自軍異性が次の攻撃で追加でランダムな敵軍単体に兵刃ダメージ（ダメージ率131%→262%）
+      // 自軍単体に計略ダメージ（ダメージ率262%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 262, 'strategy')
+      })
+      return true
+    }
+    case '戦意崩壊': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、2ターンの間、対象の統率と知略が65低下し、自軍大将に2回分の鉄壁（被ダメージ無効）を付与
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '耐苦鍛錬': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、自身が通常攻撃を受けた際に自身の武勇と統率が7→14増加（5回まで重ねがけ可能）
+      // 自分に兵刃ダメージ（ダメージ率160%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 160, 'physical')
+      })
+      return true
+    }
+    case '按甲休兵': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身は休養（毎ターン兵力回復、回復率70%→140%）を獲得
+      // 自分を回復（回復率140%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 140, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '密報通暁': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、友軍単体が洞察を獲得し、敵軍単体に撹乱（能動戦法発動時に計略ダメージ、ダメージ率152%、知略依存）を付与
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '鬼小島': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、対象に兵刃ダメージ（ダメージ率304%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率304%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 304, 'physical')
+      })
+      return true
+    }
+    case '不屈の精神': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自身は反撃を獲得し、通常攻撃を受けると攻撃者に1回反撃（ダメージ率74%→148%）を付与
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '甲斐弓騎兵': {
+      // 戦法タイプ: 兵種
+      // 弓兵が、精妙な射術を誇る甲斐弓騎兵に進化
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '洞察反撃': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、自軍複数（2名）に洞察を付与
+      // 自軍複数（2名）に計略ダメージ（ダメージ率304%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 304, 'strategy')
+      })
+      return true
+    }
+    case '気炎万丈': {
+      // 戦法タイプ: 指揮
+      // 3ターン目まで、敵軍複数（2名）に封撃を付与し、毎ターン35%→70%の確率で通常攻撃不可（毎ターン発動確率が7%→14%減少）
+      // 封撃を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["封撃"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '夜叉美濃': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身の被ダメージが17.5%→35%低下（敵軍が騎兵・鉄砲部隊の場合は25%→50%）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '一徹の意志': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自身の統率が150上昇し、武勇が最も高い敵軍単体に挑発・牽制を付与し、強制的に敵軍の通常攻撃と戦法の発動対象を自身に固定
+      // 挑発を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["挑発"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '陣形崩し': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、敵軍複数（2～3名）の統率と知略が24→48（武勇依存）減少、さらに対象に兵刃ダメージ（ダメージ率51%→102%）
+      // 敵軍複数（2名）に計略ダメージ（ダメージ率102%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 102, 'strategy')
+      })
+      return true
+    }
+    case '攻めの三左': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に兵刃ダメージ（ダメージ率71%→142%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率142%）を与える
+      // 敵軍単体を回復（回復率68%）する
+      // 潰走状態を付与し、継続ダメージ（ダメージ率72%）を処理する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 142, 'physical')
+      })
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 68, databaseHealKind(ctx.skill))
+      })
+      applyDatabaseDot(ctx, h)
+      return true
+    }
+    case '楼岸一番': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、攻撃対象にダメージ（ダメージ率94%→188%、ダメージタイプは武勇と知略の高い方）
+      // 敵軍単体に計略ダメージ（ダメージ率168%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 168, 'strategy')
+      })
+      return true
+    }
+    case '嚢沙之計': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、敵軍複数（2名）に水攻めを付与し、毎ターン持続ダメージ（ダメージ率51%→102%、知略依存）を与え、さらに対象の計略被ダメージが15%→30%上
+      // 水攻め状態を付与し、継続ダメージ（ダメージ率102%）を処理する
+      applyDatabaseDot(ctx, h)
+      return true
+    }
+    case '仏の高力': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、友軍単体の能動戦法の発動率が4.5%→9%（統率依存）増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '綱紀粛正': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍単体に計略ダメージ（ダメージ率196%、知略依存）
+      // 疲弊・威圧を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["疲弊","威圧"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '傲岸不遜': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率62%→124%）を与え、2ターンの間、挑発（敵軍の突撃戦法ダメージが15%→30%減少、統率依存）を付与 大将技：追
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率118%）を与える
+      // 挑発を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 118, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["挑発"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '満ちゆく月': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、4ターンの間、敵軍単体に潰走（ダメージ率108%、潰走を持っていない敵軍単体が優先）を付与
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '鬼十河': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、対象に兵刃ダメージ（ダメージ率188%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率188%）を与える
+      // 威圧を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 188, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["威圧"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '津田流砲術': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に計略ダメージ（ダメージ率94%→188%、知略依存）
+      // 敵軍単体に計略ダメージ（ダメージ率188%）を与える
+      // 無策・封撃・混乱・威圧を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 188, 'strategy')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策","封撃","混乱","威圧"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '鉄砲僧兵': {
+      // 戦法タイプ: 兵種
+      // 鉄砲が、破邪顕正の鉄砲僧兵に進化
+      // 自軍全体を回復（回復率48%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 48, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '仁者の沈勇': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、敵軍単体に計略ダメージ（ダメージ率92%→184%、知略依存）を与え、70%の確率で友軍単体にも同時に同対象への計略ダメージ（ダメージ率77%→15
+      // 敵軍単体に計略ダメージ（ダメージ率184%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 184, 'strategy')
+      })
+      return true
+    }
+    case '先制攻撃': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍複数（2～3名）に計略ダメージ（ダメージ率66%→132%、知略依存）を与え、2ターンの間対象の能動戦法の被ダメージが15%→30%上昇
+      // 敵軍複数（2〜3名）に計略ダメージ（ダメージ率132%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 132, 'strategy')
+      })
+      return true
+    }
+    case '諏訪の光': {
+      // 戦法タイプ: 能動
+      // 自軍複数（2名）の弱体化効果を2個浄化し、2ターンの間、対象の武勇と統率が36増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '笹の才蔵': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍単体に大量の兵刃ダメージ（ダメージ率261%→522%）を与え、3ターンの間回復不可（兵力を回復不能）を付与
+      // 敵軍単体に兵刃ダメージ（ダメージ率522%）を与える
+      // 回復不可を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 522, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["回復不可"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '落花啼鳥': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、友軍複数（2名）が先攻を獲得し、能動戦法与ダメージが37.5%→75%上昇する（2ターン持続） 大将技：与ダメージ基本増加量が42.5%→85
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '夢幻泡影': {
+      // 戦法タイプ: 能動
+      // 自軍複数（2名）を回復し（回復率59%→118%、知略依存）、2ターンの間、対象の与ダメージが7.5%→15%上昇（知略依存）
+      // 自軍複数（2名）を回復（回復率118%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 118, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '一念乱志': {
+      // 戦法タイプ: 受動
+      // 3ターン目以降、自身は35%→70%の確率で敵軍単体に兵刃ダメージ（ダメージ率89%→178%）を与え、35%の確率で武勇が最も高い友軍単体も同じ対象に兵刃ダメ
+      // 敵軍単体に兵刃ダメージ（ダメージ率178%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 178, 'physical')
+      })
+      return true
+    }
+    case '鉄砲猛撃': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）に計略ダメージ（ダメージ率51%→102%、知略依存）
+      // 敵軍複数（2名）に計略ダメージ（ダメージ率102%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 102, 'strategy')
+      })
+      return true
+    }
+    case '全力戦闘': {
+      // 戦法タイプ: 受動
+      // 5ターン目以降、戦闘終了まで自身が35%→70%の連撃（1ターンに2回通常攻撃）を獲得
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '荒切': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、1ターンの間連撃（1ターンに2回通常攻撃）を獲得
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '奮戦': {
+      // 戦法タイプ: 能動
+      // 自身に連撃（1ターンに2回通常攻撃）を付与するが、1ターンの間与ダメージが15%低下
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '生死一顧': {
+      // 戦法タイプ: 能動
+      // 敵軍全体に計略ダメージ（ダメージ率28%→56%、知略依存）を与え、1ターンの間挑発（強制的に自身を通常攻撃の対象に固定）を付与
+      // 敵軍全体に計略ダメージ（ダメージ率56%）を与える
+      // 挑発を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 56, 'strategy')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["挑発"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '先陣の勇': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に兵刃ダメージ（ダメージ率77%→154%）を与え、17.5%→35%の確率（速度差依存）で1ターンの間威圧（行動不能）を付与
+      // 敵軍単体に兵刃ダメージ（ダメージ率154%）を与える
+      // 威圧を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 154, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["威圧"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '後方支援': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、自身の能動戦法の発動確率が5%→10%減少するが、友軍複数（2名）に9%→18%の与ダメージ上昇効果を付与
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '祓除': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自軍複数（2名）の武勇・知略・速度が12→24増加、弱体化効果を2個浄化
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '闇討ち': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍大将に兵刃ダメージ（ダメージ率166%→332%）
+      // 敵軍大将に兵刃ダメージ（ダメージ率332%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 332, 'physical')
+      })
+      return true
+    }
+    case '覇王の右筆': {
+      // 戦法タイプ: 指揮
+      // 友軍複数（2名）が通常攻撃を行った後、自身は20%→40%の確率でその対象に兵刃ダメージ（ダメージ率63%→126%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率120%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 120, 'physical')
+      })
+      return true
+    }
+    case '岐阜侍従': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に兵刃ダメージ（ダメージ率74%→148%）と計略ダメージ（ダメージ率74%→148%、知略依存）
+      // 敵軍単体に兵刃・計略ダメージ（ダメージ率148%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 148, 'physical')
+        h.dealSkillDamage(ctx, target, 148, 'strategy')
+      })
+      return true
+    }
+    case '鈴鳴り': {
+      // 戦法タイプ: 受動
+      // 自身は毎ターン33%→66%の確率で敵軍単体に兵刃ダメージ（ダメージ率105%→210%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率210%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 210, 'physical')
+      })
+      return true
+    }
+    case '奪気': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）の強化効果を2個「強化解除」し、3ターンの間、自身の知略が14→28上昇
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '槍弾正': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に兵刃ダメージ（ダメージ率86%→172%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率172%）を与える
+      // 無策を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 172, 'physical')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '殿軍奮戦': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、敵軍単体に挑発（強制的に自身を通常攻撃の対象に固定）または牽制（強制的に自身を戦法の対象に固定）を付与
+      // 挑発を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["挑発"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '先制先登': {
+      // 戦法タイプ: 能動
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率61%→122%）を与え、1ターンの間、先攻（優先行動）を獲得
+      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率122%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 122, 'physical')
+      })
+      return true
+    }
+    case '一上一下': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身の能動戦法の発動確率が6%→12%増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '鬼玄蕃': {
+      // 戦法タイプ: 能動
+      // 自身の次に受けるダメージが20%→30%上昇する代わりに、2ターンの間、9%→18%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得
+      // 敵軍複数（2〜3名）に兵刃ダメージ（ダメージ率118%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 118, 'physical')
+      })
+      return true
+    }
+    case '援護射撃': {
+      // 戦法タイプ: 能動
+      // 1ターンの間、友軍単体が15%→30%の回避を獲得
+      // 自軍単体に兵刃ダメージ（ダメージ率162%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 162, 'physical')
+      })
+      return true
+    }
+    case '捨て身の義': {
+      // 戦法タイプ: 指揮
+      // 戦闘中、自身の統率が20→40増加し、友軍複数の武勇と知略が10→20増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '百錬成鋼': {
+      // 戦法タイプ: 受動
+      // 自身の武勇・知略・統率・速度が17.5→35増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '一刀両断': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、攻撃対象にもう一度兵刃ダメージ（ダメージ率158%→316%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率316%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 316, 'physical')
+      })
+      return true
+    }
+    case '懐柔': {
+      // 戦法タイプ: 指揮
+      // 2ターン目から3ターンの間、自軍複数（2～3名）が休養（毎ターン兵力回復）を獲得（回復率44%→88%、知略依存）
+      // 自軍複数（2〜3名）を回復（回復率84%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 84, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '休養': {
+      // 戦法タイプ: 受動
+      // 戦闘中、自身は休養（毎ターン兵力回復、回復率50%→100%）を獲得
+      // 自分を回復（回復率100%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 100, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '矢石飛交': {
+      // 戦法タイプ: 能動
+      // 敵軍単体にランダムで2～4回の兵刃ダメージ（ダメージ率42%→84%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率84%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 84, 'physical')
+      })
+      return true
+    }
+    case '融通自在': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、友軍単体の能動戦法の発動確率が6%→12%増加（最大2回重ねがけ可能）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '秋水一色': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、自身と友軍単体の計略与ダメージが10%→20%上昇
+      // 自軍複数（2名）に計略ダメージ（ダメージ率148%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 148, 'strategy')
+      })
+      return true
+    }
+    case '槍の鈴': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率116%→232%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率232%）を与える
+      // 敵軍単体を回復（回復率54%）する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 232, 'physical')
+      })
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 54, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '妖怪退治': {
+      // 戦法タイプ: 能動
+      // 敵軍単体の強化効果を1個「強化解除」し、その後兵刃ダメージ（ダメージ率128%→256%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率256%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 256, 'physical')
+      })
+      return true
+    }
+    case '腹中鱗甲': {
+      // 戦法タイプ: 受動
+      // 自身が反撃（通常攻撃を受けると、敵軍に兵刃ダメージ
+      // 敵軍単体に兵刃ダメージ（ダメージ率52%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 52, 'physical')
+      })
+      return true
+    }
+    case '敵陣攪乱': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に計略ダメージ（ダメージ率73%→146%、知略依存）
+      // 敵軍単体に計略ダメージ（ダメージ率146%）を与える
+      // 混乱を付与する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 146, 'strategy')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["混乱"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '驍勇善戦': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間自身が20%→40%の会心（発動時、兵刃ダメージが50%上昇）を獲得し、敵軍単体に兵刃ダメージ（ダメージ率156%→312%）
+      // 敵軍単体に兵刃ダメージ（ダメージ率312%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 312, 'physical')
+      })
+      return true
+    }
+    case '甲州流軍学': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に計略ダメージ（ダメージ率93%→186%、知略依存）を与え、1ターンの間、友軍単体に1回分の鉄壁（被ダメージ無効）を付与
+      // 敵軍単体に計略ダメージ（ダメージ率186%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 186, 'strategy')
+      })
+      return true
+    }
+    case '警戒周到': {
+      // 戦法タイプ: 指揮
+      // 4ターン目まで、自軍複数（2名）の被ダメージが11%→22%低下
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '魚目混珠': {
+      // 戦法タイプ: 受動
+      // 自身は通常攻撃ができず、与ダメージが25%→50%低下するが、毎ターン食事で自身の兵力を回復（回復率106%→212%）
+      // 自分を回復（回復率212%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 212, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '忠勤励行': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、2ターンの間、自軍複数（2名）の兵刃与ダメージが7.5%→15%上昇
+      // 自軍複数（2名）に兵刃ダメージ（ダメージ率296%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 296, 'physical')
+      })
+      return true
+    }
+    case '不意打ち': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、1～2ターンの間（65%の確率で2ターンの間）、敵軍複数（2名）にランダムに無策（能動戦法発動不可）と封撃（通常攻撃不可）のいずれかを付与
+      // 無策・封撃を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策","封撃"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '有備無患': {
+      // 戦法タイプ: 能動
+      // 自軍複数（2名）の兵力を回復（回復率54%→108%、知略依存）
+      // 自軍複数（2名）を回復（回復率108%）する
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 108, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '一触即発': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、1ターンの間攻撃対象の統率が70→140減少、無策（能動戦法発動不可）を付与
+      // 無策を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["無策"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '弓調馬服': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、敵軍単体の武勇と知略の高い方が50→100減少
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '一六勝負': {
+      // 戦法タイプ: 能動
+      // ランダムにいずれか1つの効果を発動：敵軍単体に計略ダメージ（ダメージ率120%→240%、知略依存）を与えるか、自軍単体の兵力を回復（回復率120%→240%、
+      // 敵軍単体に計略ダメージ（ダメージ率240%）を与える
+      // 敵軍単体を回復（回復率240%）する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 240, 'strategy')
+      })
+      databaseTargets(ctx, h, 'heal').forEach((target) => {
+        h.healBySkill(ctx, target, 240, databaseHealKind(ctx.skill))
+      })
+      return true
+    }
+    case '回山倒海': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率52%→104%）を与え、さらに対象に2ターンの間潰走（毎ターン持続ダメージ、ダメージ率47%→94%、武勇依存）
+      // 敵軍単体に兵刃ダメージ（ダメージ率104%）を与える
+      // 潰走状態を付与し、継続ダメージ（ダメージ率94%）を処理する
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 104, 'physical')
+      })
+      applyDatabaseDot(ctx, h)
+      return true
+    }
+    case '攻守兼備': {
+      // 戦法タイプ: 能動
+      // 敵軍単体にダメージ（ダメージ率92%→184%、ダメージタイプは武勇と知略の高い方）
+      // 敵軍単体に計略ダメージ（ダメージ率184%）を与える
+      databaseTargets(ctx, h, 'damage').forEach((target) => {
+        h.dealSkillDamage(ctx, target, 184, 'strategy')
+      })
+      return true
+    }
+    case '参謀の助言': {
+      // 戦法タイプ: 指揮
+      // 自軍全体の武勇と知略が14→28増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '不退転': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、攻撃対象にもう一度兵刃ダメージ（ダメージ率70%→140%）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '薙ぎ払い': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に兵刃ダメージ（ダメージ率62.5%→125%）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '嘲罵': {
+      // 戦法タイプ: 能動
+      // 1ターンの間、敵軍全体に挑発を付与して自身をその攻撃対象に固定
+      // 挑発を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["挑発"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '刺突': {
+      // 戦法タイプ: 能動
+      // 3ターンの間、敵軍単体に潰走（毎ターン持続ダメージ
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '同討': {
+      // 戦法タイプ: 能動
+      // 1ターンの準備後、敵軍複数（2名）に兵刃ダメージ（ダメージ率77.5%→155%）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '対話': {
+      // 戦法タイプ: 能動
+      // 3ターンの間、自軍単体に混乱に対する「耐性」効果を付与
+      // 混乱を付与する
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["混乱"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
+      })
+      return true
+    }
+    case '救援': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自軍単体に回生（ダメージを受けるたびに50%の確率で兵力を一定量回復
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '水計': {
+      // 戦法タイプ: 能動
+      // 3ターンの間、敵軍単体に水攻めを付与し、毎ターン持続ダメージを与える（ダメージ率35%→70%、知略依存）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '猛撃': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、2ターンの間、自身が7.5%→15%の会心を獲得（発動時、兵刃ダメージが50%上昇）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '連戦': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率60%→120%）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '看破': {
+      // 戦法タイプ: 能動
+      // 敵軍単体の強化効果を解除し、2ターンの間、対象の知略が9→18低下
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '火計': {
+      // 戦法タイプ: 能動
+      // 3ターンの間、敵軍単体を火傷にし、毎ターン持続ダメージを与える（ダメージ率35%→70%、知略依存）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '奮起': {
+      // 戦法タイプ: 受動
+      // 自身の武勇と速度が12.5→25増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '殿軍': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、自身の武勇が15→30増加、自身が副将の場合は追加で統率が20→40増加
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '破甲': {
+      // 戦法タイプ: 突撃
+      // 通常攻撃後、2ターンの間攻撃対象の統率が18→36減少
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '火攻め': {
+      // 戦法タイプ: 能動
+      // 敵軍単体に計略ダメージ（ダメージ率75%→150%）
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '威圧': {
+      // 戦法タイプ: 能動
+      // 2ターンの間、敵軍複数（2名）の与ダメージが7.5%→15%低下
+      return applyDatabaseSkillEffect(ctx, h)
+    }
+    case '反撃': {
+      // 戦法タイプ: 能動
+      // 1ターンの間、反撃（通常攻撃を受けるたびに攻撃者にダメージを与え、ダメージ率30%→60%）を獲得
+      return applyDatabaseSkillEffect(ctx, h)
+    }
     case '勇猛無比': {
       // 戦法タイプ: 能動
       // 自身が12.5%→25%の会心状態を獲得し、2ターン持続
@@ -1244,7 +3345,7 @@ export const applyNamedSkillEffect = (
     }
     case '出奇制勝': {
       // 戦法タイプ: 受動
-      // 能動戦法の与ダメージを上げ、確率で会心を獲得
+      // 固有能動戦法の与ダメージを上げ、確率で攻心を獲得
       // 戦法説明にある能力値/与ダメ/被ダメ補正（28%または28）を反映する
       applyDatabaseBuffs(ctx, h)
       return true
@@ -1252,7 +3353,7 @@ export const applyNamedSkillEffect = (
     case '越後先手組': {
       // 戦法タイプ: 兵種
       // 騎兵を進化させ、速度上昇と確率回復を付与
-      // 自軍全体を回復（回復率78%）する
+      // 自軍全體を回復（回復率78%）する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（24%または24）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'heal').forEach((target) => {
@@ -1260,43 +3361,35 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '追い崩し':
-    case '追亡逐北': {
+    case '追い崩し': {
       // 戦法タイプ: 能動
-      // 生存している敵軍から、兵力などに偏らずランダムな1名を選択する。
-      const livingEnemies = ctx.enemies.filter((enemy) => enemy.hp > 0)
-      const target = livingEnemies[Math.floor(ctx.rng() * livingEnemies.length)]
-      if (!target) return true
-
-      // 選んだ対象へ146%（知略依存）の計略ダメージを与える。
-      h.dealSkillDamage(ctx, target, 146, 'strategy')
-      // 既存の畏縮は指揮・受動戦法を止める状態。洞察による防御判定は通さない。
-      h.addControl(ctx, target, '畏縮', 1)
-      return true
-    }
-    case '伊達風采': {
-      // 戦法タイプ: 指揮
-      // 風采を消費して兵刃・計略ダメージを与え、重ねがけで能力上昇
-      // 敵軍単体に兵刃ダメージ（ダメージ率92%）を与える
-      // 戦法説明にある能力値/与ダメ/被ダメ補正（5%または5）を反映する
-      applyDatabaseBuffs(ctx, h)
+      // 単体計略ダメージと防御不能の畏縮付与
+      // 敵軍單體に計略ダメージ（ダメージ率146%）を与える
+      // 畏縮を付与する
       databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 92, 'physical')
+        h.dealSkillDamage(ctx, target, 146, 'strategy')
+      })
+      databaseTargets(ctx, h, 'control').forEach((target) => {
+        ["畏縮"].forEach((name) => {
+          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
+            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
+          }
+        })
       })
       return true
     }
-    case '龍騎兵': {
+    case '竜騎兵': {
       // 戦法タイプ: 兵種
-      // 鉄砲を進化させ、弾丸を消費してダメージを与える
-      // 自軍全体に兵刃ダメージ（ダメージ率104%）を与える
+      // 鉄砲を竜騎兵に進化させ、弾丸を消費してダメージを与える
+      // 自軍全體に兵刃ダメージ（ダメージ率104%）を与える
       databaseTargets(ctx, h, 'damage').forEach((target) => {
         h.dealSkillDamage(ctx, target, 104, 'physical')
       })
       return true
     }
-    case '神出鬼沒': {
+    case '神出鬼没': {
       // 戦法タイプ: 能動
-      // 降低被選中率並強化下次攻擊
+      // 狙われにくくなり、次の通常攻撃を強化
       // 自身に兵刃ダメージ（ダメージ率298%）を与える
       databaseTargets(ctx, h, 'damage').forEach((target) => {
         h.dealSkillDamage(ctx, target, 298, 'physical')
@@ -1305,8 +3398,8 @@ export const applyNamedSkillEffect = (
     }
     case '伊賀忍者': {
       // 戦法タイプ: 兵種
-      // 弓兵を進化させ、密報を使って追加ダメージを与える
-      // 自軍全体に兵刃ダメージ（ダメージ率102%）を与える
+      // 弓兵を伊賀忍者に進化させ、密報を使って追加ダメージを与える
+      // 自軍全體に兵刃ダメージ（ダメージ率102%）を与える
       // 疲弊を付与する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（10%または10）を反映する
       applyDatabaseBuffs(ctx, h)
@@ -1324,8 +3417,8 @@ export const applyNamedSkillEffect = (
     }
     case '風流武者': {
       // 戦法タイプ: 受動
-      // 能動戦法の発動に応じて回復または与ダメージを上昇
-      // 自軍複数（2人）を回復（回復率132%）する
+      // 能動・突撃戦法の発動に応じて回復または計略与ダメージ上昇
+      // 自軍群體（2人）を回復（回復率132%）する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（30%または30）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'heal').forEach((target) => {
@@ -1333,10 +3426,10 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '威風凜凜': {
+    case '威風凛凛': {
       // 戦法タイプ: 突撃
-      // 通常攻撃後に目標の与ダメージを低下
-      // 敵軍単体に兵刃ダメージ（ダメージ率238%）を与える
+      // 通常攻撃後に兵刃ダメージを与え、目標の与ダメージを低下
+      // 敵軍單體に兵刃ダメージ（ダメージ率238%）を与える
       // 戦法説明にある能力値/与ダメ/被ダメ補正（42%または42）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'damage').forEach((target) => {
@@ -1344,10 +3437,10 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '傳馬疾馳': {
+    case '伝馬疾馳': {
       // 戦法タイプ: 能動
       // 友軍を強化し、効果終了時に別の友軍へ移す
-      // 友軍単体に兵刃ダメージ（ダメージ率102%）を与える
+      // 友軍單體に兵刃ダメージ（ダメージ率102%）を与える
       // 戦法説明にある能力値/与ダメ/被ダメ補正（20%または20）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'damage').forEach((target) => {
@@ -1357,10 +3450,10 @@ export const applyNamedSkillEffect = (
     }
     case '重農主義': {
       // 戦法タイプ: 指揮
-      // 評定衆時に兵糧増産効果を追加
+      // 評定衆時に兵糧増産効果を増加
       return applyDatabaseSkillEffect(ctx, h)
     }
-    case '上州黃斑': {
+    case '上州の黄斑': {
       // 戦法タイプ: 指揮
       // 条件に応じて消沈または疲弊を付与
       // 疲弊を付与する
@@ -1375,8 +3468,8 @@ export const applyNamedSkillEffect = (
     }
     case '戮力同心': {
       // 戦法タイプ: 指揮
-      // 毎ターン確率で友軍を回復
-      // 自軍単体または自軍複数を回復（回復率82%）する
+      // 毎ターン確率で自身と友軍を回復
+      // 自軍單體或自軍群體を回復（回復率82%）する
       databaseTargets(ctx, h, 'heal').forEach((target) => {
         h.healBySkill(ctx, target, 82, databaseHealKind(ctx.skill))
       })
@@ -1385,7 +3478,7 @@ export const applyNamedSkillEffect = (
     case '鬼義重': {
       // 戦法タイプ: 能動
       // 複数兵刃ダメージと統率低下
-      // 敵軍複数（2人）に兵刃ダメージ（ダメージ率214%）を与える
+      // 敵軍群體（2人）に兵刃ダメージ（ダメージ率214%）を与える
       // 戦法説明にある能力値/与ダメ/被ダメ補正（65%または65）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'damage').forEach((target) => {
@@ -1393,10 +3486,10 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '股肱之臣': {
+    case '股肱の臣': {
       // 戦法タイプ: 能動
       // 複数に回生を付与し、残数に応じて与ダメージ上昇
-      // 自軍複数（2-3人）を回復（回復率54%）する
+      // 自軍群體（2-3人）を回復（回復率54%）する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（11%または11）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'heal').forEach((target) => {
@@ -1404,167 +3497,25 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '荷馱崩': {
+    case '荷駄崩': {
       // 戦法タイプ: 能動
       // 複数計略ダメージと被回復効果低下
-      // 敵軍複数（2人）に計略ダメージ（ダメージ率134%）を与える
+      // 敵軍群體（2人）に計略ダメージ（ダメージ率134%）を与える
       databaseTargets(ctx, h, 'damage').forEach((target) => {
         h.dealSkillDamage(ctx, target, 134, 'strategy')
       })
       return true
     }
-    case '天神山殘照': {
+    case '天神山残照': {
       // 戦法タイプ: 受動
       // 通常攻撃後に計略ダメージを与え、序盤は自身の能力を上昇
       // 自身に計略ダメージ（ダメージ率218%）を与える
+      // 混乱を付与する
       // 戦法説明にある能力値/与ダメ/被ダメ補正（60%または60）を反映する
       applyDatabaseBuffs(ctx, h)
       databaseTargets(ctx, h, 'damage').forEach((target) => {
         h.dealSkillDamage(ctx, target, 218, 'strategy')
       })
-      return true
-    }
-    case '新生': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、友軍複数（2名）の与ダメージが7%→14%（統率依存）上昇 大将技：ターン終了時に敵軍部隊の総兵力が初めて35%→70%以下になる場合、自身は毎ターン行
-      // 自軍全体（3名）を回復（回復率14%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 14, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '三河魂': {
-      // 戦法タイプ: 指揮
-      // 友軍複数（2名）が通常攻撃を受けると、攻撃者の全属性に1.25%→2.5%（統率依存）の低下効果を付与（最大8回まで重ねがけ可能） 大将技：自身が通常攻撃を受け
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '百万一心': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、敵軍複数（2名
-      // 敵軍複数（2名）に計略ダメージ（ダメージ率15%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 15, 'strategy')
-      })
-      return true
-    }
-    case '時は今': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）に、以下のいずれか1種を付与（既存と異なる状態を優先、ダメージ率56%）
-      // 火傷/水攻め/中毒/消沈/潰走状態を付与し、継続ダメージ（ダメージ率56%）を処理する
-      applyDatabaseDot(ctx, h)
-      return true
-    }
-    case '相模の獅子': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自軍複数（2～3名）に42.5%→85%の鉄壁（ダメージを無効化）を2回分付与
-      // 自軍複数（2〜3名）に計略ダメージ（ダメージ率85%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 85, 'strategy')
-      })
-      return true
-    }
-    case '軍神': {
-      // 戦法タイプ: 受動
-      // 戦闘中、乱舞獲得不可
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '海道一': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、射撃を2回行い、それぞれランダムな敵軍単体への兵刃ダメージ（ダメージ率134%）と計略ダメージ（ダメージ率134%・知略依存）
-      // 敵軍単体に計略ダメージ（ダメージ率134%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 134, 'strategy')
-      })
-      return true
-    }
-    case '鬼若子': {
-      // 戦法タイプ: 指揮
-      // 4ターン目まで、自軍複数（2～3名）は25%→50%の連撃を獲得し、統率が9→18（統率依存）増加 大将技：対象人数増加の確率が25%増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '電光雷轟': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、対象とランダムな敵単体に麻痺付与（2ターン、毎ターン30%で行動不能）
-      // 敵軍単体に兵刃ダメージ（ダメージ率60%）を与える
-      // 麻痺・威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 60, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["麻痺","威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '鬼美濃': {
-      // 戦法タイプ: 受動
-      // ダメージを受けると、17.5%→35%の確率で自身の弱体化効果を浄化し、自身の兵力を回復（回復率56%→112%、統率依存）
-      // 自分を回復（回復率112%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 112, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case 'かかれ柴田': {
-      // 戦法タイプ: 能動
-      // 自身の弱体化効果を2個浄化し、敵軍全体に兵刃ダメージ（ダメージ率77%→154%）
-      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率154%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 154, 'physical')
-      })
-      return true
-    }
-    case '古今独歩': {
-      // 戦法タイプ: 受動
-      // 通常攻撃を受けると24%→48%の確率で攻撃者に兵刃ダメージ（ダメージ率35%→70%、通常攻撃効果と突撃を発動可能）を与え、2%→4%の離反を獲得（最大8回ま
-      // 敵軍単体に兵刃ダメージ（ダメージ率48%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 48, 'physical')
-      })
-      return true
-    }
-    case '啄木鳥': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に計略ダメージ（ダメージ率78%→156%、知略依存）を与え、武勇が最も高い自軍単体が同じ対象に兵刃ダメージ（ダメージ率80%→160%、武勇と速度依存
-      // 敵軍単体に計略ダメージ（ダメージ率156%）を与える
-      // 威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 156, 'strategy')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '十面埋伏': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、敵軍全体の被ダメージが9%→18%（知略依存）上昇
-      // 敵軍全体（3名）に計略ダメージ（ダメージ率18%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 18, 'strategy')
-      })
-      return true
-    }
-    case '東国無双の麗': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身は連撃（1ターンに2回通常攻撃）を獲得し、自身の武勇が3→30増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '天下御免': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、対象に追加で兵刃ダメージ（ダメージ率188%）を与える
-      // ?に兵刃ダメージ（ダメージ率188%）を与える
-      // 混乱を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 188, 'physical')
-      })
       databaseTargets(ctx, h, 'control').forEach((target) => {
         ["混乱"].forEach((name) => {
           if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
@@ -1574,1565 +3525,9 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '夢幻泡影': {
-      // 戦法タイプ: 能動
-      // 自軍複数（2名）を回復し（回復率59%→118%、知略依存）、2ターンの間、対象の与ダメージが7.5%→15%上昇（知略依存）
-      // 自軍複数（2名）を回復（回復率118%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 118, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '梟雄の計': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍複数（2～3名）に計略ダメージ（ダメージ率64%→128%、知略依存）
-      // 敵軍複数（2〜3名）に計略ダメージ（ダメージ率128%）を与える
-      // 混乱・疲弊を付与する
-      // 火傷/中毒状態を付与し、継続ダメージ（ダメージ率96%）を処理する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 128, 'strategy')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["混乱","疲弊"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      applyDatabaseDot(ctx, h)
-      return true
-    }
-    case '地黄八幡': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍全体に兵刃ダメージ（ダメージ率87%→174%）
-      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率174%）を与える
-      // 無策・封撃を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 174, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","封撃"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '一切皆空': {
-      // 戦法タイプ: 受動
-      // 2ターン目以降、30%の確率（毎ターン発動の確率が40%増加）で一揆を発動
-      // 敵軍複数（2〜3名）を回復（回復率72%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 72, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '疾風怒濤': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自身と友軍単体が22.5%→45%の会心を獲得し、敵軍複数（2名）に兵刃ダメージ（ダメージ率51%→102%）
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率45%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 45, 'physical')
-      })
-      return true
-    }
-    case '槍の又左': {
-      // 戦法タイプ: 受動
-      // 戦闘中、能動戦法を発動するたびに、45%→90%の確率で、次のターンの行動時までに自身が1回分の鉄壁を獲得（すでにこの戦法で付与された場合は回数増加）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '斗星北天': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自身は洞察を獲得し、統率と知略が25→50増加し、敵軍複数（2～3名）に牽制（37.5%→75%の確率で自身を敵軍戦法の発動対象に固定、知略依存）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '破竹の勢い': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身が35%→70%の会心を獲得し、会心ダメージ率が15%→30%増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '冷徹無情': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率71%→142%、さらに対象の兵力損失に応じて最大25%→50%増加）
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率142%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 142, 'physical')
-      })
-      return true
-    }
-    case '死灰復然': {
-      // 戦法タイプ: 能動
-      // 最も兵力が少ない自軍単体を回復（回復率138%→276%、知略依存）
-      // 自軍単体を回復（回復率276%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 276, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '一心一徳': {
-      // 戦法タイプ: 能動
-      // 自軍複数（2～3名）を回復し（回復率30%→60%、知略依存）、1ターンの間休養（毎ターン兵力回復）を付与（回復率38%→76%、知略依存）
-      // 自軍複数（2〜3名）を回復（回復率60%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 60, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '越後流軍学': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、自身の能動戦法の発動確率が10%→20%増加
-      // 無策・封撃・疲弊・威圧を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","封撃","疲弊","威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '掃疑平乱': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自身と友軍単体が39%→78%の乱舞を獲得（速度依存）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '献身': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、自身の行動時に22%→44%の確率（知略依存）で自軍異性が次の攻撃で追加でランダムな敵軍単体に兵刃ダメージ（ダメージ率131%→262%）
-      // 自軍単体に計略ダメージ（ダメージ率262%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 262, 'strategy')
-      })
-      return true
-    }
-    case '先制攻撃': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍複数（2～3名）に計略ダメージ（ダメージ率66%→132%、知略依存）を与え、2ターンの間対象の能動戦法の被ダメージが15%→30%上昇
-      // 敵軍複数（2〜3名）に計略ダメージ（ダメージ率132%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 132, 'strategy')
-      })
-      return true
-    }
-    case '耐苦鍛錬': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、自身が通常攻撃を受けた際に自身の武勇と統率が7→14増加（5回まで重ねがけ可能）
-      // 自分に兵刃ダメージ（ダメージ率160%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 160, 'physical')
-      })
-      return true
-    }
-    case '密報通暁': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、友軍単体が洞察を獲得し、敵軍単体に撹乱（能動戦法発動時に計略ダメージ、ダメージ率152%、知略依存）を付与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '三楽犬': {
-      // 戦法タイプ: 能動
-      // 1ターンの間、自軍複数（2～3名）が先攻・必中を獲得し、速度が最も高い敵軍単体に標記を付与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '鬼小島': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、対象に兵刃ダメージ（ダメージ率304%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率304%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 304, 'physical')
-      })
-      return true
-    }
-    case '先手必勝': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）に計略ダメージ（ダメージ率67%→134%、知略依存）を与え、2ターンの間、対象が次に受ける能動戦法のダメージが26%→52%上昇
-      // 敵軍複数（2名）に計略ダメージ（ダメージ率134%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 134, 'strategy')
-      })
-      return true
-    }
-    case '不屈の精神': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自身は反撃を獲得し、通常攻撃を受けると攻撃者に1回反撃（ダメージ率74%→148%）を付与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '剛の武者': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、攻撃対象に兵刃ダメージ（ダメージ率123%→246%）を与え、2ターンの間、その次の計略与ダメージが45%→90%低下
-      // 敵軍単体に計略ダメージ（ダメージ率246%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 246, 'strategy')
-      })
-      return true
-    }
-    case '洞察反撃': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、自軍複数（2名）に洞察を付与
-      // 自軍複数（2名）に計略ダメージ（ダメージ率304%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 304, 'strategy')
-      })
-      return true
-    }
-    case '甲山猛虎': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率48%→96%）を与え、1ターンの間封撃を付与
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率96%）を与える
-      // 封撃を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 96, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["封撃"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '夜叉美濃': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の被ダメージが17.5%→35%低下（敵軍が騎兵・鉄砲部隊の場合は25%→50%）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '諏訪の光': {
-      // 戦法タイプ: 能動
-      // 自軍複数（2名）の弱体化効果を2個浄化し、2ターンの間、対象の武勇と統率が36増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '帰蝶の舞': {
-      // 戦法タイプ: 受動
-      // 戦闘中、奇数ターンに20%→40%の確率（知略依存）で1ターンの間、敵軍複数（2名）の統率と知略が11%→22%（知略依存）低下
-      // 混乱を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["混乱"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '陣前無我': {
-      // 戦法タイプ: 能動
-      // 自身の兵力が自軍の最低値でない場合、1ターンの間、敵軍複数（2～3名）に挑発と牽制（強制的に敵軍の通常攻撃と戦法の発動対象を自身に固定）を付与
-      // 挑発を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["挑発"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '一徹の意志': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自身の統率が150上昇し、武勇が最も高い敵軍単体に挑発・牽制を付与し、強制的に敵軍の通常攻撃と戦法の発動対象を自身に固定
-      // 挑発を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["挑発"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '形影相弔': {
-      // 戦法タイプ: 能動
-      // 自身と知略が最も高い敵軍武将で同時にランダムな敵軍単体に計略ダメージ（ダメージ率96%→192%、知略依存）
-      // 敵軍単体に計略ダメージ（ダメージ率192%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 192, 'strategy')
-      })
-      return true
-    }
-    case '湖水渡り': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自身と友軍単体が奇策を65%獲得
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '攻めの三左': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に兵刃ダメージ（ダメージ率71%→142%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率142%）を与える
-      // 敵軍単体を回復（回復率68%）する
-      // 潰走状態を付与し、継続ダメージ（ダメージ率72%）を処理する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 142, 'physical')
-      })
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 68, databaseHealKind(ctx.skill))
-      })
-      applyDatabaseDot(ctx, h)
-      return true
-    }
-    case '内助の賢': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、友軍複数（2名）が継続状態を付与する際、その継続時間が25%→50%の確率（知略依存）で1ターン増加
-      // 友軍複数（2名）を回復（回復率92%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 92, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '七本槍筆頭': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身は46%→92%の乱舞（通常攻撃時、対象部隊の他武将へもダメージ）を獲得
-      // 自分に兵刃ダメージ（ダメージ率92%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 92, 'physical')
-      })
-      return true
-    }
-    case '楼岸一番': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、攻撃対象にダメージ（ダメージ率94%→188%、ダメージタイプは武勇と知略の高い方）
-      // 敵軍単体に計略ダメージ（ダメージ率168%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 168, 'strategy')
-      })
-      return true
-    }
-    case '笹の才蔵': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍単体に大量の兵刃ダメージ（ダメージ率261%→522%）を与え、3ターンの間回復不可（兵力を回復不能）を付与
-      // 敵軍単体に兵刃ダメージ（ダメージ率522%）を与える
-      // 回復不可を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 522, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["回復不可"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '非常の器': {
-      // 戦法タイプ: 指揮
-      // 2ターン目まで、自軍全体が17.5%→35%の回避（ダメージを無効化）を獲得
-      // 自軍全体（3名）を回復（回復率66%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 66, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '破陣乱舞': {
-      // 戦法タイプ: 能動
-      // 1ターンの間、自身と武勇が最も高い友軍単体が23%→46%（武勇依存）の破陣を獲得
-      // 自軍複数（2名）に兵刃ダメージ（ダメージ率44%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 44, 'physical')
-      })
-      return true
-    }
-    case '仏の高力': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、友軍単体の能動戦法の発動率が4.5%→9%（統率依存）増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '勇志不抜': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、友軍複数（2名）の被ダメージの20%を肩代りし、自身の武勇が37.5→75増加し、12%→24%の離反を獲得
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '綱紀粛正': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍単体に計略ダメージ（ダメージ率196%、知略依存）
-      // 疲弊・威圧を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["疲弊","威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '落花啼鳥': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、友軍複数（2名）が先攻を獲得し、能動戦法与ダメージが37.5%→75%上昇する（2ターン持続） 大将技：与ダメージ基本増加量が42.5%→85
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '傲岸不遜': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率62%→124%）を与え、2ターンの間、挑発（敵軍の突撃戦法ダメージが15%→30%減少、統率依存）を付与 大将技：追
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率118%）を与える
-      // 挑発を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 118, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["挑発"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '尼御台': {
-      // 戦法タイプ: 指揮
-      // 2ターン目まで、自軍大将は洞察を獲得し、被ダメージが9%→18%（知略依存）低下
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '満ちゆく月': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、4ターンの間、敵軍単体に潰走（ダメージ率108%、潰走を持っていない敵軍単体が優先）を付与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '月華鶴影': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、友軍複数（2名）が通常攻撃を受けると35%の確率で敵軍複数に兵刃ダメージ（ダメージ率51%→102%）
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率102%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 102, 'physical')
-      })
-      return true
-    }
-    case '鬼十河': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、対象に兵刃ダメージ（ダメージ率188%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率188%）を与える
-      // 威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 188, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '信義貫徹': {
-      // 戦法タイプ: 能動
-      // 1ターンの間、7.5%→15%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得し、敵軍複数（2名）に兵刃ダメージ（ダメージ率78%→156%）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '旋乾転坤': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2～3名）に計略ダメージ（ダメージ率63%→126%、知略依存）を与え、恐慌を付与
-      // 敵軍複数（2〜3名）に計略ダメージ（ダメージ率126%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 126, 'strategy')
-      })
-      return true
-    }
-    case '陣形崩し': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、敵軍複数（2～3名）の統率と知略が24→48（武勇依存）減少、さらに対象に兵刃ダメージ（ダメージ率51%→102%）
-      // 敵軍複数（2名）に計略ダメージ（ダメージ率102%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 102, 'strategy')
-      })
-      return true
-    }
-    case '所向無敵': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍全体に兵刃ダメージ（ダメージ率127%→254%）
-      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率254%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 254, 'physical')
-      })
-      return true
-    }
-    case '気炎万丈': {
-      // 戦法タイプ: 指揮
-      // 3ターン目まで、敵軍複数（2名）に封撃を付与し、毎ターン35%→70%の確率で通常攻撃不可（毎ターン発動確率が7%→14%減少）
-      // 封撃を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["封撃"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '草木皆兵': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍複数（2名）に計略ダメージ（ダメージ率71%→142%）を与え、自軍複数（2名）の兵力を回復（回復率53%→106%、知略依存）
-      // 敵軍複数（2名）に計略ダメージ（ダメージ率142%）を与える
-      // 敵軍複数（2名）を回復（回復率106%）する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 142, 'strategy')
-      })
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 106, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '縦横馳突': {
-      // 戦法タイプ: 能動
-      // 自身に連撃（1ターンに2回通常攻撃が可能）を付与し、さらに封撃（通常攻撃不可）耐性を獲得する
-      // 封撃を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["封撃"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '前後挟撃': {
-      // 戦法タイプ: 能動
-      // 1ターンの間、自身と友軍単体は連撃（1ターンに2回通常攻撃）を獲得
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '千軍辟易': {
-      // 戦法タイプ: 能動
-      // 1ターンの間、敵軍全体に53%→106%の兵刃ダメージ
-      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率106%）を与える
-      // 無策・封撃・威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 106, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","封撃","威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '按甲休兵': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身は休養（毎ターン兵力回復、回復率70%→140%）を獲得
-      // 自分を回復（回復率140%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 140, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '一力当先': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自身の通常攻撃ダメージが25%→50%上昇、乱舞（通常攻撃時、対象部隊の他武将へもダメージ
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '乗勝追撃': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、敵軍全体にもう一度兵刃ダメージ（ダメージ率68%→136%）
-      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率136%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 136, 'physical')
-      })
-      return true
-    }
-    case '理非曲直': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、対象にもう一度兵刃ダメージ（ダメージ率192%）を与え、1ターンの間混乱を付与（攻撃と戦法の発動対象をランダムに選択）
-      // 敵軍単体に兵刃ダメージ（ダメージ率192%）を与える
-      // 混乱を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 192, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["混乱"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '戦意崩壊': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、2ターンの間、対象の統率と知略が65低下し、自軍大将に2回分の鉄壁（被ダメージ無効）を付与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '奇謀独断': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、敵軍複数（2名）に無策（能動戦法発動不可）を付与
-      // 無策を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '一行三昧': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の能動戦法の発動確率が7%→14%増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '沈魚落雁': {
-      // 戦法タイプ: 受動
-      // 自身が通常攻撃を受けた際、18%→36%の確率で1ターンの間、攻撃者に以下の状態を1つ付与：混乱（攻撃と戦法の目標ランダムに選択）、無策（能動戦法が発動不能）、
-      // 通常攻撃を受けた時以外は効果を処理しない
-      if (ctx.trigger !== 'onNormalAttackReceived') return true
-
-      // 直前に通常攻撃を行った攻撃者を対象にする
-      const attacker = ctx.target
-      if (!attacker || attacker.side === ctx.caster.side) return true
-
-      // 36%の確率で状態異常を1つだけ付与する
-      if (!h.roll(ctx.rng, 0.36)) return true
-      const controls = ['混乱', '無策', '疲弊']
-      const control = controls[Math.floor(ctx.rng() * controls.length)] ?? controls[0]
-      h.addControl(ctx, attacker, control, 1)
-      return true
-    }
-    case '死中求活': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身は兵刃ダメージを受けるたびに武勇が2.5→5増加（最大10回まで重ねがけ可能）
-      // 友軍複数（2名）に兵刃ダメージ（ダメージ率125%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 125, 'physical')
-      })
-      return true
-    }
-    case '文武両道': {
-      // 戦法タイプ: 受動
-      // 計略ダメージを与えるたびに武勇+30、兵刃ダメージを与えるたびに知略+30
-      // 実ダメージ発生時の処理は recordDamageDealtSkillEffects に集約し、それぞれ最大5回まで加算する
-      return true
-    }
-    case '戦意消沈': {
-      // 戦法タイプ: 指揮
-      // 敵軍複数（2名）に対し、1ターン目に1名へ、3ターン目にもう1名へ、疲弊を付与（2ターンの間、与ダメージを25％→50％の確率で無効）
-      // 疲弊を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["疲弊"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '気勢衝天': {
-      // 戦法タイプ: 指揮
-      // 4ターン目まで、自身の行動時に80%の確率で1ターンの間、武勇が最も高い敵軍武将の兵刃与ダメージが15%→30%低下（武勇依存）、知略が最も高い敵軍武将の計略与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '深慮遠謀': {
-      // 戦法タイプ: 指揮
-      // 3ターン目まで、敵軍複数（2名）の与ダメージが14%→28%低下（知略依存）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '帰還の凱歌': {
-      // 戦法タイプ: 能動
-      // 自軍複数（2名）の兵力を一定量回復（回復率66%→132%、知略依存）
-      // 自軍複数（2名）を回復（回復率152%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 152, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '血戦奮闘': {
-      // 戦法タイプ: 受動
-      // 自身の被回復効果が30%→60%上昇、さらに20%→40%の会心を獲得
-      // 自分を回復（回復率60%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 60, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '霹靂一撃': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に114%→228%の兵刃ダメージを与え、2ターンの間麻痺（毎ターン30%の確率で行動不能）を付与
-      // 敵軍単体に兵刃ダメージ（ダメージ率228%）を与える
-      // 麻痺を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 228, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["麻痺"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '以戦養戦': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身は12.5%→25%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得
-      // 自分に兵刃ダメージ（ダメージ率25%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 25, 'physical')
-      })
-      return true
-    }
-    case '百戦錬磨': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の武勇・知略・統率・速度が21→42増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '五里霧中': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、敵軍複数（2名）に混乱（攻撃と戦法の発動対象をランダムに選択）を付与
-      // 混乱を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["混乱"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '罵詈雑言': {
-      // 戦法タイプ: 指揮
-      // 3ターン目まで、敵軍複数（2～3名）に挑発（毎ターン45%→90%の確率で強制的に自身を通常攻撃の対象に固定）を付与
-      // 挑発を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["挑発"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '金鼓連天': {
-      // 戦法タイプ: 能動
-      // 3ターンの間、自身の能動戦法与ダメージが24%→48%上昇、突撃戦法被ダメージが12.5%→25%低下（1ターン後に再発動可能）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '剛毅果断': {
-      // 戦法タイプ: 能動
-      // 3ターンの間、自身の突撃戦法の与ダメージが17.5%→35%上昇、能動戦法の被ダメージが10%→20%低下（1ターン後に再発動可能）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '嚢沙之計': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、敵軍複数（2名）に水攻めを付与し、毎ターン持続ダメージ（ダメージ率51%→102%、知略依存）を与え、さらに対象の計略被ダメージが15%→30%上
-      // 水攻め状態を付与し、継続ダメージ（ダメージ率102%）を処理する
-      applyDatabaseDot(ctx, h)
-      return true
-    }
-    case '大智不智': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）に消沈を付与し、2ターンの間、毎ターン持続ダメージ（ダメージ率52%→104%、知略依存）を与え、さらに対象の兵刃被ダメージが10%→20%上昇
-      // 消沈状態を付与し、継続ダメージ（ダメージ率104%）を処理する
-      applyDatabaseDot(ctx, h)
-      return true
-    }
-    case '赤備え隊': {
-      // 戦法タイプ: 兵種
-      // 騎兵が、横掃千軍の赤備え隊に進化
-      // 自軍全体（3名）に兵刃ダメージ（ダメージ率35%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 35, 'physical')
-      })
-      return true
-    }
-    case '母衣武者': {
-      // 戦法タイプ: 兵種
-      // 騎兵が、剛勇無双の母衣武者に進化
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '三河弓兵隊': {
-      // 戦法タイプ: 兵種
-      // 弓兵が、百発百中の三河弓兵隊に進化
-      // 自軍全体（3名）を回復（回復率65%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 65, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '甲斐弓騎兵': {
-      // 戦法タイプ: 兵種
-      // 弓兵が、精妙な射術を誇る甲斐弓騎兵に進化
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '薩摩鉄砲兵': {
-      // 戦法タイプ: 兵種
-      // 鉄砲が、鉄火烈襲の薩摩鉄砲兵に進化
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '鉄砲僧兵': {
-      // 戦法タイプ: 兵種
-      // 鉄砲が、破邪顕正の鉄砲僧兵に進化
-      // 自軍全体を回復（回復率48%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 48, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '大太刀力士隊': {
-      // 戦法タイプ: 兵種
-      // 足軽が、臨戦態勢の大太刀力士隊に進化
-      // 自軍全体（3名）に兵刃ダメージ（ダメージ率100%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 100, 'physical')
-      })
-      return true
-    }
-    case '僧兵': {
-      // 戦法タイプ: 兵種
-      // 足軽が、不退転の僧兵に進化
-      // 自軍全体（3名）に兵刃ダメージ（ダメージ率60%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 60, 'physical')
-      })
-      return true
-    }
-    case '紅蓮の炎': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍全体に計略ダメージ（ダメージ率52%→104%、知略依存）を与え、2ターンの間、対象に火傷状態を付与し、毎ターン持続ダメージを与える（ダメ
-      // 敵軍全体（3名）に計略ダメージ（ダメージ率104%）を与える
-      // 火傷状態を付与し、継続ダメージ（ダメージ率74%）を処理する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 104, 'strategy')
-      })
-      applyDatabaseDot(ctx, h)
-      return true
-    }
-    case '水攻干計': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、敵軍全体に水攻め（毎ターン持続ダメージ
-      // 回復不可を付与する
-      // 水攻め状態を付与し、継続ダメージ（ダメージ率98%）を処理する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["回復不可"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      applyDatabaseDot(ctx, h)
-      return true
-    }
-    case '盤石耽々': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の被ダメージが（4.5%→9%、統率依存）低下
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '御旗楯無': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身がダメージを受けると20%→40%の確率（武勇依存）で、今回の被ダメージが20%→40%（知略依存）低下
-      // 自分に計略ダメージ（ダメージ率40%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 40, 'strategy')
-      })
-      return true
-    }
-    case '毘沙門天': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の行動が終了するたびに20%→40%の確率（武勇依存）で自軍複数（2～3名）を回復（回復率27%→54%、武勇依存）
-      // 自軍複数（2〜3名）を回復（回復率54%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 54, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '運勝の鼻': {
-      // 戦法タイプ: 受動
-      // 戦闘中、準備ターンが必要な固有能動戦法発動時、37.5%→75%の確率で準備時間を1ターンスキップ
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '所領役帳': {
-      // 戦法タイプ: 能動
-      // ランダムな自軍単体を回復し（回復率106%→212%、知略依存）、2ターンの間、最も兵力が少ない自軍単体に回生を付与し、ダメージを受けるたびに25%→50%の確
-      // 自軍単体を回復（回復率212%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 212, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '独立独歩': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の突撃戦法の発動確率が8.5%→17%増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '一領具足': {
-      // 戦法タイプ: 指揮
-      // 最初の2ターンの間、自軍全体の兵力損害が6%→12%（武勇依存）低下
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '七十二の計': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身は25%→50%の奇策（発動時に計略ダメージが50%増加）を獲得し、奇策ダメージ率が15%→30%増加
-      // 自分に計略ダメージ（ダメージ率50%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 50, 'strategy')
-      })
-      return true
-    }
-    case '怪力無双': {
-      // 戦法タイプ: 能動
-      // 2ターンの準備後、敵軍複数（2～3名）に大量の兵刃ダメージ（ダメージ率166.5%→333%）
-      // 敵軍複数（2〜3名）に兵刃ダメージ（ダメージ率333%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 333, 'physical')
-      })
-      return true
-    }
-    case '津田流砲術': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に計略ダメージ（ダメージ率94%→188%、知略依存）
-      // 敵軍単体に計略ダメージ（ダメージ率188%）を与える
-      // 無策・封撃・混乱・威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 188, 'strategy')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","封撃","混乱","威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '積水成淵': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、自軍複数（2～3名）に11%→22%の心攻（計略ダメージを与えた際にダメージ量に応じて兵力回復）を付与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '武田之赤備': {
-      // 戦法タイプ: 受動
-      // 戦闘中、10%→20%の会心を獲得
-      // 自身・敵軍単体に兵刃ダメージ（ダメージ率138%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 138, 'physical')
-      })
-      return true
-    }
-    case '豊後の戦神': {
-      // 戦法タイプ: 受動
-      // 洞察を獲得し、最高属性に応じて火力または発動率を強化する
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '先陣鼓舞': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に兵刃ダメージ （ダメージ率121%→242%）を与え、さらに自軍単体の固有戦法発動確率を8%→16%増加させる
-      // 敵軍単体に兵刃ダメージ（ダメージ率242%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 242, 'physical')
-      })
-      return true
-    }
-    case '仁者の沈勇': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、敵軍単体に計略ダメージ（ダメージ率92%→184%、知略依存）を与え、70%の確率で友軍単体にも同時に同対象への計略ダメージ（ダメージ率77%→15
-      // 敵軍単体に計略ダメージ（ダメージ率184%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 184, 'strategy')
-      })
-      return true
-    }
-    case '末世の道者': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、知略の最も高い自軍武将の計略ダメージを7%→14%（統率依存）増加させ、7%→14%の心攻状態を付与する
-      // 自軍全体（3名）に計略ダメージ（ダメージ率14%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 14, 'strategy')
-      })
-      return true
-    }
-    case '諸行無常': {
-      // 戦法タイプ: 指揮
-      // 戦闘開始後の3ターンの間、自軍全体の与ダメージを12%→24%（知略依存）上昇させる
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '知者楽水': {
-      // 戦法タイプ: 指揮
-      // 戦闘開始後の3ターンの間、自軍複数（2人）が受ける兵刃及び計略ダメージを9%→18%から12%→24%（統率依存
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '乱世の華': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃対象がすでに倒れている場合、別の敵へ対象を変更しない。
-      const attackTarget = ctx.target
-      if (!attackTarget || attackTarget.hp <= 0) return true
-
-      // 通常攻撃対象へ、攻撃側武勇と対象統率の差を使う158%兵刃ダメージを与える。
-      h.dealSkillDamage(ctx, attackTarget, 158, 'physical')
-
-      // 同じ対象へ、双方の知略差と速度差を合わせた158%計略ダメージを与える。
-      h.dealSkillDamage(ctx, attackTarget, 158, 'strategy', {
-        attackStats: ['int', 'spd'],
-        defenseStats: ['int', 'spd'],
-        coefficient: 0.9,
-      })
-      return true
-    }
-    case '静動自在': {
-      // 戦法タイプ: 能動
-      // 自身より行動順が遅い自軍単体を選択し、洞察と先攻状態を付与し、2ターン持続
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '境目奮戦': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、兵力の最も低い敵軍単体に計略ダメージ（ダメージ率130%→260%、知略依存）を与え、その敵軍が受ける回復効果を15%→30%低下させる
-      // 兵力最低の敵軍単体に計略ダメージ（ダメージ率260%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 260, 'strategy')
-      })
-      return true
-    }
-    case '同気連枝': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、友軍複数が通常攻撃後に2.5→5のメイン属性を獲得（知略依存、最大5回まで重ねがけ可能）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '風姿綽約': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、友軍複数（2人）の武勇を2%→4%上昇（知略依存）、毎ターン1回重複、最大4層まで重ね掛け可能
-      // 無策・封撃・混乱・疲弊を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","封撃","混乱","疲弊"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '攻其不備': {
-      // 戦法タイプ: 能動
-      const aliveEnemies = ctx.enemies.filter((enemy) => enemy.hp > 0)
-
-      // 指定した属性が最も低い敵を抽出し、同値が複数いる場合はランダムに1名を選ぶ。
-      const lowestStatTarget = (stat: 'lea' | 'int'): BattleFighter | null => {
-        if (aliveEnemies.length === 0) return null
-        const lowestValue = Math.min(...aliveEnemies.map((enemy) => h.statOf(enemy, stat)))
-        const candidates = aliveEnemies.filter((enemy) => h.statOf(enemy, stat) === lowestValue)
-        return candidates[Math.floor(ctx.rng() * candidates.length)] ?? null
-      }
-
-      // 統率が最も低い敵軍単体に168%の兵刃ダメージを与える。
-      const lowestLeadershipTarget = lowestStatTarget('lea')
-      if (lowestLeadershipTarget) h.dealSkillDamage(ctx, lowestLeadershipTarget, 168, 'physical')
-
-      // 知略が最も低い敵軍単体に168%の計略ダメージを与える。
-      const lowestIntelligenceTarget = lowestStatTarget('int')
-      if (lowestIntelligenceTarget) h.dealSkillDamage(ctx, lowestIntelligenceTarget, 168, 'strategy')
-      return true
-    }
-    case '回山倒海': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率52%→104%）を与え、さらに対象に2ターンの間潰走（毎ターン持続ダメージ、ダメージ率47%→94%、武勇依存）
-      // 敵軍単体に兵刃ダメージ（ダメージ率104%）を与える
-      // 潰走状態を付与し、継続ダメージ（ダメージ率94%）を処理する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 104, 'physical')
-      })
-      applyDatabaseDot(ctx, h)
-      return true
-    }
-    case '槍弾正': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に兵刃ダメージ（ダメージ率86%→172%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率172%）を与える
-      // 無策を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 172, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '一念乱志': {
-      // 戦法タイプ: 受動
-      // 3ターン目以降、自身は35%→70%の確率で敵軍単体に兵刃ダメージ（ダメージ率89%→178%）を与え、35%の確率で武勇が最も高い友軍単体も同じ対象に兵刃ダメ
-      // 敵軍単体に兵刃ダメージ（ダメージ率178%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 178, 'physical')
-      })
-      return true
-    }
-    case '警戒周到': {
-      // 戦法タイプ: 指揮
-      // 4ターン目まで、自軍複数（2名）の被ダメージが11%→22%低下
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '攻守兼備': {
-      // 戦法タイプ: 能動
-      // 敵軍単体にダメージ（ダメージ率92%→184%、ダメージタイプは武勇と知略の高い方）
-      // 敵軍単体に計略ダメージ（ダメージ率184%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 184, 'strategy')
-      })
-      return true
-    }
-    case '殿軍奮戦': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、敵軍単体に挑発（強制的に自身を通常攻撃の対象に固定）または牽制（強制的に自身を戦法の対象に固定）を付与
-      // 挑発を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["挑発"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '鉄砲猛撃': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）に計略ダメージ（ダメージ率51%→102%、知略依存）
-      // 敵軍複数（2名）に計略ダメージ（ダメージ率102%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 102, 'strategy')
-      })
-      return true
-    }
-    case '先制先登': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率61%→122%）を与え、1ターンの間、先攻（優先行動）を獲得
-      // 敵軍複数（2名）に兵刃ダメージ（ダメージ率122%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 122, 'physical')
-      })
-      return true
-    }
-    case '一上一下': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の能動戦法の発動確率が6%→12%増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '鬼玄蕃': {
-      // 戦法タイプ: 能動
-      // 自身の次に受けるダメージが20%→30%上昇する代わりに、2ターンの間、9%→18%の離反（兵刃ダメージを与えた際にダメージ量に応じて兵力回復）を獲得
-      // 敵軍複数（2〜3名）に兵刃ダメージ（ダメージ率118%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 118, 'physical')
-      })
-      return true
-    }
-    case '魚目混珠': {
-      // 戦法タイプ: 受動
-      // 自身は通常攻撃ができず、与ダメージが25%→50%低下するが、毎ターン食事で自身の兵力を回復（回復率106%→212%）
-      // 自分を回復（回復率212%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 212, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '忠勤励行': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、自軍複数（2名）の兵刃与ダメージが7.5%→15%上昇
-      // 自軍複数（2名）に兵刃ダメージ（ダメージ率296%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 296, 'physical')
-      })
-      return true
-    }
-    case '援護射撃': {
-      // 戦法タイプ: 能動
-      // 1ターンの間、友軍単体が15%→30%の回避を獲得
-      // 自軍単体に兵刃ダメージ（ダメージ率162%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 162, 'physical')
-      })
-      return true
-    }
-    case '捨て身の義': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、自身の統率が20→40増加し、友軍複数の武勇と知略が10→20増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '一刀両断': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、攻撃対象にもう一度兵刃ダメージ（ダメージ率158%→316%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率316%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 316, 'physical')
-      })
-      return true
-    }
-    case '不意打ち': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、1～2ターンの間（65%の確率で2ターンの間）、敵軍複数（2名）にランダムに無策（能動戦法発動不可）と封撃（通常攻撃不可）のいずれかを付与
-      // 無策・封撃を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","封撃"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '全力戦闘': {
-      // 戦法タイプ: 受動
-      // 5ターン目以降、戦闘終了まで自身が35%→70%の連撃（1ターンに2回通常攻撃）を獲得
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '懐柔': {
-      // 戦法タイプ: 指揮
-      // 2ターン目から3ターンの間、自軍複数（2～3名）が休養（毎ターン兵力回復）を獲得（回復率44%→88%、知略依存）
-      // 自軍複数（2〜3名）を回復（回復率84%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 84, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '荒切': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、1ターンの間連撃（1ターンに2回通常攻撃）を獲得
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '有備無患': {
-      // 戦法タイプ: 能動
-      // 自軍複数（2名）の兵力を回復（回復率54%→108%、知略依存）
-      // 自軍複数（2名）を回復（回復率108%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 108, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '生死一顧': {
-      // 戦法タイプ: 能動
-      // 敵軍全体に計略ダメージ（ダメージ率28%→56%、知略依存）を与え、1ターンの間挑発（強制的に自身を通常攻撃の対象に固定）を付与
-      // 敵軍全体に計略ダメージ（ダメージ率56%）を与える
-      // 挑発を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 56, 'strategy')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["挑発"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '一触即発': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、1ターンの間攻撃対象の統率が70→140減少、無策（能動戦法発動不可）を付与
-      // 無策を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '弓調馬服': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、敵軍単体の武勇と知略の高い方が50→100減少
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '先陣の勇': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に兵刃ダメージ（ダメージ率77%→154%）を与え、17.5%→35%の確率（速度差依存）で1ターンの間威圧（行動不能）を付与
-      // 敵軍単体に兵刃ダメージ（ダメージ率154%）を与える
-      // 威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 154, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '矢石飛交': {
-      // 戦法タイプ: 能動
-      // 敵軍単体にランダムで2～4回の兵刃ダメージ（ダメージ率42%→84%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率84%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 84, 'physical')
-      })
-      return true
-    }
-    case '融通自在': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、友軍単体の能動戦法の発動確率が6%→12%増加（最大2回重ねがけ可能）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '秋水一色': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、自身と友軍単体の計略与ダメージが10%→20%上昇
-      // 自軍複数（2名）に計略ダメージ（ダメージ率148%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 148, 'strategy')
-      })
-      return true
-    }
-    case '参謀の助言': {
-      // 戦法タイプ: 指揮
-      // 自軍全体の武勇と知略が14→28増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '後方支援': {
-      // 戦法タイプ: 指揮
-      // 戦闘中、自身の能動戦法の発動確率が5%→10%減少するが、友軍複数（2名）に9%→18%の与ダメージ上昇効果を付与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '槍の鈴': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率116%→232%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率232%）を与える
-      // 敵軍単体を回復（回復率54%）する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 232, 'physical')
-      })
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 54, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '妖怪退治': {
-      // 戦法タイプ: 能動
-      // 敵軍単体の強化効果を1個「強化解除」し、その後兵刃ダメージ（ダメージ率128%→256%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率256%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 256, 'physical')
-      })
-      return true
-    }
-    case '闇討ち': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍大将に兵刃ダメージ（ダメージ率166%→332%）
-      // 敵軍大将に兵刃ダメージ（ダメージ率332%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 332, 'physical')
-      })
-      return true
-    }
-    case '腹中鱗甲': {
-      // 戦法タイプ: 受動
-      // 自身が反撃（通常攻撃を受けると、敵軍に兵刃ダメージ
-      // 敵軍単体に兵刃ダメージ（ダメージ率52%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 52, 'physical')
-      })
-      return true
-    }
-    case '覇王の右筆': {
-      // 戦法タイプ: 指揮
-      // 友軍複数（2名）が通常攻撃を行った後、自身は20%→40%の確率でその対象に兵刃ダメージ（ダメージ率63%→126%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率120%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 120, 'physical')
-      })
-      return true
-    }
-    case '敵陣攪乱': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に計略ダメージ（ダメージ率73%→146%、知略依存）
-      // 敵軍単体に計略ダメージ（ダメージ率146%）を与える
-      // 混乱を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 146, 'strategy')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["混乱"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '驍勇善戦': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間自身が20%→40%の会心（発動時、兵刃ダメージが50%上昇）を獲得し、敵軍単体に兵刃ダメージ（ダメージ率156%→312%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率312%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 312, 'physical')
-      })
-      return true
-    }
-    case '一六勝負': {
-      // 戦法タイプ: 能動
-      // ランダムにいずれか1つの効果を発動：敵軍単体に計略ダメージ（ダメージ率120%→240%、知略依存）を与えるか、自軍単体の兵力を回復（回復率120%→240%、
-      // 敵軍単体に計略ダメージ（ダメージ率240%）を与える
-      // 敵軍単体を回復（回復率240%）する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 240, 'strategy')
-      })
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 240, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '岐阜侍従': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に兵刃ダメージ（ダメージ率74%→148%）と計略ダメージ（ダメージ率74%→148%、知略依存）
-      // 敵軍単体に計略ダメージ（ダメージ率148%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 148, 'strategy')
-      })
-      return true
-    }
-    case '鈴鳴り': {
-      // 戦法タイプ: 受動
-      // 自身は毎ターン33%→66%の確率で敵軍単体に兵刃ダメージ（ダメージ率105%→210%）
-      // 敵軍単体に兵刃ダメージ（ダメージ率210%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 210, 'physical')
-      })
-      return true
-    }
-    case '甲州流軍学': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に計略ダメージ（ダメージ率93%→186%、知略依存）を与え、1ターンの間、友軍単体に1回分の鉄壁（被ダメージ無効）を付与
-      // 敵軍単体に計略ダメージ（ダメージ率186%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 186, 'strategy')
-      })
-      return true
-    }
-    case '奮戦': {
-      // 戦法タイプ: 能動
-      // 自身に連撃（1ターンに2回通常攻撃）を付与するが、1ターンの間与ダメージが15%低下
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '百錬成鋼': {
-      // 戦法タイプ: 受動
-      // 自身の武勇・知略・統率・速度が17.5→35増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '臨時槍之鈴': {
+    case '臨時槍の鈴': {
       // 戦法タイプ: 突撃
       // 兵刃ダメージを与え、条件付きで自身を回復
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '祓除': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自軍複数（2名）の武勇・知略・速度が12→24増加、弱体化効果を2個浄化
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '奪気': {
-      // 戦法タイプ: 能動
-      // 敵軍複数（2名）の強化効果を2個「強化解除」し、3ターンの間、自身の知略が14→28上昇
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '休養': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身は休養（毎ターン兵力回復、回復率50%→100%）を獲得
-      // 自分を回復（回復率100%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 100, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '斬り': {
-      // 戦法タイプ: 能動
-      // 敵単体に兵刃ダメージを与える
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '火攻め': {
-      // 戦法タイプ: 能動
-      // 敵軍単体に計略ダメージ（ダメージ率75%→150%）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '同討': {
-      // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍複数（2名）に兵刃ダメージ（ダメージ率77.5%→155%）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '看破': {
-      // 戦法タイプ: 能動
-      // 敵軍単体の強化効果を解除し、2ターンの間、対象の知略が9→18低下
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '殿軍': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自身の武勇が15→30増加、自身が副将の場合は追加で統率が20→40増加
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '救援': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、自軍単体に回生（ダメージを受けるたびに50%の確率で兵力を一定量回復
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '威圧': {
-      // 戦法タイプ: 能動
-      // 2ターンの間、敵軍複数（2名）の与ダメージが7.5%→15%低下
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '刺突': {
-      // 戦法タイプ: 能動
-      // 3ターンの間、敵軍単体に潰走（毎ターン持続ダメージ
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '火計': {
-      // 戦法タイプ: 能動
-      // 3ターンの間、敵軍単体を火傷にし、毎ターン持続ダメージを与える（ダメージ率35%→70%、知略依存）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '水計': {
-      // 戦法タイプ: 能動
-      // 3ターンの間、敵軍単体に水攻めを付与し、毎ターン持続ダメージを与える（ダメージ率35%→70%、知略依存）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '嘲罵': {
-      // 戦法タイプ: 能動
-      // 1ターンの間、敵軍全体に挑発を付与して自身をその攻撃対象に固定
-      // 挑発を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["挑発"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '反撃': {
-      // 戦法タイプ: 能動
-      // 1ターンの間、反撃（通常攻撃を受けるたびに攻撃者にダメージを与え、ダメージ率30%→60%）を獲得
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '会話': {
-      // 戦法タイプ: 能動
-      // 自軍単体に混乱耐性を付与する
-      // 混乱を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["混乱"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
-      return true
-    }
-    case '不退転': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、攻撃対象にもう一度兵刃ダメージ（ダメージ率70%→140%）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '連戦': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率60%→120%）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '破甲': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、2ターンの間攻撃対象の統率が18→36減少
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '猛撃': {
-      // 戦法タイプ: 突撃
-      // 通常攻撃後、2ターンの間、自身が7.5%→15%の会心を獲得（発動時、兵刃ダメージが50%上昇）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '奮起': {
-      // 戦法タイプ: 受動
-      // 自身の武勇と速度が12.5→25増加
       return applyDatabaseSkillEffect(ctx, h)
     }
     case '士気高揚': {
@@ -3175,9 +3570,9 @@ export const applyNamedSkillEffect = (
       // 自身の統率を上げる
       return applyDatabaseSkillEffect(ctx, h)
     }
-    case '速戰': {
+    case '速戦': {
       // 戦法タイプ: 受動
-      // 速度提升
+      // 速度上昇
       return applyDatabaseSkillEffect(ctx, h)
     }
     // DB戦法: ここまで。
