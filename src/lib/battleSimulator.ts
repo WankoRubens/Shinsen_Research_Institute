@@ -1552,6 +1552,14 @@ const trySkill = (
 ) => {
   // 発動タイミング、クールダウン、ターン内回数、確率判定をまとめて見る入口。
   if (!isAlive(caster) || !skillSupportsTrigger(skill, trigger)) return
+  // 如水の回復反応は本戦ターン中に各ターン1回だけ。
+  // 発動記録より先に除外し、準備ターンや2回目以降の回復をログ・集計へ残さない。
+  const resolvedSkillName = skillDisplayName(skill)
+  if (
+    trigger === 'onHealed'
+    && (resolvedSkillName === '如水' || skill.name === '如水')
+    && (turn <= 0 || caster.specialState.josuiHealTurn === turn)
+  ) return
   const resolvedSkillType = battleSkillType(skill)
   // 畏縮は洞察の有無にかかわらず、指揮・受動戦法の新たな発動を禁止する。
   if ((caster.statuses['畏縮'] ?? 0) > 0 && (resolvedSkillType === '指揮' || resolvedSkillType === '受動')) {
