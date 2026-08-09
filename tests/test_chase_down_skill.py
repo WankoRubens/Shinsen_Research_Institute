@@ -24,10 +24,10 @@ class ChaseDownSkillTest(unittest.TestCase):
         effect_block = effects.split("case '追い崩し':", 1)[1].split("case '伊達風采':", 1)[0]
         self.assertIn("h.dealSkillDamage(ctx, target, 146, 'strategy')", effect_block)
         self.assertIn("h.addControl(ctx, target, '畏縮', 1)", effect_block)
-        self.assertIn("resolvedSkillType === '指揮' || resolvedSkillType === '受動'", simulator)
-        self.assertIn("は畏縮で発動できない", simulator)
-        self.assertIn("if (key === '畏縮') return", simulator)
-        self.assertIn("actor.statuses['畏縮'] -= 1", simulator)
+        self.assertIn("hasControlStatus(caster, '萎縮')", simulator)
+        self.assertIn("type === '指揮' || type === '受動'", simulator)
+        self.assertIn("は${control}で発動できない", simulator)
+        self.assertIn("consumeActionControlDurations(actor, actionControlStatusKeys)", simulator)
 
 
 if __name__ == "__main__":

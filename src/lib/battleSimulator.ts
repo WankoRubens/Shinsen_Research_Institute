@@ -103,6 +103,11 @@ interface PendingSkill {
   remainingTurns: number
 }
 
+interface BattleControlSource {
+  actorId: string
+  actorName: string
+}
+
 export interface BattleFighter {
   id: string
   side: BattleSide
@@ -116,6 +121,7 @@ export interface BattleFighter {
   baseStats: Record<Stat, number>
   buffs: Partial<Record<Stat, number>>
   statuses: Record<string, number>
+  controlSources: Record<string, BattleControlSource>
   timedStatuses: TimedStatus[]
   timedModifiers: TimedBattleModifier[]
   pendingSkills: PendingSkill[]
@@ -449,6 +455,7 @@ const makeFighter = (
     baseStats: roleStats(role, troopStatMultiplier),
     buffs: {},
     statuses: {},
+    controlSources: {},
     timedStatuses: [],
     timedModifiers: [],
     pendingSkills: [],
@@ -527,6 +534,46 @@ const emptyTurnStat = (turn: number): BattleTurnStat => ({
 
 const isAlive = (fighter: BattleFighter) => fighter.hp > 0
 const living = (fighters: BattleFighter[]) => fighters.filter(isAlive)
+const CONTROL_STATUS_NAMES = new Set([
+  '無策',
+  '封撃',
+  '混乱',
+  '疲弊',
+  '回復不可',
+  '挑発',
+  '牽制',
+  '麻痺',
+  '威圧',
+  '畏縮',
+  '萎縮',
+])
+const CONTROL_STATUS_ALIASES: Record<string, string[]> = {
+  畏縮: ['畏縮', '萎縮'],
+  萎縮: ['畏縮', '萎縮'],
+}
+const controlStatusKeys = (name: string): string[] => CONTROL_STATUS_ALIASES[name] ?? [name]
+const activeControlStatusKey = (fighter: BattleFighter, name: string): string | null =>
+  controlStatusKeys(name).find((key) => (fighter.statuses[key] ?? 0) > 0) ?? null
+const hasControlStatus = (fighter: BattleFighter, name: string): boolean =>
+  activeControlStatusKey(fighter, name) !== null
+const clearControlStatus = (fighter: BattleFighter, name: string) => {
+  controlStatusKeys(name).forEach((key) => {
+    delete fighter.statuses[key]
+    delete fighter.controlSources[key]
+  })
+}
+const applyControlStatus = (
+  caster: BattleFighter,
+  target: BattleFighter,
+  name: string,
+  duration: number,
+): boolean => {
+  // 制御状態は重ね掛けも残り時間の上書きも行わない。
+  if (activeControlStatusKey(target, name)) return false
+  target.statuses[name] = Math.max(1, duration)
+  target.controlSources[name] = { actorId: caster.id, actorName: caster.name }
+  return true
+}
 const sideHp = (fighters: BattleFighter[]) => fighters.reduce((sum, fighter) => sum + Math.max(0, fighter.hp), 0)
 const sideMaxHp = (fighters: BattleFighter[]) => fighters.reduce((sum, fighter) => sum + fighter.maxHp, 0)
 const sideMainAlive = (fighters: BattleFighter[]) => fighters.some((fighter) => fighter.role === 'main' && isAlive(fighter))
@@ -547,6 +594,52 @@ const chooseTarget = (
   if (preferred) return preferred
   const sorted = [...live].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))
   return sorted[Math.floor(rng() * Math.min(2, sorted.length))] ?? sorted[0]
+}
+
+const forcedControlTarget = (
+  caster: BattleFighter,
+  candidates: BattleFighter[],
+  mode: 'normal' | 'skill',
+): BattleFighter | null => {
+  const controlName = mode === 'normal' ? '挑発' : '牽制'
+  const activeKey = activeControlStatusKey(caster, controlName)
+  if (!activeKey) return null
+  const source = caster.controlSources[activeKey]
+  if (!source) return null
+  return living(candidates).find((fighter) => fighter.id === source.actorId)
+    ?? living(candidates).find((fighter) => fighter.name === source.actorName)
+    ?? null
+}
+
+const controlledRandomCandidates = (
+  caster: BattleFighter,
+  candidates: BattleFighter[],
+  allies: BattleFighter[],
+  enemies: BattleFighter[],
+  mode: 'normal' | 'skill',
+): BattleFighter[] => {
+  const forced = forcedControlTarget(caster, candidates, mode)
+  if (forced) return [forced]
+  if (!hasControlStatus(caster, '混乱')) return living(candidates)
+  const mixed = living([...allies, ...enemies])
+  return mode === 'normal' ? mixed.filter((fighter) => fighter.id !== caster.id) : mixed
+}
+
+const chooseControlledTarget = (
+  caster: BattleFighter,
+  candidates: BattleFighter[],
+  allies: BattleFighter[],
+  enemies: BattleFighter[],
+  rng: () => number,
+  mode: 'normal' | 'skill' = 'skill',
+): BattleFighter | null => {
+  const forced = forcedControlTarget(caster, candidates, mode)
+  if (forced) return forced
+  const controlled = controlledRandomCandidates(caster, candidates, allies, enemies, mode)
+  if (hasControlStatus(caster, '混乱')) {
+    return controlled[Math.floor(rng() * controlled.length)] ?? null
+  }
+  return chooseTarget(controlled, rng, mode)
 }
 
 const redirectGuardedNormalAttack = (
@@ -603,6 +696,11 @@ const resolveTargets = (
   const text = `${skill.target_jp ?? ''} ${skill.target ?? ''} ${skill.description_jp ?? ''}`
   const isAlly = /自軍|我軍|友軍|自身|自分|回復|恢復|heal/i.test(text) && !/敵軍/.test(text)
   if (/自身|自分/.test(text)) return [caster]
+  // 牽制中の敵向け戦法は、効果人数にかかわらず付与者へ固定する。
+  if (!isAlly) {
+    const forced = forcedControlTarget(caster, enemies, 'skill')
+    if (forced) return [forced]
+  }
   const source = isAlly ? living(allies) : living(enemies)
   if (source.length === 0) return []
   const countDef = targetCountOf(skill)
@@ -616,10 +714,11 @@ const resolveTargets = (
     const commander = source.find((fighter) => fighter.role === 'main')
     return commander ? [commander] : source.slice(0, 1)
   }
-  if (currentTarget && source.some((fighter) => fighter.id === currentTarget.id) && count === 1) {
+  const randomSource = controlledRandomCandidates(caster, source, allies, enemies, 'skill')
+  if (currentTarget && randomSource.some((fighter) => fighter.id === currentTarget.id) && count === 1) {
     return [currentTarget]
   }
-  return [...source].sort(() => rng() - 0.5).slice(0, count)
+  return [...randomSource].sort(() => rng() - 0.5).slice(0, count)
 }
 
 const applyDamage = (target: BattleFighter, amount: number): number => {
@@ -635,7 +734,8 @@ const applyDamage = (target: BattleFighter, amount: number): number => {
 }
 
 const applyHeal = (target: BattleFighter, amount: number): number => {
-  if (target.statuses['回復不可'] > 0) return 0
+  // 回復不可中も戦法自体は発動するが、実際の兵力回復は0になる。
+  if (hasControlStatus(target, '回復不可')) return 0
   const actual = Math.min(target.wounded, target.maxHp - target.hp, Math.max(0, Math.round(amount)))
   target.hp += actual
   target.wounded = Math.max(0, target.wounded - actual)
@@ -733,6 +833,8 @@ const baseDamage = (
   },
 ): DamageResolution => {
   const actualKind = kind === 'normal' ? 'physical' : kind
+  // 疲弊中も通常攻撃・戦法は発動するが、そこから発生するダメージは0になる。
+  if (hasControlStatus(caster, '疲弊')) return { amount: 0, critical: false }
   const rate = damageRate(skill)
   const attackStat = actualKind === 'strategy' ? statOf(caster, 'int') : statOf(caster, 'val')
   const defenseStat = actualKind === 'strategy' ? statOf(target, 'int') : statOf(target, 'lea')
@@ -815,7 +917,7 @@ const applyControl = (
   targets: BattleFighter[],
 ) => {
   const { skill, caster, allies, enemies, logs, turn, rng, stats, turnStat, controlStats } = ctx
-  const inferred = ['無策', '封撃', '麻痺', '混乱', '挑発', '畏縮', '疲弊', '威圧', '回復不可']
+  const inferred = ['無策', '封撃', '麻痺', '混乱', '挑発', '牽制', '畏縮', '萎縮', '疲弊', '威圧', '回復不可']
     .filter((name) => textOfSkill(skill).includes(name))
   const controlNames = [
     ...String(skill.control_type ?? '').split('/').map((name) => name.trim()).filter(Boolean),
@@ -835,7 +937,7 @@ const applyControl = (
         })
         return
       }
-      target.statuses[name] = Math.max(target.statuses[name] ?? 0, duration)
+      if (!applyControlStatus(caster, target, name, duration)) return
       controlStats[name] = (controlStats[name] ?? 0) + 1
       if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}: ${target.name}に${name}(${duration}T)` })
       const targetAllies = target.side === caster.side ? allies : enemies
@@ -907,8 +1009,16 @@ const isUniqueBattleSkill = (skill: Skill): boolean =>
 
 const skillDisplayName = (skill: Skill): string => skill.name_jp || skill.name
 const varNumber = (skill: Skill, key: string, fallback: number): number => pickMaxVar(skill, [key]) ?? fallback
-const aliveRandom = (fighters: BattleFighter[], rng: () => number): BattleFighter[] =>
-  [...living(fighters)].sort(() => rng() - 0.5)
+const aliveRandom = (
+  fighters: BattleFighter[],
+  rng: () => number,
+  ctx?: SkillResolveContext,
+): BattleFighter[] => {
+  const candidates = ctx
+    ? controlledRandomCandidates(ctx.caster, fighters, ctx.allies, ctx.enemies, 'skill')
+    : living(fighters)
+  return [...candidates].sort(() => rng() - 0.5)
+}
 const weakest = (fighters: BattleFighter[], count: number): BattleFighter[] =>
   [...living(fighters)].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp)).slice(0, count)
 const roll = (rng: () => number, chance: number): boolean => rng() < clamp(chance, 0, 1)
@@ -1074,7 +1184,10 @@ const dealSkillDamage = (
     ctx.rng,
     kind,
     statRule,
-    { candidates: ctx.enemies, skillType: battleSkillType(ctx.skill) },
+    {
+      candidates: target.side === ctx.caster.side ? ctx.allies : ctx.enemies,
+      skillType: battleSkillType(ctx.skill),
+    },
   )
   const actual = applyDamage(target, resolvedDamage.amount)
   const afterHp = target.hp
@@ -1393,7 +1506,7 @@ const createBingxueHelpers = (
     const removed = Object.keys(target.statuses)
       .filter(name => name !== '先攻' && !name.endsWith('耐性'))
       .slice(0, count)
-    removed.forEach(name => delete target.statuses[name])
+    removed.forEach(name => clearControlStatus(target, name))
     return removed
   },
 })
@@ -1410,7 +1523,7 @@ const addControl = (ctx: SkillResolveContext, target: BattleFighter, name: strin
     })
     return
   }
-  target.statuses[name] = Math.max(target.statuses[name] ?? 0, duration)
+  if (!applyControlStatus(ctx.caster, target, name, duration)) return
   ctx.controlStats[name] = (ctx.controlStats[name] ?? 0) + 1
   if (ctx.logs !== NO_LOGS) ctx.logs.push({
     turn: ctx.turn,
@@ -1469,7 +1582,9 @@ const addTimedModifier = (
 
 const namedSkillHelpers: BattleSkillEffectHelpers = {
   skillDisplayName,
-  chooseTarget,
+  chooseTarget: (candidates, rng, ctx) => ctx
+    ? chooseControlledTarget(ctx.caster, candidates, ctx.allies, ctx.enemies, rng, 'skill')
+    : chooseTarget(candidates, rng),
   resolveTargets: (ctx) => resolveTargets(ctx.skill, ctx.caster, ctx.target, ctx.allies, ctx.enemies, ctx.rng),
   varNumber,
   aliveRandom,
@@ -1585,7 +1700,7 @@ const resolveSkill = (
   }
 
   if (canApplyDirectTroopChange && (isHeal || hRate > 0)) {
-    const healTargets = targets.length > 0 && targets.some((fighter) => fighter.side === caster.side)
+    const healTargets = targets.length > 0
       ? targets
       : [...living(allies)].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp)).slice(0, targetCountOf(skill) as number)
     healTargets.forEach((fighter) => {
@@ -1641,6 +1756,33 @@ const resolveSkill = (
   }
 }
 
+const skillControlBlock = (caster: BattleFighter, skill: Skill): string | null => {
+  const type = battleSkillType(skill)
+  if (hasControlStatus(caster, '無策') && type === '能動') return '無策'
+  if (hasControlStatus(caster, '萎縮') && (type === '指揮' || type === '受動')) {
+    return activeControlStatusKey(caster, '萎縮') ?? '萎縮'
+  }
+  return null
+}
+
+const logSkillControlBlock = (
+  caster: BattleFighter,
+  skill: Skill,
+  control: string,
+  turn: number,
+  logs: BattleLogEntry[],
+) => {
+  if (logs === NO_LOGS) return
+  logs.push({
+    turn,
+    side: caster.side,
+    actor: caster.name,
+    actorHp: caster.hp,
+    effect: skillDisplayName(skill),
+    message: `${skillDisplayName(skill)}は${control}で発動できない`,
+  })
+}
+
 const trySkill = (
   skill: Skill,
   trigger: BattleTrigger,
@@ -1667,15 +1809,10 @@ const trySkill = (
     && (turn <= 0 || caster.specialState.josuiHealTurn === turn)
   ) return
   const resolvedSkillType = battleSkillType(skill)
-  // 畏縮は洞察の有無にかかわらず、指揮・受動戦法の新たな発動を禁止する。
-  if ((caster.statuses['畏縮'] ?? 0) > 0 && (resolvedSkillType === '指揮' || resolvedSkillType === '受動')) {
-    if (logs !== NO_LOGS) logs.push({
-      turn,
-      side: caster.side,
-      actor: caster.name,
-      actorHp: caster.hp,
-      message: `${skill.name_jp || skill.name}は畏縮で発動できない`,
-    })
+  // 無策は能動、萎縮（旧表記の畏縮を含む）は指揮・受動戦法だけを止める。
+  const controlBlock = skillControlBlock(caster, skill)
+  if (controlBlock) {
+    logSkillControlBlock(caster, skill, controlBlock, turn, logs)
     return
   }
   if ((caster.skillCooldowns[skill.id || skill.name] ?? 0) > 0) return
@@ -1755,7 +1892,12 @@ const processPendingSkills = (
     .sort((a, b) => compareBattleSkillPriority(a.skill, b.skill) || skillDisplayName(a.skill).localeCompare(skillDisplayName(b.skill), 'ja'))
     .forEach((pending) => {
       if (!isAlive(fighter)) return
-      const target = chooseTarget(enemies, rng)
+      const controlBlock = skillControlBlock(fighter, pending.skill)
+      if (controlBlock) {
+        logSkillControlBlock(fighter, pending.skill, controlBlock, turn, logs)
+        return
+      }
+      const target = chooseControlledTarget(fighter, enemies, allies, enemies, rng)
       if (logs !== NO_LOGS) logs.push({ turn, side: fighter.side, actor: fighter.name, actorHp: fighter.hp, message: `${pending.skill.name_jp || pending.skill.name}の準備完了` })
       if (isUniqueBattleSkill(pending.skill)) {
         fireBeforeUniqueSkill(fighter, pending.skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
@@ -1852,11 +1994,19 @@ const processDots = (
 }
 
 const isActionBlocked = (fighter: BattleFighter, rng: () => number): string | null => {
-  if ((fighter.statuses['封撃'] ?? 0) > 0) return '封撃'
-  if ((fighter.statuses['疲弊'] ?? 0) > 0 && rng() < 0.3) return '疲弊'
-  if ((fighter.statuses['麻痺'] ?? 0) > 0 && rng() < 0.3) return '麻痺'
-  if ((fighter.statuses['無策'] ?? 0) > 0) return '無策'
+  if (hasControlStatus(fighter, '威圧')) return '威圧'
+  if (hasControlStatus(fighter, '麻痺') && rng() < 0.3) return '麻痺'
   return null
+}
+
+const consumeActionControlDurations = (fighter: BattleFighter, activeAtActionStart: Set<string>) => {
+  activeAtActionStart.forEach((name) => {
+    if (!CONTROL_STATUS_NAMES.has(name) || (fighter.statuses[name] ?? 0) <= 0) return
+    fighter.statuses[name] -= 1
+    if (fighter.statuses[name] > 0) return
+    delete fighter.statuses[name]
+    delete fighter.controlSources[name]
+  })
 }
 
 const tickFighter = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[]) => {
@@ -1875,10 +2025,13 @@ const tickFighter = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[
     fighter.skillCooldowns[key] = Math.max(0, fighter.skillCooldowns[key] - 1)
   })
   Object.keys(fighter.statuses).forEach((key) => {
-    // 畏縮は付与された対象の次の行動終了時に消費し、行動済みの相手にも1回分確実に作用させる。
-    if (key === '畏縮') return
+    // 制御状態は対象の行動機会終了時に消費し、付与直後にターン更新で消えないようにする。
+    if (CONTROL_STATUS_NAMES.has(key)) return
     fighter.statuses[key] -= 1
-    if (fighter.statuses[key] <= 0) delete fighter.statuses[key]
+    if (fighter.statuses[key] <= 0) {
+      delete fighter.statuses[key]
+      delete fighter.controlSources[key]
+    }
   })
   if ((fighter.statuses['援護'] ?? 0) <= 0) delete fighter.specialState.mikawaGuardianRole
   fighter.skillUsesThisTurn = {}
@@ -2001,7 +2154,19 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
     const allies = fighter.side === 'ally' ? ally : enemy
     const enemies = fighter.side === 'ally' ? enemy : ally
     const setupStat = emptyTurnStat(0)
-    fireTriggeredSkills(fighter, 'preparationTurn', chooseTarget(enemies, rng), allies, enemies, 0, logs, rng, skillStats, setupStat, controlStats)
+    fireTriggeredSkills(
+      fighter,
+      'preparationTurn',
+      chooseControlledTarget(fighter, enemies, allies, enemies, rng),
+      allies,
+      enemies,
+      0,
+      logs,
+      rng,
+      skillStats,
+      setupStat,
+      controlStats,
+    )
   })
 
     // 本戦は真戦風に8ターン固定。各ターンは負傷兵死亡後、速度順に各武将の行動開始処理へ進む。
@@ -2024,13 +2189,17 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
       const enemies = actor.side === 'ally' ? enemy : ally
       const actionLogStart = logs === NO_LOGS ? 0 : logs.length
       const actionActorHp = actor.hp
+      const actionControlStatusKeys = new Set(
+        Object.keys(actor.statuses).filter((name) => CONTROL_STATUS_NAMES.has(name)),
+      )
+      let actionPrevented = false
 
       try {
         // 火傷・水攻め・中毒・消沈・潰走は、対象武将の行動開始時に最優先で解決する。
         processDots(actor, turn, logs, rng, skillStats, all, turnStat, controlStats)
         if (!isAlive(actor)) continue
 
-        let target = chooseTarget(enemies, rng)
+        let target = chooseControlledTarget(actor, enemies, allies, enemies, rng)
         if (!target) break
 
         // 継続ダメージ後、生存していれば兵学とターン開始戦法を処理する。
@@ -2046,11 +2215,12 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         processPendingSkills(actor, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         fireTriggeredSkills(actor, 'turnStart', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         if (!isAlive(actor)) continue
-        target = chooseTarget(enemies, rng)
+        target = chooseControlledTarget(actor, enemies, allies, enemies, rng)
         if (!target) break
 
         const blocked = isActionBlocked(actor, rng)
         if (blocked) {
+          actionPrevented = true
           if (logs !== NO_LOGS) logs.push({ turn, side: actor.side, actor: actor.name, actorHp: actor.hp, message: `${actor.name}は${blocked}で行動できない` })
           continue
         }
@@ -2084,115 +2254,130 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           turnStat,
           controlStats,
         )
-        if (!isAlive(target)) continue
-
-        target = chooseTarget(enemies, rng, 'normal')
-        if (!target) break
-        fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-        if (!isAlive(target)) continue
-
-        // 援護中の大将が狙われた場合、指定された友軍が通常攻撃を引き受ける。
-        target = redirectGuardedNormalAttack(target, enemies, actor, turn, logs)
-
-        const beforeHp = target.hp
-        const beforeWounded = target.wounded
-        const beforeDead = target.dead
-        const resolvedNormalDamage = baseDamage(actor, target, null, rng, 'normal', undefined, {
-          candidates: enemies,
-          skillType: null,
-        })
-        const normalDamage = applyDamage(target, resolvedNormalDamage.amount)
-        const afterHp = target.hp
-        const woundedDelta = target.wounded - beforeWounded
-        const deadDelta = target.dead - beforeDead
-        if (actor.side === 'ally') turnStat.allyDamage += normalDamage
-        else turnStat.enemyDamage += normalDamage
-        if (logs !== NO_LOGS) logs.push({
-          turn,
-          side: actor.side,
-          actor: actor.name,
-          actorHp: actor.hp,
-          target: target.name,
-          targetSide: target.side,
-          amount: normalDamage,
-          beforeHp,
-          afterHp,
-          woundedDelta,
-          deadDelta,
-          valueType: 'damage',
-          effect: '通常攻撃',
-          message: `${actor.name}の通常攻撃: ${target.name}に${normalDamage.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
-        })
-        if (normalDamage > 0) {
-          recordDamageDealtSkillEffects(actor, 'physical', turn, logs)
-          applyBingxueLifeSteal(actor, normalDamage, turn, logs, turnStat)
-          runBingxueNormalAttackReceived(
-            target,
-            actor,
+        const normalAttackBlocked = hasControlStatus(actor, '封撃')
+        if (normalAttackBlocked) {
+          if (logs !== NO_LOGS) logs.push({
             turn,
-            rng,
-            createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
-          )
-          fireTriggeredSkills(
-            target,
-            'onNormalAttackReceived',
-            actor,
-            enemies,
+            side: actor.side,
+            actor: actor.name,
+            actorHp: actor.hp,
+            effect: '封撃',
+            message: `${actor.name}は封撃で通常攻撃できない`,
+          })
+        } else {
+          if (!isAlive(target)) continue
+
+          target = chooseControlledTarget(actor, enemies, allies, enemies, rng, 'normal')
+          if (!target) break
+          fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+          if (!isAlive(target)) continue
+
+          // 援護中の大将が狙われた場合、指定された友軍が通常攻撃を引き受ける。
+          const targetSideMembers = target.side === actor.side ? allies : enemies
+          target = redirectGuardedNormalAttack(target, targetSideMembers, actor, turn, logs)
+
+          const beforeHp = target.hp
+          const beforeWounded = target.wounded
+          const beforeDead = target.dead
+          const resolvedNormalDamage = baseDamage(actor, target, null, rng, 'normal', undefined, {
+            candidates: targetSideMembers,
+            skillType: null,
+          })
+          const normalDamage = applyDamage(target, resolvedNormalDamage.amount)
+          const afterHp = target.hp
+          const woundedDelta = target.wounded - beforeWounded
+          const deadDelta = target.dead - beforeDead
+          if (actor.side === 'ally') turnStat.allyDamage += normalDamage
+          else turnStat.enemyDamage += normalDamage
+          if (logs !== NO_LOGS) logs.push({
+            turn,
+            side: actor.side,
+            actor: actor.name,
+            actorHp: actor.hp,
+            target: target.name,
+            targetSide: target.side,
+            amount: normalDamage,
+            beforeHp,
+            afterHp,
+            woundedDelta,
+            deadDelta,
+            valueType: 'damage',
+            effect: '通常攻撃',
+            message: `${actor.name}の通常攻撃: ${target.name}に${normalDamage.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
+          })
+          if (normalDamage > 0) {
+            const targetAllies = target.side === actor.side ? allies : enemies
+            const targetEnemies = target.side === actor.side ? enemies : allies
+            recordDamageDealtSkillEffects(actor, 'physical', turn, logs)
+            applyBingxueLifeSteal(actor, normalDamage, turn, logs, turnStat)
+            runBingxueNormalAttackReceived(
+              target,
+              actor,
+              turn,
+              rng,
+              createBingxueHelpers(targetAllies, targetEnemies, turn, logs, rng, skillStats, turnStat, controlStats),
+            )
+            fireTriggeredSkills(
+              target,
+              'onNormalAttackReceived',
+              actor,
+              targetAllies,
+              targetEnemies,
+              turn,
+              logs,
+              rng,
+              skillStats,
+              turnStat,
+              controlStats,
+              undefined,
+              target,
+            )
+            // 三河魂など、所持者以外の友軍が通常攻撃を受けた時に反応する指揮戦法も処理する。
+            targetAllies
+              .filter((owner) => owner.id !== target.id && isAlive(owner))
+              .forEach((owner) => {
+                const reactiveSkills = owner.skills.filter((skill) =>
+                  TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES.has(skillDisplayName(skill))
+                  || TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES.has(skill.name),
+                )
+                if (reactiveSkills.length === 0) return
+                fireTriggeredSkillList(
+                  owner,
+                  reactiveSkills,
+                  'onNormalAttackReceived',
+                  actor,
+                  targetAllies,
+                  targetEnemies,
+                  turn,
+                  logs,
+                  rng,
+                  skillStats,
+                  turnStat,
+                  controlStats,
+                  undefined,
+                  target,
+                )
+              })
+            fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, targetAllies, targetEnemies, turn, logs, rng, skillStats, turnStat, controlStats)
+          }
+          // 通常攻撃の結果が確定してから、通常攻撃後の兵学を処理する。
+          runBingxueAfterNormalAttack({
+            owner: actor,
             allies,
+            enemies,
+            currentTarget: target,
             turn,
-            logs,
             rng,
-            skillStats,
-            turnStat,
-            controlStats,
-            undefined,
-            target,
-          )
-          // 三河魂など、所持者以外の友軍が通常攻撃を受けた時に反応する指揮戦法も処理する。
-          enemies
-            .filter((owner) => owner.id !== target.id && isAlive(owner))
-            .forEach((owner) => {
-              const reactiveSkills = owner.skills.filter((skill) =>
-                TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES.has(skillDisplayName(skill))
-                || TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES.has(skill.name),
-              )
-              if (reactiveSkills.length === 0) return
-              fireTriggeredSkillList(
-                owner,
-                reactiveSkills,
-                'onNormalAttackReceived',
-                actor,
-                enemies,
-                allies,
-                turn,
-                logs,
-                rng,
-                skillStats,
-                turnStat,
-                controlStats,
-                undefined,
-                target,
-              )
-            })
-          fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, enemies, allies, turn, logs, rng, skillStats, turnStat, controlStats)
+            helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
+          })
+          fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         }
-        // 通常攻撃の結果が確定してから、通常攻撃後の兵学を処理する。
-        runBingxueAfterNormalAttack({
-          owner: actor,
-          allies,
-          enemies,
-          currentTarget: target,
-          turn,
-          rng,
-          helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
-        })
-        fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         if (dateMasamuneHasDragonCavalry(allies) && grantedActionSkills.length > 0) {
           fireTriggeredSkillList(
             actor,
             grantedActionSkills,
             'afterAction',
-            chooseTarget(enemies, rng),
+            chooseControlledTarget(actor, enemies, allies, enemies, rng),
             allies,
             enemies,
             turn,
@@ -2211,7 +2396,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           fireTriggeredSkills(
             owner,
             'afterAction',
-            chooseTarget(enemies, rng),
+            chooseControlledTarget(owner, enemies, allies, enemies, rng),
             allies,
             enemies,
             turn,
@@ -2225,21 +2410,20 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         })
         if (living(enemy).length === 0 || living(ally).length === 0) break
       } finally {
-        // 途中で行動が終了した場合も finally で必ず行動後兵学を1回だけ処理する。
-        runBingxueAfterAction({
-          owner: actor,
-          allies,
-          enemies,
-          currentTarget: chooseTarget(enemies, rng),
-          turn,
-          rng,
-          helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
-        })
-        // 畏縮の1ターンは、この武将の行動機会が終了した時点で消費する。
-        if ((actor.statuses['畏縮'] ?? 0) > 0) {
-          actor.statuses['畏縮'] -= 1
-          if (actor.statuses['畏縮'] <= 0) delete actor.statuses['畏縮']
+        // 麻痺・威圧で行動できなかった時は「行動後」を条件とする兵学も発動しない。
+        if (!actionPrevented && isAlive(actor)) {
+          runBingxueAfterAction({
+            owner: actor,
+            allies,
+            enemies,
+            currentTarget: chooseControlledTarget(actor, enemies, allies, enemies, rng),
+            turn,
+            rng,
+            helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
+          })
         }
+        // 行動開始時点で有効だった制御だけを消費し、行動中に新規付与された制御は残す。
+        consumeActionControlDurations(actor, actionControlStatusKeys)
         markActionLogs(logs, actionLogStart, actor, actionActorHp)
       }
     }

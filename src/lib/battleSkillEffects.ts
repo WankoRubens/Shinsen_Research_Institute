@@ -160,10 +160,10 @@ export const structuredBattleTriggers = (skill: Skill): TriggerEvent[] => {
 
 export interface BattleSkillEffectHelpers {
   skillDisplayName: (skill: Skill) => string
-  chooseTarget: (candidates: BattleFighter[], rng: () => number) => BattleFighter | null
+  chooseTarget: (candidates: BattleFighter[], rng: () => number, ctx?: SkillResolveContext) => BattleFighter | null
   resolveTargets: (ctx: SkillResolveContext) => BattleFighter[]
   varNumber: (skill: Skill, key: string, fallback: number) => number
-  aliveRandom: (fighters: BattleFighter[], rng: () => number) => BattleFighter[]
+  aliveRandom: (fighters: BattleFighter[], rng: () => number, ctx?: SkillResolveContext) => BattleFighter[]
   weakest: (fighters: BattleFighter[], count: number) => BattleFighter[]
   roll: (rng: () => number, chance: number) => boolean
   dealSkillDamage: (
@@ -203,7 +203,9 @@ const DEBUFF_NAMES = [
   '麻痺',
   '混乱',
   '挑発',
+  '牽制',
   '畏縮',
+  '萎縮',
   '疲弊',
   '威圧',
   '回復不可',
@@ -221,6 +223,7 @@ export const removeDebuffs = (fighter: BattleFighter, count: number): string[] =
     if (removed.length >= count) break
     if ((fighter.statuses[name] ?? 0) <= 0) continue
     delete fighter.statuses[name]
+    delete fighter.controlSources[name]
     removed.push(name)
   }
   fighter.timedStatuses = fighter.timedStatuses.filter((status) => {
@@ -458,14 +461,13 @@ const databaseTargets = (
   purpose: 'damage' | 'heal' | 'buff' | 'debuff' | 'control' | 'dot',
 ): BattleFighter[] => {
   const resolved = h.resolveTargets(ctx).filter((fighter) => fighter.hp > 0)
-  if (purpose === 'heal') return resolved.some((fighter) => fighter.side === ctx.caster.side) ? resolved : h.weakest(ctx.allies, 1)
+  if (purpose === 'heal') return resolved.length > 0 ? resolved : h.weakest(ctx.allies, 1)
   if (purpose === 'damage' || purpose === 'control' || purpose === 'dot') {
-    const enemyResolved = resolved.filter((fighter) => fighter.side !== ctx.caster.side)
-    if (enemyResolved.length > 0) return enemyResolved
-    const fallback = h.chooseTarget(ctx.enemies, ctx.rng)
+    if (resolved.length > 0) return resolved
+    const fallback = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
     return fallback ? [fallback] : []
   }
-  if (purpose === 'debuff') return resolved.some((fighter) => fighter.side !== ctx.caster.side) ? resolved : living(ctx.enemies)
+  if (purpose === 'debuff') return resolved.length > 0 ? resolved : living(ctx.enemies)
   if (/自身|自分/.test(textOfSkill(ctx.skill))) return [ctx.caster]
   if (hasAllyTargetText(ctx.skill) && !hasEnemyTargetText(ctx.skill)) return resolved.length > 0 ? resolved : living(ctx.allies)
   return resolved.length > 0 ? resolved : [ctx.caster]
@@ -479,7 +481,9 @@ const controlNamesFromDatabase = (skill: Skill): string[] => {
     '麻痺',
     '混乱',
     '挑発',
+    '牽制',
     '畏縮',
+    '萎縮',
     '疲弊',
     '威圧',
     '回復不可',
@@ -541,7 +545,7 @@ const normalizeStructuredStatus = (name: string): string => ({
   威壓: '威圧',
   消沉: '消沈',
   挑釁: '挑発',
-  牽制: '挑発',
+  牽制: '牽制',
   閃避: '回避',
   會心: '会心',
   謀略: '無策',
@@ -681,7 +685,7 @@ const structuredTargets = (
   const max = Math.max(min, Math.round(structuredNumber(ctx.skill, node.countMax ?? node.count_max ?? node.count, min)))
   const count = min + Math.floor(ctx.rng() * (max - min + 1))
   if (candidates.length <= count) return candidates
-  return h.aliveRandom(candidates, ctx.rng).slice(0, count)
+  return h.aliveRandom(candidates, ctx.rng, ctx).slice(0, count)
 }
 
 const applyStructuredModifier = (
@@ -971,13 +975,13 @@ const applyDatabaseSkillEffect = (ctx: SkillResolveContext, h: BattleSkillEffect
     }
     damageRates.slice(1).forEach((rate) => {
       if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['extra_trigger_chance', 'extra_prob', 'extra_chance'], 1))) {
-        const target = h.aliveRandom(ctx.enemies, ctx.rng).find((enemy) => !targets.some((base) => base.id === enemy.id)) ?? targets[0]
+        const target = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => !targets.some((base) => base.id === enemy.id)) ?? targets[0]
         if (target) h.dealSkillDamage(ctx, target, rate, kinds[0])
       }
     })
     extraDamageRates.forEach((rate) => {
       if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['extra_trigger_chance', 'extra_prob', 'extra_chance'], 1))) {
-        const target = h.chooseTarget(ctx.enemies, ctx.rng)
+        const target = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
         if (target) h.dealSkillDamage(ctx, target, rate, kinds[0])
       }
     })
@@ -1013,7 +1017,7 @@ export const applyNamedSkillEffect = (
   h: BattleSkillEffectHelpers,
 ): boolean => {
   const name = h.skillDisplayName(ctx.skill)
-  const currentTarget = ctx.target && ctx.target.hp > 0 ? ctx.target : h.chooseTarget(ctx.enemies, ctx.rng)
+  const currentTarget = ctx.target && ctx.target.hp > 0 ? ctx.target : h.chooseTarget(ctx.enemies, ctx.rng, ctx)
 
   // 精密な個別caseがない戦法は、skills.json の battle.do を説明通りに実行する。
   // battle定義側が条件不成立を返した場合も、旧来の単一効果へ二重実行しない。
@@ -1115,7 +1119,7 @@ export const applyNamedSkillEffect = (
       if (h.roll(ctx.rng, 0.8)) {
         const targetCount = 1 + Math.floor(ctx.rng() * 2)
         const damageRate = 92 + Math.min(180, Math.floor(stock / 200))
-        h.aliveRandom(ctx.enemies, ctx.rng)
+        h.aliveRandom(ctx.enemies, ctx.rng, ctx)
           .slice(0, targetCount)
           .forEach((enemy) => h.dealSkillDamage(ctx, enemy, damageRate, 'strategy'))
       }
@@ -1246,7 +1250,7 @@ export const applyNamedSkillEffect = (
     case '奇策縦横': {
       // 戦法タイプ: 能動
       // 敵軍全体に近い複数(最大3人)へ254%の計略ダメージ
-      h.aliveRandom(ctx.enemies, ctx.rng).slice(0, 3).forEach((enemy) => h.dealSkillDamage(ctx, enemy, 254, 'strategy'))
+      h.aliveRandom(ctx.enemies, ctx.rng, ctx).slice(0, 3).forEach((enemy) => h.dealSkillDamage(ctx, enemy, 254, 'strategy'))
       return true
     }
 
@@ -1314,7 +1318,7 @@ export const applyNamedSkillEffect = (
 
       // 確率で別対象へ追加ダメージ
       if (h.roll(ctx.rng, h.varNumber(ctx.skill, 'extra_prob', 0.5))) {
-        const extra = h.aliveRandom(ctx.enemies, ctx.rng).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
+        const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
         h.dealSkillDamage(ctx, extra, 98, 'physical')
       }
       return true
@@ -1326,7 +1330,7 @@ export const applyNamedSkillEffect = (
       if (!h.roll(ctx.rng, 0.45)) return true
 
       // 敵軍複数に76%の兵刃ダメージ
-      h.aliveRandom(ctx.enemies, ctx.rng).slice(0, Math.round(h.varNumber(ctx.skill, 'target_count', 2))).forEach((enemy) => {
+      h.aliveRandom(ctx.enemies, ctx.rng, ctx).slice(0, Math.round(h.varNumber(ctx.skill, 'target_count', 2))).forEach((enemy) => {
         const wasParalyzed = (enemy.statuses['麻痺'] ?? 0) > 0
         h.dealSkillDamage(ctx, enemy, 76, 'physical')
 
@@ -1355,7 +1359,7 @@ export const applyNamedSkillEffect = (
 
       // 既に混乱していれば追加で別対象へ192%の計略ダメージ
       if (wasConfused) {
-        const extra = h.aliveRandom(ctx.enemies, ctx.rng).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
+        const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
         h.dealSkillDamage(ctx, extra, 192, 'strategy')
       }
       return true
@@ -1374,7 +1378,7 @@ export const applyNamedSkillEffect = (
 
       // 既に混乱していれば、味方同士の攻撃として追加ダメージを発生させる
       if (wasConfused) {
-        const attacker = h.aliveRandom(ctx.enemies, ctx.rng).find((enemy) => enemy.id !== currentTarget.id)
+        const attacker = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id)
         if (attacker) {
           const kind = h.statOf(attacker, 'int') >= h.statOf(attacker, 'val') ? 'strategy' : 'physical'
           h.dealSkillDamage({ ...ctx, caster: attacker }, currentTarget, 158, kind)
@@ -1406,12 +1410,12 @@ export const applyNamedSkillEffect = (
         })
       } else if (phase === 1) {
         // 林: 敵2～3人へ92%の計略ダメージ
-        h.aliveRandom(ctx.enemies, ctx.rng).slice(0, 2 + Math.floor(ctx.rng() * 2)).forEach((enemy) => h.dealSkillDamage(ctx, enemy, 92, 'strategy'))
+        h.aliveRandom(ctx.enemies, ctx.rng, ctx).slice(0, 2 + Math.floor(ctx.rng() * 2)).forEach((enemy) => h.dealSkillDamage(ctx, enemy, 92, 'strategy'))
       } else if (phase === 2) {
         // 火: 敵1～2回へ156%の兵刃ダメージ
         const hits = 1 + Math.floor(ctx.rng() * 2)
         for (let i = 0; i < hits; i += 1) {
-          const enemy = h.chooseTarget(ctx.enemies, ctx.rng)
+          const enemy = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
           if (enemy) h.dealSkillDamage(ctx, enemy, 156, 'physical')
         }
       } else {
@@ -1431,7 +1435,7 @@ export const applyNamedSkillEffect = (
       h.dealSkillDamage(ctx, currentTarget, 102, 'physical')
 
       // 50%で別対象にも同じダメージ
-      const extra = h.aliveRandom(ctx.enemies, ctx.rng).find((enemy) => enemy.id !== currentTarget.id)
+      const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id)
       if (extra && h.roll(ctx.rng, 0.5)) h.dealSkillDamage(ctx, extra, 102, 'physical')
 
       // 自身の通常攻撃ダメージを上げる
@@ -1443,7 +1447,7 @@ export const applyNamedSkillEffect = (
     case '追亡逐北': {
       // 戦法タイプ: 能動。発動率35%の判定は battleSimulator.ts の trySkill で行う。
       // 説明通り、残兵割合などで偏らせず生存中の敵から1名を無作為に選ぶ。
-      const target = h.aliveRandom(ctx.enemies, ctx.rng)[0]
+      const target = h.aliveRandom(ctx.enemies, ctx.rng, ctx)[0]
       if (!target) return true
 
       // 対象へ146%（知略依存）の計略ダメージを与える。
@@ -3213,7 +3217,7 @@ export const applyNamedSkillEffect = (
         h.dealSkillDamage(ctx, target, 116, 'physical')
       })
       if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['extra_trigger_chance', 'extra_prob', 'extra_chance'], 1))) {
-        const target = h.chooseTarget(ctx.enemies, ctx.rng)
+        const target = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
         if (target) h.dealSkillDamage(ctx, target, 98, 'physical')
       }
       return true
@@ -3307,7 +3311,7 @@ export const applyNamedSkillEffect = (
       // 戦法説明にある能力値/与ダメ/被ダメ補正（33%または33）を反映する
       applyDatabaseBuffs(ctx, h)
       if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['extra_trigger_chance', 'extra_prob', 'extra_chance'], 1))) {
-        const target = h.chooseTarget(ctx.enemies, ctx.rng)
+        const target = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
         if (target) h.dealSkillDamage(ctx, target, 106, 'strategy')
       }
       return true
