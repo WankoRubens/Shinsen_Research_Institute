@@ -14,6 +14,16 @@ class MockBattleLogToneTest(unittest.TestCase):
         self.assertIn("sideNameTone(entry.targetSide!)", source)
         self.assertIn("message.matchAll(tokenPattern)", source)
 
+    def test_status_logs_include_the_target_side(self):
+        effects = (ROOT / "src" / "lib" / "battleSkillEffects.ts").read_text(encoding="utf-8")
+        simulator = (ROOT / "src" / "lib" / "battleSimulator.ts").read_text(encoding="utf-8")
+
+        self.assertIn("target: target?.name", effects)
+        self.assertIn("targetSide: target?.side", effects)
+        self.assertIn("`${target.name}に${ctx.skill.dot_name}(${turns}T)`, target", effects)
+        self.assertIn("target: target.name", simulator)
+        self.assertIn("targetSide: target.side", simulator)
+
 
 if __name__ == "__main__":
     unittest.main()

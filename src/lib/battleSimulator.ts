@@ -1330,7 +1330,15 @@ const addControl = (ctx: SkillResolveContext, target: BattleFighter, name: strin
   }
   target.statuses[name] = Math.max(target.statuses[name] ?? 0, duration)
   ctx.controlStats[name] = (ctx.controlStats[name] ?? 0) + 1
-  if (ctx.logs !== NO_LOGS) ctx.logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, actorHp: ctx.caster.hp, message: `${skillDisplayName(ctx.skill)}: ${target.name}に${name}(${duration}T)` })
+  if (ctx.logs !== NO_LOGS) ctx.logs.push({
+    turn: ctx.turn,
+    side: ctx.caster.side,
+    actor: ctx.caster.name,
+    actorHp: ctx.caster.hp,
+    target: target.name,
+    targetSide: target.side,
+    message: `${skillDisplayName(ctx.skill)}: ${target.name}に${name}(${duration}T)`,
+  })
   const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
   const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
   runBingxueControlApplied(

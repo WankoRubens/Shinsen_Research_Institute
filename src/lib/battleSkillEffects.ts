@@ -349,8 +349,16 @@ export const recordDamageDealtSkillEffects = (
   recordBunbuDamageHit(fighter, kind, turn, logs)
 }
 
-const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string) => {
-  logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, actorHp: ctx.caster.hp, message })
+const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string, target?: BattleFighter) => {
+  logs.push({
+    turn: ctx.turn,
+    side: ctx.caster.side,
+    actor: ctx.caster.name,
+    actorHp: ctx.caster.hp,
+    target: target?.name,
+    targetSide: target?.side,
+    message,
+  })
 }
 
 // 「確率（能力依存）」は基礎確率へ、能力100を超えた平均値1につき0.1%を加算する。
@@ -677,7 +685,7 @@ const applyStructuredModifier = (
     if (duration > 0 && duration < 999) h.addTimedModifier(ctx, target, stat, value, duration, maxStacks)
     else target.buffs[stat] = (target.buffs[stat] ?? 0) + value
     const direction = value >= 0 ? '上昇' : '低下'
-    log(ctx.logs, ctx, `${target.name}の${rawStat}が${Math.abs(value).toFixed(2)}${direction}${duration > 0 && duration < 999 ? `(${Math.round(duration)}T)` : ''}`)
+    log(ctx.logs, ctx, `${target.name}の${rawStat}が${Math.abs(value).toFixed(2)}${direction}${duration > 0 && duration < 999 ? `(${Math.round(duration)}T)` : ''}`, target)
   })
 }
 
@@ -747,7 +755,7 @@ const executeStructuredNodes = (
           target.statuses[status] = Math.max(target.statuses[status] ?? 0, duration)
           const strength = structuredNumber(ctx.skill, node.value, 0)
           if (strength) target.specialState[`statusValue:${status}`] = toPercent(strength)
-          log(ctx.logs, ctx, `${target.name}に${status}(${duration}T)`)
+          log(ctx.logs, ctx, `${target.name}に${status}(${duration}T)`, target)
         }
         const dotRate = structuredNumber(ctx.skill, node.damage_rate, 0)
         if (dotRate > 0) target.timedStatuses.push({
@@ -902,7 +910,7 @@ const applyDatabaseDot = (ctx: SkillResolveContext, h: BattleSkillEffectHelpers)
       dotRate: rate,
       dotType: databaseDamageKind(ctx.skill),
     })
-    log(ctx.logs, ctx, `${target.name}に${ctx.skill.dot_name}(${turns}T)`)
+    log(ctx.logs, ctx, `${target.name}に${ctx.skill.dot_name}(${turns}T)`, target)
   })
   return true
 }
@@ -1000,7 +1008,7 @@ export const applyNamedSkillEffect = (
       h.weakest(ctx.allies, 1).forEach((ally) => {
         // 弱体効果を2つ解除
         const removed = removeDebuffs(ally, 2)
-        if (removed.length > 0) log(ctx.logs, ctx, `${ally.name}の弱体効果を${removed.join('、')}解除`)
+        if (removed.length > 0) log(ctx.logs, ctx, `${ally.name}の弱体効果を${removed.join('、')}解除`, ally)
 
         // 260％(知略)の回復
         h.healBySkill(ctx, ally, 260, 'strategy')
@@ -1443,7 +1451,7 @@ export const applyNamedSkillEffect = (
         })
         attacker.specialState[stackKey] = stacks + 1
         const totalPercent = Number((reductionRate * 100 * (stacks + 1)).toFixed(2))
-        log(ctx.logs, ctx, `三河魂: ${attacker.name}の全属性が累計${totalPercent}%低下`)
+        log(ctx.logs, ctx, `三河魂: ${attacker.name}の全属性が累計${totalPercent}%低下`, attacker)
         return true
       }
 
