@@ -578,9 +578,18 @@ const normalizedLogMessage = (entry: BattleLogEntry): string => {
   )
   return message
 }
-const heroNameTone = (name: string, entry: BattleLogEntry): LogMessageTone => {
-  if (entry.actor === name && entry.side !== 'system') return entry.side === 'ally' ? 'ally-name' : 'enemy-name'
-  if (entry.target === name && entry.targetSide) return entry.targetSide === 'ally' ? 'ally-name' : 'enemy-name'
+const sideNameTone = (side: LogSide): LogMessageTone => side === 'ally' ? 'ally-name' : 'enemy-name'
+const heroNameTone = (name: string, entry: BattleLogEntry, offset: number, message: string): LogMessageTone => {
+  const isActor = entry.actor === name && entry.side !== 'system'
+  const isTarget = entry.target === name && Boolean(entry.targetSide)
+  // 両軍に同名武将がいる場合、通常攻撃文の「○○の」は発動者、それ以外は対象として色分けする。
+  if (isActor && isTarget && entry.side !== entry.targetSide) {
+    return message.startsWith(`${name}の`, offset)
+      ? sideNameTone(entry.side)
+      : sideNameTone(entry.targetSide!)
+  }
+  if (isTarget) return sideNameTone(entry.targetSide!)
+  if (isActor) return sideNameTone(entry.side)
   if (entry.actionActor === name && entry.actionSide) return entry.actionSide === 'ally' ? 'ally-name' : 'enemy-name'
   const sides = heroNameSides.value.get(name)
   if (sides?.size === 1) return sides.has('ally') ? 'ally-name' : 'enemy-name'
@@ -598,13 +607,21 @@ const logMessageParts = (entry: BattleLogEntry): LogMessagePart[] => {
     '戦死\\d[\\d,]*',
   ]
   if (tokens.length === 0) return [{ text: message, tone: 'text' }]
-  const tokenPattern = new RegExp(`(${tokens.join('|')})`, 'g')
-  return message.split(tokenPattern).filter(Boolean).map((text): LogMessagePart => {
-    if (heroNameSides.value.has(text)) return { text, tone: heroNameTone(text, entry) }
-    if (/ダメージ|負傷|戦死/.test(text)) return { text, tone: 'damage' }
-    if (/回復|蓄積|復帰|合計/.test(text)) return { text, tone: 'healing' }
-    return { text, tone: 'text' }
-  })
+  const tokenPattern = new RegExp(tokens.join('|'), 'g')
+  const parts: LogMessagePart[] = []
+  let cursor = 0
+  for (const match of message.matchAll(tokenPattern)) {
+    const offset = match.index ?? 0
+    if (offset > cursor) parts.push({ text: message.slice(cursor, offset), tone: 'text' })
+    const text = match[0]
+    if (heroNameSides.value.has(text)) parts.push({ text, tone: heroNameTone(text, entry, offset, message) })
+    else if (/ダメージ|負傷|戦死/.test(text)) parts.push({ text, tone: 'damage' })
+    else if (/回復|蓄積|復帰|合計/.test(text)) parts.push({ text, tone: 'healing' })
+    else parts.push({ text, tone: 'text' })
+    cursor = offset + text.length
+  }
+  if (cursor < message.length) parts.push({ text: message.slice(cursor), tone: 'text' })
+  return parts
 }
 
 const blockHealing = (block: ActionBlock): number =>
