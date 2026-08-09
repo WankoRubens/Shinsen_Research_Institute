@@ -313,10 +313,13 @@ export const resolveBingxueDamage = (ctx: BingxueDamageContext): { multiplier: n
     : intScaledPercent(0.02 * bingxueLevel(attacker, '妙策'), attacker.baseStats.int + (attacker.buffs.int ?? 0)))
     + skillCriticalChance
   const critical = roll(rng, Math.min(1, criticalChance))
-  // 突破・奇謀がある場合は、会心・奇策時の150%倍率へ追加倍率を加える。
+  // 突破・奇謀と戦法効果がある場合は、会心・奇策時の150%倍率へ追加倍率を加える。
+  const skillCriticalDamageBonus = kind === 'strategy'
+    ? Math.max(0, attacker.specialState.strategyCriticalDamageBonus ?? 0) / 100
+    : 0
   const criticalBonus = kind === 'physical'
     ? 0.025 * bingxueLevel(attacker, '突貫')
-    : 0.025 * bingxueLevel(attacker, '奇謀')
+    : 0.025 * bingxueLevel(attacker, '奇謀') + skillCriticalDamageBonus
   const criticalMultiplier = critical ? 1.5 + criticalBonus : 1
 
   return {

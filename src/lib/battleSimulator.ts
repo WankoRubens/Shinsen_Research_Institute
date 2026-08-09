@@ -713,6 +713,11 @@ const guaranteedDamageFloor = (troops: number, rate: number, isSkillDamage: bool
 // note公開式ベース:
 // (1.37×(攻撃武勇-守備統率)+(0.037×兵数+175))×(1+バフ-デバフ)×兵種相性。
 // 戦法の兵刃ダメージは、この通常攻撃相当値に戦法倍率を掛けて扱う。
+interface DamageResolution {
+  amount: number
+  critical: boolean
+}
+
 const baseDamage = (
   caster: BattleFighter,
   target: BattleFighter,
@@ -726,7 +731,7 @@ const baseDamage = (
     skillType?: ReturnType<typeof battleSkillType> | null
     prepared?: boolean
   },
-) => {
+): DamageResolution => {
   const actualKind = kind === 'normal' ? 'physical' : kind
   const rate = damageRate(skill)
   const attackStat = actualKind === 'strategy' ? statOf(caster, 'int') : statOf(caster, 'val')
@@ -755,9 +760,12 @@ const baseDamage = (
     candidates: bingxueContext?.candidates ?? [target],
     rng,
   })
-  if (bingxueDamage.evaded) return 0
+  if (bingxueDamage.evaded) return { amount: 0, critical: false }
   // 兵種相性は、最低保証を含むダメージが確定した後に全体へ掛ける。
-  return Math.max(floor, raw) * bingxueDamage.multiplier * caster.troopAffinityModifier
+  return {
+    amount: Math.max(floor, raw) * bingxueDamage.multiplier * caster.troopAffinityModifier,
+    critical: bingxueDamage.critical,
+  }
 }
 
 const baseHeal = (caster: BattleFighter, target: BattleFighter, skill: Skill, rng: () => number): number => {
@@ -1059,7 +1067,7 @@ const dealSkillDamage = (
   const beforeHp = target.hp
   const beforeWounded = target.wounded
   const beforeDead = target.dead
-  const actual = applyDamage(target, baseDamage(
+  const resolvedDamage = baseDamage(
     ctx.caster,
     target,
     withRate(ctx.skill, rate, kind === 'strategy' ? 'strategy' : 'bravery'),
@@ -1067,7 +1075,8 @@ const dealSkillDamage = (
     kind,
     statRule,
     { candidates: ctx.enemies, skillType: battleSkillType(ctx.skill) },
-  ))
+  )
+  const actual = applyDamage(target, resolvedDamage.amount)
   const afterHp = target.hp
   const woundedDelta = target.wounded - beforeWounded
   const deadDelta = target.dead - beforeDead
@@ -1093,6 +1102,7 @@ const dealSkillDamage = (
   if (actual > 0) {
     recordDamageDealtSkillEffects(ctx.caster, kind, ctx.turn, ctx.logs)
     applyBingxueLifeSteal(ctx.caster, actual, ctx.turn, ctx.logs, ctx.turnStat)
+    resolveSeventyTwoCriticalDamage(ctx, kind, resolvedDamage.critical, actual)
     const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
     const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
     fireTriggeredSkills(
@@ -1117,6 +1127,51 @@ const hasSkillNamed = (fighter: BattleFighter, name: string) =>
 
 const hasAnySkillNamed = (fighter: BattleFighter, names: string[]) =>
   names.some((name) => hasSkillNamed(fighter, name))
+
+const SEVENTY_TWO_SKILL_NAMES = ['七十二の計', '七十二欺計']
+
+/**
+ * 七十二の計を持つ武将が奇策ダメージを与えた回数を記録する。
+ * 7回目の奇策が成立した直後、一度だけ敵軍全体へ120%の計略ダメージを与える。
+ */
+function resolveSeventyTwoCriticalDamage(
+  ctx: SkillResolveContext,
+  kind: 'physical' | 'strategy',
+  critical: boolean,
+  actualDamage: number,
+) {
+  if (kind !== 'strategy' || !critical || actualDamage <= 0 || !isAlive(ctx.caster)) return
+  if ((ctx.caster.specialState.seventyTwoBurstTriggered ?? 0) > 0) return
+
+  const seventyTwoSkill = ctx.caster.skills.find((skill) =>
+    SEVENTY_TWO_SKILL_NAMES.some((name) => skillDisplayName(skill) === name || skill.name === name || skill.name_jp === name),
+  )
+  if (!seventyTwoSkill) return
+
+  const criticalHits = (ctx.caster.specialState.seventyTwoCriticalHits ?? 0) + 1
+  ctx.caster.specialState.seventyTwoCriticalHits = criticalHits
+  if (criticalHits < 7) return
+
+  // 追加攻撃自体が奇策になっても再発動しないよう、攻撃より先に発動済みへ切り替える。
+  ctx.caster.specialState.seventyTwoBurstTriggered = 1
+  if (ctx.logs !== NO_LOGS) ctx.logs.push({
+    turn: ctx.turn,
+    side: ctx.caster.side,
+    actor: ctx.caster.name,
+    actorHp: ctx.caster.hp,
+    effect: '七十二の計',
+    message: '七十二の計: 奇策ダメージを7回与え、敵軍全体への追加攻撃を発動',
+  })
+
+  const burstContext: SkillResolveContext = {
+    ...ctx,
+    skill: seventyTwoSkill,
+    trigger: 'beforeAction',
+  }
+  living(ctx.enemies).forEach((enemy) => {
+    dealSkillDamage(burstContext, enemy, 120, 'strategy')
+  })
+}
 
 const addHealingStock = (
   allies: BattleFighter[],
@@ -1272,10 +1327,11 @@ const createBingxueHelpers = (
     const beforeDead = target.dead
     const allFighters = [...allies, ...enemies]
     const targetCandidates = allFighters.filter(fighter => fighter.side === target.side)
-    const actual = applyDamage(target, baseDamage(owner, target, pseudoSkill, rng, kind, undefined, {
+    const resolvedDamage = baseDamage(owner, target, pseudoSkill, rng, kind, undefined, {
       candidates: targetCandidates,
       skillType: null,
-    }))
+    })
+    const actual = applyDamage(target, resolvedDamage.amount)
     if (owner.side === 'ally') turnStat.allyDamage += actual
     else turnStat.enemyDamage += actual
     const woundedDelta = target.wounded - beforeWounded
@@ -1299,6 +1355,22 @@ const createBingxueHelpers = (
     if (actual > 0) {
       recordDamageDealtSkillEffects(owner, kind, turn, logs)
       applyBingxueLifeSteal(owner, actual, turn, logs, turnStat)
+      const ownerAllies = allFighters.filter(fighter => fighter.side === owner.side)
+      const ownerEnemies = allFighters.filter(fighter => fighter.side !== owner.side)
+      resolveSeventyTwoCriticalDamage({
+        caster: owner,
+        target,
+        allies: ownerAllies,
+        enemies: ownerEnemies,
+        skill: pseudoSkill,
+        trigger: 'beforeAction',
+        turn,
+        logs,
+        rng,
+        stats,
+        turnStat,
+        controlStats,
+      }, kind, resolvedDamage.critical, actual)
       const targetAllies = allFighters.filter(fighter => fighter.side === target.side)
       const targetEnemies = allFighters.filter(fighter => fighter.side !== target.side)
       fireTriggeredSkills(
@@ -1443,7 +1515,7 @@ const resolveSkill = (
       const beforeHp = fighter.hp
       const beforeWounded = fighter.wounded
       const beforeDead = fighter.dead
-      const actual = applyDamage(fighter, baseDamage(
+      const resolvedDamage = baseDamage(
         caster,
         fighter,
         skill,
@@ -1451,7 +1523,8 @@ const resolveSkill = (
         kind,
         undefined,
         { candidates: fighter.side === caster.side ? allies : enemies, skillType: battleSkillType(skill) },
-      ))
+      )
+      const actual = applyDamage(fighter, resolvedDamage.amount)
       const afterHp = fighter.hp
       const woundedDelta = fighter.wounded - beforeWounded
       const deadDelta = fighter.dead - beforeDead
@@ -1477,6 +1550,21 @@ const resolveSkill = (
       if (actual > 0) {
         recordDamageDealtSkillEffects(caster, kind, turn, logs)
         applyBingxueLifeSteal(caster, actual, turn, logs, turnStat)
+        resolveSeventyTwoCriticalDamage({
+          caster,
+          target: fighter,
+          allies,
+          enemies,
+          skill,
+          trigger,
+          turn,
+          logs,
+          rng,
+          stats,
+          turnStat,
+          controlStats,
+          eventSubject,
+        }, kind, resolvedDamage.critical, actual)
         const targetAllies = fighter.side === caster.side ? allies : enemies
         const targetEnemies = fighter.side === caster.side ? enemies : allies
         fireTriggeredSkills(
@@ -1692,6 +1780,7 @@ const processDots = (
   stats: SkillStatMap,
   all: BattleFighter[],
   turnStat: BattleTurnStat,
+  controlStats: Record<string, number>,
 ) => {
   const remaining: TimedStatus[] = []
   fighter.timedStatuses.forEach((status) => {
@@ -1704,7 +1793,7 @@ const processDots = (
       const beforeHp = fighter.hp
       const beforeWounded = fighter.wounded
       const beforeDead = fighter.dead
-      const amount = applyDamage(fighter, baseDamage(source, fighter, {
+      const resolvedDamage = baseDamage(source, fighter, {
         ...pseudoSkill,
         damage_rate_max: status.dotRate,
         battle_type: status.dotType === 'strategy' ? 'strategy' : 'bravery',
@@ -1712,7 +1801,8 @@ const processDots = (
         candidates: all.filter(candidate => candidate.side === fighter.side),
         dot: true,
         skillType: null,
-      }))
+      })
+      const amount = applyDamage(fighter, resolvedDamage.amount)
       const afterHp = fighter.hp
       const woundedDelta = fighter.wounded - beforeWounded
       const deadDelta = fighter.dead - beforeDead
@@ -1736,8 +1826,23 @@ const processDots = (
         message: `${status.name}で${fighter.name}に${amount.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
       })
       if (amount > 0) {
-        recordDamageDealtSkillEffects(source, status.dotType ?? 'physical', turn, logs)
+        const dotKind = status.dotType ?? 'physical'
+        recordDamageDealtSkillEffects(source, dotKind, turn, logs)
         applyBingxueLifeSteal(source, amount, turn, logs, turnStat)
+        resolveSeventyTwoCriticalDamage({
+          caster: source,
+          target: fighter,
+          allies: all.filter(candidate => candidate.side === source.side),
+          enemies: all.filter(candidate => candidate.side !== source.side),
+          skill: pseudoSkill,
+          trigger: 'beforeAction',
+          turn,
+          logs,
+          rng,
+          stats,
+          turnStat,
+          controlStats,
+        }, dotKind, resolvedDamage.critical, amount)
       }
     }
     status.turns -= 1
@@ -1922,7 +2027,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
 
       try {
         // 火傷・水攻め・中毒・消沈・潰走は、対象武将の行動開始時に最優先で解決する。
-        processDots(actor, turn, logs, rng, skillStats, all, turnStat)
+        processDots(actor, turn, logs, rng, skillStats, all, turnStat, controlStats)
         if (!isAlive(actor)) continue
 
         let target = chooseTarget(enemies, rng)
@@ -1992,13 +2097,11 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         const beforeHp = target.hp
         const beforeWounded = target.wounded
         const beforeDead = target.dead
-        const normalDamage = applyDamage(
-          target,
-          baseDamage(actor, target, null, rng, 'normal', undefined, {
-            candidates: enemies,
-            skillType: null,
-          }),
-        )
+        const resolvedNormalDamage = baseDamage(actor, target, null, rng, 'normal', undefined, {
+          candidates: enemies,
+          skillType: null,
+        })
+        const normalDamage = applyDamage(target, resolvedNormalDamage.amount)
         const afterHp = target.hp
         const woundedDelta = target.wounded - beforeWounded
         const deadDelta = target.dead - beforeDead

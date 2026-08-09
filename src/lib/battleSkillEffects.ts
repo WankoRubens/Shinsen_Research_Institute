@@ -32,6 +32,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   回天転運: defineBattleSkillMeta({ type: '能動' }),
   千成瓢箪: defineBattleSkillMeta({ type: '指揮', triggers: ['beforeAction'] }),
   如水: defineBattleSkillMeta({ type: '受動', triggers: ['beforeAction', 'onHealed'] }),
+  七十二の計: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'] }),
   比翼連理: defineBattleSkillMeta({ type: '指揮', triggers: ['afterAction'] }),
   奇策縦横: defineBattleSkillMeta({ type: '能動' }),
   南蛮渡来: defineBattleSkillMeta({ type: '能動' }),
@@ -90,6 +91,7 @@ const NAMED_BATTLE_SKILL_NAMES = [
   '千成瓢箪',
   '回天転運',
   '如水',
+  '七十二の計',
   '比翼連理',
   '奇策縦横',
   '南蛮渡来',
@@ -361,6 +363,21 @@ const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string, 
   })
 }
 
+// 複数の戦法が同じ特殊効果へ加算できるよう、効果元ごとの差分だけを合計値へ反映する。
+const setSpecialStateContribution = (
+  fighter: BattleFighter,
+  totalKey: string,
+  sourceKey: string,
+  value: number,
+) => {
+  const previous = fighter.specialState[sourceKey] ?? 0
+  fighter.specialState[sourceKey] = value
+  fighter.specialState[totalKey] = Math.max(
+    0,
+    (fighter.specialState[totalKey] ?? 0) - previous + value,
+  )
+}
+
 // 「確率（能力依存）」は基礎確率へ、能力100を超えた平均値1につき0.1%を加算する。
 const attributeDependentChance = (baseChance: number, stats: number[]): number => {
   const average = stats.reduce((sum, value) => sum + value, 0) / Math.max(1, stats.length)
@@ -478,6 +495,7 @@ const PRECISE_HANDCRAFTED_SKILLS = new Set([
   '回天転運',
   '千成瓢箪',
   '如水',
+  '七十二の計',
   '比翼連理',
   '奇策縦横',
   '南蛮渡来',
@@ -1053,7 +1071,12 @@ export const applyNamedSkillEffect = (
         const nextStacks = Math.min(8, stacks + 1)
         ctx.caster.specialState.josuiKisakuStacks = nextStacks
         // 奇策1スタックにつき、計略ダメージが最終的に150%になる確率を5%上げる。
-        ctx.caster.specialState.strategyCriticalChance = nextStacks * 5
+        setSpecialStateContribution(
+          ctx.caster,
+          'strategyCriticalChance',
+          'josuiStrategyCriticalChance',
+          nextStacks * 5,
+        )
         // 回数ではなく、如水による現在の奇策率を表示する。
         log(ctx.logs, ctx, `如水: ${reason}で奇策を獲得（奇策率${nextStacks * 5}%）`)
       }
@@ -1583,11 +1606,27 @@ export const applyNamedSkillEffect = (
     }
     case '七十二の計': {
       // 戦法タイプ: 受動
-      // 戦闘中、自身は25%→50%の奇策（発動時に計略ダメージが50%増加）を獲得し、奇策ダメージ率が15%→30%増加
-      // 自分に計略ダメージ（ダメージ率50%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 50, 'strategy')
-      })
+      // 効果は戦闘開始時に一度だけ付与する。
+      if (ctx.trigger !== 'preparationTurn') return true
+
+      // 自身の奇策率を50%加算する。
+      setSpecialStateContribution(
+        ctx.caster,
+        'strategyCriticalChance',
+        'seventyTwoStrategyCriticalChance',
+        50,
+      )
+      // 通常150%の奇策ダメージへ30%を加算し、発動時の最終倍率を180%にする。
+      setSpecialStateContribution(
+        ctx.caster,
+        'strategyCriticalDamageBonus',
+        'seventyTwoStrategyCriticalDamageBonus',
+        30,
+      )
+      // 奇策ダメージの発生回数と、全体追加攻撃の発動済み状態を初期化する。
+      ctx.caster.specialState.seventyTwoCriticalHits = 0
+      ctx.caster.specialState.seventyTwoBurstTriggered = 0
+      log(ctx.logs, ctx, '七十二の計: 奇策率50%、奇策発動時の最終ダメージ180%を獲得')
       return true
     }
     case '軍神': {
