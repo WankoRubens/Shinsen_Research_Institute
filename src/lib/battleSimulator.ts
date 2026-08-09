@@ -1586,7 +1586,14 @@ const trySkill = (
   if (rng() > activationRate) {
     recordBingxueSkillFailure(caster, resolvedSkillType, unique, prepared)
     if (trigger === 'beforeAction' || trigger === 'afterNormalAttack') {
-      if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}は不発` })
+      if (logs !== NO_LOGS) logs.push({
+        turn,
+        side: caster.side,
+        actor: caster.name,
+        actorHp: caster.hp,
+        effect: resolvedSkillName,
+        message: `${resolvedSkillName}は不発`,
+      })
     }
     return
   }
