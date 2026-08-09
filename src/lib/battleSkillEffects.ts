@@ -1042,10 +1042,10 @@ export const applyNamedSkillEffect = (
         // 奇策スタックを1つ増やす
         const nextStacks = Math.min(8, stacks + 1)
         ctx.caster.specialState.josuiKisakuStacks = nextStacks
-        // 奇策1スタックにつき計略与ダメージを5%上げる
-        ctx.caster.buffs.strategyDamageDealt = (ctx.caster.buffs.strategyDamageDealt ?? 0) + 5
-        // 回数ではなく、如水による現在の累計上昇値を表示する。
-        log(ctx.logs, ctx, `如水: ${reason}で奇策を獲得（計略与ダメージ+${nextStacks * 5}%）`)
+        // 奇策1スタックにつき、計略ダメージが最終的に150%になる確率を5%上げる。
+        ctx.caster.specialState.strategyCriticalChance = nextStacks * 5
+        // 回数ではなく、如水による現在の奇策率を表示する。
+        log(ctx.logs, ctx, `如水: ${reason}で奇策を獲得（奇策率${nextStacks * 5}%）`)
       }
 
       // 効果1: 毎ターン自分の行動開始前に奇策獲得判定

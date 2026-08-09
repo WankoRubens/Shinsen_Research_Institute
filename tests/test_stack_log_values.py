@@ -14,7 +14,7 @@ class StackLogValueTest(unittest.TestCase):
         self.assertIn("知略+${totalIntelligenceIncrease.toFixed(2)}", source)
         self.assertIn("計略ダメージで武勇+${totalValorIncrease}", source)
         self.assertIn("兵刃ダメージで知略+${totalIntelligenceIncrease}", source)
-        self.assertIn("計略与ダメージ+${nextStacks * 5}%", source)
+        self.assertIn("奇策率${nextStacks * 5}%", source)
         self.assertNotRegex(source, re.compile(r"\$\{next(?:Buff)?Stacks\}/(?:4|5|8)"))
 
 
