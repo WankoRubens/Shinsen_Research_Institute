@@ -84,6 +84,7 @@ interface TimedStatus {
   name: string
   turns: number
   sourceSkill?: string
+  sourceActorId?: string
   sourceActor?: string
   dotRate?: number
   dotType?: 'physical' | 'strategy'
@@ -858,11 +859,20 @@ const applyDot = (
       name: skill.dot_name!,
       turns: duration,
       sourceSkill: skill.name_jp || skill.name,
+      sourceActorId: caster.id,
       sourceActor: caster.name,
       dotRate: normalizeRate(skill.dot_rate_max!),
       dotType: damageKind(skill),
     })
-    if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${target.name}に${skill.dot_name}(${duration}T)` })
+    if (logs !== NO_LOGS) logs.push({
+      turn,
+      side: caster.side,
+      actor: caster.name,
+      actorHp: caster.hp,
+      target: target.name,
+      targetSide: target.side,
+      message: `${target.name}に${skill.dot_name}(${duration}T)`,
+    })
   })
 }
 
@@ -1686,7 +1696,10 @@ const processDots = (
   const remaining: TimedStatus[] = []
   fighter.timedStatuses.forEach((status) => {
     if (status.dotRate && isAlive(fighter)) {
-      const source = all.find((candidate) => candidate.name === status.sourceActor) ?? fighter
+      const source = all.find((candidate) => candidate.id === status.sourceActorId)
+        ?? all.find((candidate) => candidate.name === status.sourceActor && candidate.side !== fighter.side)
+        ?? all.find((candidate) => candidate.name === status.sourceActor)
+        ?? fighter
       const pseudoSkill = { id: status.sourceSkill ?? status.name, name: status.sourceSkill ?? status.name } as Skill
       const beforeHp = fighter.hp
       const beforeWounded = fighter.wounded
@@ -1886,7 +1899,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
     fireTriggeredSkills(fighter, 'preparationTurn', chooseTarget(enemies, rng), allies, enemies, 0, logs, rng, skillStats, setupStat, controlStats)
   })
 
-  // 本戦は真戦風に8ターン固定。各ターンは継続効果、ターン開始効果、速度順行動の順で進む。
+    // 本戦は真戦風に8ターン固定。各ターンは負傷兵死亡後、速度順に各武将の行動開始処理へ進む。
   for (let turn = 1; turn <= BATTLE_TURN_LIMIT; turn += 1) {
     finalTurn = turn
     const all = [...ally, ...enemy]
@@ -1894,24 +1907,6 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
     all.forEach((fighter) => tickFighter(fighter, turn, logs))
     if (logs !== NO_LOGS) logs.push({ turn, side: 'system', message: `ターン${turn}` })
     processTurnStartWoundedDeaths(all, turn, logs)
-
-    all.forEach((fighter) => {
-      const allies = fighter.side === 'ally' ? ally : enemy
-      const enemies = fighter.side === 'ally' ? enemy : ally
-      // 負傷兵死亡や通常のターン開始戦法と同じ段階で、ターン開始兵学を処理する。
-      runBingxueTurnStart({
-        owner: fighter,
-        allies,
-        enemies,
-        currentTarget: chooseTarget(enemies, rng),
-        turn,
-        rng,
-        helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
-      })
-      processDots(fighter, turn, logs, rng, skillStats, all, turnStat)
-      processPendingSkills(fighter, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-      fireTriggeredSkills(fighter, 'turnStart', chooseTarget(enemies, rng), allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-    })
 
     const order = living(all).sort((a, b) =>
       Number((b.statuses['先攻'] ?? 0) > 0) - Number((a.statuses['先攻'] ?? 0) > 0)
@@ -1922,12 +1917,33 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
       if (!isAlive(actor)) continue
       const allies = actor.side === 'ally' ? ally : enemy
       const enemies = actor.side === 'ally' ? enemy : ally
-      let target = chooseTarget(enemies, rng)
-      if (!target) break
       const actionLogStart = logs === NO_LOGS ? 0 : logs.length
       const actionActorHp = actor.hp
 
       try {
+        // 火傷・水攻め・中毒・消沈・潰走は、対象武将の行動開始時に最優先で解決する。
+        processDots(actor, turn, logs, rng, skillStats, all, turnStat)
+        if (!isAlive(actor)) continue
+
+        let target = chooseTarget(enemies, rng)
+        if (!target) break
+
+        // 継続ダメージ後、生存していれば兵学とターン開始戦法を処理する。
+        runBingxueTurnStart({
+          owner: actor,
+          allies,
+          enemies,
+          currentTarget: target,
+          turn,
+          rng,
+          helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
+        })
+        processPendingSkills(actor, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+        fireTriggeredSkills(actor, 'turnStart', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+        if (!isAlive(actor)) continue
+        target = chooseTarget(enemies, rng)
+        if (!target) break
+
         const blocked = isActionBlocked(actor, rng)
         if (blocked) {
           if (logs !== NO_LOGS) logs.push({ turn, side: actor.side, actor: actor.name, actorHp: actor.hp, message: `${actor.name}は${blocked}で行動できない` })
