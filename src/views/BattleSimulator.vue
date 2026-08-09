@@ -222,10 +222,10 @@
 
       <section class="panel run-panel">
         <div class="auto-opponent-note">
-          全テンプレ編成と各1000回ずつ戦闘し、平均結果と兵力交換比を計算します。
+          Tier 0・Tier 0.5のテンプレ編成と各300回ずつ戦闘し、平均結果と兵力交換比を計算します。
         </div>
         <el-button type="primary" class="run-btn" :icon="VideoPlay" :loading="running" :disabled="!canRun" @click="run">
-          全テンプレ各1000回シミュレーション
+          Tier 0・0.5 各300回シミュレーション
         </el-button>
       </section>
 
@@ -338,7 +338,7 @@
             <LineSeries :series="troopSeries" />
           </ChartPanel>
 
-          <ChartPanel title="全テンプレ編成への兵力交換比">
+          <ChartPanel title="Tier 0・Tier 0.5編成への兵力交換比">
             <div class="matchup-table">
               <div
                 v-for="row in matchupRows"
@@ -354,7 +354,7 @@
         </section>
       </template>
 
-      <el-empty v-else description="自軍編成を組んで実行すると、テンプレ編成とのシミュレーション結果を表示できます。" />
+      <el-empty v-else description="自軍編成を組んで実行すると、Tier 0・Tier 0.5編成とのシミュレーション結果を表示できます。" />
     </div>
   </div>
 </template>
@@ -397,7 +397,8 @@ interface Segment {
 }
 
 const BATTLE_TURN_INDEX_LAST = 7
-const TEMPLATE_SIM_RUNS = 1000
+const TEMPLATE_SIM_RUNS = 300
+const BATTLE_TEMPLATE_TIERS = new Set(['tier0', 'tier05'])
 const { lineups } = useLineups()
 const { heroes, skills, enemyFormations, bingxue: bingxueCatalog } = useData()
 
@@ -569,8 +570,12 @@ const lineupFromTemplate = (formation: EnemyFormation): Lineup => {
   return lineup
 }
 
-const templateTeams = computed(() => new Map(enemyFormations.value.map((formation) => [formation.id, lineupFromTemplate(formation)])))
-const canRun = computed(() => Boolean(simTeam.main.hero && simTeam.vice1.hero && simTeam.vice2.hero && enemyFormations.value.length > 0))
+// 戦闘シミュレータでは上位環境だけを評価し、他画面のテンプレ一覧は絞り込まない。
+const battleEnemyFormations = computed(() =>
+  enemyFormations.value.filter((formation) => BATTLE_TEMPLATE_TIERS.has(formation.tier ?? '')),
+)
+const templateTeams = computed(() => new Map(battleEnemyFormations.value.map((formation) => [formation.id, lineupFromTemplate(formation)])))
+const canRun = computed(() => Boolean(simTeam.main.hero && simTeam.vice1.hero && simTeam.vice2.hero && battleEnemyFormations.value.length > 0))
 const teamCost = computed(() => (simTeam.main.hero?.cost ?? 0) + (simTeam.vice1.hero?.cost ?? 0) + (simTeam.vice2.hero?.cost ?? 0))
 
 // バトル結果の数値を、スクリーンショット風の評価バーへ表示しやすい配列に整える。
@@ -813,10 +818,10 @@ const run = () => {
   running.value = true
   try {
     normalizeExclusiveTeamSkills(simTeam)
-    // 代表相手は置かず、全テンプレ編成を同じ試行回数で評価する。
+    // 代表相手は置かず、Tier 0・Tier 0.5編成を同じ試行回数で評価する。
     const seed = `battle-${Date.now()}-${Math.random().toString(36).slice(2)}`
     const results: BattleBatchResult[] = []
-    matchupRows.value = enemyFormations.value.map((formation) => {
+    matchupRows.value = battleEnemyFormations.value.map((formation) => {
       const team = templateTeams.value.get(formation.id)
       if (!team) return null
       const result = simulateBattleBatch(simTeam, team, { seed: `${seed}-template-${formation.id}`, runs: TEMPLATE_SIM_RUNS })

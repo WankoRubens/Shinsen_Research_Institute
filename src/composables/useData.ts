@@ -273,6 +273,7 @@ export interface EnemyFormationMember {
 export interface EnemyFormation {
   id: string
   name: string
+  tier?: string
   troop_types?: string[]
   members: EnemyFormationMember[]
 }
