@@ -285,7 +285,7 @@ type ActionBlock = {
   isAction: boolean
   entries: BattleLogEntry[]
 }
-type LogMessageTone = 'text' | 'ally-name' | 'enemy-name' | 'damage' | 'healing'
+type LogMessageTone = 'text' | 'ally-name' | 'enemy-name' | 'damage' | 'healing' | 'status'
 type LogMessagePart = { text: string; tone: LogMessageTone }
 
 const { lineups } = useLineups()
@@ -579,6 +579,9 @@ const normalizedLogMessage = (entry: BattleLogEntry): string => {
   return message
 }
 const sideNameTone = (side: LogSide): LogMessageTone => side === 'ally' ? 'ally-name' : 'enemy-name'
+const harmfulStatusPattern = '火傷|水攻め|中毒|消沈|潰走|混乱|無策|封撃|麻痺|挑発|畏縮|疲弊|威圧|回復不可'
+const isHarmfulStatusTarget = (name: string, offset: number, message: string): boolean =>
+  new RegExp(`^に(?:${harmfulStatusPattern})`).test(message.slice(offset + name.length))
 const heroNameTone = (name: string, entry: BattleLogEntry, offset: number, message: string): LogMessageTone => {
   const isActor = entry.actor === name && entry.side !== 'system'
   const isTarget = entry.target === name && Boolean(entry.targetSide)
@@ -589,6 +592,10 @@ const heroNameTone = (name: string, entry: BattleLogEntry, offset: number, messa
       : sideNameTone(entry.targetSide!)
   }
   if (isTarget) return sideNameTone(entry.targetSide!)
+  // 旧バージョンで保存された対象情報のない状態付与ログも、文脈から敵味方を復元する。
+  if (entry.side !== 'system' && isHarmfulStatusTarget(name, offset, message)) {
+    return sideNameTone(entry.side === 'ally' ? 'enemy' : 'ally')
+  }
   if (isActor) return sideNameTone(entry.side)
   if (entry.actionActor === name && entry.actionSide) return entry.actionSide === 'ally' ? 'ally-name' : 'enemy-name'
   const sides = heroNameSides.value.get(name)
@@ -605,6 +612,7 @@ const logMessageParts = (entry: BattleLogEntry): LogMessagePart[] => {
     '合計\\d[\\d,]*',
     '負傷(?:兵)?\\d[\\d,]*(?:・戦死\\d[\\d,]*)?',
     '戦死\\d[\\d,]*',
+    harmfulStatusPattern,
   ]
   if (tokens.length === 0) return [{ text: message, tone: 'text' }]
   const tokenPattern = new RegExp(tokens.join('|'), 'g')
@@ -617,6 +625,7 @@ const logMessageParts = (entry: BattleLogEntry): LogMessagePart[] => {
     if (heroNameSides.value.has(text)) parts.push({ text, tone: heroNameTone(text, entry, offset, message) })
     else if (/ダメージ|負傷|戦死/.test(text)) parts.push({ text, tone: 'damage' })
     else if (/回復|蓄積|復帰|合計/.test(text)) parts.push({ text, tone: 'healing' })
+    else if (new RegExp(`^(?:${harmfulStatusPattern})$`).test(text)) parts.push({ text, tone: 'status' })
     else parts.push({ text, tone: 'text' })
     cursor = offset + text.length
   }
@@ -1087,7 +1096,8 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
 .log-part--ally-name,
 .log-part--enemy-name,
 .log-part--damage,
-.log-part--healing {
+.log-part--healing,
+.log-part--status {
   font-weight: 800;
 }
 
@@ -1105,6 +1115,10 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
 
 .log-part--healing {
   color: #79a900;
+}
+
+.log-part--status {
+  color: #c15a20;
 }
 
 .is-damage .log-effect {

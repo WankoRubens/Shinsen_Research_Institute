@@ -24,6 +24,15 @@ class MockBattleLogToneTest(unittest.TestCase):
         self.assertIn("target: target.name", simulator)
         self.assertIn("targetSide: target.side", simulator)
 
+    def test_old_status_logs_infer_the_opposing_side_and_color_the_status(self):
+        source = (ROOT / "src" / "views" / "MockBattle.vue").read_text(encoding="utf-8")
+
+        self.assertIn("const harmfulStatusPattern", source)
+        self.assertIn("isHarmfulStatusTarget(name, offset, message)", source)
+        self.assertIn("entry.side === 'ally' ? 'enemy' : 'ally'", source)
+        self.assertIn("tone: 'status'", source)
+        self.assertIn(".log-part--status", source)
+
 
 if __name__ == "__main__":
     unittest.main()
