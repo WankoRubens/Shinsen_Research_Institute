@@ -30,7 +30,9 @@ export type Formula = number | string;
 export type Stat =
   | 'lea' | 'val' | 'int' | 'pol' | 'cha' | 'spd'
   | 'damageDealt' | 'damageTaken' | 'strategyDamageDealt' | 'attackDamage'
-  | 'healingReceived' | 'activationRate';
+  | 'healingReceived' | 'activationRate'
+  | 'physicalCriticalChance' | 'strategyCriticalChance'
+  | 'physicalDamageTaken' | 'strategyDamageTaken' | 'activeDamageTaken';
 
 export interface Scaling {
   stat: Stat;

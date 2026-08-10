@@ -22,7 +22,7 @@ class MikawaSoulSkillTest(unittest.TestCase):
         simulator = (ROOT / "src" / "lib" / "battleSimulator.ts").read_text(encoding="utf-8")
 
         self.assertIn("三河魂: defineBattleSkillMeta({ type: '指揮', triggers: ['onNormalAttackReceived'] })", effects)
-        self.assertIn("TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂'])", effects)
+        self.assertIn("TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂', '月華鶴影'])", effects)
         self.assertIn("case '三河魂': {", effects)
         self.assertIn("attacked.id !== ctx.caster.id", effects)
         self.assertIn("stacks >= maxStacks", effects)

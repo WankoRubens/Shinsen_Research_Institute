@@ -306,8 +306,8 @@ export const resolveBingxueDamage = (ctx: BingxueDamageContext): { multiplier: n
   // 豪勇・妙算に、戦法などで獲得した会心・奇策率を加えて発動率を決める。
   // 奇策が発動すると、最低保証や兵種相性を含む最終計略ダメージが150%になる。
   const skillCriticalChance = kind === 'strategy'
-    ? Math.max(0, attacker.specialState.strategyCriticalChance ?? 0) / 100
-    : 0
+    ? (Math.max(0, attacker.specialState.strategyCriticalChance ?? 0) + Math.max(0, attacker.buffs.strategyCriticalChance ?? 0)) / 100
+    : Math.max(0, attacker.buffs.physicalCriticalChance ?? 0) / 100
   const criticalChance = (kind === 'physical'
     ? 0.02 * bingxueLevel(attacker, '豪勇')
     : intScaledPercent(0.02 * bingxueLevel(attacker, '妙策'), attacker.baseStats.int + (attacker.buffs.int ?? 0)))

@@ -6,13 +6,19 @@ import { selectedTroopLevel, selectedTroopStatMultiplier } from './troopLevels'
 import type { TroopType } from '../constants/traits'
 import {
   BATTLE_SKILL_EFFECT_TRIGGERS,
+  ENEMY_AFTER_ACTION_SKILL_NAMES,
+  ENEMY_STRATEGY_DAMAGE_RECEIVED_SKILL_NAMES,
   HEAL_STOCK_DAMAGE_SKILL_NAMES,
   IMPLEMENTED_BATTLE_SKILL_NAMES,
+  TEAM_AFTER_NORMAL_ATTACK_SKILL_NAMES,
+  TEAM_BEFORE_ACTION_SKILL_NAMES,
+  TEAM_DAMAGE_RECEIVED_SKILL_NAMES,
   TEAM_ACTION_BATTLE_SKILL_NAMES,
   TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES,
   applyNamedSkillEffect,
   battleSkillType,
   compareBattleSkillPriority,
+  isBattleSkillFollowUpTrigger,
   recordDamageDealtSkillEffects,
   structuredBattleTriggers,
   type BattleSkillEffectHelpers,
@@ -114,6 +120,7 @@ export interface BattleFighter {
   role: 'main' | 'vice1' | 'vice2'
   roleLabel: string
   name: string
+  gender: string
   maxHp: number
   hp: number
   wounded: number
@@ -448,6 +455,7 @@ const makeFighter = (
     role: roleKey,
     roleLabel: ROLE_LABELS[roleKey],
     name: role.hero.name_jp || role.hero.name,
+    gender: role.hero.gender ?? '',
     maxHp: BASE_TROOPS,
     hp: BASE_TROOPS,
     wounded: 0,
@@ -788,6 +796,8 @@ const damageModifier = (fighter: BattleFighter, outgoing: boolean, kind: 'physic
   if (kind === 'strategy') modifier += (fighter.buffs.strategyDamageDealt ?? 0) / 100
   if (kind === 'physical') modifier += (fighter.buffs.attackDamage ?? 0) / 100
   if (!outgoing) modifier += (fighter.buffs.damageTaken ?? 0) / 100
+  if (!outgoing && kind === 'physical') modifier += (fighter.buffs.physicalDamageTaken ?? 0) / 100
+  if (!outgoing && kind === 'strategy') modifier += (fighter.buffs.strategyDamageTaken ?? 0) / 100
   return Math.max(0.1, modifier)
 }
 
@@ -830,11 +840,24 @@ const baseDamage = (
     dot?: boolean
     skillType?: ReturnType<typeof battleSkillType> | null
     prepared?: boolean
+    turn?: number
   },
 ): DamageResolution => {
   const actualKind = kind === 'normal' ? 'physical' : kind
   // 疲弊中も通常攻撃・戦法は発動するが、そこから発生するダメージは0になる。
   if (hasControlStatus(caster, '疲弊')) return { amount: 0, critical: false }
+  const currentTurn = bingxueContext?.turn ?? 0
+  // 鉄壁は次の被ダメージを1回だけ無効化する。
+  if ((target.specialState.ironWallCharges ?? 0) > 0) {
+    target.specialState.ironWallCharges -= 1
+    return { amount: 0, critical: false }
+  }
+  // 回避効果はダメージ計算前に判定する。
+  if (
+    currentTurn > 0
+    && (target.specialState.skillEvasionUntil ?? 0) >= currentTurn
+    && rng() < (target.specialState.skillEvasionChance ?? 0) / 100
+  ) return { amount: 0, critical: false }
   const rate = damageRate(skill)
   const attackStat = actualKind === 'strategy' ? statOf(caster, 'int') : statOf(caster, 'val')
   const defenseStat = actualKind === 'strategy' ? statOf(target, 'int') : statOf(target, 'lea')
@@ -844,13 +867,41 @@ const baseDamage = (
         - statRule.defenseStats.reduce((sum, stat) => sum + statOf(target, stat), 0)
       ) + (0.037 * caster.hp + 175)
     : battleDamageBase(attackStat, defenseStat, caster.hp)
-  const variance = 0.9 + rng() * 0.2
-  const modifier = damageModifier(caster, true, actualKind) * damageModifier(target, false, actualKind)
-  const raw = damageBase * (rate / 100) * modifier * variance
-  const floor = guaranteedDamageFloor(caster.hp, rate, Boolean(skill)) * variance
   const resolvedSkillType = bingxueContext?.skillType === undefined
     ? skill ? battleSkillType(skill) : null
     : bingxueContext.skillType
+  const variance = 0.9 + rng() * 0.2
+  let incomingSpecialMultiplier = 1
+  if (resolvedSkillType === '能動') {
+    incomingSpecialMultiplier += (target.buffs.activeDamageTaken ?? 0) / 100
+    if ((target.specialState.nextActiveDamageTaken ?? 0) !== 0) {
+      incomingSpecialMultiplier += (target.specialState.nextActiveDamageTaken ?? 0) / 100
+      target.specialState.nextActiveDamageTaken = 0
+    }
+  }
+  if ((target.specialState.nextDamageTakenBonus ?? 0) !== 0) {
+    incomingSpecialMultiplier += (target.specialState.nextDamageTakenBonus ?? 0) / 100
+    target.specialState.nextDamageTakenBonus = 0
+  }
+  // 攻守兼備は発動ターン中、兵刃・計略それぞれ最初の被ダメージを軽減する。
+  if ((target.specialState.attackDefenseUntil ?? 0) >= currentTurn && currentTurn > 0) {
+    const seenKey = actualKind === 'physical' ? 'attackDefensePhysicalTurn' : 'attackDefenseStrategyTurn'
+    if ((target.specialState[seenKey] ?? 0) !== currentTurn) {
+      target.specialState[seenKey] = currentTurn
+      incomingSpecialMultiplier *= 0.6
+    }
+  }
+  // 御旗楯無は被ダメージごとに、武勇依存の確率で知略依存の軽減を行う。
+  if ((target.specialState.mihataPassive ?? 0) > 0) {
+    const chance = Math.min(0.95, 0.4 + Math.max(0, statOf(target, 'val') - 100) * 0.001)
+    if (rng() < chance) {
+      const reduction = Math.min(0.8, 0.4 + Math.max(0, statOf(target, 'int') - 100) * 0.001)
+      incomingSpecialMultiplier *= 1 - reduction
+    }
+  }
+  const modifier = damageModifier(caster, true, actualKind) * damageModifier(target, false, actualKind)
+  const raw = damageBase * (rate / 100) * modifier * variance
+  const floor = guaranteedDamageFloor(caster.hp, rate, Boolean(skill)) * variance
   const bingxueDamage = resolveBingxueDamage({
     attacker: caster,
     target,
@@ -865,7 +916,7 @@ const baseDamage = (
   if (bingxueDamage.evaded) return { amount: 0, critical: false }
   // 兵種相性は、最低保証を含むダメージが確定した後に全体へ掛ける。
   return {
-    amount: Math.max(floor, raw) * bingxueDamage.multiplier * caster.troopAffinityModifier,
+    amount: Math.max(floor, raw) * incomingSpecialMultiplier * bingxueDamage.multiplier * caster.troopAffinityModifier,
     critical: bingxueDamage.critical,
   }
 }
@@ -927,6 +978,10 @@ const applyControl = (
   const duration = Math.max(1, Math.round(skill.control_turns ?? 1))
   for (const name of controlNames) {
     targets.forEach((target) => {
+      if ((target.specialState.insightUntil ?? 0) >= turn) {
+        if (logs !== NO_LOGS) logs.push({ turn, side: target.side, actor: target.name, actorHp: target.hp, message: `${target.name}は洞察で${name}を無効化` })
+        return
+      }
       if (controlBlockedByBingxue(target, name)) {
         if (logs !== NO_LOGS) logs.push({
           turn,
@@ -1080,6 +1135,67 @@ const fireTriggeredSkills = (
   )
 }
 
+const skillsNamedIn = (owner: BattleFighter, names: Set<string>): Skill[] =>
+  owner.skills.filter((skill) => names.has(skillDisplayName(skill)) || names.has(skill.name))
+
+// ダメージを受けた本人以外が監視する戦法を、攻撃側・被攻撃側の向きを保って処理する。
+const fireDamageWatcherSkills = (
+  source: BattleFighter,
+  damaged: BattleFighter,
+  kind: 'physical' | 'strategy',
+  damagedAllies: BattleFighter[],
+  damagedEnemies: BattleFighter[],
+  turn: number,
+  logs: BattleLogEntry[],
+  rng: () => number,
+  stats: SkillStatMap,
+  turnStat: BattleTurnStat,
+  controlStats: Record<string, number>,
+) => {
+  damagedAllies.filter(isAlive).forEach((owner) => {
+    const skills = skillsNamedIn(owner, TEAM_DAMAGE_RECEIVED_SKILL_NAMES)
+    if (skills.length === 0) return
+    fireTriggeredSkillList(
+      owner,
+      skills,
+      kind === 'strategy' ? 'onStrategyDamageReceived' : 'onPhysicalDamageReceived',
+      source,
+      damagedAllies,
+      damagedEnemies,
+      turn,
+      logs,
+      rng,
+      stats,
+      turnStat,
+      controlStats,
+      undefined,
+      damaged,
+    )
+  })
+
+  if (kind !== 'strategy') return
+  damagedEnemies.filter(isAlive).forEach((owner) => {
+    const skills = skillsNamedIn(owner, ENEMY_STRATEGY_DAMAGE_RECEIVED_SKILL_NAMES)
+    if (skills.length === 0) return
+    fireTriggeredSkillList(
+      owner,
+      skills,
+      'onStrategyDamageReceived',
+      damaged,
+      damagedEnemies,
+      damagedAllies,
+      turn,
+      logs,
+      rng,
+      stats,
+      turnStat,
+      controlStats,
+      undefined,
+      damaged,
+    )
+  })
+}
+
 // 部隊内の誰かが持つ「全武将の行動を起点にする戦法」を、重複なしで取得する。
 const teamActionBattleSkills = (allies: BattleFighter[]): Skill[] => {
   const skills = allies.flatMap((ally) => ally.skills).filter((skill) =>
@@ -1165,6 +1281,43 @@ const applyBingxueLifeSteal = (
   return actual
 }
 
+// 戦法で付与された離反は、実際に与えた兵刃ダメージの割合だけ負傷兵を回復する。
+const applyPhysicalLifeSteal = (
+  source: BattleFighter,
+  damage: number,
+  turn: number,
+  logs: BattleLogEntry[],
+  turnStat: BattleTurnStat,
+): number => {
+  const percent = source.specialState.physicalLifeStealPercent ?? 0
+  const until = source.specialState.physicalLifeStealUntil ?? 0
+  if (damage <= 0 || percent <= 0 || until < turn || !isAlive(source)) return 0
+  const beforeHp = source.hp
+  const beforeWounded = source.wounded
+  const actual = applyHeal(source, damage * percent / 100)
+  if (actual <= 0) return 0
+  const healedWounded = beforeWounded - source.wounded
+  if (source.side === 'ally') turnStat.allyHealing += actual
+  else turnStat.enemyHealing += actual
+  if (logs !== NO_LOGS) logs.push({
+    turn,
+    side: source.side,
+    actor: source.name,
+    actorHp: source.hp,
+    target: source.name,
+    targetSide: source.side,
+    amount: actual,
+    beforeHp,
+    afterHp: source.hp,
+    woundedDelta: -healedWounded,
+    deadDelta: 0,
+    valueType: 'healing',
+    effect: '離反',
+    message: `離反で${source.name}を${actual.toLocaleString()}回復 ${hpChangeText(beforeHp, source.hp)} / 負傷兵${healedWounded.toLocaleString()}復帰`,
+  })
+  return actual
+}
+
 const dealSkillDamage = (
   ctx: SkillResolveContext,
   target: BattleFighter,
@@ -1187,6 +1340,7 @@ const dealSkillDamage = (
     {
       candidates: target.side === ctx.caster.side ? ctx.allies : ctx.enemies,
       skillType: battleSkillType(ctx.skill),
+      turn: ctx.turn,
     },
   )
   const actual = applyDamage(target, resolvedDamage.amount)
@@ -1215,6 +1369,7 @@ const dealSkillDamage = (
   if (actual > 0) {
     recordDamageDealtSkillEffects(ctx.caster, kind, ctx.turn, ctx.logs)
     applyBingxueLifeSteal(ctx.caster, actual, ctx.turn, ctx.logs, ctx.turnStat)
+    if (kind === 'physical') applyPhysicalLifeSteal(ctx.caster, actual, ctx.turn, ctx.logs, ctx.turnStat)
     resolveSeventyTwoCriticalDamage(ctx, kind, resolvedDamage.critical, actual)
     const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
     const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
@@ -1222,6 +1377,19 @@ const dealSkillDamage = (
       target,
       kind === 'strategy' ? 'onStrategyDamageReceived' : 'onPhysicalDamageReceived',
       ctx.caster,
+      targetAllies,
+      targetEnemies,
+      ctx.turn,
+      ctx.logs,
+      ctx.rng,
+      ctx.stats,
+      ctx.turnStat,
+      ctx.controlStats,
+    )
+    fireDamageWatcherSkills(
+      ctx.caster,
+      target,
+      kind,
       targetAllies,
       targetEnemies,
       ctx.turn,
@@ -1443,6 +1611,7 @@ const createBingxueHelpers = (
     const resolvedDamage = baseDamage(owner, target, pseudoSkill, rng, kind, undefined, {
       candidates: targetCandidates,
       skillType: null,
+      turn,
     })
     const actual = applyDamage(target, resolvedDamage.amount)
     if (owner.side === 'ally') turnStat.allyDamage += actual
@@ -1468,6 +1637,7 @@ const createBingxueHelpers = (
     if (actual > 0) {
       recordDamageDealtSkillEffects(owner, kind, turn, logs)
       applyBingxueLifeSteal(owner, actual, turn, logs, turnStat)
+      if (kind === 'physical') applyPhysicalLifeSteal(owner, actual, turn, logs, turnStat)
       const ownerAllies = allFighters.filter(fighter => fighter.side === owner.side)
       const ownerEnemies = allFighters.filter(fighter => fighter.side !== owner.side)
       resolveSeventyTwoCriticalDamage({
@@ -1499,6 +1669,19 @@ const createBingxueHelpers = (
         turnStat,
         controlStats,
       )
+      fireDamageWatcherSkills(
+        owner,
+        target,
+        kind,
+        targetAllies,
+        targetEnemies,
+        turn,
+        logs,
+        rng,
+        stats,
+        turnStat,
+        controlStats,
+      )
     }
     return actual
   },
@@ -1513,6 +1696,16 @@ const createBingxueHelpers = (
 
 const addControl = (ctx: SkillResolveContext, target: BattleFighter, name: string, duration: number) => {
   if (!isAlive(target)) return
+  if ((target.specialState.insightUntil ?? 0) >= ctx.turn) {
+    if (ctx.logs !== NO_LOGS) ctx.logs.push({
+      turn: ctx.turn,
+      side: target.side,
+      actor: target.name,
+      actorHp: target.hp,
+      message: `${target.name}は洞察で${name}を無効化`,
+    })
+    return
+  }
   if (controlBlockedByBingxue(target, name)) {
     if (ctx.logs !== NO_LOGS) ctx.logs.push({
       turn: ctx.turn,
@@ -1637,7 +1830,7 @@ const resolveSkill = (
         rng,
         kind,
         undefined,
-        { candidates: fighter.side === caster.side ? allies : enemies, skillType: battleSkillType(skill) },
+        { candidates: fighter.side === caster.side ? allies : enemies, skillType: battleSkillType(skill), turn },
       )
       const actual = applyDamage(fighter, resolvedDamage.amount)
       const afterHp = fighter.hp
@@ -1665,6 +1858,7 @@ const resolveSkill = (
       if (actual > 0) {
         recordDamageDealtSkillEffects(caster, kind, turn, logs)
         applyBingxueLifeSteal(caster, actual, turn, logs, turnStat)
+        if (kind === 'physical') applyPhysicalLifeSteal(caster, actual, turn, logs, turnStat)
         resolveSeventyTwoCriticalDamage({
           caster,
           target: fighter,
@@ -1686,6 +1880,19 @@ const resolveSkill = (
           fighter,
           kind === 'strategy' ? 'onStrategyDamageReceived' : 'onPhysicalDamageReceived',
           caster,
+          targetAllies,
+          targetEnemies,
+          turn,
+          logs,
+          rng,
+          stats,
+          turnStat,
+          controlStats,
+        )
+        fireDamageWatcherSkills(
+          caster,
+          fighter,
+          kind,
           targetAllies,
           targetEnemies,
           turn,
@@ -1809,24 +2016,27 @@ const trySkill = (
     && (turn <= 0 || caster.specialState.josuiHealTurn === turn)
   ) return
   const resolvedSkillType = battleSkillType(skill)
+  const followUp = isBattleSkillFollowUpTrigger(skill, trigger)
   // 無策は能動、萎縮（旧表記の畏縮を含む）は指揮・受動戦法だけを止める。
   const controlBlock = skillControlBlock(caster, skill)
   if (controlBlock) {
     logSkillControlBlock(caster, skill, controlBlock, turn, logs)
     return
   }
-  if ((caster.skillCooldowns[skill.id || skill.name] ?? 0) > 0) return
-  if (skill.maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= skill.maxPerTurn) return
+  if (!followUp && (caster.skillCooldowns[skill.id || skill.name] ?? 0) > 0) return
+  if (!followUp && skill.maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= skill.maxPerTurn) return
   const unique = isUniqueBattleSkill(skill)
   const prepared = preparationTurns(skill) > 0
+  const skillActivationPenalty = caster.specialState[`activationRatePenalty:${resolvedSkillName}`] ?? 0
   const activationRate = clamp(
     extractRate(skill)
       + (caster.buffs.activationRate ?? 0) / 100
-      + bingxueActivationChanceBonus(caster, resolvedSkillType, unique),
+      + bingxueActivationChanceBonus(caster, resolvedSkillType, unique)
+      - skillActivationPenalty / 100,
     0,
     1,
   )
-  if (rng() > activationRate) {
+  if (!followUp && rng() > activationRate) {
     recordBingxueSkillFailure(caster, resolvedSkillType, unique, prepared)
     if (trigger === 'beforeAction' || trigger === 'afterNormalAttack') {
       if (logs !== NO_LOGS) logs.push({
@@ -1841,11 +2051,13 @@ const trySkill = (
     return
   }
 
-  markBingxueSkillUsed(caster, resolvedSkillType)
+  if (!followUp) markBingxueSkillUsed(caster, resolvedSkillType)
   const skillKey = skill.id || skill.name
-  caster.skillUsesThisTurn[skillKey] = (caster.skillUsesThisTurn[skillKey] ?? 0) + 1
-  if (skill.cooldown) caster.skillCooldowns[skillKey] = skill.cooldown
-  recordActivation(stats, caster, skill)
+  if (!followUp) {
+    caster.skillUsesThisTurn[skillKey] = (caster.skillUsesThisTurn[skillKey] ?? 0) + 1
+    if (skill.cooldown) caster.skillCooldowns[skillKey] = skill.cooldown
+    recordActivation(stats, caster, skill)
+  }
 
   let prep = trigger === 'beforeAction' ? preparationTurns(skill) : 0
   if (prep > 0 && consumeBingxuePreparationReduction(caster, resolvedSkillType, unique, prepared, rng)) {
@@ -1866,9 +2078,9 @@ const trySkill = (
   if (trigger !== 'beforeUniqueSkill' && isUniqueBattleSkill(skill)) {
     fireBeforeUniqueSkill(caster, skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
   }
-  if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}発動` })
+  if (!followUp && logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}発動` })
   resolveSkill(caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats, eventSubject)
-  recordBingxueSkillResolved(caster, resolvedSkillType, prepared, turn, rng)
+  if (!followUp) recordBingxueSkillResolved(caster, resolvedSkillType, prepared, turn, rng)
 }
 
 const processPendingSkills = (
@@ -1943,6 +2155,7 @@ const processDots = (
         candidates: all.filter(candidate => candidate.side === fighter.side),
         dot: true,
         skillType: null,
+        turn,
       })
       const amount = applyDamage(fighter, resolvedDamage.amount)
       const afterHp = fighter.hp
@@ -2236,6 +2449,28 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
         })
 
+        // 伝馬疾馳など、所持者とは別の友軍の行動開始を監視する予約効果を先に解決する。
+        allies.filter(isAlive).forEach((owner) => {
+          const watcherSkills = skillsNamedIn(owner, TEAM_BEFORE_ACTION_SKILL_NAMES)
+          if (watcherSkills.length === 0) return
+          fireTriggeredSkillList(
+            owner,
+            watcherSkills,
+            'allyBeforeAction',
+            target,
+            allies,
+            enemies,
+            turn,
+            logs,
+            rng,
+            skillStats,
+            turnStat,
+            controlStats,
+            undefined,
+            actor,
+          )
+        })
+
         const grantedActionSkills = teamActionBattleSkills(allies)
         const inheritedActionSkills = grantedActionSkills.filter(
           (skill) => !actor.skills.some((ownSkill) => isSameSkill(ownSkill, skill)),
@@ -2282,6 +2517,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           const resolvedNormalDamage = baseDamage(actor, target, null, rng, 'normal', undefined, {
             candidates: targetSideMembers,
             skillType: null,
+            turn,
           })
           const normalDamage = applyDamage(target, resolvedNormalDamage.amount)
           const afterHp = target.hp
@@ -2310,6 +2546,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             const targetEnemies = target.side === actor.side ? enemies : allies
             recordDamageDealtSkillEffects(actor, 'physical', turn, logs)
             applyBingxueLifeSteal(actor, normalDamage, turn, logs, turnStat)
+            applyPhysicalLifeSteal(actor, normalDamage, turn, logs, turnStat)
             runBingxueNormalAttackReceived(
               target,
               actor,
@@ -2334,7 +2571,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             )
             // 三河魂など、所持者以外の友軍が通常攻撃を受けた時に反応する指揮戦法も処理する。
             targetAllies
-              .filter((owner) => owner.id !== target.id && isAlive(owner))
+              .filter((owner) => owner.id !== target!.id && isAlive(owner))
               .forEach((owner) => {
                 const reactiveSkills = owner.skills.filter((skill) =>
                   TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES.has(skillDisplayName(skill))
@@ -2355,10 +2592,23 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
                   turnStat,
                   controlStats,
                   undefined,
-                  target,
+                  target ?? undefined,
                 )
               })
             fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, targetAllies, targetEnemies, turn, logs, rng, skillStats, turnStat, controlStats)
+            fireDamageWatcherSkills(
+              actor,
+              target,
+              'physical',
+              targetAllies,
+              targetEnemies,
+              turn,
+              logs,
+              rng,
+              skillStats,
+              turnStat,
+              controlStats,
+            )
           }
           // 通常攻撃の結果が確定してから、通常攻撃後の兵学を処理する。
           runBingxueAfterNormalAttack({
@@ -2371,6 +2621,29 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
           })
           fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+          // 覇王の右筆・献身は、所持者本人ではなく友軍の通常攻撃後にも反応する。
+          allies
+            .filter((owner) => owner.id !== actor.id && isAlive(owner))
+            .forEach((owner) => {
+              const watcherSkills = skillsNamedIn(owner, TEAM_AFTER_NORMAL_ATTACK_SKILL_NAMES)
+              if (watcherSkills.length === 0) return
+              fireTriggeredSkillList(
+                owner,
+                watcherSkills,
+                'afterNormalAttack',
+                target,
+                allies,
+                enemies,
+                turn,
+                logs,
+                rng,
+                skillStats,
+                turnStat,
+                controlStats,
+                undefined,
+                actor,
+              )
+            })
         }
         if (dateMasamuneHasDragonCavalry(allies) && grantedActionSkills.length > 0) {
           fireTriggeredSkillList(
@@ -2406,6 +2679,27 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             turnStat,
             controlStats,
             grantedActionSkills[0],
+          )
+        })
+        // 三楽犬など、標記した敵の行動終了を監視する戦法を敵側から解決する。
+        enemies.filter(isAlive).forEach((owner) => {
+          const watcherSkills = skillsNamedIn(owner, ENEMY_AFTER_ACTION_SKILL_NAMES)
+          if (watcherSkills.length === 0) return
+          fireTriggeredSkillList(
+            owner,
+            watcherSkills,
+            'enemyAfterAction',
+            actor,
+            enemies,
+            allies,
+            turn,
+            logs,
+            rng,
+            skillStats,
+            turnStat,
+            controlStats,
+            undefined,
+            actor,
           )
         })
         if (living(enemy).length === 0 || living(ally).length === 0) break

@@ -24,7 +24,9 @@ class StrategyCriticalTest(unittest.TestCase):
 
     def test_seventy_two_stratagem_adds_rate_and_critical_damage(self):
         source = (ROOT / "src" / "lib" / "battleSkillEffects.ts").read_text(encoding="utf-8")
-        effect = source[source.index("case '七十二の計': {"):source.index("case '軍神': {")]
+        start = source.index("case '七十二の計': {")
+        end = source.index("\n    case '", start + 1)
+        effect = source[start:end]
 
         self.assertIn("ctx.trigger !== 'preparationTurn'", effect)
         self.assertIn("'seventyTwoStrategyCriticalChance'", effect)
