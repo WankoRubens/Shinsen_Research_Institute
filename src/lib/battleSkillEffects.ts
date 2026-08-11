@@ -22,6 +22,8 @@ const normalizeBattleSkillType = (text?: string | null): BattleSkillType | null 
 export interface BattleSkillEffectMeta {
   type?: BattleSkillTypeInput
   triggers?: TriggerEvent[]
+  // 個別 case の triggers だけを使い、skills.json の構造化 trigger を購読しない。
+  replaceStructuredTriggers?: boolean
   // 初回発動で予約済みの後続効果。ここでは発動率を再抽選しない。
   followUpTriggers?: TriggerEvent[]
 }
@@ -40,6 +42,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   南蛮渡来: defineBattleSkillMeta({ type: '能動' }),
   一舟軒: defineBattleSkillMeta({ type: '能動' }),
   弾嵐雨霰: defineBattleSkillMeta({ type: '能動' }),
+  直諫敢行: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
   越後二天: defineBattleSkillMeta({ type: '突撃' }),
   疾風迅雷: defineBattleSkillMeta({ type: '指揮' }),
   表裏比興: defineBattleSkillMeta({ type: '能動' }),
@@ -133,6 +136,9 @@ const battleSkillEffectMeta = (skill: Skill): BattleSkillEffectMeta | null =>
   ?? BATTLE_SKILL_EFFECT_META[skill.name]
   ?? null
 
+export const replacesStructuredBattleTriggers = (skill: Skill): boolean =>
+  battleSkillEffectMeta(skill)?.replaceStructuredTriggers ?? false
+
 export const isBattleSkillFollowUpTrigger = (skill: Skill, trigger: TriggerEvent): boolean =>
   battleSkillEffectMeta(skill)?.followUpTriggers?.includes(trigger) ?? false
 
@@ -165,6 +171,7 @@ const NAMED_BATTLE_SKILL_NAMES = [
   '南蛮渡来',
   '一舟軒',
   '弾嵐雨霰',
+  '直諫敢行',
   '越後二天',
   '疾風迅雷',
   '表裏比興',
@@ -647,6 +654,7 @@ const PRECISE_HANDCRAFTED_SKILLS = new Set([
   '南蛮渡来',
   '一舟軒',
   '弾嵐雨霰',
+  '直諫敢行',
   '越後二天',
   '疾風迅雷',
   '表裏比興',
@@ -4047,9 +4055,32 @@ export const applyNamedSkillEffect = (
     }
     case '直諫敢行': {
       // 戦法タイプ: 能動
-      // 自軍複数（2名）の被ダメージを13%→26%（知略依存）低下させ、2ターン持続、最大2回まで重ねがけ可能
-      // 戦法説明にある能力値/与ダメ/被ダメ補正（24%または24）を反映する
-      applyDatabaseBuffs(ctx, h)
+      // 発動タイミング: 自身の行動開始前
+      if (ctx.trigger !== 'beforeAction') return true
+
+      // 自軍から生存中の武将をランダムに2名選ぶ。
+      const targets = h.aliveRandom(ctx.allies, ctx.rng, ctx).slice(0, 2)
+      // 最大効果26%を基準に、発動者の知略で被ダメージ低下量を補正する。
+      const reduction = attributeDependentValue(26, [h.statOf(ctx.caster, 'int')])
+
+      targets.forEach((target) => {
+        // 2ターン持続し、同じ対象には最大2層まで重ねがけできる。
+        h.addTimedModifier(ctx, target, 'damageTaken', -reduction, 2, 2)
+        // スタック数ではなく、現在有効な被ダメージ低下量の合計を表示する。
+        const totalReduction = -target.timedModifiers
+          .filter((modifier) => modifier.key === '直諫敢行:damageTaken')
+          .reduce((sum, modifier) => sum + modifier.value, 0)
+        ctx.logs.push({
+          turn: ctx.turn,
+          side: ctx.caster.side,
+          actor: ctx.caster.name,
+          actorHp: ctx.caster.hp,
+          target: target.name,
+          targetSide: target.side,
+          effect: '直諫敢行',
+          message: `${target.name}の被ダメージを${reduction.toFixed(2)}%低下（合計${totalReduction.toFixed(2)}%・2ターン）`,
+        })
+      })
       return true
     }
     case '会盟の陣': {

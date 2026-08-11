@@ -20,6 +20,7 @@ import {
   compareBattleSkillPriority,
   isBattleSkillFollowUpTrigger,
   recordDamageDealtSkillEffects,
+  replacesStructuredBattleTriggers,
   structuredBattleTriggers,
   type BattleSkillEffectHelpers,
   type SkillDamageStatRule,
@@ -378,7 +379,8 @@ const triggerEventsForSkill = (skill: Skill): BattleTrigger[] => {
   const skillName = skill.name_jp || skill.name
   const registered = BATTLE_SKILL_EFFECT_TRIGGERS[skillName] ?? []
   const explicit = skill.triggers ?? []
-  const structured = structuredBattleTriggers(skill)
+  // 個別 case が全タイミングを管理する戦法では、生成データ側の trigger を重ねて購読しない。
+  const structured = replacesStructuredBattleTriggers(skill) ? [] : structuredBattleTriggers(skill)
   const triggers = uniqueTriggers([...registered, ...explicit, ...structured])
   return triggers.length > 0 ? triggers : [triggerForSkill(skill)]
 }
@@ -1861,17 +1863,23 @@ const addTimedModifier = (
 
 // 戦法ごとの基礎発動率に、兵学・兵種戦法・弱体効果の補正を加えた最終発動率を返す。
 // 発動判定と効果ログで同じ計算を使い、表示値と実際の抽選確率を一致させる。
-const activationRateOf = (caster: BattleFighter, skill: Skill): number => {
+const activationRateOf = (caster: BattleFighter, skill: Skill, turn = 0): number => {
   const resolvedSkillName = skillDisplayName(skill)
   const skillType = battleSkillType(skill)
   const unique = isUniqueBattleSkill(skill)
+  const sharedSkillBonus = (caster.buffs.activationRate ?? 0) / 100
   const skillActivationBonus = caster.specialState[`activationRateBonus:${resolvedSkillName}`] ?? 0
   const skillActivationPenalty = caster.specialState[`activationRatePenalty:${resolvedSkillName}`] ?? 0
+  // 直諫敢行は1ターン目だけ、他の戦法から受ける発動率上昇分を2倍にする。
+  // 基礎発動率・兵学補正・発動率低下は倍化の対象にしない。
+  const externalSkillBonus = sharedSkillBonus + skillActivationBonus / 100
+  const adjustedExternalSkillBonus = resolvedSkillName === '直諫敢行' && turn === 1
+    ? externalSkillBonus * 2
+    : externalSkillBonus
   return clamp(
     extractRate(skill)
-      + (caster.buffs.activationRate ?? 0) / 100
       + bingxueActivationChanceBonus(caster, skillType, unique)
-      + skillActivationBonus / 100
+      + adjustedExternalSkillBonus
       - skillActivationPenalty / 100,
     0,
     1,
@@ -2151,7 +2159,7 @@ const trySkill = (
   if (!followUp && skill.maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= skill.maxPerTurn) return
   const unique = isUniqueBattleSkill(skill)
   const prepared = preparationTurns(skill) > 0
-  const activationRate = activationRateOf(caster, skill)
+  const activationRate = activationRateOf(caster, skill, turn)
   // 発動抽選の成否を表示するのは、プレイヤーが確率を確認したい能動・突撃戦法だけ。
   const shouldLogActivation = resolvedSkillType === '能動' || resolvedSkillType === '突撃'
   if (!followUp && rng() > activationRate) {
