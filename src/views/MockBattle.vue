@@ -282,6 +282,7 @@ type ActionBlock = {
   side: LogSide
   actor: string
   troops: number
+  speed?: number
   isAction: boolean
   entries: BattleLogEntry[]
 }
@@ -542,6 +543,7 @@ const groupedLogs = computed(() => {
         side,
         actor,
         troops: entry.actionActorHp ?? entry.actorHp ?? currentTroops.get(troopKey(side, actor)) ?? 0,
+        speed: entry.actionActorSpeed,
         isAction,
         entries: [entry],
       })
@@ -561,8 +563,10 @@ const groupedLogs = computed(() => {
 
 const actorPortrait = (block: ActionBlock): string => roleByActor(block.side, block.actor)?.hero?.portrait || ''
 const actorSpeed = (block: ActionBlock): string => {
+  // 戦闘ログに保存された実速度を優先し、伊賀忍者などの戦闘中補正も表示する。
+  if (typeof block.speed === 'number') return block.speed.toFixed(2)
   const role = roleByActor(block.side, block.actor)
-  return Number(role?.stats.spd ?? 0).toFixed(1)
+  return Number(role?.stats.spd ?? 0).toFixed(2)
 }
 const actorHp = (block: ActionBlock): number => block.troops
 const actionBlockTitle = (block: ActionBlock): string => {

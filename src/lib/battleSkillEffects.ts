@@ -284,6 +284,7 @@ export interface BattleSkillEffectHelpers {
     maxStacks?: number,
   ) => void
   statOf: (fighter: BattleFighter, stat: Stat) => number
+  activationRateOf: (fighter: BattleFighter, skill: Skill) => number
 }
 
 export interface SkillDamageStatRule {
@@ -2466,8 +2467,15 @@ export const applyNamedSkillEffect = (
           ? attributeDependentValue(baseBonus, [h.statOf(ctx.caster, 'spd')])
           : baseBonus
         const firstActiveName = firstActive.name_jp || firstActive.name
+        const beforeRate = h.activationRateOf(ally, firstActive)
         ally.specialState[`activationRateBonus:${firstActiveName}`] = Number(bonus.toFixed(4))
-        log(ctx.logs, { ...ctx, caster: ally }, `甲斐弓騎兵: ${firstActiveName}の発動率+${bonus.toFixed(2)}%`)
+        const afterRate = h.activationRateOf(ally, firstActive)
+        const effectiveIncrease = Math.max(0, (afterRate - beforeRate) * 100)
+        log(
+          ctx.logs,
+          { ...ctx, caster: ally },
+          `甲斐弓騎兵: ${ally.name}の「${firstActiveName}」発動率 ${(beforeRate * 100).toFixed(2)}% → ${(afterRate * 100).toFixed(2)}%（+${effectiveIncrease.toFixed(2)}%）`,
+        )
       })
       return true
     }

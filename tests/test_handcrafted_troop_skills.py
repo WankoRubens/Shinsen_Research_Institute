@@ -61,6 +61,19 @@ class HandcraftedTroopSkillsTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.simulator)
 
+    def test_iga_speed_is_snapshotted_for_action_logs(self):
+        self.assertIn("setPermanentBuffContribution(ally, 'spd', 'igaNinjaSpeed', 10)", self.effects)
+        self.assertIn("const actionActorSpeed = statOf(actor, 'spd')", self.simulator)
+        self.assertIn("entry.actionActorSpeed = actionActorSpeed", self.simulator)
+
+    def test_kai_cavalry_logs_owner_and_final_activation_rate(self):
+        start = self.manual.index("case '甲斐弓騎兵': {")
+        next_case = self.manual.find("\n    case '", start + 1)
+        block = self.manual[start:next_case if next_case >= 0 else None]
+        self.assertIn("const beforeRate = h.activationRateOf(ally, firstActive)", block)
+        self.assertIn("const afterRate = h.activationRateOf(ally, firstActive)", block)
+        self.assertIn("${ally.name}の「${firstActiveName}」発動率", block)
+
     def test_completed_troop_skills_are_removed_from_generic_report(self):
         for name in TROOP_SKILLS:
             with self.subTest(name=name):

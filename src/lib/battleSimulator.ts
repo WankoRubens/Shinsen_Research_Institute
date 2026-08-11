@@ -72,6 +72,7 @@ export interface BattleLogEntry {
   actionActor?: string
   actionSide?: BattleSide
   actionActorHp?: number
+  actionActorSpeed?: number
   message: string
   target?: string
   targetSide?: BattleSide
@@ -1858,6 +1859,25 @@ const addTimedModifier = (
   })
 }
 
+// 戦法ごとの基礎発動率に、兵学・兵種戦法・弱体効果の補正を加えた最終発動率を返す。
+// 発動判定と効果ログで同じ計算を使い、表示値と実際の抽選確率を一致させる。
+const activationRateOf = (caster: BattleFighter, skill: Skill): number => {
+  const resolvedSkillName = skillDisplayName(skill)
+  const skillType = battleSkillType(skill)
+  const unique = isUniqueBattleSkill(skill)
+  const skillActivationBonus = caster.specialState[`activationRateBonus:${resolvedSkillName}`] ?? 0
+  const skillActivationPenalty = caster.specialState[`activationRatePenalty:${resolvedSkillName}`] ?? 0
+  return clamp(
+    extractRate(skill)
+      + (caster.buffs.activationRate ?? 0) / 100
+      + bingxueActivationChanceBonus(caster, skillType, unique)
+      + skillActivationBonus / 100
+      - skillActivationPenalty / 100,
+    0,
+    1,
+  )
+}
+
 const namedSkillHelpers: BattleSkillEffectHelpers = {
   skillDisplayName,
   chooseTarget: (candidates, rng, ctx) => ctx
@@ -1873,6 +1893,7 @@ const namedSkillHelpers: BattleSkillEffectHelpers = {
   addControl,
   addTimedModifier,
   statOf,
+  activationRateOf,
 }
 
 // 個別戦法は battleSkillEffects.ts に集約する。
@@ -2127,18 +2148,7 @@ const trySkill = (
   if (!followUp && skill.maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= skill.maxPerTurn) return
   const unique = isUniqueBattleSkill(skill)
   const prepared = preparationTurns(skill) > 0
-  const skillActivationPenalty = caster.specialState[`activationRatePenalty:${resolvedSkillName}`] ?? 0
-  // 甲斐弓騎兵など、特定の戦法枠だけに付与された発動率補正を加える。
-  const skillActivationBonus = caster.specialState[`activationRateBonus:${resolvedSkillName}`] ?? 0
-  const activationRate = clamp(
-    extractRate(skill)
-      + (caster.buffs.activationRate ?? 0) / 100
-      + bingxueActivationChanceBonus(caster, resolvedSkillType, unique)
-      + skillActivationBonus / 100
-      - skillActivationPenalty / 100,
-    0,
-    1,
-  )
+  const activationRate = activationRateOf(caster, skill)
   if (!followUp && rng() > activationRate) {
     recordBingxueSkillFailure(caster, resolvedSkillType, unique, prepared)
     if (trigger === 'beforeAction' || trigger === 'afterNormalAttack') {
@@ -2404,12 +2414,14 @@ const markActionLogs = (
   startIndex: number,
   actor: BattleFighter,
   actionActorHp: number,
+  actionActorSpeed: number,
 ) => {
   if (logs === NO_LOGS) return
   logs.slice(startIndex).forEach((entry) => {
     entry.actionActor = actor.name
     entry.actionSide = actor.side
     entry.actionActorHp = actionActorHp
+    entry.actionActorSpeed = actionActorSpeed
   })
 }
 
@@ -2525,6 +2537,8 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
       const enemies = actor.side === 'ally' ? enemy : ally
       const actionLogStart = logs === NO_LOGS ? 0 : logs.length
       const actionActorHp = actor.hp
+      // 伊賀忍者などの戦闘中補正を含む、行動開始時点の実速度をログへ保存する。
+      const actionActorSpeed = statOf(actor, 'spd')
       const actionControlStatusKeys = new Set(
         Object.keys(actor.statuses).filter((name) => CONTROL_STATUS_NAMES.has(name)),
       )
@@ -2917,7 +2931,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         }
         // 行動開始時点で有効だった制御だけを消費し、行動中に新規付与された制御は残す。
         consumeActionControlDurations(actor, actionControlStatusKeys)
-        markActionLogs(logs, actionLogStart, actor, actionActorHp)
+        markActionLogs(logs, actionLogStart, actor, actionActorHp, actionActorSpeed)
       }
     }
 
