@@ -1749,7 +1749,8 @@ export const applyNamedSkillEffect = (
       if (!target) return true
       h.dealSkillDamage(ctx, target, 260, 'strategy')
       // 受ける回復効果を1ターン30%低下させる。
-      h.addTimedModifier(ctx, target, 'healingReceived', -30, 1)
+      // 同じ対象へ再付与されても加算せず、回復低下30%の効果時間だけ更新する。
+      h.addTimedModifier(ctx, target, 'healingReceived', -30, 1, 1)
       return true
     }
 

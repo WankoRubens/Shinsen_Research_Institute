@@ -75,6 +75,12 @@ class DirectDamageHandcraftedSkillsTest(unittest.TestCase):
         self.assertNotIn("ctx.caster.buffs.activationRate = (ctx.caster.buffs.activationRate ?? 0) - 5", self.effects)
         self.assertIn("activationRatePenalty:${resolvedSkillName}", self.simulator)
 
+    def test_border_struggle_healing_reduction_does_not_stack(self):
+        start = self.effects.index("case '境目奮戦': {")
+        end = self.effects.index("\n    case '", start + 1)
+        effect = self.effects[start:end]
+        self.assertIn("addTimedModifier(ctx, target, 'healingReceived', -30, 1, 1)", effect)
+
 
 if __name__ == "__main__":
     unittest.main()
