@@ -74,6 +74,18 @@ class HandcraftedTroopSkillsTest(unittest.TestCase):
         self.assertIn("const afterRate = h.activationRateOf(ally, firstActive)", block)
         self.assertIn("${ally.name}の「${firstActiveName}」発動率", block)
 
+    def test_troop_skill_sub_effect_failures_do_not_clutter_the_log(self):
+        for message in (
+            "竜騎兵: 射撃は不発",
+            "竜騎兵: 伊達政宗の装備効果による装填は不発",
+            "伊賀忍者: 密報攻撃は不発",
+            "越後先手組: 回復は不発",
+            "三河弓兵隊: 回生は不発",
+            "大太刀力士隊: 反撃は不発",
+        ):
+            with self.subTest(message=message):
+                self.assertNotIn(message, self.manual)
+
     def test_completed_troop_skills_are_removed_from_generic_report(self):
         for name in TROOP_SKILLS:
             with self.subTest(name=name):

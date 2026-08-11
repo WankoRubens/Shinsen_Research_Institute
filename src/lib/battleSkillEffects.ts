@@ -1376,8 +1376,6 @@ export const applyNamedSkillEffect = (
           const aliveEnemies = ctx.enemies.filter((enemy) => enemy.hp > 0)
           const target = aliveEnemies[Math.floor(ctx.rng() * aliveEnemies.length)]
           if (target) h.dealSkillDamage(ctx, target, 104, damageKind)
-        } else if (ammo > 0) {
-          log(ctx.logs, ctx, `竜騎兵: 射撃は不発(弾丸${ammo})`)
         }
         return true
       }
@@ -1400,8 +1398,6 @@ export const applyNamedSkillEffect = (
           const nextAmmo = (ctx.caster.specialState[ammoKey] ?? 0) + 1
           ctx.caster.specialState[ammoKey] = nextAmmo
           log(ctx.logs, ctx, `竜騎兵: 伊達政宗の装備効果で弾丸を1発装填(残り${nextAmmo})`)
-        } else {
-          log(ctx.logs, ctx, '竜騎兵: 伊達政宗の装備効果による装填は不発')
         }
         return true
       }
@@ -2396,10 +2392,7 @@ export const applyNamedSkillEffect = (
       const chance = fujibayashiEquipped
         ? attributeDependentChance(0.35, [h.statOf(ctx.caster, 'spd')])
         : 0.35
-      if (!h.roll(ctx.rng, chance)) {
-        log(ctx.logs, ctx, '伊賀忍者: 密報攻撃は不発')
-        return true
-      }
+      if (!h.roll(ctx.rng, chance)) return true
 
       // 密報を1個消費し、通常攻撃対象へ102%の兵刃ダメージを与える。
       ctx.caster.specialState[intelKey] = intel - 1
@@ -2423,10 +2416,7 @@ export const applyNamedSkillEffect = (
         // 第2ターン以降、各武将の行動前に武勇・速度依存の35%で自軍単体を78%回復する。
         if (ctx.turn < 2) return true
         const chance = attributeDependentChance(0.35, [h.statOf(ctx.caster, 'val'), h.statOf(ctx.caster, 'spd')])
-        if (!h.roll(ctx.rng, chance)) {
-          log(ctx.logs, ctx, '越後先手組: 回復は不発')
-          return true
-        }
+        if (!h.roll(ctx.rng, chance)) return true
         const target = h.aliveRandom(ctx.allies, ctx.rng, ctx)[0]
         if (target) h.healBySkill(ctx, target, 78, 'bravery')
         return true
@@ -2513,10 +2503,7 @@ export const applyNamedSkillEffect = (
       const chance = ctx.caster.name === '酒井忠次'
         ? attributeDependentChance(0.35, [h.statOf(ctx.caster, 'lea')])
         : 0.35
-      if (!h.roll(ctx.rng, chance)) {
-        log(ctx.logs, ctx, '三河弓兵隊: 回生は不発', damaged)
-        return true
-      }
+      if (!h.roll(ctx.rng, chance)) return true
       h.healBySkill({ ...ctx, caster: damaged }, damaged, 65, 'leadership')
       return true
     }
@@ -2576,10 +2563,7 @@ export const applyNamedSkillEffect = (
       // 通常攻撃を受けた武将が30%で攻撃者へ100%の兵刃反撃を行う。
       const defender = ctx.eventSubject ?? ctx.caster
       const attacker = ctx.target
-      if (!attacker || attacker.hp <= 0 || !h.roll(ctx.rng, 0.30)) {
-        log(ctx.logs, ctx, '大太刀力士隊: 反撃は不発', defender)
-        return true
-      }
+      if (!attacker || attacker.hp <= 0 || !h.roll(ctx.rng, 0.30)) return true
       h.dealSkillDamage({ ...ctx, caster: defender }, attacker, 100, 'physical')
 
       // 真柄直隆本人が装備して反撃した時だけ、25%で120%の追加兵刃ダメージを与える。

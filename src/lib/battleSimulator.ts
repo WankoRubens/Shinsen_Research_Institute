@@ -1878,6 +1878,9 @@ const activationRateOf = (caster: BattleFighter, skill: Skill): number => {
   )
 }
 
+// 戦闘ログでは、抽選に実際に使った発動率を百分率・小数点2桁で表示する。
+const activationRateText = (rate: number): string => `${(rate * 100).toFixed(2)}%`
+
 const namedSkillHelpers: BattleSkillEffectHelpers = {
   skillDisplayName,
   chooseTarget: (candidates, rng, ctx) => ctx
@@ -2149,16 +2152,18 @@ const trySkill = (
   const unique = isUniqueBattleSkill(skill)
   const prepared = preparationTurns(skill) > 0
   const activationRate = activationRateOf(caster, skill)
+  // 発動抽選の成否を表示するのは、プレイヤーが確率を確認したい能動・突撃戦法だけ。
+  const shouldLogActivation = resolvedSkillType === '能動' || resolvedSkillType === '突撃'
   if (!followUp && rng() > activationRate) {
     recordBingxueSkillFailure(caster, resolvedSkillType, unique, prepared)
-    if (trigger === 'beforeAction' || trigger === 'afterNormalAttack') {
+    if (shouldLogActivation && (trigger === 'beforeAction' || trigger === 'afterNormalAttack')) {
       if (logs !== NO_LOGS) logs.push({
         turn,
         side: caster.side,
         actor: caster.name,
         actorHp: caster.hp,
         effect: resolvedSkillName,
-        message: `${resolvedSkillName}は不発`,
+        message: `不発（${activationRateText(activationRate)}）`,
       })
     }
     return
@@ -2185,13 +2190,27 @@ const trySkill = (
   }
   if (prep > 0) {
     caster.pendingSkills.push({ skill, remainingTurns: prep })
-    if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}の準備を開始(${prep}T)` })
+    if (shouldLogActivation && logs !== NO_LOGS) logs.push({
+      turn,
+      side: caster.side,
+      actor: caster.name,
+      actorHp: caster.hp,
+      effect: resolvedSkillName,
+      message: `発動（${activationRateText(activationRate)}）・準備開始(${prep}T)`,
+    })
     return
   }
   if (trigger !== 'beforeUniqueSkill' && isUniqueBattleSkill(skill)) {
     fireBeforeUniqueSkill(caster, skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
   }
-  if (!followUp && logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skill.name_jp || skill.name}発動` })
+  if (!followUp && shouldLogActivation && logs !== NO_LOGS) logs.push({
+    turn,
+    side: caster.side,
+    actor: caster.name,
+    actorHp: caster.hp,
+    effect: resolvedSkillName,
+    message: `発動（${activationRateText(activationRate)}）`,
+  })
   resolveSkill(caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats, eventSubject)
   if (!followUp) recordBingxueSkillResolved(caster, resolvedSkillType, prepared, turn, rng)
 }
