@@ -417,6 +417,13 @@ const allSkills = skillsData as unknown as Skill[]
 
 const skillKeyForDedup = (skill: Skill) => skill.sim_id || skill.id || skill.name_jp || skill.name
 
+// 戦法タイプの優先度を適用しつつ、同じタイプ同士は編成画面のスロット順を維持する。
+const orderBattleItemsByTypeAndSlot = <T>(items: T[], skillOf: (item: T) => Skill): T[] =>
+  items
+    .map((item, slotIndex) => ({ item, slotIndex }))
+    .sort((a, b) => compareBattleSkillPriority(skillOf(a.item), skillOf(b.item)) || a.slotIndex - b.slotIndex)
+    .map(({ item }) => item)
+
 const findSkillByName = (name?: string | null): Skill | null => {
   if (!name) return null
   return allSkills.find((skill) => skill.name === name || skill.name_jp === name) ?? null
@@ -424,16 +431,16 @@ const findSkillByName = (name?: string | null): Skill | null => {
 
 const battleSkillsForRole = (role: RoleData): Skill[] => {
   const uniqueSkill = findSkillByName(role.hero?.unique_skill)
+  // この配列順が第1戦法（固有）→第2戦法→第3戦法に対応する。
   const list = [uniqueSkill, role.skill1, role.skill2].filter(Boolean) as Skill[]
   const seen = new Set<string>()
-  return list
-    .filter((skill) => {
+  const deduplicated = list.filter((skill) => {
       const key = skillKeyForDedup(skill)
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
-    .sort((a, b) => compareBattleSkillPriority(a, b) || skillKeyForDedup(a).localeCompare(skillKeyForDedup(b), 'ja'))
+  return orderBattleItemsByTypeAndSlot(deduplicated, (skill) => skill)
 }
 
 const affinityMultiplier = (affinity: BattleTroopAffinity = 'neutral'): number => {
@@ -1108,7 +1115,7 @@ const weakest = (fighters: BattleFighter[], count: number): BattleFighter[] =>
   [...living(fighters)].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp)).slice(0, count)
 const roll = (rng: () => number, chance: number): boolean => rng() < clamp(chance, 0, 1)
 const orderedBattleSkills = (skills: Skill[]): Skill[] =>
-  [...skills].sort((a, b) => compareBattleSkillPriority(a, b) || skillDisplayName(a).localeCompare(skillDisplayName(b), 'ja'))
+  orderBattleItemsByTypeAndSlot(skills, (skill) => skill)
 
 const fireTriggeredSkillList = (
   owner: BattleFighter,
@@ -2240,8 +2247,7 @@ const processPendingSkills = (
     if (pending.remainingTurns <= 0) ready.push(pending)
   })
   fighter.pendingSkills = fighter.pendingSkills.filter((pending) => pending.remainingTurns > 0)
-  ready
-    .sort((a, b) => compareBattleSkillPriority(a.skill, b.skill) || skillDisplayName(a.skill).localeCompare(skillDisplayName(b.skill), 'ja'))
+  orderBattleItemsByTypeAndSlot(ready, (pending) => pending.skill)
     .forEach((pending) => {
       if (!isAlive(fighter)) return
       const controlBlock = skillControlBlock(fighter, pending.skill)
