@@ -555,6 +555,7 @@ const CONTROL_STATUS_NAMES = new Set([
   '畏縮',
   '萎縮',
 ])
+const CONTINUOUS_DAMAGE_STATUS_NAMES = new Set(['火傷', '水攻', '水攻め', '中毒', '消沈', '潰走'])
 const CONTROL_STATUS_ALIASES: Record<string, string[]> = {
   畏縮: ['畏縮', '萎縮'],
   萎縮: ['畏縮', '萎縮'],
@@ -576,6 +577,12 @@ const applyControlStatus = (
   name: string,
   duration: number,
 ): boolean => {
+  // 宮部継潤が装備した僧兵は、火傷以外の継続状態そのものを受けない。
+  if (
+    (target.specialState.monkNonBurnDotImmune ?? 0) > 0
+    && CONTINUOUS_DAMAGE_STATUS_NAMES.has(name)
+    && name !== '火傷'
+  ) return false
   // 制御状態は重ね掛けも残り時間の上書きも行わない。
   if (activeControlStatusKey(target, name)) return false
   target.statuses[name] = Math.max(1, duration)
@@ -838,6 +845,7 @@ const baseDamage = (
   bingxueContext?: {
     candidates?: BattleFighter[]
     dot?: boolean
+    normalAttack?: boolean
     skillType?: ReturnType<typeof battleSkillType> | null
     prepared?: boolean
     turn?: number
@@ -883,6 +891,15 @@ const baseDamage = (
     incomingSpecialMultiplier += (target.specialState.nextDamageTakenBonus ?? 0) / 100
     target.specialState.nextDamageTakenBonus = 0
   }
+  // 大太刀力士隊は最初の2ターンだけ、通常攻撃と突撃戦法の被ダメージを個別に軽減する。
+  const isNormalAttack = kind === 'normal' || bingxueContext?.normalAttack === true
+  if (
+    currentTurn > 0
+    && (target.specialState.odachiReductionUntil ?? 0) >= currentTurn
+    && (isNormalAttack || resolvedSkillType === '突撃')
+  ) {
+    incomingSpecialMultiplier *= 1 - Math.min(0.9, (target.specialState.odachiReductionPercent ?? 0) / 100)
+  }
   // 攻守兼備は発動ターン中、兵刃・計略それぞれ最初の被ダメージを軽減する。
   if ((target.specialState.attackDefenseUntil ?? 0) >= currentTurn && currentTurn > 0) {
     const seenKey = actualKind === 'physical' ? 'attackDefensePhysicalTurn' : 'attackDefenseStrategyTurn'
@@ -923,7 +940,12 @@ const baseDamage = (
 
 const baseHeal = (caster: BattleFighter, target: BattleFighter, skill: Skill, rng: () => number): number => {
   const rate = healRate(skill)
-  const mainStat = skill.battle_type === 'bravery' ? statOf(caster, 'val') : statOf(caster, 'int')
+  // 兵種戦法の回生・休養には統率依存があるため、武勇・知略とは別の回復軸として扱う。
+  const mainStat = skill.battle_type === 'leadership'
+    ? statOf(caster, 'lea')
+    : skill.battle_type === 'bravery'
+      ? statOf(caster, 'val')
+      : statOf(caster, 'int')
   const variance = 0.92 + rng() * 0.16
   const receivedMultiplier = Math.max(0, 1 + (target.buffs.healingReceived ?? 0) / 100)
   return Math.max(20, (mainStat * 7.5 + 480) * (rate / 100) * variance) * bingxueHealMultiplier(caster, target) * receivedMultiplier
@@ -1020,6 +1042,11 @@ const applyDot = (
   if (!skill.dot_name || !skill.dot_rate_max) return
   const duration = Math.max(1, Math.round(skill.dot_turns ?? 1))
   targets.forEach((target) => {
+    if (
+      (target.specialState.monkNonBurnDotImmune ?? 0) > 0
+      && CONTINUOUS_DAMAGE_STATUS_NAMES.has(skill.dot_name!)
+      && skill.dot_name !== '火傷'
+    ) return
     target.timedStatuses.push({
       name: skill.dot_name!,
       turns: duration,
@@ -1152,7 +1179,8 @@ const fireDamageWatcherSkills = (
   turnStat: BattleTurnStat,
   controlStats: Record<string, number>,
 ) => {
-  damagedAllies.filter(isAlive).forEach((owner) => {
+  // 被ダメージ本人が所有する戦法は直前の通常処理で発動済みなので、監視側では重複させない。
+  damagedAllies.filter((owner) => owner.id !== damaged.id && isAlive(owner)).forEach((owner) => {
     const skills = skillsNamedIn(owner, TEAM_DAMAGE_RECEIVED_SKILL_NAMES)
     if (skills.length === 0) return
     fireTriggeredSkillList(
@@ -1239,7 +1267,7 @@ const withRate = (skill: Skill, rate: number, kind?: 'bravery' | 'strategy'): Sk
   battle_type: kind ?? skill.battle_type,
 })
 
-const withHealRate = (skill: Skill, rate: number, kind?: 'bravery' | 'strategy'): Skill => ({
+const withHealRate = (skill: Skill, rate: number, kind?: 'bravery' | 'strategy' | 'leadership'): Skill => ({
   ...skill,
   heal_rate_max: rate,
   battle_type: kind ?? skill.battle_type,
@@ -1318,6 +1346,48 @@ const applyPhysicalLifeSteal = (
   return actual
 }
 
+const RED_ARMOR_SKILL_NAMES = new Set(['赤備え隊', '赤備隊'])
+
+// 飯富虎昌が赤備え隊を装備している時、部隊全体の会心ダメージ回数を共有して数える。
+// 10回へ到達した直後に回数をリセットし、生存中の各武将が88%の全軍出撃を行う。
+function resolveRedArmorCriticalHit(
+  ctx: SkillResolveContext,
+  kind: 'physical' | 'strategy',
+  critical: boolean,
+  actualDamage: number,
+) {
+  if (kind !== 'physical' || !critical || actualDamage <= 0) return
+  const owner = ctx.allies.find((ally) =>
+    ally.name === '飯富虎昌'
+    && ally.skills.some((skill) => RED_ARMOR_SKILL_NAMES.has(skillDisplayName(skill)) || RED_ARMOR_SKILL_NAMES.has(skill.name)),
+  )
+  if (!owner) return
+  const skill = owner.skills.find((candidate) =>
+    RED_ARMOR_SKILL_NAMES.has(skillDisplayName(candidate)) || RED_ARMOR_SKILL_NAMES.has(candidate.name),
+  )
+  if (!skill) return
+
+  const hits = (owner.specialState.redArmorCriticalHits ?? 0) + 1
+  owner.specialState.redArmorCriticalHits = hits
+  if (hits < 10) return
+  // 追加攻撃で会心が出ても同じ10回分へ戻らないよう、攻撃前に0へ戻す。
+  owner.specialState.redArmorCriticalHits = 0
+  if (ctx.logs !== NO_LOGS) ctx.logs.push({
+    turn: ctx.turn,
+    side: owner.side,
+    actor: owner.name,
+    actorHp: owner.hp,
+    effect: '赤備え隊',
+    message: '赤備え隊: 会心ダメージ累計10回、全軍出撃を発動',
+  })
+
+  living(ctx.allies).forEach((attacker) => {
+    const target = chooseControlledTarget(attacker, ctx.enemies, ctx.allies, ctx.enemies, ctx.rng)
+    if (!target) return
+    dealSkillDamage({ ...ctx, caster: attacker, target, skill, trigger: 'afterNormalAttack' }, target, 88, 'physical')
+  })
+}
+
 const dealSkillDamage = (
   ctx: SkillResolveContext,
   target: BattleFighter,
@@ -1368,6 +1438,7 @@ const dealSkillDamage = (
   })
   if (actual > 0) {
     recordDamageDealtSkillEffects(ctx.caster, kind, ctx.turn, ctx.logs)
+    resolveRedArmorCriticalHit(ctx, kind, resolvedDamage.critical, actual)
     applyBingxueLifeSteal(ctx.caster, actual, ctx.turn, ctx.logs, ctx.turnStat)
     if (kind === 'physical') applyPhysicalLifeSteal(ctx.caster, actual, ctx.turn, ctx.logs, ctx.turnStat)
     resolveSeventyTwoCriticalDamage(ctx, kind, resolvedDamage.critical, actual)
@@ -1477,7 +1548,7 @@ const addHealingStock = (
     })
 }
 
-const healBySkill = (ctx: SkillResolveContext, target: BattleFighter, rate: number, kind: 'bravery' | 'strategy' = 'strategy') => {
+const healBySkill = (ctx: SkillResolveContext, target: BattleFighter, rate: number, kind: 'bravery' | 'strategy' | 'leadership' = 'strategy') => {
   if (ctx.trigger === 'preparationTurn') return 0
   if (!isAlive(target)) return 0
   const beforeHp = target.hp
@@ -1640,6 +1711,20 @@ const createBingxueHelpers = (
       if (kind === 'physical') applyPhysicalLifeSteal(owner, actual, turn, logs, turnStat)
       const ownerAllies = allFighters.filter(fighter => fighter.side === owner.side)
       const ownerEnemies = allFighters.filter(fighter => fighter.side !== owner.side)
+      resolveRedArmorCriticalHit({
+        caster: owner,
+        target,
+        allies: ownerAllies,
+        enemies: ownerEnemies,
+        skill: pseudoSkill,
+        trigger: 'beforeAction',
+        turn,
+        logs,
+        rng,
+        stats,
+        turnStat,
+        controlStats,
+      }, kind, resolvedDamage.critical, actual)
       resolveSeventyTwoCriticalDamage({
         caster: owner,
         target,
@@ -1857,6 +1942,21 @@ const resolveSkill = (
       })
       if (actual > 0) {
         recordDamageDealtSkillEffects(caster, kind, turn, logs)
+        resolveRedArmorCriticalHit({
+          caster,
+          target: fighter,
+          allies,
+          enemies,
+          skill,
+          trigger,
+          turn,
+          logs,
+          rng,
+          stats,
+          turnStat,
+          controlStats,
+          eventSubject,
+        }, kind, resolvedDamage.critical, actual)
         applyBingxueLifeSteal(caster, actual, turn, logs, turnStat)
         if (kind === 'physical') applyPhysicalLifeSteal(caster, actual, turn, logs, turnStat)
         resolveSeventyTwoCriticalDamage({
@@ -2028,10 +2128,13 @@ const trySkill = (
   const unique = isUniqueBattleSkill(skill)
   const prepared = preparationTurns(skill) > 0
   const skillActivationPenalty = caster.specialState[`activationRatePenalty:${resolvedSkillName}`] ?? 0
+  // 甲斐弓騎兵など、特定の戦法枠だけに付与された発動率補正を加える。
+  const skillActivationBonus = caster.specialState[`activationRateBonus:${resolvedSkillName}`] ?? 0
   const activationRate = clamp(
     extractRate(skill)
       + (caster.buffs.activationRate ?? 0) / 100
       + bingxueActivationChanceBonus(caster, resolvedSkillType, unique)
+      + skillActivationBonus / 100
       - skillActivationPenalty / 100,
     0,
     1,
@@ -2138,6 +2241,12 @@ const processDots = (
 ) => {
   const remaining: TimedStatus[] = []
   fighter.timedStatuses.forEach((status) => {
+    // 僧兵の継続状態無効は、既に予約されていた状態にも適用してダメージ前に除去する。
+    if (
+      (fighter.specialState.monkNonBurnDotImmune ?? 0) > 0
+      && CONTINUOUS_DAMAGE_STATUS_NAMES.has(status.name)
+      && status.name !== '火傷'
+    ) return
     if (status.dotRate && isAlive(fighter)) {
       const source = all.find((candidate) => candidate.id === status.sourceActorId)
         ?? all.find((candidate) => candidate.name === status.sourceActor && candidate.side !== fighter.side)
@@ -2183,6 +2292,20 @@ const processDots = (
       if (amount > 0) {
         const dotKind = status.dotType ?? 'physical'
         recordDamageDealtSkillEffects(source, dotKind, turn, logs)
+        resolveRedArmorCriticalHit({
+          caster: source,
+          target: fighter,
+          allies: all.filter(candidate => candidate.side === source.side),
+          enemies: all.filter(candidate => candidate.side !== source.side),
+          skill: pseudoSkill,
+          trigger: 'beforeAction',
+          turn,
+          logs,
+          rng,
+          stats,
+          turnStat,
+          controlStats,
+        }, dotKind, resolvedDamage.critical, amount)
         applyBingxueLifeSteal(source, amount, turn, logs, turnStat)
         resolveSeventyTwoCriticalDamage({
           caster: source,
@@ -2490,6 +2613,9 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           controlStats,
         )
         const normalAttackBlocked = hasControlStatus(actor, '封撃')
+        const satsumaStrategyRate = actor.specialState.satsumaStrategyNormalRate ?? 0
+        const satsumaWaiting = satsumaStrategyRate > 0
+          && (actor.specialState.satsumaStrategyNormalNextTurn ?? 1) > turn
         if (normalAttackBlocked) {
           if (logs !== NO_LOGS) logs.push({
             turn,
@@ -2498,6 +2624,16 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             actorHp: actor.hp,
             effect: '封撃',
             message: `${actor.name}は封撃で通常攻撃できない`,
+          })
+        } else if (satsumaWaiting) {
+          // 薩摩鉄砲兵の計略通常攻撃は、攻撃した次のターンを休止する。
+          if (logs !== NO_LOGS) logs.push({
+            turn,
+            side: actor.side,
+            actor: actor.name,
+            actorHp: actor.hp,
+            effect: '薩摩鉄砲兵',
+            message: `${actor.name}は薩摩鉄砲兵の再装填中`,
           })
         } else {
           if (!isAlive(target)) continue
@@ -2514,11 +2650,29 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           const beforeHp = target.hp
           const beforeWounded = target.wounded
           const beforeDead = target.dead
-          const resolvedNormalDamage = baseDamage(actor, target, null, rng, 'normal', undefined, {
+          const normalDamageKind = satsumaStrategyRate > 0 ? 'strategy' : 'physical'
+          const satsumaSkill = satsumaStrategyRate > 0 ? {
+            id: 'troop:satsuma-strategy-normal',
+            name: '薩摩鉄砲兵',
+            name_jp: '薩摩鉄砲兵',
+            type: '兵種',
+            battle_type: 'strategy',
+            damage_rate_max: satsumaStrategyRate,
+          } as Skill : null
+          const resolvedNormalDamage = baseDamage(
+            actor,
+            target,
+            satsumaSkill,
+            rng,
+            satsumaStrategyRate > 0 ? 'strategy' : 'normal',
+            undefined,
+            {
             candidates: targetSideMembers,
+            normalAttack: true,
             skillType: null,
             turn,
-          })
+            },
+          )
           const normalDamage = applyDamage(target, resolvedNormalDamage.amount)
           const afterHp = target.hp
           const woundedDelta = target.wounded - beforeWounded
@@ -2538,15 +2692,33 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             woundedDelta,
             deadDelta,
             valueType: 'damage',
-            effect: '通常攻撃',
-            message: `${actor.name}の通常攻撃: ${target.name}に${normalDamage.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
+            effect: satsumaStrategyRate > 0 ? '薩摩鉄砲兵' : '通常攻撃',
+            message: `${actor.name}の${satsumaStrategyRate > 0 ? '計略通常攻撃' : '通常攻撃'}: ${target.name}に${normalDamage.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
           })
+          if (satsumaStrategyRate > 0) actor.specialState.satsumaStrategyNormalNextTurn = turn + 2
           if (normalDamage > 0) {
             const targetAllies = target.side === actor.side ? allies : enemies
             const targetEnemies = target.side === actor.side ? enemies : allies
-            recordDamageDealtSkillEffects(actor, 'physical', turn, logs)
+            if (satsumaSkill) recordDamage(skillStats, actor, satsumaSkill, normalDamage)
+            recordDamageDealtSkillEffects(actor, normalDamageKind, turn, logs)
+            const normalAttackContext: SkillResolveContext = {
+              caster: actor,
+              target,
+              allies,
+              enemies,
+              skill: satsumaSkill ?? ({ id: 'normal-attack', name: '通常攻撃' } as Skill),
+              trigger: 'afterNormalAttack',
+              turn,
+              logs,
+              rng,
+              stats: skillStats,
+              turnStat,
+              controlStats,
+            }
+            resolveRedArmorCriticalHit(normalAttackContext, normalDamageKind, resolvedNormalDamage.critical, normalDamage)
+            resolveSeventyTwoCriticalDamage(normalAttackContext, normalDamageKind, resolvedNormalDamage.critical, normalDamage)
             applyBingxueLifeSteal(actor, normalDamage, turn, logs, turnStat)
-            applyPhysicalLifeSteal(actor, normalDamage, turn, logs, turnStat)
+            if (normalDamageKind === 'physical') applyPhysicalLifeSteal(actor, normalDamage, turn, logs, turnStat)
             runBingxueNormalAttackReceived(
               target,
               actor,
@@ -2595,11 +2767,23 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
                   target ?? undefined,
                 )
               })
-            fireTriggeredSkills(target, 'onPhysicalDamageReceived', actor, targetAllies, targetEnemies, turn, logs, rng, skillStats, turnStat, controlStats)
+            fireTriggeredSkills(
+              target,
+              normalDamageKind === 'strategy' ? 'onStrategyDamageReceived' : 'onPhysicalDamageReceived',
+              actor,
+              targetAllies,
+              targetEnemies,
+              turn,
+              logs,
+              rng,
+              skillStats,
+              turnStat,
+              controlStats,
+            )
             fireDamageWatcherSkills(
               actor,
               target,
-              'physical',
+              normalDamageKind,
               targetAllies,
               targetEnemies,
               turn,
@@ -2620,7 +2804,22 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             rng,
             helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
           })
-          fireTriggeredSkills(actor, 'afterNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+          // 伊賀忍者・越後先手組・母衣武者など、部隊全員へ付与された兵種戦法も
+          // 実際に通常攻撃した武将を発動者として一度だけ処理する。
+          fireTriggeredSkillList(
+            actor,
+            [...actor.skills, ...inheritedActionSkills],
+            'afterNormalAttack',
+            target,
+            allies,
+            enemies,
+            turn,
+            logs,
+            rng,
+            skillStats,
+            turnStat,
+            controlStats,
+          )
           // 覇王の右筆・献身は、所持者本人ではなく友軍の通常攻撃後にも反応する。
           allies
             .filter((owner) => owner.id !== actor.id && isAlive(owner))

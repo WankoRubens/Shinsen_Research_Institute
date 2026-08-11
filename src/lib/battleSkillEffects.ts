@@ -50,6 +50,16 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   文武両道: defineBattleSkillMeta({ type: '受動', triggers: ['onPhysicalDamageDealt', 'onStrategyDamageDealt'] }),
   竜騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
   龍騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
+  伊賀忍者: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'afterNormalAttack'], followUpTriggers: ['afterNormalAttack'] }),
+  越後先手組: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'beforeAction', 'afterNormalAttack'], followUpTriggers: ['beforeAction', 'afterNormalAttack'] }),
+  甲斐弓騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn'] }),
+  薩摩鉄砲兵: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn'] }),
+  三河弓兵隊: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'onPhysicalDamageReceived', 'onStrategyDamageReceived'], followUpTriggers: ['onPhysicalDamageReceived', 'onStrategyDamageReceived'] }),
+  赤備え隊: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn'] }),
+  僧兵: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'beforeAction'], followUpTriggers: ['beforeAction'] }),
+  大太刀力士隊: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'onNormalAttackReceived'], followUpTriggers: ['onNormalAttackReceived'] }),
+  鉄砲僧兵: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'beforeAction'], followUpTriggers: ['beforeAction'] }),
+  母衣武者: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'afterNormalAttack'], followUpTriggers: ['afterNormalAttack'] }),
   攻其不備: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追い崩し: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追亡逐北: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
@@ -166,14 +176,22 @@ const NAMED_BATTLE_SKILL_NAMES = [
 ]
 
 // 所持者だけでなく、部隊内の各武将の行動を起点に発動する兵種戦法。
-export const TEAM_ACTION_BATTLE_SKILL_NAMES = new Set(['竜騎兵', '龍騎兵'])
+export const TEAM_ACTION_BATTLE_SKILL_NAMES = new Set([
+  '竜騎兵',
+  '龍騎兵',
+  '伊賀忍者',
+  '越後先手組',
+  '僧兵',
+  '鉄砲僧兵',
+  '母衣武者',
+])
 
 // 所持者本人ではなく、同じ部隊の友軍が通常攻撃を受けた時にも反応する戦法。
-export const TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂', '月華鶴影'])
+export const TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂', '月華鶴影', '大太刀力士隊'])
 
 // 友軍の通常攻撃や被ダメージ、敵軍の行動を監視する個別戦法。
 export const TEAM_AFTER_NORMAL_ATTACK_SKILL_NAMES = new Set(['覇王の右筆', '献身'])
-export const TEAM_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['援護射撃'])
+export const TEAM_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['援護射撃', '三河弓兵隊'])
 export const ENEMY_STRATEGY_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['城盗り'])
 export const TEAM_BEFORE_ACTION_SKILL_NAMES = new Set(['伝馬疾馳'])
 export const ENEMY_AFTER_ACTION_SKILL_NAMES = new Set(['三楽犬'])
@@ -254,7 +272,7 @@ export interface BattleSkillEffectHelpers {
     ctx: SkillResolveContext,
     target: BattleFighter,
     rate: number,
-    kind?: 'bravery' | 'strategy',
+    kind?: 'bravery' | 'strategy' | 'leadership',
   ) => number
   addControl: (ctx: SkillResolveContext, target: BattleFighter, name: string, duration: number) => void
   addTimedModifier: (
@@ -292,6 +310,7 @@ const DEBUFF_NAMES = [
   '消沈',
   '潰走',
 ]
+const CONTINUOUS_DAMAGE_NAMES = new Set(['火傷', '水攻', '水攻め', '中毒', '消沈', '潰走'])
 
 // 弱体効果を指定数まで解除する。戦法コメントからそのまま呼べるようにしておく。
 export const removeDebuffs = (fighter: BattleFighter, count: number): string[] => {
@@ -458,11 +477,33 @@ const setSpecialStateContribution = (
   )
 }
 
+// 準備ターンの永続能力上昇を、再適用しても二重加算しない形で保存する。
+const setPermanentBuffContribution = (
+  fighter: BattleFighter,
+  stat: Stat,
+  sourceKey: string,
+  value: number,
+) => {
+  const previous = fighter.specialState[sourceKey] ?? 0
+  fighter.specialState[sourceKey] = value
+  fighter.buffs[stat] = (fighter.buffs[stat] ?? 0) - previous + value
+}
+
 // 「確率（能力依存）」は基礎確率へ、能力100を超えた平均値1につき0.1%を加算する。
 const attributeDependentChance = (baseChance: number, stats: number[]): number => {
   const average = stats.reduce((sum, value) => sum + value, 0) / Math.max(1, stats.length)
   return Math.min(0.95, baseChance + Math.max(0, average - 100) * 0.001)
 }
+
+// 数値効果の「能力依存」は、能力100を基準に100超過分1につき0.1%だけ効果量を伸ばす。
+// 発動確率とは違い、3%などの効果値へ相対倍率を掛けるため過大な上昇にならない。
+const attributeDependentValue = (baseValue: number, stats: number[]): number => {
+  const average = stats.reduce((sum, value) => sum + value, 0) / Math.max(1, stats.length)
+  return baseValue * (1 + Math.max(0, average - 100) * 0.001)
+}
+
+const fighterHasSkill = (fighter: BattleFighter, names: string[]): boolean =>
+  fighter.skills.some((skill) => names.includes(skill.name_jp || skill.name) || names.includes(skill.name))
 
 const textOfSkill = (skill: Skill): string =>
   [
@@ -620,6 +661,16 @@ const PRECISE_HANDCRAFTED_SKILLS = new Set([
   '追い崩し',
   '追亡逐北',
   '三河武士',
+  '伊賀忍者',
+  '越後先手組',
+  '甲斐弓騎兵',
+  '薩摩鉄砲兵',
+  '三河弓兵隊',
+  '赤備え隊',
+  '僧兵',
+  '大太刀力士隊',
+  '鉄砲僧兵',
+  '母衣武者',
 ])
 
 const structuredArray = (value: unknown): StructuredBattleNode[] =>
@@ -871,6 +922,11 @@ const executeStructuredNodes = (
       const duration = Math.max(1, Math.round(structuredNumber(ctx.skill, node.duration, 1)))
       const chance = structuredChance(ctx, h, node.chance, node.scale)
       targets.forEach((target) => {
+        if (
+          (target.specialState.monkNonBurnDotImmune ?? 0) > 0
+          && CONTINUOUS_DAMAGE_NAMES.has(status)
+          && status !== '火傷'
+        ) return
         if (!h.roll(ctx.rng, chance)) return
         if (DEBUFF_NAMES.includes(status)) h.addControl(ctx, target, status, duration)
         else {
@@ -1025,6 +1081,11 @@ const applyDatabaseDot = (ctx: SkillResolveContext, h: BattleSkillEffectHelpers)
   const turns = Math.max(1, Math.round(ctx.skill.dot_turns ?? durationFromDatabase(ctx.skill, 1)))
   const rate = toPercent(ctx.skill.dot_rate_max)
   databaseTargets(ctx, h, 'dot').forEach((target) => {
+    if (
+      (target.specialState.monkNonBurnDotImmune ?? 0) > 0
+      && CONTINUOUS_DAMAGE_NAMES.has(ctx.skill.dot_name!)
+      && ctx.skill.dot_name !== '火傷'
+    ) return
     target.timedStatuses.push({
       name: ctx.skill.dot_name!,
       turns,
@@ -2303,6 +2364,277 @@ export const applyNamedSkillEffect = (
       return true
     }
 
+    case '伊賀忍者': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘開始時、自軍全体の武勇と速度を10上昇させる。
+        ctx.allies.forEach((ally) => {
+          setPermanentBuffContribution(ally, 'val', 'igaNinjaValor', 10)
+          setPermanentBuffContribution(ally, 'spd', 'igaNinjaSpeed', 10)
+          // 敵軍1名ごとに密報を2個用意し、攻撃対象別に残数を管理する。
+          ctx.enemies.forEach((enemy) => {
+            ally.specialState[`igaIntel:${roleCode(enemy)}`] = 2
+          })
+        })
+        log(ctx.logs, ctx, '伊賀忍者: 自軍全体の武勇・速度+10、敵軍ごとに密報を2個獲得')
+        return true
+      }
+
+      // 通常攻撃後以外は密報を消費しない。
+      if (ctx.trigger !== 'afterNormalAttack') return true
+      const attacked = ctx.target
+      if (!attacked || attacked.hp <= 0) return true
+      const intelKey = `igaIntel:${roleCode(attacked)}`
+      const intel = ctx.caster.specialState[intelKey] ?? 0
+      if (intel <= 0) return true
+
+      // 基本35%。藤林正保が装備している部隊では、行動武将の速度に応じて確率が上昇する。
+      const fujibayashiEquipped = ctx.allies.some((ally) =>
+        ally.name === '藤林正保' && fighterHasSkill(ally, ['伊賀忍者']),
+      )
+      const chance = fujibayashiEquipped
+        ? attributeDependentChance(0.35, [h.statOf(ctx.caster, 'spd')])
+        : 0.35
+      if (!h.roll(ctx.rng, chance)) {
+        log(ctx.logs, ctx, '伊賀忍者: 密報攻撃は不発')
+        return true
+      }
+
+      // 密報を1個消費し、通常攻撃対象へ102%の兵刃ダメージを与える。
+      ctx.caster.specialState[intelKey] = intel - 1
+      log(ctx.logs, ctx, `伊賀忍者: ${attacked.name}への密報を1個消費(残り${intel - 1})`, attacked)
+      h.dealSkillDamage(ctx, attacked, 102, 'physical')
+      // 同じ敵への密報を使い切った時、その敵へ疲弊を1ターン付与する。
+      if (intel - 1 === 0 && attacked.hp > 0) h.addControl(ctx, attacked, '疲弊', 1)
+      return true
+    }
+
+    case '越後先手組': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘開始時、自軍全体の速度を24上昇させる。
+        ctx.allies.forEach((ally) => setPermanentBuffContribution(ally, 'spd', 'echigoVanguardSpeed', 24))
+        log(ctx.logs, ctx, '越後先手組: 自軍全体の速度+24')
+        return true
+      }
+
+      if (ctx.trigger === 'beforeAction') {
+        // 第2ターン以降、各武将の行動前に武勇・速度依存の35%で自軍単体を78%回復する。
+        if (ctx.turn < 2) return true
+        const chance = attributeDependentChance(0.35, [h.statOf(ctx.caster, 'val'), h.statOf(ctx.caster, 'spd')])
+        if (!h.roll(ctx.rng, chance)) {
+          log(ctx.logs, ctx, '越後先手組: 回復は不発')
+          return true
+        }
+        const target = h.aliveRandom(ctx.allies, ctx.rng, ctx)[0]
+        if (target) h.healBySkill(ctx, target, 78, 'bravery')
+        return true
+      }
+
+      // 上杉謙信が装備している場合、武勇最高の味方が通常攻撃で撃破すると追加回復する。
+      const attacker = ctx.eventSubject ?? ctx.caster
+      const defeated = ctx.target
+      const kenshinEquipped = ctx.allies.some((ally) =>
+        ally.name === '上杉謙信' && fighterHasSkill(ally, ['越後先手組']),
+      )
+      const highestValor = highestByStat(ctx.allies, 'val')
+      if (
+        ctx.trigger === 'afterNormalAttack'
+        && kenshinEquipped
+        && defeated
+        && defeated.hp <= 0
+        && highestValor?.id === attacker.id
+      ) {
+        const target = h.weakest(ctx.allies, 1)[0]
+        if (target) h.healBySkill({ ...ctx, caster: attacker }, target, 78, 'bravery')
+      }
+      return true
+    }
+
+    case '甲斐弓騎兵': {
+      // 戦法タイプ: 兵種。戦闘中の行軍速度は戦闘シミュレーションの対象外。
+      if (ctx.trigger !== 'preparationTurn') return true
+      const ichijoEquipped = ctx.caster.name === '一条信龍'
+      ctx.allies.forEach((ally) => {
+        // 配置順が最初の能動戦法だけを対象にする。
+        const firstActive = ally.skills.find((skill) => battleSkillType(skill) === '能動')
+        if (!firstActive) return
+        const prepared = Number(firstActive.battle?.prepTurns ?? 0) > 0 || /準備/.test(textOfSkill(firstActive))
+        const baseBonus = prepared ? 12 : 8
+        // 一条信龍が装備している場合のみ、上昇値を一条信龍の速度依存にする。
+        const bonus = ichijoEquipped
+          ? attributeDependentValue(baseBonus, [h.statOf(ctx.caster, 'spd')])
+          : baseBonus
+        const firstActiveName = firstActive.name_jp || firstActive.name
+        ally.specialState[`activationRateBonus:${firstActiveName}`] = Number(bonus.toFixed(4))
+        log(ctx.logs, { ...ctx, caster: ally }, `甲斐弓騎兵: ${firstActiveName}の発動率+${bonus.toFixed(2)}%`)
+      })
+      return true
+    }
+
+    case '薩摩鉄砲兵': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger !== 'preparationTurn') return true
+      // 島津貴久本人が装備していれば60%、それ以外は40%を通常攻撃の基本倍率へ加算する。
+      const bonusRate = ctx.caster.name === '島津貴久' ? 60 : 40
+      ctx.allies.forEach((ally) => {
+        // 戦闘本体はこの値を見て、通常攻撃を計略攻撃へ変換し、攻撃後1ターン休止させる。
+        ally.specialState.satsumaStrategyNormalRate = 100 + bonusRate
+        ally.specialState.satsumaStrategyNormalNextTurn = 1
+      })
+      log(ctx.logs, ctx, `薩摩鉄砲兵: 自軍全体の通常攻撃を${100 + bonusRate}%の計略攻撃へ変換`)
+      return true
+    }
+
+    case '三河弓兵隊': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘開始時、自軍全体の統率を20上昇させる。
+        ctx.allies.forEach((ally) => {
+          setPermanentBuffContribution(ally, 'lea', 'mikawaArcherLeadership', 20)
+          ally.specialState.mikawaArcherRebirthUntil = 3
+        })
+        log(ctx.logs, ctx, '三河弓兵隊: 自軍全体の統率+20、3ターン目まで回生を付与')
+        return true
+      }
+
+      // 兵刃・計略ダメージを実際に受けた武将を回生の対象にする。
+      const damaged = ctx.eventSubject ?? ctx.caster
+      if ((damaged.specialState.mikawaArcherRebirthUntil ?? 0) < ctx.turn) return true
+      // 基本35%。酒井忠次が装備している場合、装備者の統率に応じて確率が上昇する。
+      const chance = ctx.caster.name === '酒井忠次'
+        ? attributeDependentChance(0.35, [h.statOf(ctx.caster, 'lea')])
+        : 0.35
+      if (!h.roll(ctx.rng, chance)) {
+        log(ctx.logs, ctx, '三河弓兵隊: 回生は不発', damaged)
+        return true
+      }
+      h.healBySkill({ ...ctx, caster: damaged }, damaged, 65, 'leadership')
+      return true
+    }
+
+    case '赤備え隊': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger !== 'preparationTurn') return true
+      // 戦闘開始時、自軍全体へ会心35%を付与する。
+      ctx.allies.forEach((ally) => {
+        setPermanentBuffContribution(ally, 'physicalCriticalChance', 'redArmorCriticalChance', 35)
+      })
+      // 飯富虎昌の装備条件と会心回数は戦闘本体の各ダメージ確定時に判定する。
+      ctx.caster.specialState.redArmorCriticalHits = 0
+      log(ctx.logs, ctx, '赤備え隊: 自軍全体の会心+35%')
+      return true
+    }
+
+    case '僧兵': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger === 'preparationTurn') {
+        const miyabeEquipped = ctx.caster.name === '宮部継潤'
+        ctx.allies.forEach((ally) => {
+          // 自軍全体の兵刃被ダメージを20%（各武将の統率依存）低下させる。
+          const reduction = attributeDependentValue(20, [h.statOf(ally, 'lea')])
+          setPermanentBuffContribution(ally, 'physicalDamageTaken', 'monkPhysicalReduction', -reduction)
+          // 宮部継潤が装備している部隊では、火傷以外の継続状態を無効化する。
+          ally.specialState.monkNonBurnDotImmune = miyabeEquipped ? 1 : 0
+        })
+        log(ctx.logs, ctx, `僧兵: 自軍全体の兵刃被ダメージを低下${miyabeEquipped ? '、火傷以外の継続状態を無効化' : ''}`)
+        return true
+      }
+
+      // 各武将の行動前、弱体化効果中なら追加の兵力損失を発生させる。
+      const hasDebuff = DEBUFF_NAMES.some((name) => (ctx.caster.statuses[name] ?? 0) > 0)
+        || ctx.caster.timedStatuses.length > 0
+        || ctx.caster.timedModifiers.some((modifier) => modifier.value < 0)
+      if (!hasDebuff) return true
+      // 火傷中は240%、それ以外の弱体化効果中は60%の兵刃ダメージとして処理する。
+      const burning = (ctx.caster.statuses['火傷'] ?? 0) > 0
+        || ctx.caster.timedStatuses.some((status) => status.name === '火傷')
+      h.dealSkillDamage(ctx, ctx.caster, burning ? 240 : 60, 'physical')
+      return true
+    }
+
+    case '大太刀力士隊': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger === 'preparationTurn') {
+        ctx.allies.forEach((ally) => {
+          // 2ターン目まで、通常攻撃・突撃戦法の被ダメージを18%（武勇依存）低下させる。
+          ally.specialState.odachiReductionPercent = attributeDependentValue(18, [h.statOf(ally, 'val')])
+          ally.specialState.odachiReductionUntil = 2
+        })
+        log(ctx.logs, ctx, '大太刀力士隊: 2ターン目まで通常攻撃・突撃戦法の被ダメージを低下')
+        return true
+      }
+
+      // 通常攻撃を受けた武将が30%で攻撃者へ100%の兵刃反撃を行う。
+      const defender = ctx.eventSubject ?? ctx.caster
+      const attacker = ctx.target
+      if (!attacker || attacker.hp <= 0 || !h.roll(ctx.rng, 0.30)) {
+        log(ctx.logs, ctx, '大太刀力士隊: 反撃は不発', defender)
+        return true
+      }
+      h.dealSkillDamage({ ...ctx, caster: defender }, attacker, 100, 'physical')
+
+      // 真柄直隆本人が装備して反撃した時だけ、25%で120%の追加兵刃ダメージを与える。
+      if (
+        defender.name === '真柄直隆'
+        && fighterHasSkill(defender, ['大太刀力士隊'])
+        && attacker.hp > 0
+        && h.roll(ctx.rng, 0.25)
+      ) h.dealSkillDamage({ ...ctx, caster: defender }, attacker, 120, 'physical')
+      return true
+    }
+
+    case '鉄砲僧兵': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger === 'preparationTurn') {
+        const tsudaEquipped = ctx.caster.name === '津田算長'
+        ctx.allies.forEach((ally) => {
+          // 自軍全体の統率・知略を12上昇。津田算長装備時は装備者の統率依存で上昇量を伸ばす。
+          const increase = tsudaEquipped
+            ? attributeDependentValue(12, [h.statOf(ctx.caster, 'lea')])
+            : 12
+          setPermanentBuffContribution(ally, 'lea', 'gunMonkLeadership', increase)
+          setPermanentBuffContribution(ally, 'int', 'gunMonkIntelligence', increase)
+          ally.specialState.gunMonkRestEnabled = 1
+        })
+        log(ctx.logs, ctx, '鉄砲僧兵: 自軍全体の統率・知略を上昇')
+        return true
+      }
+
+      // 1・2・5・6ターン目の行動前に、各武将が48%（統率依存）の休養回復を行う。
+      if ((ctx.caster.specialState.gunMonkRestEnabled ?? 0) > 0 && [1, 2, 5, 6].includes(ctx.turn)) {
+        h.healBySkill(ctx, ctx.caster, 48, 'leadership')
+      }
+      return true
+    }
+
+    case '母衣武者': {
+      // 戦法タイプ: 兵種
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘開始時、自軍全体の速度を20上昇させる。
+        ctx.allies.forEach((ally) => setPermanentBuffContribution(ally, 'spd', 'horoSpeed', 20))
+        log(ctx.logs, ctx, '母衣武者: 自軍全体の速度+20')
+        return true
+      }
+
+      // 通常攻撃後、攻撃対象の被ダメージを速度依存で上昇させる（最大5回）。
+      const attacked = ctx.target
+      if (!attacked || attacked.hp <= 0) return true
+      const maedaEquipped = ctx.allies.some((ally) =>
+        ally.name === '前田利家' && fighterHasSkill(ally, ['母衣武者']),
+      )
+      const baseIncrease = maedaEquipped ? 3.5 : 3
+      const increase = attributeDependentValue(baseIncrease, [h.statOf(ctx.caster, 'spd')])
+      h.addTimedModifier(ctx, attacked, 'damageTaken', increase, 99, 5)
+      const totalIncrease = attacked.timedModifiers
+        .filter((modifier) => modifier.key === '母衣武者:damageTaken')
+        .reduce((sum, modifier) => sum + modifier.value, 0)
+      log(ctx.logs, ctx, `母衣武者: ${attacked.name}の被ダメージ+${totalIncrease.toFixed(2)}%`, attacked)
+      return true
+    }
+
+
+
 
 
 
@@ -2597,15 +2929,6 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '三河弓兵隊': {
-      // 戦法タイプ: 兵種
-      // 弓兵が、百発百中の三河弓兵隊に進化
-      // 自軍全体（3名）を回復（回復率65%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 65, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
     case '風姿綽約': {
       // 戦法タイプ: 指揮
       // 戦闘中、友軍複数（2人）の武勇を2%→4%上昇（知略依存）、毎ターン1回重複、最大4層まで重ね掛け可能
@@ -2718,11 +3041,6 @@ export const applyNamedSkillEffect = (
     case '槍の又左': {
       // 戦法タイプ: 受動
       // 戦闘中、能動戦法を発動するたびに、45%→90%の確率で、次のターンの行動時までに自身が1回分の鉄壁を獲得（すでにこの戦法で付与された場合は回数増加）
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '母衣武者': {
-      // 戦法タイプ: 兵種
-      // 騎兵が、剛勇無双の母衣武者に進化
       return applyDatabaseSkillEffect(ctx, h)
     }
     case '破竹の勢い': {
@@ -2885,15 +3203,6 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '赤備え隊': {
-      // 戦法タイプ: 兵種
-      // 騎兵が、横掃千軍の赤備え隊に進化
-      // 自軍全体（3名）に兵刃ダメージ（ダメージ率35%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 35, 'physical')
-      })
-      return true
-    }
     case '陣前無我': {
       // 戦法タイプ: 能動
       // 自身の兵力が自軍の最低値でない場合、1ターンの間、敵軍複数（2～3名）に挑発と牽制（強制的に敵軍の通常攻撃と戦法の発動対象を自身に固定）を付与
@@ -2994,11 +3303,6 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '薩摩鉄砲兵': {
-      // 戦法タイプ: 兵種
-      // 鉄砲が、鉄火烈襲の薩摩鉄砲兵に進化
-      return applyDatabaseSkillEffect(ctx, h)
-    }
     case '怪力無双': {
       // 戦法タイプ: 能動
       // 2ターンの準備後、敵軍複数（2～3名）に大量の兵刃ダメージ（ダメージ率166.5%→333%）
@@ -3008,28 +3312,10 @@ export const applyNamedSkillEffect = (
       })
       return true
     }
-    case '大太刀力士隊': {
-      // 戦法タイプ: 兵種
-      // 足軽が、臨戦態勢の大太刀力士隊に進化
-      // 自軍全体（3名）に兵刃ダメージ（ダメージ率100%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 100, 'physical')
-      })
-      return true
-    }
     case '積水成淵': {
       // 戦法タイプ: 能動
       // 1ターンの準備後、自軍複数（2～3名）に11%→22%の心攻（計略ダメージを与えた際にダメージ量に応じて兵力回復）を付与
       return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '僧兵': {
-      // 戦法タイプ: 兵種
-      // 足軽が、不退転の僧兵に進化
-      // 自軍全体（3名）に兵刃ダメージ（ダメージ率60%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 60, 'physical')
-      })
-      return true
     }
     case '諸行無常': {
       // 戦法タイプ: 指揮
@@ -3099,11 +3385,6 @@ export const applyNamedSkillEffect = (
     case '密報通暁': {
       // 戦法タイプ: 能動
       // 1ターンの準備後、2ターンの間、友軍単体が洞察を獲得し、敵軍単体に撹乱（能動戦法発動時に計略ダメージ、ダメージ率152%、知略依存）を付与
-      return applyDatabaseSkillEffect(ctx, h)
-    }
-    case '甲斐弓騎兵': {
-      // 戦法タイプ: 兵種
-      // 弓兵が、精妙な射術を誇る甲斐弓騎兵に進化
       return applyDatabaseSkillEffect(ctx, h)
     }
     case '気炎万丈': {
@@ -3230,15 +3511,6 @@ export const applyNamedSkillEffect = (
             h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
           }
         })
-      })
-      return true
-    }
-    case '鉄砲僧兵': {
-      // 戦法タイプ: 兵種
-      // 鉄砲が、破邪顕正の鉄砲僧兵に進化
-      // 自軍全体を回復（回復率48%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 48, databaseHealKind(ctx.skill))
       })
       return true
     }
@@ -3800,36 +4072,6 @@ export const applyNamedSkillEffect = (
       // 固有能動戦法の与ダメージを上げ、確率で攻心を獲得
       // 戦法説明にある能力値/与ダメ/被ダメ補正（28%または28）を反映する
       applyDatabaseBuffs(ctx, h)
-      return true
-    }
-    case '越後先手組': {
-      // 戦法タイプ: 兵種
-      // 騎兵を進化させ、速度上昇と確率回復を付与
-      // 自軍全體を回復（回復率78%）する
-      // 戦法説明にある能力値/与ダメ/被ダメ補正（24%または24）を反映する
-      applyDatabaseBuffs(ctx, h)
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 78, databaseHealKind(ctx.skill))
-      })
-      return true
-    }
-    case '伊賀忍者': {
-      // 戦法タイプ: 兵種
-      // 弓兵を伊賀忍者に進化させ、密報を使って追加ダメージを与える
-      // 自軍全體に兵刃ダメージ（ダメージ率102%）を与える
-      // 疲弊を付与する
-      // 戦法説明にある能力値/与ダメ/被ダメ補正（10%または10）を反映する
-      applyDatabaseBuffs(ctx, h)
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 102, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["疲弊"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
       return true
     }
     case '風流武者': {
