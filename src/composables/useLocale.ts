@@ -18,6 +18,7 @@ const messages = {
   mockBattle: '模擬対戦',
   aiLineup: 'AI編成',
   heroDb: '武将データベース',
+  traitDb: '特性一覧',
   settings: '設定',
   feedback: '要望/報告',
   collapse: '折りたたむ',

@@ -128,6 +128,7 @@ const primaryNav = computed<readonly NavItem[]>(() => ([
   { name: 'mockBattle', to: { name: 'mockBattle' }, icon: Aim, label: t('mockBattle'), badge: 'NEW' },
   { name: 'aiLineup', to: { name: 'aiLineup' }, icon: Aim, label: t('aiLineup'), badge: 'NEW' },
   { name: 'heroDb', to: { name: 'heroDb' }, icon: Reading, label: t('heroDb') },
+  { name: 'traitDb', to: { name: 'traitDb' }, icon: Reading, label: t('traitDb') },
 ] as Array<NavItem & { name: PageName }>).filter((item) => canDisplayPage(item.name)))
 
 const soonNav = computed<readonly NavItem[]>(() => [])

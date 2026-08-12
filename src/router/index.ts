@@ -17,6 +17,7 @@ import MockBattle from '../views/MockBattle.vue'
 import AiLineupOptimizer from '../views/AiLineupOptimizer.vue'
 import SettingsView from '../views/SettingsView.vue'
 import HeroDatabaseView from '../views/HeroDatabaseView.vue'
+import TraitDatabaseView from '../views/TraitDatabaseView.vue'
 import {
   canAccessPage,
   isPageName,
@@ -128,6 +129,15 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '武将データベース',
           description: '編成時に使っている武将データを一覧表示します。',
+        },
+      }),
+      ...publishedRoute('traitDb', {
+        path: 'traits',
+        name: 'traitDb',
+        component: TraitDatabaseView,
+        meta: {
+          title: '特性一覧',
+          description: '特性の効果と所持武将を一覧表示します。',
         },
       }),
     ],

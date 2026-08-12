@@ -9,6 +9,7 @@ export const ALL_PAGE_NAMES = [
   'mockBattle',
   'aiLineup',
   'heroDb',
+  'traitDb',
   'settings',
 ] as const
 
@@ -27,6 +28,7 @@ export const PUBLIC_PAGE_NAMES: readonly PageName[] = [
   'shares',
   'proposals',
   'heroDb',
+  'traitDb',
 ]
 
 const publicPages = new Set<PageName>(PUBLIC_PAGE_NAMES)
