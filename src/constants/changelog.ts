@@ -33,6 +33,14 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.1.2',
+    date: '2026-08-13',
+    entries: [
+      { tag: 'feat', text: '「特性一覧」ページを追加しました。特性の効果、所持武将、実装状況を一覧で確認できます。' },
+      { tag: 'misc', text: '使い方：特性名・効果・武将名で検索し、実装状況（実装済み・一部実装・未実装）で絞り込めます。' },
+    ],
+  },
+  {
     version: '0.1.1',
     date: '2026-07-22',
     entries: [

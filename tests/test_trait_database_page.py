@@ -24,15 +24,16 @@ class TraitDatabasePageTests(unittest.TestCase):
         self.assertIn("heroDb,traitDb,settings", self.workflow)
 
     def test_table_contains_requested_trait_columns(self):
-        for heading in ("ランク", "特性名", "実装状況", "効果", "所持武将", "人数"):
+        for heading in ("特性名", "実装状況", "効果", "所持武将", "人数"):
             with self.subTest(heading=heading):
                 self.assertIn(f">{heading}<", self.view)
+        self.assertNotIn(">ランク<", self.view)
 
     def test_traits_are_grouped_and_searchable(self):
         self.assertIn("const rows = new Map", self.view)
         self.assertIn("existing.heroes.add(heroName)", self.view)
         self.assertIn("特性名・効果・武将名を検索", self.view)
-        self.assertIn("selectedRank", self.view)
+        self.assertNotIn("selectedRank", self.view)
 
     def test_implementation_status_is_visible_and_filterable(self):
         self.assertIn("traitImplementation(trait)", self.view)
