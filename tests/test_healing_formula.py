@@ -13,18 +13,16 @@ class HealingFormulaTest(unittest.TestCase):
 
     def test_healing_uses_observed_stat_scaling(self) -> None:
         self.assertIn(
-            "mainStat * 2 * (rate / 100) * variance",
+            "mainStat * 2.64 * (rate / 100) * variance",
             self.source,
         )
         self.assertNotIn("mainStat * 7.5 + 480", self.source)
 
-    def test_sennari_empirical_value_is_inside_random_range(self) -> None:
-        intelligence = 370
+    def test_sennari_empirical_value_matches_random_midpoint(self) -> None:
+        intelligence = 328
         recovery_rate = 0.76
-        minimum = intelligence * 2 * recovery_rate * 0.92
-        maximum = intelligence * 2 * recovery_rate * 1.08
-        self.assertLessEqual(minimum, 575)
-        self.assertGreaterEqual(maximum, 575)
+        midpoint = intelligence * 2.64 * recovery_rate
+        self.assertAlmostEqual(midpoint, 658, delta=0.2)
 
 
 if __name__ == "__main__":
