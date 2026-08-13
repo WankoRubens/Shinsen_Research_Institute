@@ -3242,12 +3242,16 @@
         "name": "花枝招展",
         "description": "自身受到普通攻擊時，有45%機率（受魅力影響）回復自身兵力（治療率68%，受智略影響），最多觸發3次",
         "active": true,
+        "name_jp": "花枝招展",
+        "description_jp": "自身が通常攻撃を受けた際、45%の確率（魅力依存）で自身の兵力を回復する（回復率68%、知略依存）。最大3回まで発動する。",
         "rank": "S"
       },
       {
         "name": "馬槍術II",
         "description": "部隊的騎兵、足輕等級上升2級",
         "active": true,
+        "name_jp": "馬槍術Ⅱ",
+        "description_jp": "部隊の騎兵・足軽レベルが2増加する。",
         "rank": "B",
         "affinity": {
           "troop_types": [
@@ -3262,12 +3266,16 @@
         "name": "守勢II",
         "description": "我軍全體受到傷害減少1.3%",
         "active": true,
+        "name_jp": "守勢Ⅱ",
+        "description_jp": "自軍全体の被ダメージが1.3%減少する。",
         "rank": "B"
       },
       {
         "name": "智慧II",
         "description": "智略提高2.5%",
         "active": true,
+        "name_jp": "知恵Ⅱ",
+        "description_jp": "知略が2.5%上昇する。",
         "rank": "B"
       }
     ],
@@ -3361,12 +3369,16 @@
         "name": "手足之愛",
         "description": "戰鬥中，每回合首次治療其他武將時，有100%機率使自身統率增加其主屬性的12%，持續1回合",
         "active": true,
+        "name_jp": "手足之愛",
+        "description_jp": "戦闘中、各ターンで初めて他の武将を回復した際、自身の統率をその武将の主要属性の12%分増加させる。1ターン持続する。",
         "rank": "S"
       },
       {
         "name": "弓槍術II",
         "description": "部隊的足輕、弓兵等級上升2級",
         "active": true,
+        "name_jp": "弓槍術Ⅱ",
+        "description_jp": "部隊の足軽・弓兵レベルが2増加する。",
         "rank": "B",
         "affinity": {
           "troop_types": [
@@ -3381,12 +3393,16 @@
         "name": "攻勢II",
         "description": "我軍全體受到傷害減少1.3%",
         "active": true,
+        "name_jp": "攻勢Ⅱ",
+        "description_jp": "自軍全体の与ダメージが1.3%増加する。",
         "rank": "B"
       },
       {
         "name": "智慧II",
         "description": "智略提高2.5%",
         "active": true,
+        "name_jp": "知恵Ⅱ",
+        "description_jp": "知略が2.5%上昇する。",
         "rank": "B"
       }
     ],
@@ -8004,6 +8020,8 @@
           "cap_up": 1
         },
         "active": true,
+        "name_jp": "鉄砲大将",
+        "description_jp": "部隊の鉄砲レベルが3、レベル上限が1増加する。",
         "rank": "S",
         "affinity": {
           "troop_types": [
@@ -8017,18 +8035,24 @@
         "name": "牢固III",
         "description": "受到傷害減少2%",
         "active": true,
+        "name_jp": "牢固Ⅲ",
+        "description_jp": "被ダメージが2%減少する。",
         "rank": "A"
       },
       {
         "name": "破敵II",
         "description": "造成傷害增加1.6%",
         "active": true,
+        "name_jp": "破敵Ⅱ",
+        "description_jp": "与ダメージが1.6%増加する。",
         "rank": "B"
       },
       {
         "name": "靈巧II",
         "description": "速度提高2.5%",
         "active": true,
+        "name_jp": "急速Ⅱ",
+        "description_jp": "速度が2.5%上昇する。",
         "rank": "B"
       }
     ],
@@ -9623,9 +9647,9 @@
       },
       {
         "name": "剛猛I",
-        "name_jp": "剛猛I",
+        "name_jp": "剛猛Ⅰ",
         "description": "自身が通常攻撃を受ける確率小幅上昇",
-        "description_jp": "自身が通常攻撃を受ける確率小幅上昇",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に上昇する。",
         "rank": "A",
         "active": true,
         "sim_level": "4"
@@ -9740,9 +9764,9 @@
       },
       {
         "name": "剛猛I",
-        "name_jp": "剛猛I",
+        "name_jp": "剛猛Ⅰ",
         "description": "自身が通常攻撃を受ける確率小幅上昇",
-        "description_jp": "自身が通常攻撃を受ける確率小幅上昇",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に上昇する。",
         "rank": "A",
         "active": true,
         "sim_level": "2"
@@ -9866,9 +9890,9 @@
       },
       {
         "name": "剛猛I",
-        "name_jp": "剛猛I",
+        "name_jp": "剛猛Ⅰ",
         "description": "自身が通常攻撃を受ける確率小幅上昇",
-        "description_jp": "自身が通常攻撃を受ける確率小幅上昇",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に上昇する。",
         "rank": "A",
         "active": true,
         "sim_level": "2"
@@ -9992,9 +10016,9 @@
       },
       {
         "name": "剛猛I",
-        "name_jp": "剛猛I",
+        "name_jp": "剛猛Ⅰ",
         "description": "自身が通常攻撃を受ける確率小幅上昇",
-        "description_jp": "自身が通常攻撃を受ける確率小幅上昇",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に上昇する。",
         "rank": "A",
         "active": true,
         "sim_level": "2"
@@ -11175,6 +11199,8 @@
         "name": "弓術III",
         "description": "部隊的弓兵等級上升3級",
         "active": true,
+        "name_jp": "弓術Ⅲ",
+        "description_jp": "部隊の弓兵レベルが3増加する。",
         "rank": "A",
         "affinity": {
           "troop_types": [
@@ -11188,18 +11214,24 @@
         "name": "固守III",
         "description": "我軍全體受到兵刃傷害減少2.2%",
         "active": true,
+        "name_jp": "固守Ⅲ",
+        "description_jp": "自軍全体の兵刃被ダメージが2.2%減少する。",
         "rank": "A"
       },
       {
         "name": "堅固II",
         "description": "我軍全體受到謀略傷害減少3%",
         "active": true,
+        "name_jp": "堅固Ⅱ",
+        "description_jp": "自軍全体の計略被ダメージが3%減少する。",
         "rank": "B"
       },
       {
         "name": "隱忍I",
         "description": "使自身受到普通攻擊的機率略微降低",
         "active": true,
+        "name_jp": "忍耐Ⅰ",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に低下する。",
         "rank": "C"
       }
     ],
@@ -11293,12 +11325,16 @@
         "name": "領兵III",
         "description": "統率提高3%",
         "active": true,
+        "name_jp": "統帥Ⅲ",
+        "description_jp": "統率が3%上昇する。",
         "rank": "A"
       },
       {
         "name": "馬炮術I",
         "description": "部隊的騎兵、鐵炮等級上升1級",
         "active": true,
+        "name_jp": "馬砲術Ⅰ",
+        "description_jp": "部隊の騎兵・鉄砲レベルが1増加する。",
         "rank": "C",
         "affinity": {
           "troop_types": [
@@ -11313,6 +11349,8 @@
         "name": "防護III",
         "description": "受到兵刃傷害減少2.8%",
         "active": true,
+        "name_jp": "防護Ⅲ",
+        "description_jp": "兵刃被ダメージが2.8%減少する。",
         "rank": "A"
       },
       {
@@ -11320,6 +11358,8 @@
         "description": "自身受到普通攻擊的機率小幅提高",
         "vars": {},
         "active": true,
+        "name_jp": "剛猛Ⅰ",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に上昇する。",
         "rank": "C"
       }
     ],
@@ -11586,7 +11626,7 @@
         "name": "隱忍I",
         "name_jp": "忍耐Ⅰ",
         "description": "使自身受到普通攻擊的機率略微降低",
-        "description_jp": "自身が通常攻撃の対象に選ばれる確率が小幅低下する。",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に低下する。",
         "active": true,
         "rank": "C"
       }
@@ -12679,6 +12719,8 @@
         "name": "弓槍術II",
         "description": "部隊的足輕、弓兵等級上升2級",
         "active": true,
+        "name_jp": "弓槍術Ⅱ",
+        "description_jp": "部隊の足軽・弓兵レベルが2増加する。",
         "rank": "B",
         "affinity": {
           "troop_types": [
@@ -12693,18 +12735,24 @@
         "name": "武威II",
         "description": "武勇提高2.5%",
         "active": true,
+        "name_jp": "武威Ⅱ",
+        "description_jp": "武勇が2.5%上昇する。",
         "rank": "B"
       },
       {
         "name": "智慧II",
         "description": "智略提高2.5%",
         "active": true,
+        "name_jp": "知恵Ⅱ",
+        "description_jp": "知略が2.5%上昇する。",
         "rank": "B"
       },
       {
         "name": "牢固II",
         "description": "受到傷害減少1.6%",
         "active": true,
+        "name_jp": "牢固Ⅱ",
+        "description_jp": "被ダメージが1.6%減少する。",
         "rank": "B"
       }
     ],

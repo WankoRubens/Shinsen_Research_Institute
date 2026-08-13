@@ -328,6 +328,98 @@ def _merge_game8_skill_index(skills: list[dict]) -> tuple[list[dict], int]:
         merged += 1
     return skills, merged
 
+
+# Additional commanders can arrive from sources that only contain Traditional
+# Chinese trait text. Keep the verified Japanese display text here so every UI
+# (lineup cards, hero database, and trait database) receives the same names.
+MANUAL_TRAIT_JA_TEXT = {
+    "花枝招展": {
+        "name_jp": "花枝招展",
+        "description_jp": "自身が通常攻撃を受けた際、45%の確率（魅力依存）で自身の兵力を回復する（回復率68%、知略依存）。最大3回まで発動する。",
+    },
+    "馬槍術II": {
+        "name_jp": "馬槍術Ⅱ",
+        "description_jp": "部隊の騎兵・足軽レベルが2増加する。",
+    },
+    "守勢II": {
+        "name_jp": "守勢Ⅱ",
+        "description_jp": "自軍全体の被ダメージが1.3%減少する。",
+    },
+    "智慧II": {
+        "name_jp": "知恵Ⅱ",
+        "description_jp": "知略が2.5%上昇する。",
+    },
+    "手足之愛": {
+        "name_jp": "手足之愛",
+        "description_jp": "戦闘中、各ターンで初めて他の武将を回復した際、自身の統率をその武将の主要属性の12%分増加させる。1ターン持続する。",
+    },
+    "弓槍術II": {
+        "name_jp": "弓槍術Ⅱ",
+        "description_jp": "部隊の足軽・弓兵レベルが2増加する。",
+    },
+    "攻勢II": {
+        "name_jp": "攻勢Ⅱ",
+        "description_jp": "自軍全体の与ダメージが1.3%増加する。",
+    },
+    "鐵炮大將": {
+        "name_jp": "鉄砲大将",
+        "description_jp": "部隊の鉄砲レベルが3、レベル上限が1増加する。",
+    },
+    "牢固III": {
+        "name_jp": "牢固Ⅲ",
+        "description_jp": "被ダメージが2%減少する。",
+    },
+    "破敵II": {
+        "name_jp": "破敵Ⅱ",
+        "description_jp": "与ダメージが1.6%増加する。",
+    },
+    "靈巧II": {
+        "name_jp": "急速Ⅱ",
+        "description_jp": "速度が2.5%上昇する。",
+    },
+    "弓術III": {
+        "name_jp": "弓術Ⅲ",
+        "description_jp": "部隊の弓兵レベルが3増加する。",
+    },
+    "固守III": {
+        "name_jp": "固守Ⅲ",
+        "description_jp": "自軍全体の兵刃被ダメージが2.2%減少する。",
+    },
+    "堅固II": {
+        "name_jp": "堅固Ⅱ",
+        "description_jp": "自軍全体の計略被ダメージが3%減少する。",
+    },
+    "隱忍I": {
+        "name_jp": "忍耐Ⅰ",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に低下する。",
+    },
+    "領兵III": {
+        "name_jp": "統帥Ⅲ",
+        "description_jp": "統率が3%上昇する。",
+    },
+    "馬炮術I": {
+        "name_jp": "馬砲術Ⅰ",
+        "description_jp": "部隊の騎兵・鉄砲レベルが1増加する。",
+    },
+    "防護III": {
+        "name_jp": "防護Ⅲ",
+        "description_jp": "兵刃被ダメージが2.8%減少する。",
+    },
+    "剛猛I": {
+        "name_jp": "剛猛Ⅰ",
+        "description_jp": "自身が通常攻撃を受ける確率が小幅に上昇する。",
+    },
+    "武威II": {
+        "name_jp": "武威Ⅱ",
+        "description_jp": "武勇が2.5%上昇する。",
+    },
+    "牢固II": {
+        "name_jp": "牢固Ⅱ",
+        "description_jp": "被ダメージが1.6%減少する。",
+    },
+}
+
+
 MANUAL_SKILL_JA_TEXT = {
     "如水": {
         "name_jp": "如水",
@@ -1232,6 +1324,12 @@ def postprocess_hero(hero: dict) -> dict:
         if hero.get(field):
             hero[field] = fix_skill_name(hero[field])
     for t in hero.get("traits") or []:
+        manual_ja = (
+            MANUAL_TRAIT_JA_TEXT.get(t.get("name", ""))
+            or MANUAL_TRAIT_JA_TEXT.get(t.get("name_jp", ""))
+        )
+        if manual_ja:
+            t.update(manual_ja)
         if t.get("description"):
             t["description"] = normalize_status_refs(t["description"])
         if t.get("vars"):
