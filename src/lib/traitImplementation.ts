@@ -1,4 +1,5 @@
 import type { Trait } from '../composables/useData'
+import { traitBattleEffectDetail } from './battleTraitEffects'
 
 export type TraitImplementationStatus = 'implemented' | 'partial' | 'unimplemented'
 
@@ -15,6 +16,9 @@ export const traitImplementation = (trait: Trait): TraitImplementation => {
   const name = trait.name_jp || trait.name
   const namedDetail = IMPLEMENTED_TRAIT_EFFECTS[name]
   if (namedDetail) return { status: 'implemented', detail: namedDetail }
+
+  const staticBattleDetail = traitBattleEffectDetail(trait)
+  if (staticBattleDetail) return { status: 'implemented', detail: staticBattleDetail }
 
   if (trait.affinity) {
     const effects: string[] = []

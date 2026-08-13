@@ -1,9 +1,10 @@
 ﻿import type { BingxueActive, Lineup, RoleData } from '../composables/useLineups'
-import type { Skill, Stat, TriggerEvent } from '../composables/useData'
+import type { Skill, Stat, Trait, TriggerEvent } from '../composables/useData'
 import skillsData from '../../.build/skills.json'
 import { heroLevel50Stats } from './heroStats'
 import { selectedTroopLevel, selectedTroopStatMultiplier } from './troopLevels'
-import type { TroopType } from '../constants/traits'
+import { TRAIT_UNLOCK, type TroopType } from '../constants/traits'
+import { initializeTraitBattle } from './battleTraitEffects'
 import {
   BATTLE_SKILL_EFFECT_TRIGGERS,
   ENEMY_AFTER_ACTION_SKILL_NAMES,
@@ -138,6 +139,7 @@ export interface BattleFighter {
   skillUsesThisTurn: Record<string, number>
   specialState: Record<string, number>
   skills: Skill[]
+  traits: Trait[]
   bingxue: BingxueActive
   bingxueRuntime: BingxueRuntimeState
   troopType: TroopType | null
@@ -481,6 +483,9 @@ const makeFighter = (
     skillUsesThisTurn: {},
     specialState: {},
     skills: battleSkillsForRole(role),
+    // 凸数で解放済みの特性だけを、戦闘開始時効果の対象にする。
+    traits: (role.hero.traits ?? []).filter((_, index) =>
+      index < TRAIT_UNLOCK.length && role.breakthrough >= TRAIT_UNLOCK[index]),
     bingxue: role.bingxue,
     bingxueRuntime: { timedModifiers: [] },
     troopType,
@@ -2507,6 +2512,26 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
   if (logs !== NO_LOGS) logs.push({ turn: 0, side: 'system', message: `${allyLineup.name} vs ${enemyLineup.name} 開始` })
   logTroopStatBonus(logs, '自軍', ally)
   logTroopStatBonus(logs, '敵軍', enemy)
+  // 特性は、兵学および準備ターンに発動する全戦法より先に適用する。
+  ;[
+    { fighters: ally, allies: ally },
+    { fighters: enemy, allies: enemy },
+  ].forEach(({ fighters, allies }) => {
+    fighters.forEach((fighter) => initializeTraitBattle(
+      fighter,
+      allies,
+      (owner, message) => {
+        if (logs !== NO_LOGS) logs.push({
+          turn: 0,
+          side: owner.side,
+          actor: owner.name,
+          actorHp: owner.hp,
+          effect: '特性',
+          message,
+        })
+      },
+    ))
+  })
   // 戦闘開始時に一度だけ発動する兵学を、自軍・敵軍の全武将へ適用する。
   ;[
     { fighters: ally, allies: ally },

@@ -487,14 +487,19 @@ const makePrepSections = (entries: BattleLogEntry[]): PrepSection[] => {
     }))
   })
 
+  const traitRows = entries
+    .filter((entry) => entry.effect === '特性')
+    .map((entry) => ({ side: entry.side, message: entry.message }))
+
   const skillRows = entries
-    .filter((entry) => entry.side !== 'system')
+    .filter((entry) => entry.side !== 'system' && entry.effect !== '特性' && entry.effect !== '兵学')
     .map((entry) => ({ side: entry.side, message: entry.message }))
 
   return [
     { title: '合戦開始', rows: battleStartRows.length ? battleStartRows : [{ side: 'system', message: '合戦開始' }] },
     { title: '士気の影響', rows: moraleRows },
     { title: '兵種の影響', rows: troopRows },
+    { title: '特性の影響', rows: traitRows.length ? traitRows : [{ side: 'system', message: '常時特性効果なし' }] },
     { title: '軍学・兵学による影響', rows: bingxueRows.length ? bingxueRows : [{ side: 'system', message: '兵学効果なし' }] },
     { title: '戦法の影響', rows: skillRows.length ? skillRows : [{ side: 'system', message: '準備ターンに発動した戦法はありません' }] },
   ]
