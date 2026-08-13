@@ -50,6 +50,12 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
   三河魂: defineBattleSkillMeta({ type: '指揮', triggers: ['onNormalAttackReceived'] }),
+  軍神: defineBattleSkillMeta({
+    type: '受動',
+    triggers: ['preparationTurn', 'beforeAction', 'afterNormalAttack', 'allyNormalAttack', 'allySkillActivated'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['beforeAction', 'afterNormalAttack', 'allyNormalAttack', 'allySkillActivated'],
+  }),
   伊達の粋: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn', 'beforeAction'] }),
   文武両道: defineBattleSkillMeta({ type: '受動', triggers: ['onPhysicalDamageDealt', 'onStrategyDamageDealt'] }),
   竜騎兵: defineBattleSkillMeta({ type: '兵種', triggers: ['beforeAction', 'afterAction'] }),
@@ -177,6 +183,7 @@ const NAMED_BATTLE_SKILL_NAMES = [
   '疾風迅雷',
   '表裏比興',
   '瞬息万変',
+  '軍神',
   '三河武士',
   '風林火山',
   '無想掃討',
@@ -203,6 +210,8 @@ export const TEAM_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['援護射撃', '三河
 export const ENEMY_STRATEGY_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['城盗り'])
 export const TEAM_BEFORE_ACTION_SKILL_NAMES = new Set(['伝馬疾馳'])
 export const ENEMY_AFTER_ACTION_SKILL_NAMES = new Set(['三楽犬'])
+// 友軍の通常攻撃・能動戦法・突撃戦法の発動を監視する受動戦法。
+export const TEAM_MILITARY_GOD_SKILL_NAMES = new Set(['軍神'])
 
 // 制御・継続状態と大将/特定武将条件を持たない、個別実装対象のダメージ戦法。
 export const DIRECT_DAMAGE_HANDCRAFTED_SKILL_NAMES = [
@@ -511,6 +520,37 @@ const attributeDependentValue = (baseValue: number, stats: number[]): number => 
   return baseValue * (1 + Math.max(0, average - 100) * 0.001)
 }
 
+// 軍神の1スタック分は実測値（武勇391.80で16.82%、武勇435で17.89%）から線形補間する。
+const militaryGodStackBonus = (valor: number): number => {
+  const slope = (17.89 - 16.82) / (435 - 391.8)
+  return Math.max(0, 16.82 + (valor - 391.8) * slope)
+}
+
+// 軍神の溜めを1つ加算し、その時点の武勇に応じた通常攻撃専用ボーナスを保存する。
+const gainMilitaryGodCharge = (
+  ctx: SkillResolveContext,
+  h: BattleSkillEffectHelpers,
+  reason: string,
+) => {
+  const stacks = ctx.caster.specialState.militaryGodCharges ?? 0
+  if (stacks >= 12) return
+
+  const nextStacks = stacks + 1
+  const stackBonus = militaryGodStackBonus(h.statOf(ctx.caster, 'val'))
+  // 12回目は各スタック分に加え、160%相当（1スタック分の16倍）の追加上昇を得る。
+  const maximumBonus = nextStacks === 12 ? stackBonus * 16 : 0
+  const totalBonus = (ctx.caster.specialState.militaryGodNormalAttackBonus ?? 0) + stackBonus + maximumBonus
+  ctx.caster.specialState.militaryGodCharges = nextStacks
+  ctx.caster.specialState.militaryGodNormalAttackBonus = Number(totalBonus.toFixed(4))
+  const gainedBonus = stackBonus + maximumBonus
+
+  log(
+    ctx.logs,
+    ctx,
+    `軍神: ${reason}で溜めを獲得、${ctx.caster.name}の通常攻撃与ダメージが${gainedBonus.toFixed(2)}%上昇（${(100 + totalBonus).toFixed(2)}%）`,
+  )
+}
+
 const fighterHasSkill = (fighter: BattleFighter, names: string[]): boolean =>
   fighter.skills.some((skill) => names.includes(skill.name_jp || skill.name) || names.includes(skill.name))
 
@@ -682,6 +722,7 @@ const PRECISE_HANDCRAFTED_SKILLS = new Set([
   '大太刀力士隊',
   '鉄砲僧兵',
   '母衣武者',
+  '軍神',
 ])
 
 const structuredArray = (value: unknown): StructuredBattleNode[] =>
@@ -2218,7 +2259,10 @@ export const applyNamedSkillEffect = (
       if (ctx.trigger === 'beforeAction') {
         // 戦法タイプ: 能動。通常攻撃与ダメージ+50%と乱舞70%を2ターン付与。
         h.addTimedModifier(ctx, ctx.caster, 'attackDamage', 50, 2)
-        ctx.caster.specialState.splashAttackUntil = expiresAfterTurns(ctx.turn, 2)
+        // 軍神の所持者は通常攻撃強化だけを獲得し、乱舞は獲得できない。
+        if ((ctx.caster.specialState.ranbuDisabled ?? 0) <= 0) {
+          ctx.caster.specialState.splashAttackUntil = expiresAfterTurns(ctx.turn, 2)
+        }
         return true
       }
       if ((ctx.caster.specialState.splashAttackUntil ?? 0) < ctx.turn || !currentTarget) return true
@@ -2757,8 +2801,51 @@ export const applyNamedSkillEffect = (
     }
     case '軍神': {
       // 戦法タイプ: 受動
-      // 戦闘中、乱舞獲得不可
-      return applyDatabaseSkillEffect(ctx, h)
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘開始時に溜めを初期化し、以降は乱舞を獲得できない状態にする。
+        ctx.caster.specialState.militaryGodCharges = 0
+        ctx.caster.specialState.militaryGodNormalAttackBonus = 0
+        ctx.caster.specialState.ranbuDisabled = 1
+        delete ctx.caster.specialState.splashAttackUntil
+        log(ctx.logs, ctx, '軍神: 乱舞獲得不可')
+        return true
+      }
+
+      if (ctx.trigger === 'beforeAction') {
+        // 大将の時は、毎ターン自身の行動前に確率判定なしで溜めを1つ獲得する。
+        if (ctx.caster.role === 'main') gainMilitaryGodCharge(ctx, h, '大将効果')
+        return true
+      }
+
+      if (ctx.trigger === 'allyNormalAttack' || ctx.trigger === 'allySkillActivated') {
+        const source = ctx.eventSubject
+        // 軍神の所持者本人は対象外。自軍にいる残り2名の行動だけを監視する。
+        if (!source || source.side !== ctx.caster.side || source.id === ctx.caster.id) return true
+
+        // 友軍の通常攻撃・能動戦法・突撃戦法の発動時、66%（武勇依存）で溜めを獲得する。
+        const chance = attributeDependentChance(0.66, [h.statOf(ctx.caster, 'val')])
+        if (h.roll(ctx.rng, chance)) {
+          const reason = ctx.trigger === 'allyNormalAttack'
+            ? `${source.name}の通常攻撃`
+            : `${source.name}の能動・突撃戦法発動`
+          gainMilitaryGodCharge(ctx, h, reason)
+        }
+        return true
+      }
+
+      if (ctx.trigger === 'afterNormalAttack') {
+        // 自身の通常攻撃が完了したら、今回の攻撃へ適用した溜めとボーナスをすべて消費する。
+        const stacks = ctx.caster.specialState.militaryGodCharges ?? 0
+        const bonus = ctx.caster.specialState.militaryGodNormalAttackBonus ?? 0
+        if (stacks > 0) {
+          log(ctx.logs, ctx, `軍神: 通常攻撃後、${ctx.caster.name}の通常攻撃与ダメージが${bonus.toFixed(2)}%低下（100.00%）`)
+        }
+        ctx.caster.specialState.militaryGodCharges = 0
+        ctx.caster.specialState.militaryGodNormalAttackBonus = 0
+        return true
+      }
+
+      return true
     }
     case '毘沙門天': {
       // 戦法タイプ: 受動

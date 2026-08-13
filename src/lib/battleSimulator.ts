@@ -15,6 +15,7 @@ import {
   TEAM_BEFORE_ACTION_SKILL_NAMES,
   TEAM_DAMAGE_RECEIVED_SKILL_NAMES,
   TEAM_ACTION_BATTLE_SKILL_NAMES,
+  TEAM_MILITARY_GOD_SKILL_NAMES,
   TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES,
   applyNamedSkillEffect,
   battleSkillType,
@@ -931,7 +932,12 @@ const baseDamage = (
       incomingSpecialMultiplier *= 1 - reduction
     }
   }
-  const modifier = damageModifier(caster, true, actualKind) * damageModifier(target, false, actualKind)
+  // 軍神の溜めは通常攻撃だけを強化し、兵刃戦法や突撃戦法には加算しない。
+  const militaryGodNormalBonus = isNormalAttack
+    ? (caster.specialState.militaryGodNormalAttackBonus ?? 0) / 100
+    : 0
+  const modifier = (damageModifier(caster, true, actualKind) + militaryGodNormalBonus)
+    * damageModifier(target, false, actualKind)
   const raw = damageBase * (rate / 100) * modifier * variance
   const floor = guaranteedDamageFloor(caster.hp, rate, Boolean(skill)) * variance
   const bingxueDamage = resolveBingxueDamage({
@@ -1181,6 +1187,78 @@ const fireTriggeredSkills = (
 
 const skillsNamedIn = (owner: BattleFighter, names: Set<string>): Skill[] =>
   owner.skills.filter((skill) => names.has(skillDisplayName(skill)) || names.has(skill.name))
+
+// 友軍の通常攻撃が完了したことを、同じ部隊の軍神所持者へ通知する。
+const fireMilitaryGodNormalAttackWatchers = (
+  attacker: BattleFighter,
+  target: BattleFighter | null,
+  allies: BattleFighter[],
+  enemies: BattleFighter[],
+  turn: number,
+  logs: BattleLogEntry[],
+  rng: () => number,
+  stats: SkillStatMap,
+  turnStat: BattleTurnStat,
+  controlStats: Record<string, number>,
+) => {
+  allies.filter((owner) => owner.id !== attacker.id && isAlive(owner)).forEach((owner) => {
+    const skills = skillsNamedIn(owner, TEAM_MILITARY_GOD_SKILL_NAMES)
+    if (skills.length === 0) return
+    fireTriggeredSkillList(
+      owner,
+      skills,
+      'allyNormalAttack',
+      target,
+      allies,
+      enemies,
+      turn,
+      logs,
+      rng,
+      stats,
+      turnStat,
+      controlStats,
+      undefined,
+      attacker,
+    )
+  })
+}
+
+// 友軍の能動・突撃戦法が発動に成功したことを、同じ部隊の軍神所持者へ通知する。
+const fireMilitaryGodSkillActivationWatchers = (
+  activator: BattleFighter,
+  activatedSkill: Skill,
+  target: BattleFighter | null,
+  allies: BattleFighter[],
+  enemies: BattleFighter[],
+  turn: number,
+  logs: BattleLogEntry[],
+  rng: () => number,
+  stats: SkillStatMap,
+  turnStat: BattleTurnStat,
+  controlStats: Record<string, number>,
+) => {
+  if (!['能動', '突撃'].includes(battleSkillType(activatedSkill))) return
+  allies.filter((owner) => owner.id !== activator.id && isAlive(owner)).forEach((owner) => {
+    const skills = skillsNamedIn(owner, TEAM_MILITARY_GOD_SKILL_NAMES)
+    if (skills.length === 0) return
+    fireTriggeredSkillList(
+      owner,
+      skills,
+      'allySkillActivated',
+      target,
+      allies,
+      enemies,
+      turn,
+      logs,
+      rng,
+      stats,
+      turnStat,
+      controlStats,
+      undefined,
+      activator,
+    )
+  })
+}
 
 // ダメージを受けた本人以外が監視する戦法を、攻撃側・被攻撃側の向きを保って処理する。
 const fireDamageWatcherSkills = (
@@ -2220,6 +2298,9 @@ const trySkill = (
       effect: resolvedSkillName,
       message: `発動（${activationRateText(activationRate)}）・準備開始(${prep}T)`,
     })
+    if (!followUp) {
+      fireMilitaryGodSkillActivationWatchers(caster, skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
+    }
     return
   }
   if (trigger !== 'beforeUniqueSkill' && isUniqueBattleSkill(skill)) {
@@ -2233,6 +2314,9 @@ const trySkill = (
     effect: resolvedSkillName,
     message: `発動（${activationRateText(activationRate)}）`,
   })
+  if (!followUp) {
+    fireMilitaryGodSkillActivationWatchers(caster, skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
+  }
   resolveSkill(caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats, eventSubject)
   if (!followUp) recordBingxueSkillResolved(caster, resolvedSkillType, prepared, turn, rng)
 }
@@ -2868,6 +2952,19 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
               controlStats,
             )
           }
+          // 通常攻撃が成立した時点で、友軍が持つ軍神の溜め獲得判定を行う。
+          fireMilitaryGodNormalAttackWatchers(
+            actor,
+            target,
+            allies,
+            enemies,
+            turn,
+            logs,
+            rng,
+            skillStats,
+            turnStat,
+            controlStats,
+          )
           // 通常攻撃の結果が確定してから、通常攻撃後の兵学を処理する。
           runBingxueAfterNormalAttack({
             owner: actor,
