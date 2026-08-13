@@ -146,18 +146,76 @@
       </section>
 
       <section v-if="result" class="panel result-panel">
-        <div class="result-head">
-          <div>
-            <p class="eyebrow">対戦結果</p>
-            <h2>{{ outcomeLabel }}</h2>
-          </div>
-          <div class="summary-pills">
-            <span>自軍 {{ formatNumber(result.summary.allyHp) }} / {{ formatNumber(result.summary.allyMaxHp) }}</span>
-            <span>敵軍 {{ formatNumber(result.summary.enemyHp) }} / {{ formatNumber(result.summary.enemyMaxHp) }}</span>
-            <span>{{ result.summary.turns }}ターン</span>
+        <div class="battle-report-scroll">
+          <div class="battle-report">
+            <header class="report-scoreboard">
+              <div class="report-side-summary side-ally">
+                <div class="casualty-pair">
+                  <span>戦死 <b>{{ formatNumber(sideSummary('ally').dead) }}</b></span>
+                  <span>負傷 <b>{{ formatNumber(sideSummary('ally').wounded) }}</b></span>
+                </div>
+                <div class="troop-total">
+                  <strong>兵力 {{ formatNumber(sideSummary('ally').hp) }} / {{ formatNumber(sideSummary('ally').maxHp) }}</strong>
+                  <div class="troop-gauge"><i :style="{ width: `${sideSummary('ally').hpRate}%` }"></i></div>
+                </div>
+              </div>
+
+              <div class="result-emblem" :class="`outcome-${result.summary.outcome}`">
+                <small>{{ result.summary.turns }}ターン</small>
+                <b>{{ outcomeShortLabel }}</b>
+              </div>
+
+              <div class="report-side-summary side-enemy">
+                <div class="troop-total">
+                  <strong>兵力 {{ formatNumber(sideSummary('enemy').hp) }} / {{ formatNumber(sideSummary('enemy').maxHp) }}</strong>
+                  <div class="troop-gauge"><i :style="{ width: `${sideSummary('enemy').hpRate}%` }"></i></div>
+                </div>
+                <div class="casualty-pair">
+                  <span>戦死 <b>{{ formatNumber(sideSummary('enemy').dead) }}</b></span>
+                  <span>負傷 <b>{{ formatNumber(sideSummary('enemy').wounded) }}</b></span>
+                </div>
+              </div>
+            </header>
+
+            <div class="report-team-names">
+              <strong>{{ allyTeam.name || '自軍編成' }}</strong>
+              <span>対戦結果</span>
+              <strong>{{ enemyTeam.name || '敵軍編成' }}</strong>
+            </div>
+
+            <div class="report-member-grid">
+              <article
+                v-for="member in battleReportMembers"
+                :key="`${member.side}-${member.roleKey}`"
+                class="report-member"
+                :class="`side-${member.side}`"
+              >
+                <div class="member-role" :class="{ commander: member.roleKey === 'main' }">
+                  {{ member.roleKey === 'main' ? '大将' : '副将' }}
+                </div>
+                <img v-if="member.portrait" :src="member.portrait" :alt="member.name" loading="lazy" />
+                <div v-else class="member-portrait-empty">画像なし</div>
+                <strong class="member-name">{{ member.name }}</strong>
+                <div class="member-troops">
+                  <span>兵力</span>
+                  <b>{{ formatNumber(member.hp) }}</b>
+                </div>
+                <div class="member-skill-list">
+                  <section v-for="skill in member.skills" :key="skill.key" class="member-skill-stat">
+                    <h4>{{ skill.name }}</h4>
+                    <dl>
+                      <div><dt>発動</dt><dd>{{ formatNumber(skill.activations) }}</dd></div>
+                      <div><dt>撃破</dt><dd>{{ formatNumber(skill.damage) }}</dd></div>
+                      <div><dt>救援</dt><dd>{{ formatNumber(skill.healing) }}</dd></div>
+                    </dl>
+                  </section>
+                </div>
+              </article>
+            </div>
           </div>
         </div>
 
+        <h3 class="detail-log-title">ターン別詳細ログ</h3>
         <div class="log-groups">
           <article v-for="group in groupedLogs" :key="group.turn" class="log-group">
             <div class="battle-turn-banner">
@@ -262,7 +320,7 @@ import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
 import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
-import { simulateBattle, type BattleLogEntry, type BattleResult } from '../lib/battleSimulator'
+import { simulateBattle, type BattleFighter, type BattleLogEntry, type BattleResult } from '../lib/battleSimulator'
 import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { useLineups } from '../composables/useLineups'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
@@ -288,6 +346,21 @@ type ActionBlock = {
 }
 type LogMessageTone = 'text' | 'ally-name' | 'enemy-name' | 'damage' | 'healing' | 'status'
 type LogMessagePart = { text: string; tone: LogMessageTone }
+type ReportSkillStat = {
+  key: string
+  name: string
+  activations: number
+  damage: number
+  healing: number
+}
+type ReportMember = {
+  side: BattleSideKey
+  roleKey: RoleKey
+  name: string
+  portrait: string
+  hp: number
+  skills: ReportSkillStat[]
+}
 
 const { lineups } = useLineups()
 const { heroes, skills, enemyFormations } = useData()
@@ -511,6 +584,100 @@ const outcomeLabel = computed(() => {
   if (result.value.summary.outcome === 'enemy') return '敵軍勝利'
   return '引き分け'
 })
+
+const outcomeShortLabel = computed(() => {
+  if (!result.value || result.value.summary.outcome === 'draw') return '分'
+  return result.value.summary.outcome === 'ally' ? '勝' : '敗'
+})
+
+const fightersForSide = (side: BattleSideKey): BattleFighter[] =>
+  result.value?.[side] ?? []
+
+const sideSummary = (side: BattleSideKey) => {
+  const fighters = fightersForSide(side)
+  const hp = fighters.reduce((sum, fighter) => sum + fighter.hp, 0)
+  // fighter.maxHp は戦死者分だけ減るため、表示上の初期兵力は残兵・負傷・戦死から復元する。
+  const maxHp = fighters.reduce((sum, fighter) => sum + fighter.hp + fighter.wounded + fighter.dead, 0)
+  return {
+    hp,
+    maxHp,
+    wounded: fighters.reduce((sum, fighter) => sum + fighter.wounded, 0),
+    dead: fighters.reduce((sum, fighter) => sum + fighter.dead, 0),
+    hpRate: maxHp > 0 ? Math.max(0, Math.min(100, hp / maxHp * 100)) : 0,
+  }
+}
+
+const reportSkillStat = (
+  side: BattleSideKey,
+  roleKey: RoleKey,
+  name: string,
+  fallbackKey: string,
+): ReportSkillStat => {
+  const stat = result.value?.skillStats.find((item) =>
+    item.side === side && item.role === roleKey && item.skillName === name)
+  return {
+    key: `${fallbackKey}:${name}`,
+    name,
+    activations: stat?.activations ?? 0,
+    damage: stat?.damage ?? 0,
+    healing: stat?.healing ?? 0,
+  }
+}
+
+const normalAttackStat = (
+  side: BattleSideKey,
+  roleKey: RoleKey,
+  actorName: string,
+): ReportSkillStat => {
+  const entries = result.value?.logs.filter((entry) =>
+    entry.side === side
+    && entry.actor === actorName
+    && /の(?:計略)?通常攻撃[:：]/.test(entry.message)
+    && entry.valueType === 'damage') ?? []
+  return {
+    key: `${side}:${roleKey}:normal-attack`,
+    name: '通常攻撃',
+    activations: entries.length,
+    damage: entries.reduce((sum, entry) => sum + (entry.amount ?? 0), 0),
+    healing: 0,
+  }
+}
+
+const reportMember = (side: BattleSideKey, roleKey: RoleKey): ReportMember | null => {
+  const role = selectedTeam(side)[roleKey]
+  const fighter = fightersForSide(side).find((item) => item.role === roleKey)
+  if (!role.hero || !fighter) return null
+  const uniqueSkill = role.hero.unique_skill
+    ? skillOptions.value.find((skill) =>
+        skill.name === role.hero?.unique_skill || skill.name_jp === role.hero?.unique_skill)
+    : null
+  const uniqueName = uniqueSkill
+    ? skillName(uniqueSkill)
+    : role.hero.unique_skill || '固有戦法なし'
+  const configuredSkills = [
+    reportSkillStat(side, roleKey, uniqueName, `${side}:${roleKey}:unique`),
+    role.skill1
+      ? reportSkillStat(side, roleKey, skillName(role.skill1), `${side}:${roleKey}:skill1`)
+      : { key: `${side}:${roleKey}:skill1`, name: '戦法未設定', activations: 0, damage: 0, healing: 0 },
+    role.skill2
+      ? reportSkillStat(side, roleKey, skillName(role.skill2), `${side}:${roleKey}:skill2`)
+      : { key: `${side}:${roleKey}:skill2`, name: '戦法未設定', activations: 0, damage: 0, healing: 0 },
+    normalAttackStat(side, roleKey, fighter.name),
+  ]
+  return {
+    side,
+    roleKey,
+    name: fighter.name,
+    portrait: role.hero.portrait || '',
+    hp: fighter.hp,
+    skills: configuredSkills,
+  }
+}
+
+const battleReportMembers = computed<ReportMember[]>(() => [
+  ...roleConfigs.map(({ key }) => reportMember('ally', key)),
+  ...roleConfigs.map(({ key }) => reportMember('enemy', key)),
+].filter(Boolean) as ReportMember[])
 
 const groupedLogs = computed(() => {
   const troopKey = (side: LogSide, actor: string) => `${side}:${actor}`
@@ -898,6 +1065,236 @@ function uniqueBy<T>(items: T[], keyOf: (item: T) => string): T[] {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.battle-report-scroll {
+  overflow-x: auto;
+  border: 1px solid #9cacba;
+  background: #dce6ee;
+}
+
+.battle-report {
+  min-width: 960px;
+  color: #263238;
+  background:
+    linear-gradient(90deg, rgba(44, 116, 171, 0.09) 0 50%, rgba(174, 73, 56, 0.09) 50% 100%),
+    #e9eef1;
+}
+
+.report-scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px minmax(0, 1fr);
+  align-items: center;
+  min-height: 76px;
+  border-bottom: 1px solid #95a8b7;
+  background: linear-gradient(90deg, #8eb5d3 0 46%, #c8d3dc 50%, #cf9e98 54% 100%);
+}
+
+.report-side-summary {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr);
+  align-items: center;
+  gap: 22px;
+  padding: 10px 18px;
+}
+
+.report-side-summary.side-enemy {
+  grid-template-columns: minmax(220px, 1fr) auto;
+  text-align: right;
+}
+
+.casualty-pair {
+  display: flex;
+  gap: 14px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.casualty-pair span {
+  display: grid;
+  gap: 2px;
+}
+
+.casualty-pair b {
+  font-size: 18px;
+}
+
+.troop-total {
+  display: grid;
+  gap: 5px;
+  font-size: 17px;
+}
+
+.troop-gauge {
+  height: 10px;
+  overflow: hidden;
+  border: 2px solid #52616b;
+  border-radius: 3px;
+  background: #7c858a;
+}
+
+.troop-gauge i {
+  display: block;
+  height: 100%;
+  background: #73d6e6;
+}
+
+.side-enemy .troop-gauge i {
+  margin-left: auto;
+  background: #e58b74;
+}
+
+.result-emblem {
+  width: 72px;
+  height: 72px;
+  justify-self: center;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  border: 5px ridge #b68a2d;
+  border-radius: 50%;
+  background: #d5a83b;
+  box-shadow: 0 2px 8px rgba(50, 43, 28, 0.28);
+  color: #fff8d4;
+}
+
+.result-emblem small {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.result-emblem b {
+  font-size: 31px;
+  line-height: 1.05;
+}
+
+.result-emblem.outcome-enemy { background: #9f5d49; }
+.result-emblem.outcome-draw { background: #6f8290; }
+
+.report-team-names {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 22px;
+  border-bottom: 1px solid #aab8c2;
+  font-size: 18px;
+}
+
+.report-team-names strong:last-child { text-align: right; }
+.report-team-names span { color: #6d7b85; font-size: 13px; font-weight: 800; }
+
+.report-member-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.report-member {
+  position: relative;
+  min-width: 0;
+  padding: 10px 6px 12px;
+  border-right: 1px solid rgba(104, 124, 139, 0.35);
+  text-align: center;
+}
+
+.report-member:nth-child(3) { border-right: 3px solid #8d9ca7; }
+.report-member:last-child { border-right: 0; }
+
+.member-role {
+  min-height: 25px;
+  margin-bottom: 6px;
+  display: grid;
+  place-items: center;
+  color: #3c4850;
+  font-weight: 900;
+}
+
+.member-role.commander {
+  border: 1px solid #d0a632;
+  background: linear-gradient(180deg, #fff3a5, #d6a72d);
+  color: #5c3c00;
+}
+
+.report-member img,
+.member-portrait-empty {
+  width: 100%;
+  aspect-ratio: 0.82;
+  border: 2px solid #d8b84a;
+  background: #d4dce1;
+  object-fit: cover;
+  object-position: top;
+}
+
+.member-portrait-empty {
+  display: grid;
+  place-items: center;
+  color: #7b8790;
+}
+
+.member-name {
+  display: block;
+  min-height: 29px;
+  padding: 5px 2px 2px;
+  font-size: 15px;
+}
+
+.member-troops {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 1px solid #aeb8bf;
+  background: rgba(255, 255, 255, 0.48);
+  font-size: 13px;
+}
+
+.member-skill-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.member-skill-stat {
+  overflow: hidden;
+  border: 1px solid rgba(142, 151, 156, 0.35);
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.member-skill-stat h4 {
+  min-height: 30px;
+  margin: 0;
+  padding: 5px 3px;
+  display: grid;
+  place-items: center;
+  border-bottom: 1px solid rgba(142, 151, 156, 0.35);
+  background: #f8f2dc;
+  color: #544419;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.member-skill-stat dl {
+  margin: 0;
+  padding: 4px 7px;
+  display: grid;
+  gap: 2px;
+}
+
+.member-skill-stat dl div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.member-skill-stat dt { color: #68747c; }
+.member-skill-stat dd { margin: 0; text-align: right; font-weight: 800; }
+
+.detail-log-title {
+  margin: 18px 0 0;
+  padding-left: 10px;
+  border-left: 4px solid #b8860b;
+  font-size: 18px;
 }
 
 .log-groups {
