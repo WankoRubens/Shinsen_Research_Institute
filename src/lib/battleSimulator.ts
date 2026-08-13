@@ -963,7 +963,9 @@ const baseHeal = (caster: BattleFighter, target: BattleFighter, skill: Skill, rn
       : statOf(caster, 'int')
   const variance = 0.92 + rng() * 0.16
   const receivedMultiplier = Math.max(0, 1 + (target.buffs.healingReceived ?? 0) / 100)
-  return Math.max(20, (mainStat * 7.5 + 480) * (rate / 100) * variance) * bingxueHealMultiplier(caster, target) * receivedMultiplier
+  // 実戦値を基準に、能力値370・回復率76%なら平均約562（乱数込みで約517～607）になる。
+  // 千成瓢箪の実測約575もこの範囲に入り、回復率が高い戦法も同じ比例関係で計算できる。
+  return Math.max(20, mainStat * 2 * (rate / 100) * variance) * bingxueHealMultiplier(caster, target) * receivedMultiplier
 }
 
 const applyGenericBuffs = (
