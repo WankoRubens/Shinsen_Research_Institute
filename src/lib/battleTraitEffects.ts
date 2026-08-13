@@ -55,6 +55,34 @@ const parseTraitSeries = (trait: Trait): { family: string; level: 1 | 2 | 3 } | 
 
 const signedPercent = (value: number): string => `${value >= 0 ? '+' : '-'}${Math.abs(value).toFixed(2)}%`
 
+// ダメージ補正は100%を基準にし、同じ計算へ加わる汎用補正も含めた現在値を返す。
+const currentDamagePercent = (fighter: BattleFighter, stat: Stat): number => {
+  const commonDealt = fighter.buffs.damageDealt ?? 0
+  const commonTaken = fighter.buffs.damageTaken ?? 0
+  switch (stat) {
+    case 'attackDamage':
+      return 100 + commonDealt + (fighter.buffs.attackDamage ?? 0)
+    case 'strategyDamageDealt':
+      return 100 + commonDealt + (fighter.buffs.strategyDamageDealt ?? 0)
+    case 'physicalDamageTaken':
+      return 100 + commonTaken + (fighter.buffs.physicalDamageTaken ?? 0)
+    case 'strategyDamageTaken':
+      return 100 + commonTaken + (fighter.buffs.strategyDamageTaken ?? 0)
+    default:
+      return 100 + (fighter.buffs[stat] ?? 0)
+  }
+}
+
+const damageChangeText = (
+  target: BattleFighter,
+  label: string,
+  stat: Stat,
+  value: number,
+): string => {
+  const direction = value >= 0 ? '上昇' : '低下'
+  return `${target.name}の${label}が${Math.abs(value).toFixed(2)}%${direction}（${currentDamagePercent(target, stat).toFixed(2)}%）`
+}
+
 export const traitBattleEffectDetail = (trait: Trait): string | null => {
   const parsed = parseTraitSeries(trait)
   if (!parsed) return null
@@ -84,16 +112,14 @@ export const initializeTraitBattle = (
         ? Math.round((target.baseStats[effect.stat] ?? 0) * configuredValue) / 100
         : configuredValue
       target.buffs[effect.stat] = (target.buffs[effect.stat] ?? 0) + appliedValue
-    })
 
-    const displayName = trait.name_jp || trait.name
-    if (effect.percentOfBaseStat) {
-      const appliedValue = Math.round((fighter.baseStats[effect.stat] ?? 0) * configuredValue) / 100
-      const after = (fighter.baseStats[effect.stat] ?? 0) + (fighter.buffs[effect.stat] ?? 0)
-      log(fighter, `${displayName}: ${effect.label}+${appliedValue.toFixed(2)}（${after.toFixed(2)}）`)
-      return
-    }
-    const targetLabel = effect.target === 'allies' ? '自軍全体の' : ''
-    log(fighter, `${displayName}: ${targetLabel}${effect.label}${signedPercent(configuredValue)}`)
+      const displayName = trait.name_jp || trait.name
+      if (effect.percentOfBaseStat) {
+        const after = (target.baseStats[effect.stat] ?? 0) + (target.buffs[effect.stat] ?? 0)
+        log(fighter, `${displayName}: ${target.name}の${effect.label}が${appliedValue.toFixed(2)}上昇（${after.toFixed(2)}）`)
+      } else {
+        log(fighter, `${displayName}: ${damageChangeText(target, effect.label, effect.stat, configuredValue)}`)
+      }
+    })
   })
 }

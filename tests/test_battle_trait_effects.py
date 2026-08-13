@@ -23,6 +23,17 @@ class BattleTraitEffectsTests(unittest.TestCase):
         self.assertIn("target.baseStats[effect.stat]", self.effects)
         self.assertIn("percentOfBaseStat: true", self.effects)
 
+    def test_damage_logs_name_target_change_and_current_percent(self):
+        self.assertIn("target.name", self.effects)
+        self.assertIn("currentDamagePercent(target, stat).toFixed(2)", self.effects)
+        self.assertIn("value >= 0 ? '上昇' : '低下'", self.effects)
+
+    def test_document_uses_japanese_language_and_font_priority(self):
+        index = (ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn('<html lang="ja">', index)
+        self.assertIn("'Yu Gothic'", index)
+        self.assertNotIn("'PingFang SC'", index)
+
     def test_only_breakthrough_unlocked_traits_are_passed_to_battle(self):
         self.assertIn("role.breakthrough >= TRAIT_UNLOCK[index]", self.simulator)
 
