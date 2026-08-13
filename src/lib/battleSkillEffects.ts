@@ -2834,12 +2834,12 @@ export const applyNamedSkillEffect = (
       }
 
       if (ctx.trigger === 'afterNormalAttack') {
-        // 自身の通常攻撃が完了したら、今回の攻撃へ適用した溜めとボーナスをすべて消費する。
+        // 溜めが最大の12回に達した後、自身の通常攻撃が完了した時だけ全消費する。
         const stacks = ctx.caster.specialState.militaryGodCharges ?? 0
         const bonus = ctx.caster.specialState.militaryGodNormalAttackBonus ?? 0
-        if (stacks > 0) {
-          log(ctx.logs, ctx, `軍神: 通常攻撃後、${ctx.caster.name}の通常攻撃与ダメージが${bonus.toFixed(2)}%低下（100.00%）`)
-        }
+        if (stacks < 12) return true
+
+        log(ctx.logs, ctx, `軍神: 最大まで溜めた通常攻撃後、${ctx.caster.name}の通常攻撃与ダメージが${bonus.toFixed(2)}%低下（100.00%）`)
         ctx.caster.specialState.militaryGodCharges = 0
         ctx.caster.specialState.militaryGodNormalAttackBonus = 0
         return true
