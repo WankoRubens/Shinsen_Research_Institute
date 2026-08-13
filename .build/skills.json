@@ -695,6 +695,8 @@
     "brief_description": "造成水攻狀態及禁療狀態",
     "brief_description_jp": "1ターンの準備後、2ターンの間、敵軍全体に水攻め（毎ターン持続ダメージ",
     "cfg_id": 20133,
+    "dot_turns": 2,
+    "control_turns": 2,
     "sim_id": "t29",
     "probability": 0.3,
     "category": "active",
@@ -704,9 +706,7 @@
     "heal_rate_max": null,
     "dot_name": "水攻め",
     "dot_rate_max": 98,
-    "dot_turns": 1,
     "control_type": "",
-    "control_turns": null,
     "buff_types": "",
     "debuff_types": "回復不可",
     "battle_tags": [

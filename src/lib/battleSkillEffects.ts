@@ -35,6 +35,7 @@ const defineBattleSkillMeta = (meta: BattleSkillEffectMeta): BattleSkillEffectMe
 export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   回天転運: defineBattleSkillMeta({ type: '能動' }),
   千成瓢箪: defineBattleSkillMeta({ type: '指揮', triggers: ['beforeAction'] }),
+  水攻干計: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   如水: defineBattleSkillMeta({ type: '受動', triggers: ['beforeAction', 'onHealed'] }),
   七十二の計: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'] }),
   比翼連理: defineBattleSkillMeta({ type: '指揮', triggers: ['afterAction'] }),
@@ -647,6 +648,7 @@ const PRECISE_HANDCRAFTED_SKILLS = new Set([
   ...DIRECT_DAMAGE_HANDCRAFTED_SKILL_NAMES,
   '回天転運',
   '千成瓢箪',
+  '水攻干計',
   '如水',
   '七十二の計',
   '比翼連理',
@@ -2716,17 +2718,34 @@ export const applyNamedSkillEffect = (
     }
     case '水攻干計': {
       // 戦法タイプ: 能動
-      // 1ターンの準備後、2ターンの間、敵軍全体に水攻め（毎ターン持続ダメージ
-      // 回復不可を付与する
-      // 水攻め状態を付与し、継続ダメージ（ダメージ率98%）を処理する
+      // 1ターンの準備後、敵軍全体へ2ターンの水攻めと回復不可を付与する。
       databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["回復不可"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
+        // 回復不可中は、戦法が発動しても実際の回復量が0になる。
+        h.addControl(ctx, target, '回復不可', 2)
+
+        // 水攻めは対象の行動開始時に、知略依存の98%計略ダメージを与える。
+        // 同じ発動者・戦法による水攻めが残っている場合は重ねず、持続時間だけ2ターンへ更新する。
+        const existing = target.timedStatuses.find((status) =>
+          status.name === '水攻め'
+          && status.sourceSkill === h.skillDisplayName(ctx.skill)
+          && status.sourceActorId === ctx.caster.id)
+        if (existing) {
+          existing.turns = 2
+          existing.dotRate = 98
+          existing.dotType = 'strategy'
+        } else {
+          target.timedStatuses.push({
+            name: '水攻め',
+            turns: 2,
+            sourceSkill: h.skillDisplayName(ctx.skill),
+            sourceActorId: ctx.caster.id,
+            sourceActor: ctx.caster.name,
+            dotRate: 98,
+            dotType: 'strategy',
+          })
+        }
+        log(ctx.logs, ctx, `${target.name}に水攻め(2T)`, target)
       })
-      applyDatabaseDot(ctx, h)
       return true
     }
     case '時は今': {
