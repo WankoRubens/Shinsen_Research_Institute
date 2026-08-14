@@ -189,11 +189,17 @@ const statusLabel = (status: TraitImplementationStatus): string => ({
 }
 
 .trait-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: grid;
   grid-template-columns: minmax(240px, 1fr) auto auto;
   align-items: center;
   gap: 12px;
+  padding: 8px 0;
   margin-bottom: 12px;
+  background: #f6f1e8;
+  box-shadow: 0 8px 12px -12px rgba(76, 55, 17, 0.55);
 }
 
 .search-field {
@@ -317,7 +323,7 @@ const statusLabel = (status: TraitImplementationStatus): string => ({
 .empty-cell { padding: 48px 16px !important; text-align: center !important; color: #8c7650 !important; }
 
 @media (max-width: 760px) {
-  .trait-toolbar { grid-template-columns: 1fr; gap: 8px; }
+  .trait-toolbar { top: -12px; grid-template-columns: 1fr; gap: 8px; }
   .status-filter { width: 100%; }
   .status-filter button { flex: 1; min-width: 0; padding: 0 6px; }
   .result-count { text-align: right; }

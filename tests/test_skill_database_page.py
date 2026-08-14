@@ -67,6 +67,13 @@ class SkillDatabasePageTests(unittest.TestCase):
         self.assertIn(".skill-table thead { display: none; }", self.view)
         self.assertIn("min-width: 0;", self.view)
 
+    def test_search_and_filters_stay_visible_while_scrolling(self):
+        toolbar = self.view[self.view.index(".skill-toolbar {"):]
+        self.assertIn("position: sticky;", toolbar)
+        self.assertIn("top: 0;", toolbar)
+        self.assertIn("z-index: 10;", toolbar)
+        self.assertIn(".skill-toolbar { top: -12px;", toolbar)
+
 
 if __name__ == "__main__":
     unittest.main()
