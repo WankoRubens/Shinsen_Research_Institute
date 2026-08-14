@@ -34,6 +34,11 @@ class ActiveSkillRatePassivesTest(unittest.TestCase):
         self.assertIn("caster.specialState.activeSkillActivationRateBonus", self.simulator)
         self.assertIn("+ activeSkillPassiveBonus", self.simulator)
 
+    def test_skill_database_marks_both_as_precisely_implemented(self):
+        precise = self.effects.split("const PRECISE_HANDCRAFTED_SKILLS = new Set([", 1)[1].split("])", 1)[0]
+        self.assertIn("'一上一下'", precise)
+        self.assertIn("'一行三昧'", precise)
+
 
 if __name__ == "__main__":
     unittest.main()
