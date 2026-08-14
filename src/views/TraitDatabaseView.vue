@@ -84,6 +84,7 @@ interface TraitRow {
   name: string
   description: string
   heroes: string[]
+  searchHeroes: string[]
   status: TraitImplementationStatus
   implementationDetails: string[]
 }
@@ -112,12 +113,15 @@ const traitRows = computed<TraitRow[]>(() => {
     name: string
     description: string
     heroes: Set<string>
+    searchHeroes: Set<string>
     implementationStatuses: Set<Exclude<TraitImplementationStatus, 'partial'>>
     implementationDetails: Set<string>
   }>()
 
   heroes.value.forEach((hero) => {
     const heroName = hero.name_jp || hero.name
+    const searchableHeroNames = [hero.name, hero.name_jp, ...(hero.aliases ?? [])]
+      .filter((name): name is string => Boolean(name))
     ;(hero.traits ?? []).forEach((trait) => {
       const name = traitName(trait)
       if (!name) return
@@ -125,6 +129,7 @@ const traitRows = computed<TraitRow[]>(() => {
         name,
         description: '',
         heroes: new Set<string>(),
+        searchHeroes: new Set<string>(),
         implementationStatuses: new Set<Exclude<TraitImplementationStatus, 'partial'>>(),
         implementationDetails: new Set<string>(),
       }
@@ -133,6 +138,7 @@ const traitRows = computed<TraitRow[]>(() => {
         existing.description = description
       }
       existing.heroes.add(heroName)
+      searchableHeroNames.forEach((name) => existing.searchHeroes.add(name))
       const implementation = traitImplementation(trait)
       existing.implementationStatuses.add(implementation.status)
       existing.implementationDetails.add(implementation.detail)
@@ -145,6 +151,7 @@ const traitRows = computed<TraitRow[]>(() => {
       name: row.name,
       description: row.description || '説明データがありません。',
       heroes: [...row.heroes].sort((a, b) => a.localeCompare(b, 'ja')),
+      searchHeroes: [...row.searchHeroes],
       status: row.implementationStatuses.size > 1
         ? 'partial'
         : row.implementationStatuses.has('implemented') ? 'implemented' : 'unimplemented',
@@ -158,7 +165,7 @@ const filteredTraits = computed(() => {
   return traitRows.value.filter((row) => {
     if (selectedStatus.value !== 'all' && row.status !== selectedStatus.value) return false
     if (!keyword) return true
-    return [row.name, row.description, ...row.heroes]
+    return [row.name, row.description, ...row.searchHeroes]
       .join(' ')
       .toLocaleLowerCase('ja')
       .includes(keyword)

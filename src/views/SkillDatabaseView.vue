@@ -114,6 +114,7 @@ interface SkillRow {
   activationRate: string
   description: string
   sourceHero: string
+  searchHeroes: string[]
   eventMaterial: string
   origin: string
   status: BattleSkillImplementationStatus
@@ -142,11 +143,39 @@ const { parseTextToPlain } = useTemplateParser()
 const heroNames = computed(() => new Map(
   heroes.value.flatMap((hero) => {
     const displayName = heroName(hero)
-    return [hero.name, hero.name_jp]
+    return [hero.name, hero.name_jp, ...(hero.aliases ?? [])]
       .filter((name): name is string => Boolean(name))
       .map((name) => [name, displayName] as const)
   }),
 ))
+
+// 固有・伝授・編成戦法の参照先から、各戦法に関係する武将名を検索用に逆引きする。
+const skillHeroSearchNames = computed(() => {
+  const canonicalSkillNames = new Map<string, string>()
+  skills.value.forEach((skill) => {
+    const canonicalName = skillName(skill)
+    ;[skill.name, skill.name_jp, ...(skill.aliases ?? [])]
+      .filter((name): name is string => Boolean(name))
+      .forEach((name) => canonicalSkillNames.set(name, canonicalName))
+  })
+
+  const relatedHeroes = new Map<string, Set<string>>()
+  heroes.value.forEach((hero) => {
+    const searchableHeroNames = [hero.name, hero.name_jp, ...(hero.aliases ?? [])]
+      .filter((name): name is string => Boolean(name))
+    ;[hero.unique_skill, hero.teachable_skill, hero.assembly_skill]
+      .filter((name): name is string => Boolean(name))
+      .forEach((reference) => {
+        const canonicalName = canonicalSkillNames.get(reference)
+        if (!canonicalName) return
+        const names = relatedHeroes.get(canonicalName) ?? new Set<string>()
+        searchableHeroNames.forEach((name) => names.add(name))
+        relatedHeroes.set(canonicalName, names)
+      })
+  })
+
+  return new Map([...relatedHeroes].map(([name, related]) => [name, [...related]]))
+})
 
 const plainDescription = (skill: Skill): string => {
   const main = skillDescription(skill)
@@ -174,13 +203,15 @@ const originLabel = (skill: Skill): string => {
 const skillRows = computed<SkillRow[]>(() => skills.value
   .map((skill) => {
     const implementation = battleSkillImplementation(skill)
+    const name = skillName(skill)
     return {
-      name: skillName(skill),
+      name,
       rarity: skill.rarity || '-',
       type: battleSkillType(skill),
       activationRate: formatRate(skill.activation_rate, true) || '100%',
       description: plainDescription(skill),
       sourceHero: sourceHeroName(skill),
+      searchHeroes: skillHeroSearchNames.value.get(name) ?? [],
       eventMaterial: eventSkillMaterial(skill),
       origin: originLabel(skill),
       status: implementation.status,
@@ -199,7 +230,7 @@ const filteredSkills = computed(() => {
     if (selectedType.value !== 'all' && row.type !== selectedType.value) return false
     if (selectedStatus.value !== 'all' && row.status !== selectedStatus.value) return false
     if (!keyword) return true
-    return [row.name, row.description, row.sourceHero, row.type]
+    return [row.name, row.description, row.sourceHero, ...row.searchHeroes, row.type]
       .join(' ')
       .toLocaleLowerCase('ja')
       .includes(keyword)

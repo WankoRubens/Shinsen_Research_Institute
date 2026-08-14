@@ -32,6 +32,10 @@ class SkillDatabasePageTests(unittest.TestCase):
 
     def test_skills_are_searchable_and_filterable(self):
         self.assertIn("戦法名・効果・武将名を検索", self.view)
+        self.assertIn("hero.teachable_skill", self.view)
+        self.assertIn("hero.unique_skill", self.view)
+        self.assertIn("hero.assembly_skill", self.view)
+        self.assertIn("...row.searchHeroes", self.view)
         self.assertIn("selectedType", self.view)
         self.assertIn("selectedStatus", self.view)
         self.assertIn("BATTLE_SKILL_TYPE_PRIORITY", self.view)

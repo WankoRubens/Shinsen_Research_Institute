@@ -32,6 +32,9 @@ class TraitDatabasePageTests(unittest.TestCase):
     def test_traits_are_grouped_and_searchable(self):
         self.assertIn("const rows = new Map", self.view)
         self.assertIn("existing.heroes.add(heroName)", self.view)
+        self.assertIn("existing.searchHeroes.add(name)", self.view)
+        self.assertIn("...(hero.aliases ?? [])", self.view)
+        self.assertIn("...row.searchHeroes", self.view)
         self.assertIn("特性名・効果・武将名を検索", self.view)
         self.assertNotIn("selectedRank", self.view)
 
