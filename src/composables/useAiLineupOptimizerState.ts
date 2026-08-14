@@ -47,6 +47,7 @@ const resultPhase = ref<AiOptimizerPhase>('idle')
 const sampleCount = ref(500)
 const scoutRuns = ref(20)
 const finalRuns = ref(100)
+const reorderFixedHeroes = ref(true)
 
 export function useAiLineupOptimizerState() {
   return {
@@ -58,5 +59,6 @@ export function useAiLineupOptimizerState() {
     sampleCount,
     scoutRuns,
     finalRuns,
+    reorderFixedHeroes,
   }
 }

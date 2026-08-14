@@ -81,14 +81,28 @@
             <span>最終試行 / テンプレ</span>
             <el-input-number v-model="finalRuns" :min="10" :max="1000" controls-position="right" />
           </label>
+          <label>
+            <span>指定武将の位置</span>
+            <div class="position-switch">
+              <el-switch
+                v-model="reorderFixedHeroes"
+                inline-prompt
+                active-text="可変"
+                inactive-text="固定"
+                :width="58"
+                @change="clearOptimizerResults"
+              />
+            </div>
+          </label>
         </div>
 
         <div class="status-row">
           <span>空き武将 {{ emptyHeroSlotCount }} 枠</span>
           <span>空き戦法 {{ emptySkillSlotCount }} 枠</span>
+          <span>評価対象 Tier 0・0.5・1</span>
           <span>テンプレ {{ templateTeams.length }} 編成</span>
           <span>推定全組み合わせ {{ formatLargeNumber(estimatedCombinations) }}</span>
-          <span>固定武将も主将/副将の配置替えを試行</span>
+          <span>{{ reorderFixedHeroes ? '指定武将も主将/副将の配置替えを試行' : '指定武将の主将/副将位置を固定' }}</span>
           <span v-if="!hasEnoughCandidates" class="warning">空き枠を埋める候補が不足しています。</span>
           <span v-else>S武将全体とS/A戦法全体からランダムに {{ formatNumber(sampleCount) }} 組を探索します。</span>
         </div>
@@ -230,6 +244,7 @@ const {
   sampleCount,
   scoutRuns,
   finalRuns,
+  reorderFixedHeroes,
 } = useAiLineupOptimizerState()
 const seedTroopLevels = useTroopLevels(computed(() => seedTeam))
 
@@ -242,6 +257,13 @@ const skillPickerVisible = ref(false)
 const emptyConflictSet = new Set<string>()
 const autoBreakthrough = 5
 const finalistCount = 8
+const AI_TEMPLATE_TIERS = new Set(['tier0', 'tier05', 'tier1'])
+const MATCHUPS_PER_BROWSER_YIELD = 4
+
+const clearOptimizerResults = (): void => {
+  topResults.value = []
+  resultPhase.value = 'idle'
+}
 
 const setSeedTroopType = (troopType: TroopType | null): void => {
   seedTeam.troopType = troopType
@@ -296,10 +318,13 @@ const skillCandidates = computed(() =>
     .sort((a, b) => skillCandidateScore(b) - skillCandidateScore(a) || skillName(a).localeCompare(skillName(b), 'ja'))
 )
 
-const templateTeams = computed(() => enemyFormations.value.map((formation) => ({
-  formation,
-  lineup: lineupFromTemplate(formation),
-})))
+// AI探索では環境上位のTier 0からTier 1までを評価対象にする。
+const templateTeams = computed(() => enemyFormations.value
+  .filter((formation) => AI_TEMPLATE_TIERS.has(formation.tier ?? ''))
+  .map((formation) => ({
+    formation,
+    lineup: lineupFromTemplate(formation),
+  })))
 
 const estimatedCombinations = computed(() => {
   const fixedRoleCountValue = fixedRoleCount.value
@@ -381,51 +406,61 @@ const runOptimizer = async () => {
   progress.total = 0
   try {
     const candidates = buildMonteCarloLineups(sampleCount.value)
-    progress.total = candidates.length + Math.min(finalistCount, candidates.length)
+    progress.total = candidates.length
 
     const scoutResults: AiOptimizerResult[] = []
     for (const [index, lineup] of candidates.entries()) {
-      scoutResults.push(evaluateLineup(lineup, scoutRuns.value, `scout-${index}`))
-      progress.done += 1
-      if (index % 2 === 0) await nextTick()
+      scoutResults.push(await evaluateLineup(lineup, scoutRuns.value, `scout-${index}`))
+      progress.done = index + 1
+      // 1組の評価が終わるたびに、現時点の上位候補を画面へ反映する。
+      topResults.value = rankedTopResults(scoutResults)
+      await nextTick()
+      await waitForPaint()
     }
 
-    const finalists = scoutResults
+    const finalists = [...scoutResults]
       .sort(compareOptimizerResults)
       .slice(0, finalistCount)
 
-    topResults.value = finalists
-      .slice(0, 3)
-      .map((result, index) => ({ ...result, rank: index + 1 }))
+    topResults.value = rankedTopResults(finalists)
     resultPhase.value = 'final'
+    progress.done = 0
+    progress.total = finalists.length
     await nextTick()
     await waitForPaint()
 
-    const finalResults: AiOptimizerResult[] = []
+    const finalResults = new Map<string, AiOptimizerResult>()
     for (const [index, result] of finalists.entries()) {
-      finalResults.push(evaluateLineup(result.lineup, finalRuns.value, `final-${index}`))
-      progress.done += 1
+      const evaluated = await evaluateLineup(result.lineup, finalRuns.value, `final-${index}`)
+      finalResults.set(lineupSignature(result.lineup), evaluated)
+      progress.done = index + 1
+      // 未評価の候補は一次結果を残し、再評価が終わった候補から順次差し替える。
+      topResults.value = rankedTopResults(finalists.map((finalist) =>
+        finalResults.get(lineupSignature(finalist.lineup)) ?? finalist,
+      ))
       await nextTick()
+      await waitForPaint()
     }
 
-    topResults.value = finalResults
-      .sort(compareOptimizerResults)
-      .slice(0, 3)
-      .map((result, index) => ({ ...result, rank: index + 1 }))
+    topResults.value = rankedTopResults([...finalResults.values()])
     resultPhase.value = 'done'
   } finally {
     running.value = false
   }
 }
 
-const evaluateLineup = (lineup: Lineup, runs: number, idPrefix: string): AiOptimizerResult => {
-  const matchupResults = templateTeams.value.map(({ formation, lineup: enemy }) => {
+const evaluateLineup = async (lineup: Lineup, runs: number, idPrefix: string): Promise<AiOptimizerResult> => {
+  const matchupResults: Array<{ formation: EnemyFormation; result: BattleBatchResult }> = []
+  for (const [index, { formation, lineup: enemy }] of templateTeams.value.entries()) {
     const result = simulateBattleBatch(lineup, enemy, {
       seed: `${idPrefix}-${formation.id}`,
       runs,
     })
-    return { formation, result }
-  })
+    matchupResults.push({ formation, result })
+
+    // 長い1候補の評価中も定期的にブラウザへ制御を返し、操作不能を防ぐ。
+    if ((index + 1) % MATCHUPS_PER_BROWSER_YIELD === 0) await yieldToBrowser()
+  }
   const average = (pick: (result: BattleBatchResult) => number) =>
     matchupResults.reduce((sum, item) => sum + pick(item.result), 0) / Math.max(1, matchupResults.length)
   const winRate = average((result) => result.allyWinRate)
@@ -474,16 +509,23 @@ const buildMonteCarloLineups = (count: number): Lineup[] => {
 
 const randomCandidateLineup = (index: number): Lineup | null => {
   const team = emptyLineup('AI探索編成')
-  const fixedBlocks = shuffled(roleKeys
-    .map((role) => seedTeam[role])
-    .filter((role) => role.hero)
-    .map((role) => cloneRole(role)))
-  const availableRoles = shuffled([...roleKeys])
+  if (reorderFixedHeroes.value) {
+    const fixedBlocks = shuffled(roleKeys
+      .map((role) => seedTeam[role])
+      .filter((role) => role.hero)
+      .map((role) => cloneRole(role)))
+    const availableRoles = shuffled([...roleKeys])
 
-  for (const block of fixedBlocks) {
-    const role = takeRandom(availableRoles)
-    if (!role) return null
-    team[role] = cloneRole(block)
+    for (const block of fixedBlocks) {
+      const role = takeRandom(availableRoles)
+      if (!role) return null
+      team[role] = cloneRole(block)
+    }
+  } else {
+    // 位置固定時は、指定済みの主将・副将を元の枠へそのまま配置する。
+    for (const role of roleKeys) {
+      if (seedTeam[role].hero) team[role] = cloneRole(seedTeam[role])
+    }
   }
 
   normalizeExclusiveTeamSkills(team)
@@ -676,6 +718,12 @@ const compareOptimizerResults = (a: AiOptimizerResult, b: AiOptimizerResult) =>
   || b.exchangeRatio - a.exchangeRatio
   || b.score - a.score
 
+const rankedTopResults = (results: AiOptimizerResult[]): AiOptimizerResult[] =>
+  [...results]
+    .sort(compareOptimizerResults)
+    .slice(0, 3)
+    .map((result, index) => ({ ...result, rank: index + 1 }))
+
 const tierFromScore = (value: number): string => {
   if (value >= 86) return 'T0'
   if (value >= 72) return 'T0.5'
@@ -755,6 +803,11 @@ function waitForPaint(): Promise<void> {
   return new Promise((resolve) => {
     window.requestAnimationFrame(() => window.setTimeout(resolve, 0))
   })
+}
+
+function yieldToBrowser(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve()
+  return new Promise((resolve) => window.setTimeout(resolve, 0))
 }
 </script>
 
@@ -839,7 +892,7 @@ function waitForPaint(): Promise<void> {
 
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -852,6 +905,12 @@ function waitForPaint(): Promise<void> {
   font-size: 12px;
   font-weight: 800;
   color: #6f6557;
+}
+
+.position-switch {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
 }
 
 .status-row {
