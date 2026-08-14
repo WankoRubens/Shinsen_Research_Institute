@@ -177,6 +177,7 @@ import SkillDescription from './SkillDescription.vue'
 import BriefDescription from './BriefDescription.vue'
 import { useLocalizedGameData } from '../composables/useLocalizedGameData'
 import { IMPLEMENTED_BATTLE_SKILL_NAMES } from '../lib/battleSimulator'
+import { battleSkillImplementation } from '../lib/battleSkillEffects'
 
 const props = defineProps({
   mode: { type: String as PropType<'browse' | 'select' | 'manage'>, default: 'browse' }, // 'browse' | 'select' | 'manage'
@@ -184,6 +185,7 @@ const props = defineProps({
   ownedSkills: { type: Array as PropType<string[]>, default: () => [] },
   filterOwned: { type: Boolean, default: false },
   battleImplementedOnly: { type: Boolean, default: false },
+  preciseBattleImplementedOnly: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['select', 'update:ownedSkills', 'update:filterOwned', 'skill-drag-start', 'skill-drag-end'])
@@ -318,6 +320,9 @@ const isFixed = (skill: any) => {
 }
 
 const isBattleImplemented = (skill: any) => {
+  if (props.preciseBattleImplementedOnly) {
+    return battleSkillImplementation(skill).status === 'implemented'
+  }
   if (!props.battleImplementedOnly) return true
   const names = [skill?.name_jp, skill?.name].filter(Boolean)
   return names.some((name) => IMPLEMENTED_BATTLE_SKILL_NAMES.has(name))

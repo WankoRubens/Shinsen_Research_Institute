@@ -33,6 +33,12 @@ class AiLineupOptimizerProgressTest(unittest.TestCase):
         self.assertIn("if (reorderFixedHeroes.value)", self.source)
         self.assertIn("team[role] = cloneRole(seedTeam[role])", self.source)
 
+    def test_only_precisely_implemented_skills_are_used(self):
+        self.assertIn("precise-battle-implemented-only", self.source)
+        self.assertIn("battleSkillImplementation(skill).status === 'implemented'", self.source)
+        self.assertIn("unsupportedFixedSkillNames.value.length === 0", self.source)
+        self.assertNotIn("IMPLEMENTED_BATTLE_SKILL_NAMES", self.source)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -64,7 +64,7 @@
             <h3>候補数と試行回数</h3>
           </div>
           <div class="estimate-pill">
-            S武将 {{ heroCandidates.length }} / S・A戦法 {{ skillCandidates.length }}
+            S武将 {{ heroCandidates.length }} / 実装済みS・A戦法 {{ skillCandidates.length }}
           </div>
         </div>
 
@@ -103,6 +103,9 @@
           <span>テンプレ {{ templateTeams.length }} 編成</span>
           <span>推定全組み合わせ {{ formatLargeNumber(estimatedCombinations) }}</span>
           <span>{{ reorderFixedHeroes ? '指定武将も主将/副将の配置替えを試行' : '指定武将の主将/副将位置を固定' }}</span>
+          <span v-if="unsupportedFixedSkillNames.length" class="warning">
+            「{{ unsupportedFixedSkillNames.join('、') }}」は戦法一覧で実装済みではないため使用できません。
+          </span>
           <span v-if="!hasEnoughCandidates" class="warning">空き枠を埋める候補が不足しています。</span>
           <span v-else>S武将全体とS/A戦法全体からランダムに {{ formatNumber(sampleCount) }} 組を探索します。</span>
         </div>
@@ -186,7 +189,7 @@
       <div class="picker-body">
         <SkillLibrary
           mode="select"
-          battle-implemented-only
+          precise-battle-implemented-only
           :used-skills="usedSkillNames"
           :owned-skills="[]"
           :filter-owned="false"
@@ -213,11 +216,10 @@ import {
   type AiOptimizerResult,
 } from '../composables/useAiLineupOptimizerState'
 import {
-  IMPLEMENTED_BATTLE_SKILL_NAMES,
   simulateBattleBatch,
   type BattleBatchResult,
 } from '../lib/battleSimulator'
-import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
+import { battleSkillImplementation, battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { heroLevel50Stats } from '../lib/heroStats'
 import { normalizeTroopType } from '../constants/traits'
 import type { TroopType } from '../constants/traits'
@@ -296,6 +298,13 @@ const skillOptions = computed(() =>
 
 const fixedHeroKeys = computed(() => new Set(roleKeys.map((role) => seedTeam[role].hero).filter(Boolean).map((hero) => heroIdentity(hero as Hero))))
 const fixedSkillKeys = computed(() => new Set(roleKeys.flatMap((role) => [seedTeam[role].skill1, seedTeam[role].skill2]).filter(Boolean).map((skill) => skillIdentity(skill as Skill))))
+const unsupportedFixedSkillNames = computed(() => [...new Set(
+  roleKeys
+    .flatMap((role) => [seedTeam[role].skill1, seedTeam[role].skill2])
+    .filter((skill): skill is Skill => Boolean(skill))
+    .filter((skill) => battleSkillImplementation(skill).status !== 'implemented')
+    .map((skill) => skillName(skill)),
+)])
 const fixedRoleCount = computed(() => roleKeys.filter((role) => seedTeam[role].hero).length)
 const emptyHeroSlotCount = computed(() => roleKeys.filter((role) => !seedTeam[role].hero).length)
 const emptySkillSlotCount = computed(() => roleKeys.reduce((sum, role) => {
@@ -342,6 +351,7 @@ const canOptimize = computed(() =>
   !running.value
   && templateTeams.value.length > 0
   && hasEnoughCandidates.value
+  && unsupportedFixedSkillNames.value.length === 0
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
 const resultHeading = computed(() => {
@@ -695,8 +705,7 @@ const isSearchHero = (hero: Hero): boolean => Number(hero.rarity) === 5 || hero.
 const isSearchSkill = (skill: Skill): boolean => skill.rarity === 'S' || skill.rarity === 'A'
 const isSelectableBattleSkill = (skill: Skill): boolean => {
   if (!skill || skill.is_fixed || skill.is_unique) return false
-  const names = [skill.name_jp, skill.name].filter(Boolean) as string[]
-  return names.some((name) => IMPLEMENTED_BATTLE_SKILL_NAMES.has(name))
+  return battleSkillImplementation(skill).status === 'implemented'
 }
 
 const heroCandidateScore = (hero: Hero): number => {
