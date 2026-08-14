@@ -33,6 +33,14 @@ export const TAG_COLORS: Record<ChangelogTag, string> = {
 
 export const CHANGELOG: ChangelogVersion[] = [
   {
+    version: '0.1.3',
+    date: '2026-08-14',
+    entries: [
+      { tag: 'feat', text: '「戦法一覧」ページを追加しました。戦法の種類、発動率、効果、由来、実装状況を一覧で確認できます。' },
+      { tag: 'misc', text: '使い方：戦法名・効果・武将名で検索し、戦法の種類や実装状況で絞り込めます。' },
+    ],
+  },
+  {
     version: '0.1.2',
     date: '2026-08-13',
     entries: [
