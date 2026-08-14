@@ -19,6 +19,7 @@ const messages = {
   aiLineup: 'AI編成',
   heroDb: '武将データベース',
   traitDb: '特性一覧',
+  skillDb: '戦法一覧',
   settings: '設定',
   feedback: '要望/報告',
   collapse: '折りたたむ',

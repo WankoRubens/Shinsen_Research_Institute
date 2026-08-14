@@ -18,6 +18,7 @@ import AiLineupOptimizer from '../views/AiLineupOptimizer.vue'
 import SettingsView from '../views/SettingsView.vue'
 import HeroDatabaseView from '../views/HeroDatabaseView.vue'
 import TraitDatabaseView from '../views/TraitDatabaseView.vue'
+import SkillDatabaseView from '../views/SkillDatabaseView.vue'
 import {
   canAccessPage,
   isPageName,
@@ -138,6 +139,15 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '特性一覧',
           description: '特性の効果と所持武将を一覧表示します。',
+        },
+      }),
+      ...publishedRoute('skillDb', {
+        path: 'skills',
+        name: 'skillDb',
+        component: SkillDatabaseView,
+        meta: {
+          title: '戦法一覧',
+          description: '戦法の種類、発動率、効果、由来、戦闘ロジックの実装状況を一覧表示します。',
         },
       }),
     ],

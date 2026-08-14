@@ -21,7 +21,7 @@ class TraitDatabasePageTests(unittest.TestCase):
 
     def test_trait_page_is_public_and_deployed(self):
         self.assertGreaterEqual(self.pages.count("'traitDb'"), 2)
-        self.assertIn("heroDb,traitDb,settings", self.workflow)
+        self.assertIn("heroDb,traitDb,skillDb,settings", self.workflow)
 
     def test_table_contains_requested_trait_columns(self):
         for heading in ("特性名", "実装状況", "効果", "所持武将", "人数"):

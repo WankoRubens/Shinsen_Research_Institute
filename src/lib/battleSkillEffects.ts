@@ -725,6 +725,30 @@ const PRECISE_HANDCRAFTED_SKILLS = new Set([
   '軍神',
 ])
 
+export type BattleSkillImplementationStatus = 'implemented' | 'partial' | 'unimplemented'
+
+export interface BattleSkillImplementation {
+  status: BattleSkillImplementationStatus
+  detail: string
+}
+
+// 戦法一覧では、個別caseと説明文ベースの共通処理を区別して進捗を表示する。
+export const battleSkillImplementation = (skill: Skill): BattleSkillImplementation => {
+  const names = [skill.name_jp, skill.name].filter((name): name is string => Boolean(name))
+  if (names.some((name) => PRECISE_HANDCRAFTED_SKILLS.has(name))) {
+    return { status: 'implemented', detail: '個別戦法ロジック' }
+  }
+
+  if (names.some((name) => IMPLEMENTED_BATTLE_SKILL_NAMES.has(name))) {
+    return {
+      status: 'partial',
+      detail: skill.battle ? '構造化データによる共通処理' : '戦法説明ベースの共通処理',
+    }
+  }
+
+  return { status: 'unimplemented', detail: '戦闘ロジック未実装' }
+}
+
 const structuredArray = (value: unknown): StructuredBattleNode[] =>
   Array.isArray(value) ? value.filter((item): item is StructuredBattleNode => Boolean(item && typeof item === 'object')) : []
 
