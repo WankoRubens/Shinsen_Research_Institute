@@ -4,6 +4,9 @@ skills:
   水攻干計:
     dot_turns: 2
     control_turns: 2
+  縦横馳突:
+    # 戦闘では最大レベル時の発動率40%を使用する。
+    probability: 0.4
   勇猛無前:
     name: 勇猛無前
     type: 主動

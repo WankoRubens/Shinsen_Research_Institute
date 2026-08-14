@@ -31,6 +31,7 @@ class ControlStatusRulesTest(unittest.TestCase):
 
     def test_seal_only_skips_the_normal_and_assault_attack_phase(self):
         self.assertIn("const normalAttackBlocked = hasControlStatus(actor, '封撃')", self.simulator)
+        self.assertIn("!hasControlImmunity(actor, '封撃', turn)", self.simulator)
         self.assertIn("は封撃で通常攻撃できない", self.simulator)
 
     def test_exhaustion_and_heal_block_keep_effects_but_zero_the_value(self):

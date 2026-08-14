@@ -581,6 +581,8 @@ const activeControlStatusKey = (fighter: BattleFighter, name: string): string | 
   controlStatusKeys(name).find((key) => (fighter.statuses[key] ?? 0) > 0) ?? null
 const hasControlStatus = (fighter: BattleFighter, name: string): boolean =>
   activeControlStatusKey(fighter, name) !== null
+const hasControlImmunity = (fighter: BattleFighter, name: string, turn: number): boolean =>
+  (fighter.specialState[`controlImmunityUntil:${name}`] ?? 0) >= turn
 const clearControlStatus = (fighter: BattleFighter, name: string) => {
   controlStatusKeys(name).forEach((key) => {
     delete fighter.statuses[key]
@@ -1876,6 +1878,17 @@ const createBingxueHelpers = (
 
 const addControl = (ctx: SkillResolveContext, target: BattleFighter, name: string, duration: number) => {
   if (!isAlive(target)) return
+  if (hasControlImmunity(target, name, ctx.turn)) {
+    if (ctx.logs !== NO_LOGS) ctx.logs.push({
+      turn: ctx.turn,
+      side: target.side,
+      actor: target.name,
+      actorHp: target.hp,
+      effect: name,
+      message: `${target.name}は${name}耐性で${name}を無効化`,
+    })
+    return
+  }
   if ((target.specialState.insightUntil ?? 0) >= ctx.turn) {
     if (ctx.logs !== NO_LOGS) ctx.logs.push({
       turn: ctx.turn,
@@ -2771,6 +2784,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           controlStats,
         )
         const normalAttackBlocked = hasControlStatus(actor, '封撃')
+          && !hasControlImmunity(actor, '封撃', turn)
         const satsumaStrategyRate = actor.specialState.satsumaStrategyNormalRate ?? 0
         const satsumaWaiting = satsumaStrategyRate > 0
           && (actor.specialState.satsumaStrategyNormalNextTurn ?? 1) > turn
@@ -2794,12 +2808,14 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             message: `${actor.name}は薩摩鉄砲兵の再装填中`,
           })
         } else {
-          if (!isAlive(target)) continue
-
-          target = chooseControlledTarget(actor, enemies, allies, enemies, rng, 'normal')
-          if (!target) break
-          fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
-          if (!isAlive(target)) continue
+          // 連撃中は、ターゲット選択から通常攻撃後効果までの一連の処理を2回行う。
+          const normalAttackCount = (actor.specialState.doubleAttackUntil ?? 0) >= turn ? 2 : 1
+          for (let normalAttackIndex = 0; normalAttackIndex < normalAttackCount; normalAttackIndex += 1) {
+            if (!isAlive(actor)) break
+            target = chooseControlledTarget(actor, enemies, allies, enemies, rng, 'normal')
+            if (!target) break
+            fireTriggeredSkills(actor, 'beforeNormalAttack', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
+            if (!isAlive(target)) continue
 
           // 援護中の大将が狙われた場合、指定された友軍が通常攻撃を引き受ける。
           const targetSideMembers = target.side === actor.side ? allies : enemies
@@ -3014,6 +3030,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
                 actor,
               )
             })
+          }
         }
         if (dateMasamuneHasDragonCavalry(allies) && grantedActionSkills.length > 0) {
           fireTriggeredSkillList(

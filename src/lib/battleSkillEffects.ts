@@ -73,6 +73,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   攻其不備: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追い崩し: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追亡逐北: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
+  縦横馳突: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
   乱世の華: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   御旗楯無: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn', 'onNormalAttackReceived'], followUpTriggers: ['onNormalAttackReceived'] }),
   所向無敵: defineBattleSkillMeta({ type: '能動' }),
@@ -2729,15 +2730,17 @@ export const applyNamedSkillEffect = (
     }
     case '縦横馳突': {
       // 戦法タイプ: 能動
-      // 自身に連撃（1ターンに2回通常攻撃が可能）を付与し、さらに封撃（通常攻撃不可）耐性を獲得する
-      // 封撃を付与する
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["封撃"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
+      // 発動したターンは通常攻撃を2回行えるようにする。
+      ctx.caster.specialState.doubleAttackUntil = Math.max(
+        ctx.caster.specialState.doubleAttackUntil ?? 0,
+        ctx.turn,
+      )
+      // 発動したターンは、既に受けている封撃と新たに受ける封撃の両方を無効化する。
+      ctx.caster.specialState['controlImmunityUntil:封撃'] = Math.max(
+        ctx.caster.specialState['controlImmunityUntil:封撃'] ?? 0,
+        ctx.turn,
+      )
+      log(ctx.logs, ctx, `${ctx.caster.name}は連撃と封撃耐性を獲得(1T)`)
       return true
     }
     case '知者楽水': {
