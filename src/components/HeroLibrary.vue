@@ -223,7 +223,7 @@
 <script setup lang="ts">
 import { ref, computed, PropType, watch } from 'vue'
 import { ArrowDown, Close, Minus, Plus } from '@element-plus/icons-vue'
-import { useData, Hero } from '../composables/useData'
+import { useData, Hero, normalizeClanName, normalizeFactionName } from '../composables/useData'
 import { TROOP_TYPES } from '../constants/traits'
 import HeroCard from './HeroCard.vue'
 import { allHeroLabels, heroLabels } from '../lib/heroLabels'
@@ -275,8 +275,10 @@ const libraryHeroes = computed(() => heroes.value.filter((hero) => {
   return allowedRaritySet.value.has(Number(hero.rarity))
 }))
 
-const heroFactionLabel = (hero: Hero): string => hero.faction_jp || hero.faction || ''
-const heroClanLabel = (hero: Hero): string => hero.clan_jp || hero.clan || ''
+const heroFactionLabel = (hero: Hero): string => normalizeFactionName(hero.faction_jp || hero.faction)
+// Normalize again at the filter boundary so raw or asynchronously replaced
+// hero data cannot create duplicate labels such as 徳川/德川/徳川家.
+const heroClanLabel = (hero: Hero): string => normalizeClanName(hero.clan_jp || hero.clan)
 const heroSearchText = (hero: Hero): string => [
   hero.name_jp,
   hero.name,

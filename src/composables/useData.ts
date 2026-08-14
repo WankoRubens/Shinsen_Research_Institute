@@ -455,7 +455,7 @@ export const resolveHeroBingxueDirection = (
 // Clan data comes from multiple sources and can contain both "織田" and
 // "織田家", plus traditional-character variants. Keep one Japanese label so
 // filters and hero details never show duplicate entries for the same clan.
-const normalizeClanName = (value: string | null | undefined): string => {
+export const normalizeClanName = (value: string | null | undefined): string => {
   const replacements: Record<string, string> = {
     德: '徳',
     豐: '豊',
@@ -466,17 +466,23 @@ const normalizeClanName = (value: string | null | undefined): string => {
     淺: '浅',
     齋: '斎',
   }
-  let normalized = (value ?? '').trim().replace(/家+$/u, '')
+  let normalized = (value ?? '').trim().replace(/\s+/gu, '')
   for (const [from, to] of Object.entries(replacements)) {
     normalized = normalized.replaceAll(from, to)
   }
-  return normalized
+  return normalized.replace(/家+$/u, '')
 }
 
+// Factions are sourced from the same Japanese/traditional labels as clans.
+export const normalizeFactionName = normalizeClanName
+
 const normalizeHero = (hero: Hero): Hero => {
+  const faction = normalizeFactionName(hero.faction_jp || hero.faction)
   const clan = normalizeClanName(hero.clan_jp || hero.clan)
   return withHeroLevel50Stats({
     ...hero,
+    faction: faction || undefined,
+    faction_jp: faction || undefined,
     clan: clan || undefined,
     clan_jp: clan || undefined,
     bingxue: normalizeHeroBingxue(hero.bingxue),

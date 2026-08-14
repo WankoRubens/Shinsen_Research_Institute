@@ -1292,6 +1292,25 @@ def fix_skill_name(name: str) -> str:
     return SKILL_NAME_FIXES.get(name, name)
 
 
+CLAN_CHARACTER_FIXES = str.maketrans({
+    "德": "徳",
+    "豐": "豊",
+    "條": "条",
+    "內": "内",
+    "國": "国",
+    "眾": "衆",
+    "淺": "浅",
+    "齋": "斎",
+})
+
+
+def normalize_faction_or_clan_name(value: str) -> str:
+    """Return one Japanese label for traditional and ``...家`` group variants."""
+    normalized = re.sub(r"\s+", "", str(value or "").strip())
+    normalized = normalized.translate(CLAN_CHARACTER_FIXES)
+    return re.sub(r"家+$", "", normalized)
+
+
 VALID_SKILL_TYPES = {"被動", "主動", "指揮", "突擊", "兵種", "陣法"}
 
 
@@ -1324,6 +1343,11 @@ def postprocess_skill(skill: dict) -> dict:
 
 def postprocess_hero(hero: dict) -> dict:
     """Normalize a single hero entry after all merges/overrides."""
+    # Source data mixes labels such as 徳川/德川/徳川家 and
+    # 豊臣/豐臣/豊臣家. Canonicalize faction and clan fields before UI filters.
+    for field in ("faction", "faction_jp", "clan", "clan_jp"):
+        if hero.get(field):
+            hero[field] = normalize_faction_or_clan_name(hero[field])
     # Fix skill name references on heroes
     for field in ("unique_skill", "teachable_skill"):
         if hero.get(field):
