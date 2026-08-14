@@ -74,6 +74,8 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   追い崩し: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追亡逐北: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   縦横馳突: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  一行三昧: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  一上一下: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
   乱世の華: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   御旗楯無: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn', 'onNormalAttackReceived'], followUpTriggers: ['onNormalAttackReceived'] }),
   所向無敵: defineBattleSkillMeta({ type: '能動' }),
@@ -479,6 +481,18 @@ const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string, 
     targetSide: target?.side,
     message,
   })
+}
+
+// 戦闘中ずっと有効な「能動戦法だけ」の発動率上昇を加算する。
+const addActiveSkillActivationRateBonus = (ctx: SkillResolveContext, bonus: number) => {
+  const key = 'activeSkillActivationRateBonus'
+  const total = (ctx.caster.specialState[key] ?? 0) + bonus
+  ctx.caster.specialState[key] = total
+  log(
+    ctx.logs,
+    ctx,
+    `${ctx.caster.name}の能動戦法発動率が${bonus}%上昇(合計+${total}%)`,
+  )
 }
 
 // 複数の戦法が同じ特殊効果へ加算できるよう、効果元ごとの差分だけを合計値へ反映する。
@@ -2964,7 +2978,9 @@ export const applyNamedSkillEffect = (
     case '一行三昧': {
       // 戦法タイプ: 受動
       // 戦闘中、自身の能動戦法の発動確率が7%→14%増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 準備ターンに、最大レベル時の14%を戦闘終了まで加算する。
+      addActiveSkillActivationRateBonus(ctx, 14)
+      return true
     }
     case '地黄八幡': {
       // 戦法タイプ: 能動
@@ -3798,7 +3814,9 @@ export const applyNamedSkillEffect = (
     case '一上一下': {
       // 戦法タイプ: 受動
       // 戦闘中、自身の能動戦法の発動確率が6%→12%増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 準備ターンに、最大レベル時の12%を戦闘終了まで加算する。
+      addActiveSkillActivationRateBonus(ctx, 12)
+      return true
     }
     case '捨て身の義': {
       // 戦法タイプ: 指揮

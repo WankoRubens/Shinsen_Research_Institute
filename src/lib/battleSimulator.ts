@@ -1975,9 +1975,13 @@ const activationRateOf = (caster: BattleFighter, skill: Skill, turn = 0): number
   const sharedSkillBonus = (caster.buffs.activationRate ?? 0) / 100
   const skillActivationBonus = caster.specialState[`activationRateBonus:${resolvedSkillName}`] ?? 0
   const skillActivationPenalty = caster.specialState[`activationRatePenalty:${resolvedSkillName}`] ?? 0
+  // 一上一下・一行三昧は能動戦法だけを強化し、指揮・突撃などには加算しない。
+  const activeSkillPassiveBonus = skillType === '能動'
+    ? (caster.specialState.activeSkillActivationRateBonus ?? 0) / 100
+    : 0
   // 直諫敢行は1ターン目だけ、他の戦法から受ける発動率上昇分を2倍にする。
   // 基礎発動率・兵学補正・発動率低下は倍化の対象にしない。
-  const externalSkillBonus = sharedSkillBonus + skillActivationBonus / 100
+  const externalSkillBonus = sharedSkillBonus + skillActivationBonus / 100 + activeSkillPassiveBonus
   const adjustedExternalSkillBonus = resolvedSkillName === '直諫敢行' && turn === 1
     ? externalSkillBonus * 2
     : externalSkillBonus
