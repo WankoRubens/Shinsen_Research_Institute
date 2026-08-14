@@ -70,7 +70,10 @@
               <td data-label="由来">
                 <div class="source-info">
                   <span class="origin-badge">{{ row.origin }}</span>
-                  <span v-if="row.sourceHero">{{ row.sourceHero }}</span>
+                  <span v-if="row.eventMaterial" class="event-material">
+                    <strong>必要素材</strong>{{ row.eventMaterial }}
+                  </span>
+                  <span v-else-if="row.sourceHero">{{ row.sourceHero }}</span>
                 </div>
               </td>
             </tr>
@@ -87,6 +90,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { eventSkillMaterial } from '../constants/eventSkillMaterials'
 import { formatRate } from '../constants/gameData'
 import type { Skill } from '../composables/useData'
 import { useData } from '../composables/useData'
@@ -110,6 +114,7 @@ interface SkillRow {
   activationRate: string
   description: string
   sourceHero: string
+  eventMaterial: string
   origin: string
   status: BattleSkillImplementationStatus
   implementationDetail: string
@@ -160,8 +165,8 @@ const sourceHeroName = (skill: Skill): string => {
 
 const originLabel = (skill: Skill): string => {
   if (skill.is_unique) return '固有'
+  if (skill.is_event_skill) return '事件'
   if (skill.is_teachable) return '伝授'
-  if (skill.is_event_skill) return 'イベント'
   if (skill.is_fixed) return '固定'
   return '汎用'
 }
@@ -176,6 +181,7 @@ const skillRows = computed<SkillRow[]>(() => skills.value
       activationRate: formatRate(skill.activation_rate, true) || '100%',
       description: plainDescription(skill),
       sourceHero: sourceHeroName(skill),
+      eventMaterial: eventSkillMaterial(skill),
       origin: originLabel(skill),
       status: implementation.status,
       implementationDetail: implementation.detail,
@@ -363,6 +369,17 @@ const statusLabel = (status: BattleSkillImplementationStatus): string => ({
   align-items: flex-start;
   gap: 7px;
   color: #4f6070;
+}
+
+.event-material {
+  display: grid;
+  gap: 2px;
+  line-height: 1.45;
+}
+
+.event-material strong {
+  color: #8b4d13;
+  font-size: 11px;
 }
 
 .origin-badge { border-color: #d7bb77; background: #fff6df; color: #765412; }
