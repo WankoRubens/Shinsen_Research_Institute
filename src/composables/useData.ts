@@ -468,7 +468,7 @@ export const normalizeClanName = (value: string | null | undefined): string => {
   }
   let normalized = (value ?? '').trim().replace(/\s+/gu, '')
   for (const [from, to] of Object.entries(replacements)) {
-    normalized = normalized.replaceAll(from, to)
+    normalized = normalized.split(from).join(to)
   }
   return normalized.replace(/家+$/u, '')
 }
@@ -481,7 +481,7 @@ const normalizeHero = (hero: Hero): Hero => {
   const clan = normalizeClanName(hero.clan_jp || hero.clan)
   return withHeroLevel50Stats({
     ...hero,
-    faction: faction || undefined,
+    faction,
     faction_jp: faction || undefined,
     clan: clan || undefined,
     clan_jp: clan || undefined,

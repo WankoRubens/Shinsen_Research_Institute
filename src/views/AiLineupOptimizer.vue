@@ -64,11 +64,20 @@
             <h3>候補数と試行回数</h3>
           </div>
           <div class="estimate-pill">
+            {{ candidatePoolMode === 'owned' ? '所持' : '全体' }}：
             S武将 {{ heroCandidates.length }} / 実装済みS・A戦法 {{ skillCandidates.length }}
           </div>
         </div>
 
         <div class="settings-grid">
+          <label>
+            <span>候補範囲</span>
+            <el-segmented
+              v-model="candidatePoolMode"
+              :options="candidatePoolOptions"
+              @change="handleCandidatePoolChange"
+            />
+          </label>
           <label>
             <span>探索サンプル数</span>
             <el-input-number v-model="sampleCount" :min="1" :max="5000" controls-position="right" />
@@ -107,7 +116,10 @@
             「{{ unsupportedFixedSkillNames.join('、') }}」は戦法一覧で実装済みではないため使用できません。
           </span>
           <span v-if="!hasEnoughCandidates" class="warning">空き枠を埋める候補が不足しています。</span>
-          <span v-else>S武将全体とS/A戦法全体からランダムに {{ formatNumber(sampleCount) }} 組を探索します。</span>
+          <span v-else>
+            {{ candidatePoolMode === 'owned' ? '所持中のS武将と実装済みS/A戦法' : 'S武将全体と実装済みS/A戦法全体' }}から
+            ランダムに {{ formatNumber(sampleCount) }} 組を探索します。
+          </span>
         </div>
       </section>
 
@@ -176,8 +188,8 @@
         <HeroLibrary
           mode="select"
           :used-heroes="usedHeroNames"
-          :owned-heroes="[]"
-          :filter-owned="false"
+          :owned-heroes="ownedHeroes"
+          :filter-owned="candidatePoolMode === 'owned'"
           :allowed-rarities="[5, 4]"
           :show-troop-filter="false"
           @select="selectHeroFromLibrary"
@@ -191,8 +203,8 @@
           mode="select"
           precise-battle-implemented-only
           :used-skills="usedSkillNames"
-          :owned-skills="[]"
-          :filter-owned="false"
+          :owned-skills="ownedSkills"
+          :filter-owned="candidatePoolMode === 'owned'"
           @select="selectSkillFromLibrary"
         />
       </div>
@@ -209,6 +221,7 @@ import SkillLibrary from '../components/SkillLibrary.vue'
 import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
 import { useTroopLevels } from '../composables/useTroopLevels'
+import { useInventory } from '../composables/useInventory'
 import { buildTemplateLookup, useData, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
 import {
   emptyAiOptimizerRole,
@@ -247,7 +260,9 @@ const {
   scoutRuns,
   finalRuns,
   reorderFixedHeroes,
+  candidatePoolMode,
 } = useAiLineupOptimizerState()
+const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs } = useInventory()
 const seedTroopLevels = useTroopLevels(computed(() => seedTeam))
 
 const picker = reactive<{ role: RoleKey | null; skillSlot: number | null }>({
@@ -261,10 +276,29 @@ const autoBreakthrough = 5
 const finalistCount = 8
 const AI_TEMPLATE_TIERS = new Set(['tier0', 'tier05', 'tier1'])
 const MATCHUPS_PER_BROWSER_YIELD = 4
+const candidatePoolOptions = [
+  { label: '所持のみ', value: 'owned' },
+  { label: 'すべて', value: 'all' },
+]
 
 const clearOptimizerResults = (): void => {
   topResults.value = []
   resultPhase.value = 'idle'
+}
+
+const breakthroughForHero = (hero: Hero): number => {
+  if (candidatePoolMode.value === 'all') return autoBreakthrough
+  return Math.min(5, Math.max(0, Math.trunc(Number(ownedHeroBreakthroughs.value[hero.name]) || 0)))
+}
+
+const handleCandidatePoolChange = (): void => {
+  // Match fixed slots to the selected assumption as well: registered counts
+  // for owned-only exploration, or max breakthrough for the full library.
+  for (const role of roleKeys) {
+    const hero = seedTeam[role].hero
+    if (hero) seedTeam[role].breakthrough = breakthroughForHero(hero)
+  }
+  clearOptimizerResults()
 }
 
 const setSeedTroopType = (troopType: TroopType | null): void => {
@@ -315,6 +349,7 @@ const emptySkillSlotCount = computed(() => roleKeys.reduce((sum, role) => {
 const heroCandidates = computed(() =>
   uniqueBy(heroes.value, heroIdentity)
     .filter((hero) => isSearchHero(hero))
+    .filter((hero) => candidatePoolMode.value === 'all' || ownedHeroes.value.includes(hero.name))
     .filter((hero) => !fixedHeroKeys.value.has(heroIdentity(hero)))
     .sort((a, b) => heroCandidateScore(b) - heroCandidateScore(a) || heroName(a).localeCompare(heroName(b), 'ja'))
 )
@@ -323,6 +358,7 @@ const skillCandidates = computed(() =>
   uniqueBy(skills.value, skillIdentity)
     .filter((skill) => isSelectableBattleSkill(skill))
     .filter((skill) => isSearchSkill(skill))
+    .filter((skill) => candidatePoolMode.value === 'all' || ownedSkills.value.includes(skill.name))
     .filter((skill) => !fixedSkillKeys.value.has(skillIdentity(skill)))
     .sort((a, b) => skillCandidateScore(b) - skillCandidateScore(a) || skillName(a).localeCompare(skillName(b), 'ja'))
 )
@@ -368,7 +404,7 @@ const setHero = (role: RoleKey, value: string) => {
   seedTeam[role].skill1 = null
   seedTeam[role].skill2 = null
   seedTeam[role].bingxue = { direction: null, major: null, minors: [] }
-  seedTeam[role].breakthrough = hero ? autoBreakthrough : 0
+  seedTeam[role].breakthrough = hero ? breakthroughForHero(hero) : 0
   seedTeam[role].stats = hero ? { ...heroLevel50Stats(hero) } : emptyRole().stats
   topResults.value = []
   resultPhase.value = 'idle'
@@ -633,7 +669,7 @@ const statsWithFocus = (hero: Hero | null, focus?: string, breakthrough = autoBr
 const autoRole = (hero: Hero): RoleData => ({
   ...emptyRole(),
   hero,
-  breakthrough: autoBreakthrough,
+  breakthrough: breakthroughForHero(hero),
   stats: { ...heroLevel50Stats(hero) },
 })
 
@@ -914,6 +950,10 @@ function yieldToBrowser(): Promise<void> {
   font-size: 12px;
   font-weight: 800;
   color: #6f6557;
+}
+
+.settings-grid :deep(.el-segmented) {
+  width: 100%;
 }
 
 .position-switch {
