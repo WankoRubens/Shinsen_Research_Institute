@@ -194,6 +194,10 @@ const NAMED_BATTLE_SKILL_NAMES = [
   '疾風迅雷',
   '表裏比興',
   '瞬息万変',
+  '三河魂',
+  '縦横馳突',
+  '千軍辟易',
+  '恵風和雨',
   '軍神',
   '三河武士',
   '風林火山',
@@ -709,6 +713,8 @@ const durationFromDatabase = (skill: Skill, fallback = 1): number =>
 
 const PRECISE_HANDCRAFTED_SKILLS = new Set([
   ...DIRECT_DAMAGE_HANDCRAFTED_SKILL_NAMES,
+  // 個別戦法の登録一覧を共有し、追加したcaseを戦法一覧でも実装済みとして扱う。
+  ...NAMED_BATTLE_SKILL_NAMES,
   '回天転運',
   '千成瓢箪',
   '水攻干計',
