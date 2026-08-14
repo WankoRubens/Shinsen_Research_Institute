@@ -52,6 +52,12 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
     replaceStructuredTriggers: true,
     followUpTriggers: ['turnStart'],
   }),
+  会盟の陣: defineBattleSkillMeta({
+    type: '陣法',
+    triggers: ['preparationTurn', 'turnStart'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['turnStart'],
+  }),
   表裏比興: defineBattleSkillMeta({ type: '能動' }),
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
@@ -198,6 +204,7 @@ const NAMED_BATTLE_SKILL_NAMES = [
   '縦横馳突',
   '千軍辟易',
   '恵風和雨',
+  '会盟の陣',
   '軍神',
   '三河武士',
   '風林火山',
@@ -4264,9 +4271,60 @@ export const applyNamedSkillEffect = (
     }
     case '会盟の陣': {
       // 戦法タイプ: 陣法
-      // 自軍3名の所属勢力がすべて異なり、且つ自軍大将の固有戦法が能動または突撃である場合に発動
-      // 戦法説明にある能力値/与ダメ/被ダメ補正（13%または13）を反映する
-      applyDatabaseBuffs(ctx, h)
+      if (ctx.trigger === 'preparationTurn') {
+        // 自軍3名が揃い、所属勢力がすべて異なるかを確認する。
+        const factions = ctx.allies.map((ally) => ally.faction).filter(Boolean)
+        const allFactionsDifferent = factions.length === 3 && new Set(factions).size === 3
+        // 自軍大将と、その固有戦法を取得する。
+        const commander = ctx.allies.find((ally) => ally.role === 'main')
+        const commanderUniqueSkill = commander?.skills.find((skill) =>
+          Boolean(skill.is_unique || skill.unique_hero || /固有戦法/.test(skill.game8_kind ?? '')))
+        // 大将の固有戦法が能動または突撃かを確認する。
+        const uniqueSkillType = commanderUniqueSkill ? battleSkillType(commanderUniqueSkill) : null
+        const validUniqueSkill = uniqueSkillType === '能動' || uniqueSkillType === '突撃'
+
+        if (!commander || !commanderUniqueSkill || !allFactionsDifferent || !validUniqueSkill) {
+          ctx.caster.specialState.allianceFormationActive = 0
+          log(ctx.logs, ctx, '会盟の陣: 発動条件を満たしていない')
+          return true
+        }
+
+        // 条件成立を記録し、大将の固有戦法だけに発動率+13%を加える。
+        ctx.caster.specialState.allianceFormationActive = 1
+        const uniqueSkillName = commanderUniqueSkill.name_jp || commanderUniqueSkill.name
+        const activationRateKey = `activationRateBonus:${uniqueSkillName}`
+        setSpecialStateContribution(
+          commander,
+          activationRateKey,
+          `allianceFormationActivationRate:${ctx.caster.id}:${uniqueSkillName}`,
+          13,
+        )
+        log(ctx.logs, ctx, `${commander.name}の${uniqueSkillName}発動率が13.00%上昇`, commander)
+        return true
+      }
+
+      // 準備ターンで条件を満たしていない場合、毎ターンの副将補正を行わない。
+      if ((ctx.caster.specialState.allianceFormationActive ?? 0) <= 0) return true
+      // 現在兵力を比較するため、戦死した武将を含む副将2名を取得する。
+      const deputies = ctx.allies.filter((ally) => ally.role !== 'main')
+      if (deputies.length < 2) return true
+      // 同兵力の場合は第1副将を兵力が高い側として扱う。
+      const higher = deputies[0]!.hp >= deputies[1]!.hp ? deputies[0]! : deputies[1]!
+      const lower = higher.id === deputies[0]!.id ? deputies[1]! : deputies[0]!
+
+      // 兵力が高い副将は、1ターンの間、与ダメージ+18%・被ダメージ-10%。
+      if (higher.hp > 0) {
+        h.addTimedModifier(ctx, higher, 'damageDealt', 18, 1, 1)
+        h.addTimedModifier(ctx, higher, 'damageTaken', -10, 1, 1)
+        log(ctx.logs, ctx, `会盟の陣: ${higher.name}の与ダメージが18.00%上昇（${(100 + (higher.buffs.damageDealt ?? 0)).toFixed(2)}%）、被ダメージが10.00%低下（${(100 + (higher.buffs.damageTaken ?? 0)).toFixed(2)}%）`, higher)
+      }
+
+      // 兵力が低い副将は、1ターンの間、与ダメージ+10%・被ダメージ-18%。
+      if (lower.hp > 0) {
+        h.addTimedModifier(ctx, lower, 'damageDealt', 10, 1, 1)
+        h.addTimedModifier(ctx, lower, 'damageTaken', -18, 1, 1)
+        log(ctx.logs, ctx, `会盟の陣: ${lower.name}の与ダメージが10.00%上昇（${(100 + (lower.buffs.damageDealt ?? 0)).toFixed(2)}%）、被ダメージが18.00%低下（${(100 + (lower.buffs.damageTaken ?? 0)).toFixed(2)}%）`, lower)
+      }
       return true
     }
     case '出奇制勝': {

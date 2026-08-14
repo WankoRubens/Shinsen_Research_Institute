@@ -125,6 +125,7 @@ export interface BattleFighter {
   roleLabel: string
   name: string
   gender: string
+  faction: string
   maxHp: number
   hp: number
   wounded: number
@@ -469,6 +470,8 @@ const makeFighter = (
     roleLabel: ROLE_LABELS[roleKey],
     name: role.hero.name_jp || role.hero.name,
     gender: role.hero.gender ?? '',
+    // 会盟の陣など、所属勢力を条件にする戦法で参照する。
+    faction: role.hero.faction_jp || role.hero.faction || '',
     maxHp: BASE_TROOPS,
     hp: BASE_TROOPS,
     wounded: 0,
