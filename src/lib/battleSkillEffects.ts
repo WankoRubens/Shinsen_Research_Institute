@@ -46,6 +46,12 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   直諫敢行: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
   越後二天: defineBattleSkillMeta({ type: '突撃' }),
   疾風迅雷: defineBattleSkillMeta({ type: '指揮' }),
+  恵風和雨: defineBattleSkillMeta({
+    type: '指揮',
+    triggers: ['preparationTurn', 'turnStart'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['turnStart'],
+  }),
   表裏比興: defineBattleSkillMeta({ type: '能動' }),
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
@@ -4029,10 +4035,23 @@ export const applyNamedSkillEffect = (
     }
     case '恵風和雨': {
       // 戦法タイプ: 指揮
-      // 戦闘中、偶数ターンに40%→80%の確率で自軍複数（2名）を回復する（回復率61%→122%、知略依存）
-      // 友军群体(2人)を回復（回復率122%）する
+      // 準備ターンは指揮戦法の登録だけを行い、回復判定は1～8ターン目に実行する。
+      if (ctx.trigger === 'preparationTurn' || ctx.turn <= 0) return true
+
+      // 偶数ターンは80%で発動する。奇数ターンは女性武将だけが発動判定を行う。
+      const isEvenTurn = ctx.turn % 2 === 0
+      const isFemale = /女|女性|female/i.test(ctx.caster.gender)
+      if (!isEvenTurn && !isFemale) return true
+
+      // 女性武将の奇数ターンは20%を基礎値とし、魅力100超過分で発動率を上げる。
+      const chance = isEvenTurn
+        ? 0.8
+        : attributeDependentChance(0.2, [h.statOf(ctx.caster, 'cha')])
+      if (!h.roll(ctx.rng, chance)) return true
+
+      // 発動に成功した時だけ、ランダムな自軍2名を122%・知略依存で回復する。
       databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 122, databaseHealKind(ctx.skill))
+        h.healBySkill(ctx, target, 122, 'strategy')
       })
       return true
     }
