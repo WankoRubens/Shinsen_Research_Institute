@@ -15901,15 +15901,6 @@
           "level": 3,
           "level_cap_bonus": 0
         }
-      },
-      {
-        "name": "-",
-        "name_jp": "-",
-        "description": "-",
-        "description_jp": "-",
-        "rank": "A",
-        "active": true,
-        "sim_level": "4"
       }
     ],
     "bingxue": {

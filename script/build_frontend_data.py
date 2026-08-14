@@ -155,9 +155,14 @@ def _merge_shinsen_sim_data(heroes: list[dict], skills: list[dict]) -> tuple[lis
             hero["gender"] = commander["gender"]
         traits = []
         for trait in commander.get("traits") or []:
+            trait_name = str(trait.get("name") or "").strip()
+            # 公開シミュレータでは、特性なしの空き枠がハイフンで返る場合がある。
+            # 空き枠を実在する特性として一覧や戦闘処理へ渡さない。
+            if trait_name in {"", "-", "－", "―", "—"}:
+                continue
             traits.append({
-                "name": trait.get("name") or "",
-                "name_jp": trait.get("name") or "",
+                "name": trait_name,
+                "name_jp": trait_name,
                 "description": trait.get("content") or "",
                 "description_jp": trait.get("content") or "",
                 "rank": "S" if trait.get("level") == "0" else "A",

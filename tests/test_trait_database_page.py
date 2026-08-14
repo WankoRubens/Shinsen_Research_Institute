@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 
@@ -13,6 +14,8 @@ class TraitDatabasePageTests(unittest.TestCase):
         cls.pages = (ROOT / "src/config/publishedPages.ts").read_text(encoding="utf-8")
         cls.sidebar = (ROOT / "src/components/layout/SidebarBody.vue").read_text(encoding="utf-8")
         cls.workflow = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
+        cls.builder = (ROOT / "script/build_frontend_data.py").read_text(encoding="utf-8")
+        cls.heroes = json.loads((ROOT / ".build/heroes.json").read_text(encoding="utf-8"))
 
     def test_route_and_navigation_are_registered(self):
         self.assertIn("path: 'traits'", self.router)
@@ -44,6 +47,14 @@ class TraitDatabasePageTests(unittest.TestCase):
         self.assertIn("一部実装", self.view)
         self.assertIn("未実装", self.view)
         self.assertIn("selectedStatus", self.view)
+
+    def test_placeholder_trait_slots_are_removed(self):
+        self.assertIn('if trait_name in {"", "-", "－", "―", "—"}:', self.builder)
+        placeholder_names = {"", "-", "－", "―", "—"}
+        for hero in self.heroes:
+            for trait in hero.get("traits") or []:
+                with self.subTest(hero=hero.get("name_jp"), trait=trait.get("name_jp")):
+                    self.assertNotIn((trait.get("name_jp") or "").strip(), placeholder_names)
 
 
 if __name__ == "__main__":
