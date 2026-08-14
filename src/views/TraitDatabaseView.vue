@@ -56,7 +56,7 @@
               </td>
               <td data-label="人数" class="count-cell">{{ row.heroes.length }}</td>
             </tr>
-            <tr v-if="filteredTraits.length === 0">
+            <tr v-if="filteredTraits.length === 0" class="empty-row">
               <td colspan="5" class="empty-cell">条件に一致する特性がありません。</td>
             </tr>
           </tbody>
@@ -321,8 +321,96 @@ const statusLabel = (status: TraitImplementationStatus): string => ({
   .status-filter { width: 100%; }
   .status-filter button { flex: 1; min-width: 0; padding: 0 6px; }
   .result-count { text-align: right; }
-  .trait-table-wrap { border-left: 0; border-right: 0; }
-  .trait-table { min-width: 930px; }
-  .heroes-column { width: 270px; }
+
+  .trait-table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .trait-table {
+    display: block;
+    min-width: 0;
+  }
+
+  .trait-table thead { display: none; }
+
+  .trait-table tbody {
+    display: grid;
+    gap: 8px;
+  }
+
+  .trait-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name status"
+      "description description"
+      "heroes count";
+    border: 1px solid #cdbb8e;
+    background: #fffaf0;
+    box-shadow: 0 2px 6px rgba(76, 55, 17, 0.06);
+  }
+
+  .trait-table tbody th,
+  .trait-table tbody td {
+    min-width: 0;
+    border-bottom: 0;
+    padding: 9px 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .trait-table tbody th {
+    grid-area: name;
+    align-self: center;
+    font-size: 16px;
+  }
+
+  .trait-table td[data-label="実装状況"] {
+    grid-area: status;
+    text-align: right;
+  }
+
+  .trait-table td[data-label="効果"] {
+    grid-area: description;
+    border-top: 1px solid #eadfc4;
+  }
+
+  .trait-table td[data-label="所持武将"] {
+    grid-area: heroes;
+    border-top: 1px solid #eadfc4;
+  }
+
+  .trait-table td[data-label="人数"] {
+    grid-area: count;
+    align-self: stretch;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 4px;
+    border-top: 1px solid #eadfc4;
+    white-space: nowrap;
+  }
+
+  .trait-table td[data-label="効果"]::before,
+  .trait-table td[data-label="所持武将"]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: #8b6a2c;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .trait-table td[data-label="人数"]::before {
+    content: "人数";
+    color: #8b6a2c;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .trait-table tbody tr.empty-row { display: block; }
+  .trait-table .empty-cell { display: block; }
 }
 </style>

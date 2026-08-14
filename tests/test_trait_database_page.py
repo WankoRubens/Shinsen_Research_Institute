@@ -56,6 +56,12 @@ class TraitDatabasePageTests(unittest.TestCase):
                 with self.subTest(hero=hero.get("name_jp"), trait=trait.get("name_jp")):
                     self.assertNotIn((trait.get("name_jp") or "").strip(), placeholder_names)
 
+    def test_mobile_rows_fit_the_viewport(self):
+        self.assertIn("grid-template-areas:", self.view)
+        self.assertIn('"name status"', self.view)
+        self.assertIn(".trait-table thead { display: none; }", self.view)
+        self.assertIn("min-width: 0;", self.view)
+
 
 if __name__ == "__main__":
     unittest.main()

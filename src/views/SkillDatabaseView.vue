@@ -66,7 +66,7 @@
                 </span>
                 <div class="status-detail">{{ row.implementationDetail }}</div>
               </td>
-              <td data-label="効果" class="description-cell">{{ row.description }}</td>
+              <td data-label="効果（最大Lv）" class="description-cell">{{ row.description }}</td>
               <td data-label="由来">
                 <div class="source-info">
                   <span class="origin-badge">{{ row.origin }}</span>
@@ -77,7 +77,7 @@
                 </div>
               </td>
             </tr>
-            <tr v-if="filteredSkills.length === 0">
+            <tr v-if="filteredSkills.length === 0" class="empty-row">
               <td colspan="6" class="empty-cell">条件に一致する戦法がありません。</td>
             </tr>
           </tbody>
@@ -426,6 +426,89 @@ const statusLabel = (status: BattleSkillImplementationStatus): string => ({
   .status-filter { width: 100%; }
   .status-filter button { flex: 1; min-width: 0; padding: 0 5px; }
   .result-count { text-align: right; }
-  .skill-table-wrap { border-left: 0; border-right: 0; }
+
+  .skill-table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .skill-table {
+    display: block;
+    min-width: 0;
+  }
+
+  .skill-table thead { display: none; }
+
+  .skill-table tbody {
+    display: grid;
+    gap: 8px;
+  }
+
+  .skill-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-areas:
+      "name type"
+      "rate status"
+      "description description"
+      "source source";
+    border: 1px solid #cdbb8e;
+    background: #fffaf0;
+    box-shadow: 0 2px 6px rgba(76, 55, 17, 0.06);
+  }
+
+  .skill-table tbody th,
+  .skill-table tbody td {
+    min-width: 0;
+    border-bottom: 0;
+    padding: 9px 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .skill-table tbody th {
+    grid-area: name;
+    font-size: 16px;
+  }
+
+  .skill-table td[data-label="種類"] {
+    grid-area: type;
+    text-align: right;
+  }
+
+  .skill-table td[data-label="発動率"] {
+    grid-area: rate;
+  }
+
+  .skill-table td[data-label="実装状況"] {
+    grid-area: status;
+  }
+
+  .skill-table td[data-label="効果（最大Lv）"] {
+    grid-area: description;
+    border-top: 1px solid #eadfc4;
+  }
+
+  .skill-table td[data-label="由来"] {
+    grid-area: source;
+    border-top: 1px solid #eadfc4;
+  }
+
+  .skill-table td[data-label="発動率"]::before,
+  .skill-table td[data-label="実装状況"]::before,
+  .skill-table td[data-label="効果（最大Lv）"]::before,
+  .skill-table td[data-label="由来"]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: #8b6a2c;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .skill-table .source-info { flex-wrap: wrap; }
+  .skill-table tbody tr.empty-row { display: block; }
+  .skill-table .empty-cell { display: block; }
 }
 </style>

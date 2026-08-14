@@ -61,6 +61,12 @@ class SkillDatabasePageTests(unittest.TestCase):
             with self.subTest(skill_name=skill_name):
                 self.assertIn(f"'{skill_name}':", self.event_materials)
 
+    def test_mobile_rows_fit_the_viewport(self):
+        self.assertIn("grid-template-areas:", self.view)
+        self.assertIn('"name type"', self.view)
+        self.assertIn(".skill-table thead { display: none; }", self.view)
+        self.assertIn("min-width: 0;", self.view)
+
 
 if __name__ == "__main__":
     unittest.main()
