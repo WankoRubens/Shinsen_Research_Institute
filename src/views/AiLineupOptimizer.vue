@@ -110,6 +110,7 @@
           <span>空き戦法 {{ emptySkillSlotCount }} 枠</span>
           <span>評価対象 Tier 0・0.5・1</span>
           <span>テンプレ {{ templateTeams.length }} 編成</span>
+          <span>武勇・知略差40以上は低い能力だけに依存する戦法を除外</span>
           <span>推定全組み合わせ {{ formatLargeNumber(estimatedCombinations) }}</span>
           <span>{{ reorderFixedHeroes ? '指定武将も主将/副将の配置替えを試行' : '指定武将の主将/副将位置を固定' }}</span>
           <span v-if="unsupportedFixedSkillNames.length" class="warning">
@@ -233,6 +234,7 @@ import {
   type BattleBatchResult,
 } from '../lib/battleSimulator'
 import { battleSkillImplementation, battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
+import { isAiSkillCompatibleWithStats } from '../lib/aiSkillCompatibility'
 import { heroLevel50Stats } from '../lib/heroStats'
 import { normalizeTroopType } from '../constants/traits'
 import type { TroopType } from '../constants/traits'
@@ -604,7 +606,15 @@ const randomCandidateLineup = (index: number): Lineup | null => {
     const candidates = skillCandidates.value.filter((skill) => {
       const key = skillIdentity(skill)
       const type = battleSkillType(skill)
-      return !usedSkills.has(key) && (!isExclusiveTeamSkillType(skill) || !exclusiveTypes.has(type))
+      const roleStats = team[role].stats
+      const hasCompatibleStats = isAiSkillCompatibleWithStats(
+        skill,
+        Number(roleStats.val),
+        Number(roleStats.int),
+      )
+      return !usedSkills.has(key)
+        && hasCompatibleStats
+        && (!isExclusiveTeamSkillType(skill) || !exclusiveTypes.has(type))
     })
     const skill = randomItem(candidates)
     if (!skill) return null
