@@ -3011,18 +3011,17 @@ export const applyNamedSkillEffect = (
     }
     case '千軍辟易': {
       // 戦法タイプ: 能動
-      // 1ターンの間、敵軍全体に53%→106%の兵刃ダメージ
-      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率106%）を与える
-      // 無策・封撃・威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
+      // 敵軍全体をこの戦法の対象として一度だけ確定する
+      const targets = databaseTargets(ctx, h, 'damage')
+      targets.forEach((target) => {
+        // ダメージ前から封撃または無策なら、威圧の追加判定対象になる
+        const canApplyPressure = (target.statuses['封撃'] ?? 0) > 0 || (target.statuses['無策'] ?? 0) > 0
+        // 対象にダメージ率106%の兵刃ダメージを与える
         h.dealSkillDamage(ctx, target, 106, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","封撃","威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
+        // 条件を満たす生存対象には35%の確率で威圧を1ターン付与する
+        if (canApplyPressure && target.hp > 0 && h.roll(ctx.rng, 0.35)) {
+          h.addControl(ctx, target, '威圧', 1)
+        }
       })
       return true
     }
