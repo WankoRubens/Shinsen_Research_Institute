@@ -17,6 +17,7 @@ import {
   TEAM_ACTION_BATTLE_SKILL_NAMES,
   TEAM_MILITARY_GOD_SKILL_NAMES,
   TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES,
+  WISE_WATER_SHARE_UNTIL_KEY,
   applyNamedSkillEffect,
   battleSkillType,
   compareBattleSkillPriority,
@@ -769,6 +770,98 @@ const applyDamage = (target: BattleFighter, amount: number): number => {
   return actual
 }
 
+interface SharedDamageRecord {
+  fighter: BattleFighter
+  amount: number
+  beforeHp: number
+  afterHp: number
+  woundedDelta: number
+  deadDelta: number
+}
+
+interface AppliedDamageResult {
+  targetDamage: number
+  totalDamage: number
+  shares: SharedDamageRecord[]
+}
+
+// 知者楽水の大将技が有効な第1ターンは、最終ダメージの30%を他の生存友軍へ均等配分する。
+const applyDamageWithTeamShare = (
+  target: BattleFighter,
+  amount: number,
+  turn: number,
+  candidates: BattleFighter[],
+): AppliedDamageResult => {
+  // 従来同様、対象の残存兵力を超えるダメージは分担前に切り捨てる。
+  const cappedAmount = Math.min(target.hp, Math.max(0, Math.round(amount)))
+  const recipients = living(candidates).filter((fighter) => fighter.id !== target.id)
+  const canShare = turn === 1
+    && (target.specialState[WISE_WATER_SHARE_UNTIL_KEY] ?? 0) >= turn
+    && recipients.length > 0
+
+  if (!canShare) {
+    const targetDamage = applyDamage(target, cappedAmount)
+    return { targetDamage, totalDamage: targetDamage, shares: [] }
+  }
+
+  // 本来の対象は70%を受け、残り30%を他の生存友軍で分担する。
+  const sharedAmount = Math.round(cappedAmount * 0.3)
+  const targetDamage = applyDamage(target, cappedAmount - sharedAmount)
+  const baseShare = Math.floor(sharedAmount / recipients.length)
+  let remainder = sharedAmount % recipients.length
+  const shares = recipients.map((fighter) => {
+    const assigned = baseShare + (remainder > 0 ? 1 : 0)
+    remainder = Math.max(0, remainder - 1)
+    const beforeHp = fighter.hp
+    const beforeWounded = fighter.wounded
+    const beforeDead = fighter.dead
+    const actual = applyDamage(fighter, assigned)
+    return {
+      fighter,
+      amount: actual,
+      beforeHp,
+      afterHp: fighter.hp,
+      woundedDelta: fighter.wounded - beforeWounded,
+      deadDelta: fighter.dead - beforeDead,
+    }
+  }).filter((record) => record.amount > 0)
+
+  return {
+    targetDamage,
+    totalDamage: targetDamage + shares.reduce((sum, record) => sum + record.amount, 0),
+    shares,
+  }
+}
+
+// 元の攻撃ログの直後に、誰が何兵を分担したかを個別表示する。
+const logSharedDamage = (
+  source: BattleFighter,
+  effect: string,
+  turn: number,
+  logs: BattleLogEntry[],
+  result: AppliedDamageResult,
+) => {
+  if (logs === NO_LOGS) return
+  result.shares.forEach((share) => {
+    logs.push({
+      turn,
+      side: source.side,
+      actor: source.name,
+      actorHp: source.hp,
+      target: share.fighter.name,
+      targetSide: share.fighter.side,
+      amount: share.amount,
+      beforeHp: share.beforeHp,
+      afterHp: share.afterHp,
+      woundedDelta: share.woundedDelta,
+      deadDelta: share.deadDelta,
+      valueType: 'damage',
+      effect: '知者楽水',
+      message: `知者楽水: ${effect}のダメージを${share.fighter.name}が${share.amount.toLocaleString()}分担 ${hpChangeText(share.beforeHp, share.afterHp)} / ${casualtyText(share.woundedDelta, share.deadDelta)}`,
+    })
+  })
+}
+
 const applyHeal = (target: BattleFighter, amount: number): number => {
   // 回復不可中も戦法自体は発動するが、実際の兵力回復は0になる。
   if (hasControlStatus(target, '回復不可')) return 0
@@ -1513,13 +1606,20 @@ const dealSkillDamage = (
       turn: ctx.turn,
     },
   )
-  const actual = applyDamage(target, resolvedDamage.amount)
+  const damageResult = applyDamageWithTeamShare(
+    target,
+    resolvedDamage.amount,
+    ctx.turn,
+    target.side === ctx.caster.side ? ctx.allies : ctx.enemies,
+  )
+  const actual = damageResult.targetDamage
+  const totalActual = damageResult.totalDamage
   const afterHp = target.hp
   const woundedDelta = target.wounded - beforeWounded
   const deadDelta = target.dead - beforeDead
-  recordDamage(ctx.stats, ctx.caster, ctx.skill, actual)
-  if (ctx.caster.side === 'ally') ctx.turnStat.allyDamage += actual
-  else ctx.turnStat.enemyDamage += actual
+  recordDamage(ctx.stats, ctx.caster, ctx.skill, totalActual)
+  if (ctx.caster.side === 'ally') ctx.turnStat.allyDamage += totalActual
+  else ctx.turnStat.enemyDamage += totalActual
   if (ctx.logs !== NO_LOGS) ctx.logs.push({
     turn: ctx.turn,
     side: ctx.caster.side,
@@ -1536,12 +1636,13 @@ const dealSkillDamage = (
     effect: skillDisplayName(ctx.skill),
     message: `${skillDisplayName(ctx.skill)}で${target.name}に${actual.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
   })
-  if (actual > 0) {
+  logSharedDamage(ctx.caster, skillDisplayName(ctx.skill), ctx.turn, ctx.logs, damageResult)
+  if (totalActual > 0) {
     recordDamageDealtSkillEffects(ctx.caster, kind, ctx.turn, ctx.logs)
-    resolveRedArmorCriticalHit(ctx, kind, resolvedDamage.critical, actual)
-    applyBingxueLifeSteal(ctx.caster, actual, ctx.turn, ctx.logs, ctx.turnStat)
-    if (kind === 'physical') applyPhysicalLifeSteal(ctx.caster, actual, ctx.turn, ctx.logs, ctx.turnStat)
-    resolveSeventyTwoCriticalDamage(ctx, kind, resolvedDamage.critical, actual)
+    resolveRedArmorCriticalHit(ctx, kind, resolvedDamage.critical, totalActual)
+    applyBingxueLifeSteal(ctx.caster, totalActual, ctx.turn, ctx.logs, ctx.turnStat)
+    if (kind === 'physical') applyPhysicalLifeSteal(ctx.caster, totalActual, ctx.turn, ctx.logs, ctx.turnStat)
+    resolveSeventyTwoCriticalDamage(ctx, kind, resolvedDamage.critical, totalActual)
     const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
     const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
     fireTriggeredSkills(
@@ -1571,7 +1672,7 @@ const dealSkillDamage = (
       ctx.controlStats,
     )
   }
-  return actual
+  return totalActual
 }
 
 const hasSkillNamed = (fighter: BattleFighter, name: string) =>
@@ -1784,9 +1885,11 @@ const createBingxueHelpers = (
       skillType: null,
       turn,
     })
-    const actual = applyDamage(target, resolvedDamage.amount)
-    if (owner.side === 'ally') turnStat.allyDamage += actual
-    else turnStat.enemyDamage += actual
+    const damageResult = applyDamageWithTeamShare(target, resolvedDamage.amount, turn, targetCandidates)
+    const actual = damageResult.targetDamage
+    const totalActual = damageResult.totalDamage
+    if (owner.side === 'ally') turnStat.allyDamage += totalActual
+    else turnStat.enemyDamage += totalActual
     const woundedDelta = target.wounded - beforeWounded
     const deadDelta = target.dead - beforeDead
     if (logs !== NO_LOGS) logs.push({
@@ -1805,10 +1908,11 @@ const createBingxueHelpers = (
       effect,
       message: `${effect}で${target.name}に${actual.toLocaleString()}ダメージ ${hpChangeText(beforeHp, target.hp)} / ${casualtyText(woundedDelta, deadDelta)}`,
     })
-    if (actual > 0) {
+    logSharedDamage(owner, effect, turn, logs, damageResult)
+    if (totalActual > 0) {
       recordDamageDealtSkillEffects(owner, kind, turn, logs)
-      applyBingxueLifeSteal(owner, actual, turn, logs, turnStat)
-      if (kind === 'physical') applyPhysicalLifeSteal(owner, actual, turn, logs, turnStat)
+      applyBingxueLifeSteal(owner, totalActual, turn, logs, turnStat)
+      if (kind === 'physical') applyPhysicalLifeSteal(owner, totalActual, turn, logs, turnStat)
       const ownerAllies = allFighters.filter(fighter => fighter.side === owner.side)
       const ownerEnemies = allFighters.filter(fighter => fighter.side !== owner.side)
       resolveRedArmorCriticalHit({
@@ -1824,7 +1928,7 @@ const createBingxueHelpers = (
         stats,
         turnStat,
         controlStats,
-      }, kind, resolvedDamage.critical, actual)
+      }, kind, resolvedDamage.critical, totalActual)
       resolveSeventyTwoCriticalDamage({
         caster: owner,
         target,
@@ -1838,7 +1942,7 @@ const createBingxueHelpers = (
         stats,
         turnStat,
         controlStats,
-      }, kind, resolvedDamage.critical, actual)
+      }, kind, resolvedDamage.critical, totalActual)
       const targetAllies = allFighters.filter(fighter => fighter.side === target.side)
       const targetEnemies = allFighters.filter(fighter => fighter.side !== target.side)
       fireTriggeredSkills(
@@ -1868,7 +1972,7 @@ const createBingxueHelpers = (
         controlStats,
       )
     }
-    return actual
+    return totalActual
   },
   cleanse: (target, count) => {
     const removed = Object.keys(target.statuses)
@@ -2061,13 +2165,20 @@ const resolveSkill = (
         undefined,
         { candidates: fighter.side === caster.side ? allies : enemies, skillType: battleSkillType(skill), turn },
       )
-      const actual = applyDamage(fighter, resolvedDamage.amount)
+      const damageResult = applyDamageWithTeamShare(
+        fighter,
+        resolvedDamage.amount,
+        turn,
+        fighter.side === caster.side ? allies : enemies,
+      )
+      const actual = damageResult.targetDamage
+      const totalActual = damageResult.totalDamage
       const afterHp = fighter.hp
       const woundedDelta = fighter.wounded - beforeWounded
       const deadDelta = fighter.dead - beforeDead
-      recordDamage(stats, caster, skill, actual)
-      if (caster.side === 'ally') turnStat.allyDamage += actual
-      else turnStat.enemyDamage += actual
+      recordDamage(stats, caster, skill, totalActual)
+      if (caster.side === 'ally') turnStat.allyDamage += totalActual
+      else turnStat.enemyDamage += totalActual
       if (logs !== NO_LOGS) logs.push({
         turn,
         side: caster.side,
@@ -2084,7 +2195,8 @@ const resolveSkill = (
         effect: skillName,
         message: `${skillName}で${fighter.name}に${actual.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
       })
-      if (actual > 0) {
+      logSharedDamage(caster, skillName, turn, logs, damageResult)
+      if (totalActual > 0) {
         recordDamageDealtSkillEffects(caster, kind, turn, logs)
         resolveRedArmorCriticalHit({
           caster,
@@ -2100,9 +2212,9 @@ const resolveSkill = (
           turnStat,
           controlStats,
           eventSubject,
-        }, kind, resolvedDamage.critical, actual)
-        applyBingxueLifeSteal(caster, actual, turn, logs, turnStat)
-        if (kind === 'physical') applyPhysicalLifeSteal(caster, actual, turn, logs, turnStat)
+        }, kind, resolvedDamage.critical, totalActual)
+        applyBingxueLifeSteal(caster, totalActual, turn, logs, turnStat)
+        if (kind === 'physical') applyPhysicalLifeSteal(caster, totalActual, turn, logs, turnStat)
         resolveSeventyTwoCriticalDamage({
           caster,
           target: fighter,
@@ -2117,7 +2229,7 @@ const resolveSkill = (
           turnStat,
           controlStats,
           eventSubject,
-        }, kind, resolvedDamage.critical, actual)
+        }, kind, resolvedDamage.critical, totalActual)
         const targetAllies = fighter.side === caster.side ? allies : enemies
         const targetEnemies = fighter.side === caster.side ? enemies : allies
         fireTriggeredSkills(
@@ -2420,13 +2532,20 @@ const processDots = (
         skillType: null,
         turn,
       })
-      const amount = applyDamage(fighter, resolvedDamage.amount)
+      const damageResult = applyDamageWithTeamShare(
+        fighter,
+        resolvedDamage.amount,
+        turn,
+        all.filter(candidate => candidate.side === fighter.side),
+      )
+      const amount = damageResult.targetDamage
+      const totalAmount = damageResult.totalDamage
       const afterHp = fighter.hp
       const woundedDelta = fighter.wounded - beforeWounded
       const deadDelta = fighter.dead - beforeDead
-      recordDamage(stats, source, pseudoSkill, amount)
-      if (source.side === 'ally') turnStat.allyDamage += amount
-      else turnStat.enemyDamage += amount
+      recordDamage(stats, source, pseudoSkill, totalAmount)
+      if (source.side === 'ally') turnStat.allyDamage += totalAmount
+      else turnStat.enemyDamage += totalAmount
       if (logs !== NO_LOGS) logs.push({
         turn,
         side: source.side,
@@ -2443,7 +2562,8 @@ const processDots = (
         effect: status.name,
         message: `${status.name}で${fighter.name}に${amount.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
       })
-      if (amount > 0) {
+      logSharedDamage(source, status.name, turn, logs, damageResult)
+      if (totalAmount > 0) {
         const dotKind = status.dotType ?? 'physical'
         recordDamageDealtSkillEffects(source, dotKind, turn, logs)
         resolveRedArmorCriticalHit({
@@ -2459,8 +2579,8 @@ const processDots = (
           stats,
           turnStat,
           controlStats,
-        }, dotKind, resolvedDamage.critical, amount)
-        applyBingxueLifeSteal(source, amount, turn, logs, turnStat)
+        }, dotKind, resolvedDamage.critical, totalAmount)
+        applyBingxueLifeSteal(source, totalAmount, turn, logs, turnStat)
         resolveSeventyTwoCriticalDamage({
           caster: source,
           target: fighter,
@@ -2474,7 +2594,7 @@ const processDots = (
           stats,
           turnStat,
           controlStats,
-        }, dotKind, resolvedDamage.critical, amount)
+        }, dotKind, resolvedDamage.critical, totalAmount)
       }
     }
     status.turns -= 1
@@ -2854,12 +2974,14 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             turn,
             },
           )
-          const normalDamage = applyDamage(target, resolvedNormalDamage.amount)
+          const damageResult = applyDamageWithTeamShare(target, resolvedNormalDamage.amount, turn, targetSideMembers)
+          const normalDamage = damageResult.targetDamage
+          const totalNormalDamage = damageResult.totalDamage
           const afterHp = target.hp
           const woundedDelta = target.wounded - beforeWounded
           const deadDelta = target.dead - beforeDead
-          if (actor.side === 'ally') turnStat.allyDamage += normalDamage
-          else turnStat.enemyDamage += normalDamage
+          if (actor.side === 'ally') turnStat.allyDamage += totalNormalDamage
+          else turnStat.enemyDamage += totalNormalDamage
           if (logs !== NO_LOGS) logs.push({
             turn,
             side: actor.side,
@@ -2876,11 +2998,18 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             effect: satsumaStrategyRate > 0 ? '薩摩鉄砲兵' : '通常攻撃',
             message: `${actor.name}の${satsumaStrategyRate > 0 ? '計略通常攻撃' : '通常攻撃'}: ${target.name}に${normalDamage.toLocaleString()}ダメージ ${hpChangeText(beforeHp, afterHp)} / ${casualtyText(woundedDelta, deadDelta)}`,
           })
+          logSharedDamage(
+            actor,
+            satsumaStrategyRate > 0 ? '薩摩鉄砲兵' : '通常攻撃',
+            turn,
+            logs,
+            damageResult,
+          )
           if (satsumaStrategyRate > 0) actor.specialState.satsumaStrategyNormalNextTurn = turn + 2
-          if (normalDamage > 0) {
+          if (totalNormalDamage > 0) {
             const targetAllies = target.side === actor.side ? allies : enemies
             const targetEnemies = target.side === actor.side ? enemies : allies
-            if (satsumaSkill) recordDamage(skillStats, actor, satsumaSkill, normalDamage)
+            if (satsumaSkill) recordDamage(skillStats, actor, satsumaSkill, totalNormalDamage)
             recordDamageDealtSkillEffects(actor, normalDamageKind, turn, logs)
             const normalAttackContext: SkillResolveContext = {
               caster: actor,
@@ -2896,10 +3025,10 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
               turnStat,
               controlStats,
             }
-            resolveRedArmorCriticalHit(normalAttackContext, normalDamageKind, resolvedNormalDamage.critical, normalDamage)
-            resolveSeventyTwoCriticalDamage(normalAttackContext, normalDamageKind, resolvedNormalDamage.critical, normalDamage)
-            applyBingxueLifeSteal(actor, normalDamage, turn, logs, turnStat)
-            if (normalDamageKind === 'physical') applyPhysicalLifeSteal(actor, normalDamage, turn, logs, turnStat)
+            resolveRedArmorCriticalHit(normalAttackContext, normalDamageKind, resolvedNormalDamage.critical, totalNormalDamage)
+            resolveSeventyTwoCriticalDamage(normalAttackContext, normalDamageKind, resolvedNormalDamage.critical, totalNormalDamage)
+            applyBingxueLifeSteal(actor, totalNormalDamage, turn, logs, turnStat)
+            if (normalDamageKind === 'physical') applyPhysicalLifeSteal(actor, totalNormalDamage, turn, logs, turnStat)
             runBingxueNormalAttackReceived(
               target,
               actor,

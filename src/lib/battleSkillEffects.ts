@@ -3,6 +3,8 @@ import type { BattleFighter, BattleLogEntry, SkillResolveContext } from './battl
 import skillsData from '../../.build/skills.json'
 
 export const HEAL_STOCK_DAMAGE_SKILL_NAMES = ['比翼連理']
+// 知者楽水の大将技をダメージ確定処理から参照する共通キー。
+export const WISE_WATER_SHARE_UNTIL_KEY = 'wiseWaterDamageShareUntil'
 
 export type BattleSkillType = '受動' | '兵種' | '指揮' | '陣法' | '能動' | '突撃'
 export type BattleSkillTypeInput = BattleSkillType | '被動' | '主動' | '兵种' | '阵法' | '突擊' | '突击' | 'passive' | 'troop' | 'command' | 'formation' | 'active' | 'assault'
@@ -57,6 +59,11 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
     triggers: ['preparationTurn', 'turnStart'],
     replaceStructuredTriggers: true,
     followUpTriggers: ['turnStart'],
+  }),
+  知者楽水: defineBattleSkillMeta({
+    type: '指揮',
+    triggers: ['preparationTurn'],
+    replaceStructuredTriggers: true,
   }),
   表裏比興: defineBattleSkillMeta({ type: '能動' }),
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
@@ -205,6 +212,7 @@ const NAMED_BATTLE_SKILL_NAMES = [
   '千軍辟易',
   '恵風和雨',
   '会盟の陣',
+  '知者楽水',
   '軍神',
   '三河武士',
   '風林火山',
@@ -2782,8 +2790,35 @@ export const applyNamedSkillEffect = (
     }
     case '知者楽水': {
       // 戦法タイプ: 指揮
-      // 戦闘開始後の3ターンの間、自軍複数（2人）が受ける兵刃及び計略ダメージを9%→18%から12%→24%（統率依存
-      return applyDatabaseSkillEffect(ctx, h)
+      // 自軍内で知略が武勇より高い武将の人数を数える。
+      const strategyFocusedCount = ctx.allies.filter((ally) => h.statOf(ally, 'int') > h.statOf(ally, 'val')).length
+      // 過半数が知略型なら兵刃軽減を24%、それ以外なら計略軽減を24%にする。
+      const physicalReduction = strategyFocusedCount >= 2 ? 24 : 18
+      const strategyReduction = strategyFocusedCount >= 2 ? 18 : 24
+      // 自軍から重複なしで2名を選び、3ターン限定の補正を付与する。
+      const targets = h.aliveRandom(ctx.allies, ctx.rng, ctx).slice(0, 2)
+      targets.forEach((target) => {
+        // 兵刃・計略被ダメージをそれぞれ軽減する。
+        h.addTimedModifier(ctx, target, 'physicalDamageTaken', -physicalReduction, 3, 1)
+        h.addTimedModifier(ctx, target, 'strategyDamageTaken', -strategyReduction, 3, 1)
+        // 強力な軽減と引き換えに、対象の与ダメージを5%低下させる。
+        h.addTimedModifier(ctx, target, 'damageDealt', -5, 3, 1)
+        log(
+          ctx.logs,
+          ctx,
+          `知者楽水: ${target.name}の兵刃被ダメージを${physicalReduction}%軽減、計略被ダメージを${strategyReduction}%軽減、与ダメージを5%低下(3T)`,
+          target,
+        )
+      })
+
+      if (ctx.caster.role === 'main') {
+        // 大将時は自軍全体へ、第1ターンの最終被ダメージ30%分担を予約する。
+        ctx.allies.forEach((ally) => {
+          ally.specialState[WISE_WATER_SHARE_UNTIL_KEY] = 1
+        })
+        log(ctx.logs, ctx, '知者楽水: 第1ターンの被ダメージ30%を自軍全体で分担')
+      }
+      return true
     }
     case '新生': {
       // 戦法タイプ: 指揮
