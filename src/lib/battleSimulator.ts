@@ -19,6 +19,7 @@ import {
   TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES,
   WISE_WATER_SHARE_UNTIL_KEY,
   applyNamedSkillEffect,
+  battleSkillMaxPerTurn,
   battleSkillType,
   compareBattleSkillPriority,
   isBattleSkillFollowUpTrigger,
@@ -972,6 +973,10 @@ const baseDamage = (
   // 鉄壁は次の被ダメージを1回だけ無効化する。
   if ((target.specialState.ironWallCharges ?? 0) > 0) {
     target.specialState.ironWallCharges -= 1
+    // 相模の獅子由来の鉄壁を消費した場合は、期限管理用の残数も同時に減らす。
+    if ((target.specialState.sagamiIronWallCharges ?? 0) > 0) {
+      target.specialState.sagamiIronWallCharges -= 1
+    }
     return { amount: 0, critical: false }
   }
   // 回避効果はダメージ計算前に判定する。
@@ -2380,7 +2385,8 @@ const trySkill = (
     return
   }
   if (!followUp && (caster.skillCooldowns[skill.id || skill.name] ?? 0) > 0) return
-  if (!followUp && skill.maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= skill.maxPerTurn) return
+  const maxPerTurn = battleSkillMaxPerTurn(skill)
+  if (!followUp && maxPerTurn && (caster.skillUsesThisTurn[skill.id || skill.name] ?? 0) >= maxPerTurn) return
   const unique = isUniqueBattleSkill(skill)
   const prepared = preparationTurns(skill) > 0
   const activationRate = activationRateOf(caster, skill, turn)
@@ -2621,6 +2627,18 @@ const consumeActionControlDurations = (fighter: BattleFighter, activeAtActionSta
 
 const tickFighter = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[]) => {
   tickBingxueTurn(fighter, turn)
+  // 相模の獅子で得た鉄壁は付与ターンを含む2ターンだけ有効。残った専用回数だけを全体回数から外す。
+  if (
+    (fighter.specialState.sagamiIronWallCharges ?? 0) > 0
+    && turn > (fighter.specialState.sagamiIronWallUntil ?? 0)
+  ) {
+    const expiredCharges = Math.min(
+      fighter.specialState.ironWallCharges ?? 0,
+      fighter.specialState.sagamiIronWallCharges ?? 0,
+    )
+    fighter.specialState.ironWallCharges = Math.max(0, (fighter.specialState.ironWallCharges ?? 0) - expiredCharges)
+    fighter.specialState.sagamiIronWallCharges = 0
+  }
   const activeModifiers: TimedBattleModifier[] = []
   fighter.timedModifiers.forEach((modifier) => {
     if (turn < modifier.expiresTurn) {
@@ -3244,6 +3262,25 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         markActionLogs(logs, actionLogStart, actor, actionActorHp, actionActorSpeed)
       }
     }
+
+    // 新生など「ターン終了時」を条件とする効果は、全武将の行動が終わってから一度だけ処理する。
+    all.filter(isAlive).forEach((fighter) => {
+      const allies = fighter.side === 'ally' ? ally : enemy
+      const enemies = fighter.side === 'ally' ? enemy : ally
+      fireTriggeredSkills(
+        fighter,
+        'turnEnd',
+        chooseControlledTarget(fighter, enemies, allies, enemies, rng),
+        allies,
+        enemies,
+        turn,
+        logs,
+        rng,
+        skillStats,
+        turnStat,
+        controlStats,
+      )
+    })
 
     turnStat.allyHp = sideHp(ally)
     turnStat.enemyHp = sideHp(enemy)

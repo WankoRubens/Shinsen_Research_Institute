@@ -24,6 +24,8 @@ const normalizeBattleSkillType = (text?: string | null): BattleSkillType | null 
 export interface BattleSkillEffectMeta {
   type?: BattleSkillTypeInput
   triggers?: TriggerEvent[]
+  // データ側に回数制限がない個別戦法の、1ターン内の最大発動回数。
+  maxPerTurn?: number
   // 個別 case の triggers だけを使い、skills.json の構造化 trigger を購読しない。
   replaceStructuredTriggers?: boolean
   // 初回発動で予約済みの後続効果。ここでは発動率を再抽選しない。
@@ -65,6 +67,22 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
     triggers: ['preparationTurn'],
     replaceStructuredTriggers: true,
   }),
+  新生: defineBattleSkillMeta({
+    type: '指揮',
+    triggers: ['preparationTurn', 'turnEnd', 'beforeAction'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['turnEnd', 'beforeAction'],
+  }),
+  時は今: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  電光雷轟: defineBattleSkillMeta({
+    type: '突撃',
+    triggers: ['afterNormalAttack'],
+    replaceStructuredTriggers: true,
+    maxPerTurn: 1,
+  }),
+  地黄八幡: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  相模の獅子: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  啄木鳥: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
   表裏比興: defineBattleSkillMeta({ type: '能動' }),
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
@@ -171,6 +189,9 @@ export const replacesStructuredBattleTriggers = (skill: Skill): boolean =>
 export const isBattleSkillFollowUpTrigger = (skill: Skill, trigger: TriggerEvent): boolean =>
   battleSkillEffectMeta(skill)?.followUpTriggers?.includes(trigger) ?? false
 
+export const battleSkillMaxPerTurn = (skill: Skill): number | null =>
+  battleSkillEffectMeta(skill)?.maxPerTurn ?? skill.maxPerTurn ?? null
+
 export const battleSkillType = (skill: Skill): BattleSkillType =>
   normalizeBattleSkillType(battleSkillEffectMeta(skill)?.type)
   ?? normalizeBattleSkillType(skill.battle?.type)
@@ -213,6 +234,12 @@ const NAMED_BATTLE_SKILL_NAMES = [
   '恵風和雨',
   '会盟の陣',
   '知者楽水',
+  '新生',
+  '時は今',
+  '電光雷轟',
+  '地黄八幡',
+  '相模の獅子',
+  '啄木鳥',
   '軍神',
   '三河武士',
   '風林火山',
@@ -354,15 +381,23 @@ const DEBUFF_NAMES = [
   '回復不可',
   '火傷',
   '水攻',
+  '水攻め',
   '中毒',
   '消沈',
   '潰走',
 ]
 const CONTINUOUS_DAMAGE_NAMES = new Set(['火傷', '水攻', '水攻め', '中毒', '消沈', '潰走'])
+const TIME_IS_NOW_DOT_NAMES = ['火傷', '水攻め', '中毒', '消沈', '潰走'] as const
+
+// 時は今の大将技は、対象が5種類すべてを所持している間だけ継続状態の浄化を禁止する。
+const timeIsNowDotsLocked = (fighter: BattleFighter): boolean =>
+  (fighter.specialState.timeIsNowDotCleanseLock ?? 0) > 0
+  && TIME_IS_NOW_DOT_NAMES.every((name) => fighter.timedStatuses.some((status) => status.name === name))
 
 // 弱体効果を指定数まで解除する。戦法コメントからそのまま呼べるようにしておく。
 export const removeDebuffs = (fighter: BattleFighter, count: number): string[] => {
   const removed: string[] = []
+  const dotsLocked = timeIsNowDotsLocked(fighter)
   for (const name of DEBUFF_NAMES) {
     if (removed.length >= count) break
     if ((fighter.statuses[name] ?? 0) <= 0) continue
@@ -373,6 +408,8 @@ export const removeDebuffs = (fighter: BattleFighter, count: number): string[] =
   fighter.timedStatuses = fighter.timedStatuses.filter((status) => {
     if (removed.length >= count) return true
     if (!DEBUFF_NAMES.includes(status.name)) return true
+    // 5種類が揃っている間は、時は今の大将技により継続状態を取り除けない。
+    if (dotsLocked && CONTINUOUS_DAMAGE_NAMES.has(status.name)) return true
     removed.push(status.name)
     return false
   })
@@ -2822,11 +2859,37 @@ export const applyNamedSkillEffect = (
     }
     case '新生': {
       // 戦法タイプ: 指揮
-      // 戦闘中、友軍複数（2名）の与ダメージが7%→14%（統率依存）上昇 大将技：ターン終了時に敵軍部隊の総兵力が初めて35%→70%以下になる場合、自身は毎ターン行
-      // 自軍全体（3名）を回復（回復率14%）する
-      databaseTargets(ctx, h, 'heal').forEach((target) => {
-        h.healBySkill(ctx, target, 14, databaseHealKind(ctx.skill))
-      })
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘開始時、発動者以外の友軍2名へ統率依存の与ダメージ上昇を付与する。
+        const damageBonus = attributeDependentValue(14, [h.statOf(ctx.caster, 'lea')])
+        ctx.allies
+          .filter((ally) => ally.id !== ctx.caster.id && ally.hp > 0)
+          .slice(0, 2)
+          .forEach((ally) => {
+            setPermanentBuffContribution(ally, 'damageDealt', `newLifeDamage:${ctx.caster.id}`, damageBonus)
+            log(ctx.logs, ctx, `新生: ${ally.name}の与ダメージが${damageBonus.toFixed(2)}%上昇（${(100 + (ally.buffs.damageDealt ?? 0)).toFixed(2)}%）`, ally)
+          })
+        // 大将技の閾値判定は、まだ一度も成立していない状態から始める。
+        ctx.caster.specialState.newLifeThresholdReached = 0
+        return true
+      }
+
+      if (ctx.trigger === 'turnEnd') {
+        // 大将時のみ、各ターン終了時に敵軍総兵力が初めて70%以下になったかを確認する。
+        if (ctx.caster.role !== 'main' || (ctx.caster.specialState.newLifeThresholdReached ?? 0) > 0) return true
+        const enemyHp = ctx.enemies.reduce((sum, enemy) => sum + Math.max(0, enemy.hp), 0)
+        const enemyMaxHp = ctx.enemies.reduce((sum, enemy) => sum + Math.max(1, enemy.maxHp), 0)
+        if (enemyHp / Math.max(1, enemyMaxHp) <= 0.7) {
+          ctx.caster.specialState.newLifeThresholdReached = 1
+          log(ctx.logs, ctx, '新生: 敵軍総兵力が70%以下になり、以降の行動時回復を獲得')
+        }
+        return true
+      }
+
+      if (ctx.trigger === 'beforeAction' && ctx.caster.role === 'main' && (ctx.caster.specialState.newLifeThresholdReached ?? 0) > 0) {
+        // 条件成立後は、大将自身が行動するたびに知略依存で回復する。
+        h.healBySkill(ctx, ctx.caster, 65, 'strategy')
+      }
       return true
     }
     case '紅蓮の炎': {
@@ -2893,9 +2956,44 @@ export const applyNamedSkillEffect = (
     }
     case '時は今': {
       // 戦法タイプ: 能動
-      // 敵軍複数（2名）に、以下のいずれか1種を付与（既存と異なる状態を優先、ダメージ率56%）
-      // 火傷/水攻め/中毒/消沈/潰走状態を付与し、継続ダメージ（ダメージ率56%）を処理する
-      applyDatabaseDot(ctx, h)
+      // ランダムな対象2名を選ぶ。混乱中は既存ルールに従い敵味方を区別しない。
+      h.aliveRandom(ctx.enemies, ctx.rng, ctx).slice(0, 2).forEach((target) => {
+        // まだ所持していない継続状態を優先し、5種類すべて所持済みなら全種類から選び直す。
+        const missing = TIME_IS_NOW_DOT_NAMES.filter((name) =>
+          !target.timedStatuses.some((status) => status.name === name),
+        )
+        let pool = missing.length > 0 ? [...missing] : [...TIME_IS_NOW_DOT_NAMES]
+        // 宮部継潤の僧兵は火傷以外の継続状態を受けないため、付与可能な候補だけに絞る。
+        if ((target.specialState.monkNonBurnDotImmune ?? 0) > 0) pool = pool.filter((name) => name === '火傷')
+        const statusName = pool[Math.floor(ctx.rng() * pool.length)]
+        if (!statusName) return
+
+        const dotType: 'physical' | 'strategy' = statusName === '潰走' ? 'physical' : 'strategy'
+        const sourceSkill = h.skillDisplayName(ctx.skill)
+        // 同じ発動者の同名状態は重ねず3ターンへ更新し、別の発動者による状態とは区別する。
+        const existing = target.timedStatuses.find((status) =>
+          status.name === statusName
+          && status.sourceSkill === sourceSkill
+          && status.sourceActorId === ctx.caster.id)
+        if (existing) {
+          existing.turns = 3
+          existing.dotRate = 56
+          existing.dotType = dotType
+        } else {
+          target.timedStatuses.push({
+            name: statusName,
+            turns: 3,
+            sourceSkill,
+            sourceActorId: ctx.caster.id,
+            sourceActor: ctx.caster.name,
+            dotRate: 56,
+            dotType,
+          })
+        }
+        // 大将時は、対象に5種類が揃っている間の浄化禁止判定を有効にする。
+        if (ctx.caster.role === 'main') target.specialState.timeIsNowDotCleanseLock = 1
+        log(ctx.logs, ctx, `時は今: ${target.name}に${statusName}(3T・ダメージ率56%)`, target)
+      })
       return true
     }
     case '軍神': {
@@ -2982,19 +3080,30 @@ export const applyNamedSkillEffect = (
     }
     case '電光雷轟': {
       // 戦法タイプ: 突撃
-      // 通常攻撃後、対象とランダムな敵単体に麻痺付与（2ターン、毎ターン30%で行動不能）
-      // 敵軍単体に兵刃ダメージ（ダメージ率60%）を与える
-      // 麻痺・威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 60, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["麻痺","威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
+      // 通常攻撃で実際に狙った対象だけを基準にし、撃破済みなら別対象へすり替えない。
+      const normalAttackTarget = ctx.target && ctx.target.hp > 0 ? ctx.target : null
+      if (!normalAttackTarget) return true
+      const targetAlreadyParalyzed = (normalAttackTarget.statuses['麻痺'] ?? 0) > 0
+
+      if (targetAlreadyParalyzed) {
+        // 通常攻撃対象がすでに麻痺中なら、雷鳴として敵軍全体へ兵刃ダメージを与える。
+        const thunderRate = ctx.caster.role === 'main' ? 60 : 52
+        ctx.enemies.filter((enemy) => enemy.hp > 0).forEach((enemy) => {
+          h.dealSkillDamage(ctx, enemy, thunderRate, 'physical')
         })
-      })
+        // 雷鳴後、まだ麻痺していないランダムな武将1名へ麻痺を付与する。
+        const extraTarget = h.aliveRandom(ctx.enemies, ctx.rng, ctx)
+          .find((enemy) => (enemy.statuses['麻痺'] ?? 0) <= 0)
+        if (extraTarget) h.addControl(ctx, extraTarget, '麻痺', 2)
+        return true
+      }
+
+      // 対象が麻痺していなければ、通常攻撃対象へ麻痺を付与する。
+      h.addControl(ctx, normalAttackTarget, '麻痺', 2)
+      // さらに通常攻撃対象とは別のランダムな武将1名へ麻痺を付与する。
+      const extraTarget = h.aliveRandom(ctx.enemies, ctx.rng, ctx)
+        .find((enemy) => enemy.id !== normalAttackTarget.id && (enemy.statuses['麻痺'] ?? 0) <= 0)
+      if (extraTarget) h.addControl(ctx, extraTarget, '麻痺', 2)
       return true
     }
     case '霹靂一撃': {
@@ -3042,18 +3151,16 @@ export const applyNamedSkillEffect = (
     }
     case '地黄八幡': {
       // 戦法タイプ: 能動
-      // 1ターンの準備後、敵軍全体に兵刃ダメージ（ダメージ率87%→174%）
-      // 敵軍全体（3名）に兵刃ダメージ（ダメージ率174%）を与える
-      // 無策・封撃を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
+      // 準備完了後、敵軍全体へ兵刃ダメージを与える。
+      ctx.enemies.filter((target) => target.hp > 0).forEach((target) => {
         h.dealSkillDamage(ctx, target, 174, 'physical')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["無策","封撃"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
+        // 制御は対象ごとに1回判定し、成功時は封撃と無策を同時に1ターン付与する。
+        const baseChance = ctx.caster.role === 'main' ? 0.44 : 0.36
+        const controlChance = attributeDependentChance(baseChance, [h.statOf(ctx.caster, 'val')])
+        if (target.hp > 0 && h.roll(ctx.rng, controlChance)) {
+          h.addControl(ctx, target, '封撃', 1)
+          h.addControl(ctx, target, '無策', 1)
+        }
       })
       return true
     }
@@ -3196,10 +3303,31 @@ export const applyNamedSkillEffect = (
     }
     case '相模の獅子': {
       // 戦法タイプ: 能動
-      // 2ターンの間、自軍複数（2～3名）に42.5%→85%の鉄壁（ダメージを無効化）を2回分付与
-      // 自軍複数（2〜3名）に計略ダメージ（ダメージ率85%）を与える
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 85, 'strategy')
+      // 自軍から2～3名をランダムに選ぶ。
+      const targetCount = 2 + Math.floor(ctx.rng() * 2)
+      h.aliveRandom(ctx.allies, ctx.rng, ctx).slice(0, targetCount).forEach((ally) => {
+        if ((ally.specialState.ironWallCharges ?? 0) > 0) {
+          // すでに鉄壁中なら付与を行わず、代わりに敵軍単体へ計略ダメージを与える。
+          const enemy = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
+          if (enemy) h.dealSkillDamage(ctx, enemy, 178, 'strategy')
+          return
+        }
+
+        // 2回分それぞれについて85%で鉄壁を獲得する。
+        let gainedCharges = 0
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          if (h.roll(ctx.rng, 0.85)) {
+            gainedCharges += 1
+          } else if (ctx.caster.role === 'main') {
+            // 大将時は、鉄壁の獲得に失敗するたびに対象を回復する。
+            h.healBySkill(ctx, ally, 40, 'strategy')
+          }
+        }
+        if (gainedCharges <= 0) return
+        ally.specialState.ironWallCharges = (ally.specialState.ironWallCharges ?? 0) + gainedCharges
+        ally.specialState.sagamiIronWallCharges = (ally.specialState.sagamiIronWallCharges ?? 0) + gainedCharges
+        ally.specialState.sagamiIronWallUntil = ctx.turn + 1
+        log(ctx.logs, ctx, `相模の獅子: ${ally.name}に鉄壁${gainedCharges}回分を付与(2T)`, ally)
       })
       return true
     }
@@ -3261,20 +3389,31 @@ export const applyNamedSkillEffect = (
     }
     case '啄木鳥': {
       // 戦法タイプ: 能動
-      // 敵軍単体に計略ダメージ（ダメージ率78%→156%、知略依存）を与え、武勇が最も高い自軍単体が同じ対象に兵刃ダメージ（ダメージ率80%→160%、武勇と速度依存
-      // 敵軍単体に兵刃・計略ダメージ（ダメージ率156%）を与える
-      // 威圧を付与する
-      databaseTargets(ctx, h, 'damage').forEach((target) => {
-        h.dealSkillDamage(ctx, target, 156, 'physical')
+      const executeWoodpecker = (target: BattleFighter | null) => {
+        if (!target || target.hp <= 0) return
+        // 発動者が対象へ知略依存の計略ダメージを与える。
         h.dealSkillDamage(ctx, target, 156, 'strategy')
-      })
-      databaseTargets(ctx, h, 'control').forEach((target) => {
-        ["威圧"].forEach((name) => {
-          if (h.roll(ctx.rng, chanceFrom(ctx.skill, ['status_chance', 'debuff_rate', 'random_rate', 'pressure_rate', 'fatigue_rate'], 1))) {
-            h.addControl(ctx, target, name, durationFromDatabase(ctx.skill, 1))
-          }
-        })
-      })
+        // 武勇が最も高い生存友軍が、同じ対象へ武勇・速度依存の兵刃ダメージを与える。
+        const attacker = highestByStat(ctx.allies, 'val')
+        if (attacker && target.hp > 0) {
+          h.dealSkillDamage({ ...ctx, caster: attacker }, target, 160, 'physical', {
+            attackStats: ['val', 'spd'],
+            defenseStats: ['lea'],
+            coefficient: 0.9,
+          })
+        }
+        // 対象が生存していれば、速度依存の確率で威圧を1ターン付与する。
+        const pressureChance = attributeDependentChance(0.35, [h.statOf(ctx.caster, 'spd')])
+        if (target.hp > 0 && h.roll(ctx.rng, pressureChance)) h.addControl(ctx, target, '威圧', 1)
+      }
+
+      executeWoodpecker(currentTarget)
+      // 大将時は10%で戦法効果一式を追加でもう1回発動する。
+      if (ctx.caster.role === 'main' && h.roll(ctx.rng, 0.1)) {
+        const repeatTarget = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
+        log(ctx.logs, ctx, '啄木鳥: 大将効果でもう1回発動')
+        executeWoodpecker(repeatTarget)
+      }
       return true
     }
     case '死灰復然': {

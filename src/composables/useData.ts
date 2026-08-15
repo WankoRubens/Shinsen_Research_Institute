@@ -8,6 +8,7 @@ export type TriggerEvent =
   | 'battleStart'
   | 'preparationTurn'
   | 'turnStart'
+  | 'turnEnd'
   | 'beforeAction'
   | 'beforeNormalAttack'
   | 'afterAction'
