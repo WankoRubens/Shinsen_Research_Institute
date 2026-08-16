@@ -10,6 +10,11 @@ import {
 export const BASE_TROOP_LEVEL_CAP = 10
 export const TROOP_LEVEL_STAT_RATE = 0.02
 
+// 元データで affinity が欠けている既知の兵種特性を補完する。
+const MANUAL_TROOP_AFFINITY: Readonly<Record<string, { troopTypes: TroopType[]; level: number }>> = {
+  砲術I: { troopTypes: ['鉄砲'], level: 1 },
+}
+
 const addHeroLookupKey = (
   lookup: Map<string, Hero>,
   key: string | null | undefined,
@@ -53,12 +58,16 @@ export const calculateTroopLevels = (
 
     hero.traits?.forEach((trait, index) => {
       if (index >= TRAIT_UNLOCK.length || role.breakthrough < TRAIT_UNLOCK[index]) return
-      if (!trait.affinity) return
-      for (const rawTroopType of trait.affinity.troop_types) {
+      const name = (trait.name_jp || trait.name).normalize('NFKC')
+      const manual = MANUAL_TROOP_AFFINITY[name]
+      const troopTypes = trait.affinity?.troop_types ?? manual?.troopTypes ?? []
+      const level = trait.affinity?.level ?? manual?.level ?? 0
+      const capBonus = trait.affinity?.level_cap_bonus ?? 0
+      for (const rawTroopType of troopTypes) {
         const troopType = normalizeTroopType(rawTroopType)
         if (!troopType) continue
-        sums[troopType].level += Math.max(0, Number(trait.affinity.level) || 0)
-        sums[troopType].capBonus += Math.max(0, Number(trait.affinity.level_cap_bonus) || 0)
+        sums[troopType].level += Math.max(0, Number(level) || 0)
+        sums[troopType].capBonus += Math.max(0, Number(capBonus) || 0)
       }
     })
   }

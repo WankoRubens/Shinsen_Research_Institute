@@ -317,9 +317,11 @@ export const resolveBingxueDamage = (ctx: BingxueDamageContext): { multiplier: n
   const skillCriticalDamageBonus = kind === 'strategy'
     ? Math.max(0, attacker.specialState.strategyCriticalDamageBonus ?? 0) / 100
     : 0
+  // 特性の気勢・高揚は会心と奇策の両方、妙計は奇策だけを強化する。
+  const traitCriticalDamageBonus = Math.max(0, attacker.specialState.traitCriticalDamageBonus ?? 0) / 100
   const criticalBonus = kind === 'physical'
-    ? 0.025 * bingxueLevel(attacker, '突貫')
-    : 0.025 * bingxueLevel(attacker, '奇謀') + skillCriticalDamageBonus
+    ? 0.025 * bingxueLevel(attacker, '突貫') + traitCriticalDamageBonus
+    : 0.025 * bingxueLevel(attacker, '奇謀') + skillCriticalDamageBonus + traitCriticalDamageBonus
   const criticalMultiplier = critical ? 1.5 + criticalBonus : 1
 
   return {
