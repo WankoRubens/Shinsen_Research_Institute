@@ -1,6 +1,21 @@
 import type { Skill, Stat, StructuredBattleNode, TriggerEvent } from '../composables/useData'
 import type { BattleFighter, BattleLogEntry, SkillResolveContext } from './battleSimulator'
 import skillsData from '../../.build/skills.json'
+import {
+  S_UNIQUE_HANDCRAFTED_META,
+  S_UNIQUE_HANDCRAFTED_SKILL_NAMES,
+  applySUniqueSkillEffect,
+  recordSUniqueDamageEvent,
+} from './battleUniqueSkillEffects'
+
+export {
+  S_UNIQUE_ENEMY_ACTIVE_SKILL_WATCHERS,
+  S_UNIQUE_OWN_SKILL_WATCHERS,
+  S_UNIQUE_TEAM_DAMAGE_WATCHERS,
+  S_UNIQUE_TEAM_NORMAL_ATTACK_WATCHERS,
+  S_UNIQUE_TEAM_SKILL_WATCHERS,
+  recordSUniqueDamageEvent,
+} from './battleUniqueSkillEffects'
 
 export const HEAL_STOCK_DAMAGE_SKILL_NAMES = ['比翼連理']
 // 知者楽水の大将技をダメージ確定処理から参照する共通キー。
@@ -170,6 +185,7 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
   風林火山: defineBattleSkillMeta({ type: '指揮' }),
   無想掃討: defineBattleSkillMeta({ type: '能動' }),
+  ...S_UNIQUE_HANDCRAFTED_META,
 }
 
 export const BATTLE_SKILL_EFFECT_TRIGGERS: Record<string, TriggerEvent[]> = Object.fromEntries(
@@ -530,9 +546,11 @@ export const recordDamageDealtSkillEffects = (
   kind: 'physical' | 'strategy',
   turn: number,
   logs: BattleLogEntry[],
+  critical = false,
 ) => {
   recordDateIkiDamageHit(fighter, kind, turn, logs)
   recordBunbuDamageHit(fighter, kind, turn, logs)
+  recordSUniqueDamageEvent(fighter, kind, critical, turn, logs)
 }
 
 const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string, target?: BattleFighter) => {
@@ -767,6 +785,7 @@ const PRECISE_HANDCRAFTED_SKILLS = new Set([
   ...DIRECT_DAMAGE_HANDCRAFTED_SKILL_NAMES,
   // 個別戦法の登録一覧を共有し、追加したcaseを戦法一覧でも実装済みとして扱う。
   ...NAMED_BATTLE_SKILL_NAMES,
+  ...S_UNIQUE_HANDCRAFTED_SKILL_NAMES,
   '回天転運',
   '千成瓢箪',
   '水攻干計',
@@ -1338,6 +1357,10 @@ export const applyNamedSkillEffect = (
 ): boolean => {
   const name = h.skillDisplayName(ctx.skill)
   const currentTarget = ctx.target && ctx.target.hp > 0 ? ctx.target : h.chooseTarget(ctx.enemies, ctx.rng, ctx)
+
+  // S固有戦法は専用ファイルの個別caseを最優先し、旧生成caseへ二重に流さない。
+  const uniqueResult = applySUniqueSkillEffect(ctx, h)
+  if (uniqueResult !== null) return uniqueResult
 
   // 精密な個別caseがない戦法は、skills.json の battle.do を説明通りに実行する。
   // battle定義側が条件不成立を返した場合も、旧来の単一効果へ二重実行しない。

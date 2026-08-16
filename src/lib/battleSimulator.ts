@@ -11,6 +11,11 @@ import {
   ENEMY_STRATEGY_DAMAGE_RECEIVED_SKILL_NAMES,
   HEAL_STOCK_DAMAGE_SKILL_NAMES,
   IMPLEMENTED_BATTLE_SKILL_NAMES,
+  S_UNIQUE_ENEMY_ACTIVE_SKILL_WATCHERS,
+  S_UNIQUE_OWN_SKILL_WATCHERS,
+  S_UNIQUE_TEAM_DAMAGE_WATCHERS,
+  S_UNIQUE_TEAM_NORMAL_ATTACK_WATCHERS,
+  S_UNIQUE_TEAM_SKILL_WATCHERS,
   TEAM_AFTER_NORMAL_ATTACK_SKILL_NAMES,
   TEAM_BEFORE_ACTION_SKILL_NAMES,
   TEAM_DAMAGE_RECEIVED_SKILL_NAMES,
@@ -673,6 +678,16 @@ const chooseControlledTarget = (
 ): BattleFighter | null => {
   const forced = forcedControlTarget(caster, candidates, mode)
   if (forced) return forced
+  // 七本槍筆頭の対象固定は挑発より優先せず、通常の対象抽選だけを置き換える。
+  const currentTurn = caster.specialState.bingxueCurrentTurn ?? 0
+  if (mode === 'normal' && (caster.specialState.forcedNormalTargetUntil ?? 0) >= currentTurn) {
+    const role = caster.specialState.forcedNormalTargetRole
+    const fixed = living(candidates).find((fighter) =>
+      (role === 1 && fighter.role === 'main')
+      || (role === 2 && fighter.role === 'vice1')
+      || (role === 3 && fighter.role === 'vice2'))
+    if (fixed) return fixed
+  }
   const controlled = controlledRandomCandidates(caster, candidates, allies, enemies, mode)
   if (hasControlStatus(caster, '混乱')) {
     return controlled[Math.floor(rng() * controlled.length)] ?? null
@@ -768,6 +783,14 @@ const applyDamage = (target: BattleFighter, amount: number): number => {
   target.dead += dead
   target.maxHp = Math.max(0, target.maxHp - dead)
   if (target.hp > target.maxHp) target.hp = target.maxHp
+  // 回生は撃破された瞬間に1回消費し、負傷兵の範囲内で兵力を復帰させる。
+  if (target.hp <= 0 && (target.specialState.reviveCharges ?? 0) > 0) {
+    target.specialState.reviveCharges = Math.max(0, (target.specialState.reviveCharges ?? 0) - 1)
+    const reviveRate = target.specialState.reviveHealRate ?? 54
+    const recovered = Math.min(target.wounded, Math.max(1, Math.round(target.maxHp * reviveRate / 540)))
+    target.hp = Math.min(target.maxHp, recovered)
+    target.wounded = Math.max(0, target.wounded - recovered)
+  }
   return actual
 }
 
@@ -796,6 +819,35 @@ const applyDamageWithTeamShare = (
   // 従来同様、対象の残存兵力を超えるダメージは分担前に切り捨てる。
   const cappedAmount = Math.min(target.hp, Math.max(0, Math.round(amount)))
   const recipients = living(candidates).filter((fighter) => fighter.id !== target.id)
+  // 勇志不抜で守られている友軍は、指定された所持者へ20%を肩代わりさせる。
+  const currentTurn = target.specialState.bingxueCurrentTurn ?? 0
+  const shoulderRole = target.specialState.damageShoulderSourceRole
+  const shoulder = (target.specialState.damageShoulderUntil ?? 0) >= currentTurn
+    ? recipients.find((fighter) =>
+        (shoulderRole === 1 && fighter.role === 'main')
+        || (shoulderRole === 2 && fighter.role === 'vice1')
+        || (shoulderRole === 3 && fighter.role === 'vice2'))
+    : null
+  if (shoulder) {
+    const shoulderAmount = Math.round(cappedAmount * Math.min(0.9, (target.specialState.damageShoulderPercent ?? 0) / 100))
+    const targetDamage = applyDamage(target, cappedAmount - shoulderAmount)
+    const beforeHp = shoulder.hp
+    const beforeWounded = shoulder.wounded
+    const beforeDead = shoulder.dead
+    const actualShare = applyDamage(shoulder, shoulderAmount)
+    return {
+      targetDamage,
+      totalDamage: targetDamage + actualShare,
+      shares: actualShare > 0 ? [{
+        fighter: shoulder,
+        amount: actualShare,
+        beforeHp,
+        afterHp: shoulder.hp,
+        woundedDelta: shoulder.wounded - beforeWounded,
+        deadDelta: shoulder.dead - beforeDead,
+      }] : [],
+    }
+  }
   const canShare = turn === 1
     && (target.specialState[WISE_WATER_SHARE_UNTIL_KEY] ?? 0) >= turn
     && recipients.length > 0
@@ -1041,7 +1093,27 @@ const baseDamage = (
     : 0
   const modifier = (damageModifier(caster, true, actualKind) + militaryGodNormalBonus)
     * damageModifier(target, false, actualKind)
-  const raw = damageBase * (rate / 100) * modifier * variance
+  let conditionalMultiplier = 1
+  // 満ちゆく月は、対象が次に与える2回のダメージだけを40%低下させる。
+  if ((caster.specialState.nextDamagePenaltyCharges ?? 0) > 0) {
+    conditionalMultiplier *= 1 - Math.min(0.95, (caster.specialState.nextDamagePenalty ?? 0) / 100)
+    caster.specialState.nextDamagePenaltyCharges = Math.max(0, (caster.specialState.nextDamagePenaltyCharges ?? 0) - 1)
+  }
+  if (isNormalAttack && (caster.specialState.normalDamagePenaltyUntil ?? 0) >= currentTurn) {
+    conditionalMultiplier *= 1 - Math.min(0.95, (caster.specialState.normalDamagePenalty ?? 0) / 100)
+  }
+  if (resolvedSkillType === '突撃' && (caster.specialState.assaultDamagePenaltyUntil ?? 0) >= currentTurn) {
+    conditionalMultiplier *= 1 - Math.min(0.95, (caster.specialState.assaultDamagePenalty ?? 0) / 100)
+  }
+  // 落花啼鳥の与ダメージ上昇は能動戦法だけを対象にする。
+  if (resolvedSkillType === '能動' && (caster.specialState.activeDamageBonusUntil ?? 0) >= currentTurn) {
+    conditionalMultiplier *= 1 + Math.max(0, caster.specialState.activeDamageBonus ?? 0) / 100
+  }
+  // 破陣は兵刃ダメージにだけ適用する。防御無視率を同率の最終補正として近似する。
+  if (actualKind === 'physical' && (caster.specialState.physicalPenetrationUntil ?? 0) >= currentTurn) {
+    conditionalMultiplier *= 1 + Math.max(0, caster.specialState.physicalPenetration ?? 46) / 100
+  }
+  const raw = damageBase * (rate / 100) * modifier * conditionalMultiplier * variance
   const floor = guaranteedDamageFloor(caster.hp, rate, Boolean(skill)) * variance
   const bingxueDamage = resolveBingxueDamage({
     attacker: caster,
@@ -1056,8 +1128,12 @@ const baseDamage = (
   })
   if (bingxueDamage.evaded) return { amount: 0, critical: false }
   // 兵種相性は、最低保証を含むダメージが確定した後に全体へ掛ける。
+  // 破竹の勢い・湖水渡りで増えた会心ダメージ率は、会心成立時だけ最終値へ加算する。
+  const uniqueCriticalMultiplier = bingxueDamage.critical
+    ? 1 + Math.max(0, caster.specialState.criticalDamageBonus ?? 0) / 150
+    : 1
   return {
-    amount: Math.max(floor, raw) * incomingSpecialMultiplier * bingxueDamage.multiplier * caster.troopAffinityModifier,
+    amount: Math.max(floor, raw) * incomingSpecialMultiplier * bingxueDamage.multiplier * uniqueCriticalMultiplier * caster.troopAffinityModifier,
     critical: bingxueDamage.critical,
   }
 }
@@ -1305,7 +1381,11 @@ const fireMilitaryGodNormalAttackWatchers = (
   controlStats: Record<string, number>,
 ) => {
   allies.filter((owner) => owner.id !== attacker.id && isAlive(owner)).forEach((owner) => {
-    const skills = skillsNamedIn(owner, TEAM_MILITARY_GOD_SKILL_NAMES)
+    const skills = owner.skills.filter((skill) =>
+      TEAM_MILITARY_GOD_SKILL_NAMES.has(skillDisplayName(skill))
+      || TEAM_MILITARY_GOD_SKILL_NAMES.has(skill.name)
+      || S_UNIQUE_TEAM_NORMAL_ATTACK_WATCHERS.has(skillDisplayName(skill))
+      || S_UNIQUE_TEAM_NORMAL_ATTACK_WATCHERS.has(skill.name))
     if (skills.length === 0) return
     fireTriggeredSkillList(
       owner,
@@ -1340,9 +1420,41 @@ const fireMilitaryGodSkillActivationWatchers = (
   turnStat: BattleTurnStat,
   controlStats: Record<string, number>,
 ) => {
-  if (!['能動', '突撃'].includes(battleSkillType(activatedSkill))) return
+  const activatedType = battleSkillType(activatedSkill)
+  if (!['能動', '突撃'].includes(activatedType)) return
+  // 監視戦法のcaseから、今回発動した戦法の種類と固有判定を参照できるようにする。
+  activator.specialState.currentActivatedSkillActive = activatedType === '能動' ? 1 : 0
+  activator.specialState.currentActivatedSkillAssault = activatedType === '突撃' ? 1 : 0
+  activator.specialState.currentActivatedSkillUnique = isUniqueBattleSkill(activatedSkill) ? 1 : 0
+  activator.specialState.currentActivatedSkillCombatState = /状態|獲得|付与/.test(textOfSkill(activatedSkill)) ? 1 : 0
+
+  // 槍の又左・越後流軍学・風流武者は、所持者本人の能動・突撃発動を監視する。
+  const ownWatcherSkills = skillsNamedIn(activator, S_UNIQUE_OWN_SKILL_WATCHERS)
+  if (ownWatcherSkills.length > 0) {
+    fireTriggeredSkillList(
+      activator,
+      ownWatcherSkills,
+      'ownSkillActivated',
+      target,
+      allies,
+      enemies,
+      turn,
+      logs,
+      rng,
+      stats,
+      turnStat,
+      controlStats,
+      activatedSkill,
+      activator,
+    )
+  }
+
   allies.filter((owner) => owner.id !== activator.id && isAlive(owner)).forEach((owner) => {
-    const skills = skillsNamedIn(owner, TEAM_MILITARY_GOD_SKILL_NAMES)
+    const skills = owner.skills.filter((skill) =>
+      TEAM_MILITARY_GOD_SKILL_NAMES.has(skillDisplayName(skill))
+      || TEAM_MILITARY_GOD_SKILL_NAMES.has(skill.name)
+      || S_UNIQUE_TEAM_SKILL_WATCHERS.has(skillDisplayName(skill))
+      || S_UNIQUE_TEAM_SKILL_WATCHERS.has(skill.name))
     if (skills.length === 0) return
     fireTriggeredSkillList(
       owner,
@@ -1361,6 +1473,30 @@ const fireMilitaryGodSkillActivationWatchers = (
       activator,
     )
   })
+
+  // 百万一心・密報通暁は、相手の能動戦法が効果を解決する前に割り込む。
+  if (activatedType === '能動') {
+    enemies.filter(isAlive).forEach((owner) => {
+      const skills = skillsNamedIn(owner, S_UNIQUE_ENEMY_ACTIVE_SKILL_WATCHERS)
+      if (skills.length === 0) return
+      fireTriggeredSkillList(
+        owner,
+        skills,
+        'enemyActiveSkill',
+        activator,
+        enemies,
+        allies,
+        turn,
+        logs,
+        rng,
+        stats,
+        turnStat,
+        controlStats,
+        activatedSkill,
+        activator,
+      )
+    })
+  }
 }
 
 // ダメージを受けた本人以外が監視する戦法を、攻撃側・被攻撃側の向きを保って処理する。
@@ -1379,7 +1515,11 @@ const fireDamageWatcherSkills = (
 ) => {
   // 被ダメージ本人が所有する戦法は直前の通常処理で発動済みなので、監視側では重複させない。
   damagedAllies.filter((owner) => owner.id !== damaged.id && isAlive(owner)).forEach((owner) => {
-    const skills = skillsNamedIn(owner, TEAM_DAMAGE_RECEIVED_SKILL_NAMES)
+    const skills = owner.skills.filter((skill) =>
+      TEAM_DAMAGE_RECEIVED_SKILL_NAMES.has(skillDisplayName(skill))
+      || TEAM_DAMAGE_RECEIVED_SKILL_NAMES.has(skill.name)
+      || S_UNIQUE_TEAM_DAMAGE_WATCHERS.has(skillDisplayName(skill))
+      || S_UNIQUE_TEAM_DAMAGE_WATCHERS.has(skill.name))
     if (skills.length === 0) return
     fireTriggeredSkillList(
       owner,
@@ -1544,6 +1684,43 @@ const applyPhysicalLifeSteal = (
   return actual
 }
 
+// 戦法で付与された心攻は、実際に与えた計略ダメージの割合だけ負傷兵を回復する。
+const applyStrategyLifeSteal = (
+  source: BattleFighter,
+  damage: number,
+  turn: number,
+  logs: BattleLogEntry[],
+  turnStat: BattleTurnStat,
+): number => {
+  const percent = source.specialState.strategyLifeStealPercent ?? 0
+  const until = source.specialState.strategyLifeStealUntil ?? 0
+  if (damage <= 0 || percent <= 0 || until < turn || !isAlive(source)) return 0
+  const beforeHp = source.hp
+  const beforeWounded = source.wounded
+  const actual = applyHeal(source, damage * percent / 100)
+  if (actual <= 0) return 0
+  const healedWounded = beforeWounded - source.wounded
+  if (source.side === 'ally') turnStat.allyHealing += actual
+  else turnStat.enemyHealing += actual
+  if (logs !== NO_LOGS) logs.push({
+    turn,
+    side: source.side,
+    actor: source.name,
+    actorHp: source.hp,
+    target: source.name,
+    targetSide: source.side,
+    amount: actual,
+    beforeHp,
+    afterHp: source.hp,
+    woundedDelta: -healedWounded,
+    deadDelta: 0,
+    valueType: 'healing',
+    effect: '心攻',
+    message: `心攻で${source.name}を${actual.toLocaleString()}回復 ${hpChangeText(beforeHp, source.hp)} / 負傷兵${healedWounded.toLocaleString()}復帰`,
+  })
+  return actual
+}
+
 const RED_ARMOR_SKILL_NAMES = new Set(['赤備え隊', '赤備隊'])
 
 // 飯富虎昌が赤備え隊を装備している時、部隊全体の会心ダメージ回数を共有して数える。
@@ -1620,6 +1797,7 @@ const dealSkillDamage = (
   const actual = damageResult.targetDamage
   const totalActual = damageResult.totalDamage
   const afterHp = target.hp
+  target.specialState.lastDamageAmount = actual
   const woundedDelta = target.wounded - beforeWounded
   const deadDelta = target.dead - beforeDead
   recordDamage(ctx.stats, ctx.caster, ctx.skill, totalActual)
@@ -1643,10 +1821,11 @@ const dealSkillDamage = (
   })
   logSharedDamage(ctx.caster, skillDisplayName(ctx.skill), ctx.turn, ctx.logs, damageResult)
   if (totalActual > 0) {
-    recordDamageDealtSkillEffects(ctx.caster, kind, ctx.turn, ctx.logs)
+    recordDamageDealtSkillEffects(ctx.caster, kind, ctx.turn, ctx.logs, resolvedDamage.critical)
     resolveRedArmorCriticalHit(ctx, kind, resolvedDamage.critical, totalActual)
     applyBingxueLifeSteal(ctx.caster, totalActual, ctx.turn, ctx.logs, ctx.turnStat)
     if (kind === 'physical') applyPhysicalLifeSteal(ctx.caster, totalActual, ctx.turn, ctx.logs, ctx.turnStat)
+    else applyStrategyLifeSteal(ctx.caster, totalActual, ctx.turn, ctx.logs, ctx.turnStat)
     resolveSeventyTwoCriticalDamage(ctx, kind, resolvedDamage.critical, totalActual)
     const targetAllies = target.side === ctx.caster.side ? ctx.allies : ctx.enemies
     const targetEnemies = target.side === ctx.caster.side ? ctx.enemies : ctx.allies
@@ -1893,6 +2072,7 @@ const createBingxueHelpers = (
     const damageResult = applyDamageWithTeamShare(target, resolvedDamage.amount, turn, targetCandidates)
     const actual = damageResult.targetDamage
     const totalActual = damageResult.totalDamage
+    target.specialState.lastDamageAmount = actual
     if (owner.side === 'ally') turnStat.allyDamage += totalActual
     else turnStat.enemyDamage += totalActual
     const woundedDelta = target.wounded - beforeWounded
@@ -1915,9 +2095,10 @@ const createBingxueHelpers = (
     })
     logSharedDamage(owner, effect, turn, logs, damageResult)
     if (totalActual > 0) {
-      recordDamageDealtSkillEffects(owner, kind, turn, logs)
+      recordDamageDealtSkillEffects(owner, kind, turn, logs, resolvedDamage.critical)
       applyBingxueLifeSteal(owner, totalActual, turn, logs, turnStat)
       if (kind === 'physical') applyPhysicalLifeSteal(owner, totalActual, turn, logs, turnStat)
+      else applyStrategyLifeSteal(owner, totalActual, turn, logs, turnStat)
       const ownerAllies = allFighters.filter(fighter => fighter.side === owner.side)
       const ownerEnemies = allFighters.filter(fighter => fighter.side !== owner.side)
       resolveRedArmorCriticalHit({
@@ -2091,9 +2272,19 @@ const activationRateOf = (caster: BattleFighter, skill: Skill, turn = 0): number
   const activeSkillPassiveBonus = skillType === '能動'
     ? (caster.specialState.activeSkillActivationRateBonus ?? 0) / 100
     : 0
+  const uniqueSkillBonus = unique && (caster.specialState.uniqueActivationRateBonusUntil ?? 0) >= turn
+    ? (caster.specialState.uniqueActivationRateBonus ?? 0) / 100
+    : 0
+  const nonUniqueActiveBonus = skillType === '能動' && !unique
+    ? (caster.specialState.nonUniqueActiveActivationBonus ?? 0) / 100
+    : 0
   // 直諫敢行は1ターン目だけ、他の戦法から受ける発動率上昇分を2倍にする。
   // 基礎発動率・兵学補正・発動率低下は倍化の対象にしない。
-  const externalSkillBonus = sharedSkillBonus + skillActivationBonus / 100 + activeSkillPassiveBonus
+  const externalSkillBonus = sharedSkillBonus
+    + skillActivationBonus / 100
+    + activeSkillPassiveBonus
+    + uniqueSkillBonus
+    + nonUniqueActiveBonus
   const adjustedExternalSkillBonus = resolvedSkillName === '直諫敢行' && turn === 1
     ? externalSkillBonus * 2
     : externalSkillBonus
@@ -2179,6 +2370,7 @@ const resolveSkill = (
       const actual = damageResult.targetDamage
       const totalActual = damageResult.totalDamage
       const afterHp = fighter.hp
+      fighter.specialState.lastDamageAmount = actual
       const woundedDelta = fighter.wounded - beforeWounded
       const deadDelta = fighter.dead - beforeDead
       recordDamage(stats, caster, skill, totalActual)
@@ -2202,7 +2394,7 @@ const resolveSkill = (
       })
       logSharedDamage(caster, skillName, turn, logs, damageResult)
       if (totalActual > 0) {
-        recordDamageDealtSkillEffects(caster, kind, turn, logs)
+        recordDamageDealtSkillEffects(caster, kind, turn, logs, resolvedDamage.critical)
         resolveRedArmorCriticalHit({
           caster,
           target: fighter,
@@ -2220,6 +2412,7 @@ const resolveSkill = (
         }, kind, resolvedDamage.critical, totalActual)
         applyBingxueLifeSteal(caster, totalActual, turn, logs, turnStat)
         if (kind === 'physical') applyPhysicalLifeSteal(caster, totalActual, turn, logs, turnStat)
+        else applyStrategyLifeSteal(caster, totalActual, turn, logs, turnStat)
         resolveSeventyTwoCriticalDamage({
           caster,
           target: fighter,
@@ -2413,9 +2606,31 @@ const trySkill = (
     caster.skillUsesThisTurn[skillKey] = (caster.skillUsesThisTurn[skillKey] ?? 0) + 1
     if (skill.cooldown) caster.skillCooldowns[skillKey] = skill.cooldown
     recordActivation(stats, caster, skill)
+    // 仏の高力は、強化対象が次に能動戦法を発動した瞬間に統率上昇へ変換する。
+    if (
+      resolvedSkillType === '能動'
+      && (caster.specialState.buddhaLeadershipUntil ?? 0) >= turn
+      && (caster.specialState.buddhaLeadershipBonus ?? 0) > 0
+    ) {
+      const bonus = caster.specialState.buddhaLeadershipBonus ?? 0
+      caster.buffs.lea = (caster.buffs.lea ?? 0) + statOf(caster, 'lea') * bonus / 100
+      caster.specialState.buddhaLeadershipBonus = 0
+      if (logs !== NO_LOGS) logs.push({
+        turn,
+        side: caster.side,
+        actor: caster.name,
+        actorHp: caster.hp,
+        effect: '仏の高力',
+        message: `${caster.name}の統率が${bonus.toFixed(2)}%上昇`,
+      })
+    }
   }
 
   let prep = trigger === 'beforeAction' ? preparationTurns(skill) : 0
+  if (prep > 0 && (caster.specialState.skipPreparationOnce ?? 0) > 0) {
+    caster.specialState.skipPreparationOnce = 0
+    prep = 0
+  }
   if (prep > 0 && consumeBingxuePreparationReduction(caster, resolvedSkillType, unique, prepared, rng)) {
     prep = Math.max(0, prep - 1)
     if (logs !== NO_LOGS) logs.push({
@@ -2438,6 +2653,11 @@ const trySkill = (
     })
     if (!followUp) {
       fireMilitaryGodSkillActivationWatchers(caster, skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
+      if ((caster.specialState.cancelCurrentActiveSkill ?? 0) > 0) {
+        caster.specialState.cancelCurrentActiveSkill = 0
+        caster.pendingSkills = caster.pendingSkills.filter((pending) => !isSameSkill(pending.skill, skill))
+        return
+      }
     }
     return
   }
@@ -2454,6 +2674,10 @@ const trySkill = (
   })
   if (!followUp) {
     fireMilitaryGodSkillActivationWatchers(caster, skill, target, allies, enemies, turn, logs, rng, stats, turnStat, controlStats)
+    if ((caster.specialState.cancelCurrentActiveSkill ?? 0) > 0) {
+      caster.specialState.cancelCurrentActiveSkill = 0
+      return
+    }
   }
   resolveSkill(caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats, eventSubject)
   if (!followUp) recordBingxueSkillResolved(caster, resolvedSkillType, prepared, turn, rng)
@@ -2547,6 +2771,7 @@ const processDots = (
       const amount = damageResult.targetDamage
       const totalAmount = damageResult.totalDamage
       const afterHp = fighter.hp
+      fighter.specialState.lastDamageAmount = amount
       const woundedDelta = fighter.wounded - beforeWounded
       const deadDelta = fighter.dead - beforeDead
       recordDamage(stats, source, pseudoSkill, totalAmount)
@@ -2571,7 +2796,7 @@ const processDots = (
       logSharedDamage(source, status.name, turn, logs, damageResult)
       if (totalAmount > 0) {
         const dotKind = status.dotType ?? 'physical'
-        recordDamageDealtSkillEffects(source, dotKind, turn, logs)
+        recordDamageDealtSkillEffects(source, dotKind, turn, logs, resolvedDamage.critical)
         resolveRedArmorCriticalHit({
           caster: source,
           target: fighter,
@@ -2625,7 +2850,7 @@ const consumeActionControlDurations = (fighter: BattleFighter, activeAtActionSta
   })
 }
 
-const tickFighter = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[]) => {
+const tickFighter = (fighter: BattleFighter, turn: number, _logs: BattleLogEntry[]) => {
   tickBingxueTurn(fighter, turn)
   // 相模の獅子で得た鉄壁は付与ターンを含む2ターンだけ有効。残った専用回数だけを全体回数から外す。
   if (
@@ -2864,6 +3089,45 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           rng,
           helpers: createBingxueHelpers(allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats),
         })
+        // 一心一徳で予約された休養は、対象本人の次のターン開始時に1回だけ回復する。
+        if ((actor.specialState.restHealTurn ?? 0) === turn) {
+          const sourceRole = actor.specialState.restHealSourceRole
+          const source = allies.find((fighter) =>
+            (sourceRole === 1 && fighter.role === 'main')
+            || (sourceRole === 2 && fighter.role === 'vice1')
+            || (sourceRole === 3 && fighter.role === 'vice2')) ?? actor
+          const pseudoSkill = {
+            id: 'unique-rest-heal',
+            name: '休養',
+            name_jp: '休養',
+            heal_rate_max: actor.specialState.restHealRate ?? 76,
+            battle_type: 'strategy',
+          } as Skill
+          const beforeHp = actor.hp
+          const beforeWounded = actor.wounded
+          const actual = applyHeal(actor, baseHeal(source, actor, pseudoSkill, rng))
+          if (actual > 0) {
+            if (actor.side === 'ally') turnStat.allyHealing += actual
+            else turnStat.enemyHealing += actual
+            if (logs !== NO_LOGS) logs.push({
+              turn,
+              side: source.side,
+              actor: source.name,
+              actorHp: source.hp,
+              target: actor.name,
+              targetSide: actor.side,
+              amount: actual,
+              beforeHp,
+              afterHp: actor.hp,
+              woundedDelta: -(beforeWounded - actor.wounded),
+              deadDelta: 0,
+              valueType: 'healing',
+              effect: '休養',
+              message: `休養で${actor.name}を${actual.toLocaleString()}回復 ${hpChangeText(beforeHp, actor.hp)} / 負傷兵${(beforeWounded - actor.wounded).toLocaleString()}復帰`,
+            })
+          }
+          actor.specialState.restHealTurn = 0
+        }
         processPendingSkills(actor, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         fireTriggeredSkills(actor, 'turnStart', target, allies, enemies, turn, logs, rng, skillStats, turnStat, controlStats)
         if (!isAlive(actor)) continue
@@ -2954,6 +3218,9 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           })
         } else {
           // 連撃中は、ターゲット選択から通常攻撃後効果までの一連の処理を2回行う。
+          const randomCombo = (actor.specialState.comboChanceUntil ?? 0) >= turn
+            && rng() < (actor.specialState.comboChance ?? 0) / 100
+          if (randomCombo) actor.specialState.doubleAttackUntil = Math.max(actor.specialState.doubleAttackUntil ?? 0, turn)
           const normalAttackCount = (actor.specialState.doubleAttackUntil ?? 0) >= turn ? 2 : 1
           for (let normalAttackIndex = 0; normalAttackIndex < normalAttackCount; normalAttackIndex += 1) {
             if (!isAlive(actor)) break
@@ -2998,6 +3265,9 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
           const afterHp = target.hp
           const woundedDelta = target.wounded - beforeWounded
           const deadDelta = target.dead - beforeDead
+          target.specialState.lastDamageAmount = normalDamage
+          target.specialState.lastNormalAttackerRole = actor.role === 'main' ? 1 : actor.role === 'vice1' ? 2 : 3
+          target.specialState.lastNormalAttackedTurn = turn
           if (actor.side === 'ally') turnStat.allyDamage += totalNormalDamage
           else turnStat.enemyDamage += totalNormalDamage
           if (logs !== NO_LOGS) logs.push({
@@ -3023,12 +3293,44 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             logs,
             damageResult,
           )
+          // 乱舞中は通常攻撃成立後、対象以外の生存敵将へ同量相当の巻き込みダメージを与える。
+          if (
+            normalDamage > 0
+            && (actor.specialState.splashAttackUntil ?? 0) >= turn
+            && rng() < (actor.specialState.splashAttackChance ?? 0) / 100
+          ) {
+            targetSideMembers.filter((fighter) => fighter.id !== target!.id && isAlive(fighter)).forEach((splashTarget) => {
+              const splashBefore = splashTarget.hp
+              const splashWounded = splashTarget.wounded
+              const splashDead = splashTarget.dead
+              const splashAmount = applyDamage(splashTarget, normalDamage)
+              splashTarget.specialState.lastDamageAmount = splashAmount
+              if (actor.side === 'ally') turnStat.allyDamage += splashAmount
+              else turnStat.enemyDamage += splashAmount
+              if (logs !== NO_LOGS) logs.push({
+                turn,
+                side: actor.side,
+                actor: actor.name,
+                actorHp: actor.hp,
+                target: splashTarget.name,
+                targetSide: splashTarget.side,
+                amount: splashAmount,
+                beforeHp: splashBefore,
+                afterHp: splashTarget.hp,
+                woundedDelta: splashTarget.wounded - splashWounded,
+                deadDelta: splashTarget.dead - splashDead,
+                valueType: 'damage',
+                effect: '乱舞',
+                message: `乱舞で${splashTarget.name}に${splashAmount.toLocaleString()}ダメージ ${hpChangeText(splashBefore, splashTarget.hp)} / ${casualtyText(splashTarget.wounded - splashWounded, splashTarget.dead - splashDead)}`,
+              })
+            })
+          }
           if (satsumaStrategyRate > 0) actor.specialState.satsumaStrategyNormalNextTurn = turn + 2
           if (totalNormalDamage > 0) {
             const targetAllies = target.side === actor.side ? allies : enemies
             const targetEnemies = target.side === actor.side ? enemies : allies
             if (satsumaSkill) recordDamage(skillStats, actor, satsumaSkill, totalNormalDamage)
-            recordDamageDealtSkillEffects(actor, normalDamageKind, turn, logs)
+            recordDamageDealtSkillEffects(actor, normalDamageKind, turn, logs, resolvedNormalDamage.critical)
             const normalAttackContext: SkillResolveContext = {
               caster: actor,
               target,
@@ -3047,6 +3349,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             resolveSeventyTwoCriticalDamage(normalAttackContext, normalDamageKind, resolvedNormalDamage.critical, totalNormalDamage)
             applyBingxueLifeSteal(actor, totalNormalDamage, turn, logs, turnStat)
             if (normalDamageKind === 'physical') applyPhysicalLifeSteal(actor, totalNormalDamage, turn, logs, turnStat)
+            else applyStrategyLifeSteal(actor, totalNormalDamage, turn, logs, turnStat)
             runBingxueNormalAttackReceived(
               target,
               actor,
