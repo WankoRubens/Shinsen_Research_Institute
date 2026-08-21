@@ -102,7 +102,7 @@ export const S_UNIQUE_TEAM_NORMAL_ATTACK_WATCHERS = new Set(['同気連枝'])
 export const S_UNIQUE_TEAM_DAMAGE_WATCHERS = new Set(['同気連枝', '剛毅木訥'])
 export const S_UNIQUE_TEAM_SKILL_WATCHERS = new Set(['松柏之操'])
 export const S_UNIQUE_ENEMY_ACTIVE_SKILL_WATCHERS = new Set(['百万一心', '密報通暁'])
-export const S_UNIQUE_OWN_SKILL_WATCHERS = new Set(['槍の又左', '越後流軍学', '風流武者'])
+export const S_UNIQUE_OWN_SKILL_WATCHERS = new Set(['槍の又左', '越後流軍学', '風流武者', '疑心暗鬼'])
 
 const living = (fighters: BattleFighter[]) => fighters.filter((fighter) => fighter.hp > 0)
 const fighterHasSkill = (fighter: BattleFighter, name: string) =>

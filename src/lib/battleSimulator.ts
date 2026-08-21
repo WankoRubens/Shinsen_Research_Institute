@@ -1102,6 +1102,14 @@ const baseDamage = (
       target.specialState.nextActiveDamageTaken = 0
     }
   }
+  // 金城湯池は戦法から受けるダメージだけを軽減し、通常攻撃には適用しない。
+  if (
+    resolvedSkillType !== null
+    && currentTurn > 0
+    && (target.specialState.skillDamageReductionUntil ?? 0) >= currentTurn
+  ) {
+    incomingSpecialMultiplier *= 1 - Math.min(0.95, (target.specialState.skillDamageReductionPercent ?? 0) / 100)
+  }
   if ((target.specialState.nextDamageTakenBonus ?? 0) !== 0) {
     incomingSpecialMultiplier += (target.specialState.nextDamageTakenBonus ?? 0) / 100
     target.specialState.nextDamageTakenBonus = 0
@@ -1170,6 +1178,23 @@ const baseDamage = (
   }
   if (resolvedSkillType === '突撃' && (caster.specialState.assaultDamagePenaltyUntil ?? 0) >= currentTurn) {
     conditionalMultiplier *= 1 - Math.min(0.95, (caster.specialState.assaultDamagePenalty ?? 0) / 100)
+  }
+  // 罵詈雑言は最初の3ターン、通常攻撃と突撃戦法から受けるダメージを軽減する。
+  if (
+    currentTurn > 0
+    && (target.specialState.verbalAbuseReductionUntil ?? 0) >= currentTurn
+    && (isNormalAttack || resolvedSkillType === '突撃')
+  ) {
+    incomingSpecialMultiplier *= 1 - Math.min(0.95, (target.specialState.verbalAbuseReductionPercent ?? 0) / 100)
+  }
+  // 専横専断の強化は、次に成立する能動戦法の兵刃ダメージ1回だけへ適用する。
+  if (
+    actualKind === 'physical'
+    && resolvedSkillType === '能動'
+    && (caster.specialState.nextActivePhysicalDamageBonus ?? 0) > 0
+  ) {
+    conditionalMultiplier *= 1 + (caster.specialState.nextActivePhysicalDamageBonus ?? 0) / 100
+    caster.specialState.nextActivePhysicalDamageBonus = 0
   }
   // 落花啼鳥の与ダメージ上昇は能動戦法だけを対象にする。
   if (resolvedSkillType === '能動' && (caster.specialState.activeDamageBonusUntil ?? 0) >= currentTurn) {
@@ -1527,6 +1552,7 @@ const fireMilitaryGodSkillActivationWatchers = (
   activator.specialState.currentActivatedSkillActive = activatedType === '能動' ? 1 : 0
   activator.specialState.currentActivatedSkillAssault = activatedType === '突撃' ? 1 : 0
   activator.specialState.currentActivatedSkillUnique = isUniqueBattleSkill(activatedSkill) ? 1 : 0
+  activator.specialState.currentActivatedSkillPrepared = preparationTurns(activatedSkill) > 0 ? 1 : 0
   activator.specialState.currentActivatedSkillCombatState = /状態|獲得|付与/.test(textOfSkill(activatedSkill)) ? 1 : 0
 
   // 槍の又左・越後流軍学・風流武者は、所持者本人の能動・突撃発動を監視する。
