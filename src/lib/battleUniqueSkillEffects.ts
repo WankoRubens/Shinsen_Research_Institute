@@ -282,7 +282,10 @@ export const applySUniqueSkillEffect = (
       const target = random(ctx, h, ctx.enemies)
       if (target && h.roll(ctx.rng, chance)) {
         h.dealSkillDamage(ctx, target, 138, 'physical')
-        h.addTimedModifier(ctx, target, 'lea', -statOf(target, 'lea') * 0.15, 2)
+        // 統率低下は即時ではなく、対象が次ターンに通常攻撃を終えた後から2ターン付与する。
+        target.specialState.takedaRedLeadershipPenaltyTurn = ctx.turn + 1
+        target.specialState.takedaRedLeadershipPenaltyPercent = 15
+        target.specialState.takedaRedLeadershipPenaltySourceRole = roleCode(ctx.caster)
       }
       return true
     }
@@ -377,8 +380,9 @@ export const applySUniqueSkillEffect = (
       })
       // 与えた合計ダメージの25%を、生存する雑賀・本願寺武将へ均等配分する。
       if (factionAllies.length > 0 && total > 0) {
-        const healRate = total * 0.25 / factionAllies.length / Math.max(1, statOf(ctx.caster, 'int') * 2.64) * 100
-        factionAllies.forEach((ally) => h.healBySkill(ctx, ally, healRate, 'strategy'))
+        // 通常回復式の乱数を再適用せず、説明どおり合計ダメージの25%をそのまま分配する。
+        const healAmount = total * 0.25 / factionAllies.length
+        factionAllies.forEach((ally) => h.healFixedBySkill(ctx, ally, healAmount))
       }
       return true
     }
@@ -390,6 +394,8 @@ export const applySUniqueSkillEffect = (
       ctx.caster.specialState.kokonLifeStealStacks = stacks
       ctx.caster.specialState.physicalLifeStealPercent = stacks * 4
       ctx.caster.specialState.physicalLifeStealUntil = 8
+      // この反撃は通常攻撃効果を持つため、通常攻撃後効果と突撃戦法を続けて解決する。
+      h.triggerNormalAttackFollowUps(ctx, ctx.target)
       return true
     }
     // 敵の兵力が減るほど威力を増し、条件達成時に能動発動率を上げる。
@@ -998,6 +1004,7 @@ export const applySUniqueSkillEffect = (
         ctx.caster.specialState.damageShoulderEnemyRole = roleCode(target)
         ctx.caster.specialState.damageShoulderPercent = attributeValue(ctx.caster.role === 'main' ? 7 : 4, statOf(ctx.caster, 'lea'))
         ctx.caster.specialState.damageShoulderUntil = expires(ctx.turn, 2)
+        ctx.caster.specialState.damageShoulderEffect = 2
       }
       return true
     }

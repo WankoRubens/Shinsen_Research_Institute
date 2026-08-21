@@ -515,6 +515,17 @@ export interface BattleSkillEffectHelpers {
     rate: number,
     kind?: 'bravery' | 'strategy' | 'leadership',
   ) => number
+  // ダメージ量の一定割合など、乱数を掛け直さない固定量の戦法回復に使う。
+  healFixedBySkill: (
+    ctx: SkillResolveContext,
+    target: BattleFighter,
+    amount: number,
+  ) => number
+  // 反撃が「通常攻撃効果と突撃を発動可能」な場合に、攻撃後効果をまとめて解決する。
+  triggerNormalAttackFollowUps: (
+    ctx: SkillResolveContext,
+    target: BattleFighter,
+  ) => void
   addControl: (ctx: SkillResolveContext, target: BattleFighter, name: string, duration: number) => void
   addTimedModifier: (
     ctx: SkillResolveContext,
@@ -1993,6 +2004,14 @@ export const applyNamedSkillEffect = (
         currentTarget.specialState.doubleDealerWatcherUntil = ctx.turn + 1
         currentTarget.specialState.doubleDealerWatcherConsumed = 0
 
+        // 大将時は、混乱を付与した敵へ自身の被ダメージを3%（知略依存）肩代わりさせる。
+        if (ctx.caster.role === 'main') {
+          ctx.caster.specialState.damageShoulderEnemyRole = roleCode(currentTarget)
+          ctx.caster.specialState.damageShoulderPercent = attributeDependentValue(3, [h.statOf(ctx.caster, 'int')])
+          ctx.caster.specialState.damageShoulderUntil = expiresAfterTurns(ctx.turn, 1)
+          ctx.caster.specialState.damageShoulderEffect = 1
+        }
+
         if (wasConfused) {
           // 既に混乱中なら、元の対象の友軍を優先して別の敵へ192%の計略ダメージを与える。
           const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
@@ -2114,9 +2133,10 @@ export const applyNamedSkillEffect = (
         h.dealSkillDamage(ctx, extra, 102, 'physical')
       }
 
-      // 自身より先に行動する武将数に応じ、兵刃与ダメージ上昇量を10%ずつ減らす。
+      // このターンに実際に自身より先に行動を完了した武将数に応じ、
+      // 兵刃与ダメージ上昇量を10%ずつ減らす。速度だけ高くても行動不能なら数えない。
       const actedEarlier = [...ctx.allies, ...ctx.enemies]
-        .filter((fighter) => fighter.id !== ctx.caster.id && fighter.hp > 0 && h.statOf(fighter, 'spd') > h.statOf(ctx.caster, 'spd')).length
+        .filter((fighter) => fighter.id !== ctx.caster.id && fighter.specialState.lastCompletedActionTurn === ctx.turn).length
       // 大将時は減少回数を最大2回、それ以外は実人数分まで反映する。
       const reductions = ctx.caster.role === 'main' ? Math.min(2, actedEarlier) : actedEarlier
       const bonus = Math.max(0, 50 - reductions * 10)
@@ -4281,6 +4301,7 @@ export const applyNamedSkillEffect = (
         ally.specialState.damageShoulderSourceRole = roleCode(ctx.caster)
         ally.specialState.damageShoulderPercent = 20
         ally.specialState.damageShoulderUntil = expiresAfterTurns(ctx.turn, 2)
+        ally.specialState.damageShoulderEffect = 3
       }
       return true
     }
