@@ -349,16 +349,37 @@ export const applySUniqueSkillEffect = (
     }
     // ターン経過で発動率を高め、敵複数への攻撃量に応じて味方を回復する。
     case '一切皆空': {
+      // 1ターン目は一揆の発動判定を行わない。
       if (ctx.turn < 2) return true
-      const chance = Math.min(0.95, 0.3 * Math.pow(1.4, ctx.turn - 2))
-      if (!h.roll(ctx.rng, chance)) return true
+      // 2ターン目30%から、ターン経過ごとに発動率を40ポイントずつ増やす。
+      const uprisingChance = Math.min(1, 0.3 + (ctx.turn - 2) * 0.4)
+      if (!h.roll(ctx.rng, uprisingChance)) return true
+      // 一揆発動後、その行動で実際に攻撃する確率はターン数に応じ80～90%になる。
+      const attackChance = Math.min(0.9, 0.8 + (ctx.turn - 2) * (0.1 / 6))
+      if (!h.roll(ctx.rng, attackChance)) return true
+
+      // 通常は敵軍2名、50%で3名を攻撃する。
       const targets = randomMany(ctx, h, ctx.enemies, h.roll(ctx.rng, 0.5) ? 3 : 2)
       let total = 0
+      // 武勇と知略の高い方を攻撃属性として使う。
+      const attackStat: Stat = statOf(ctx.caster, 'val') >= statOf(ctx.caster, 'int') ? 'val' : 'int'
+      const damageKind = attackStat === 'val' ? 'physical' : 'strategy'
+      // 大将時は、自軍にいる雑賀・本願寺武将1名につきダメージ率を12%加算する。
+      const factionAllies = living(ctx.allies).filter((ally) => /本願寺|雑賀/.test(ally.faction))
+      const damageRate = 72 + (ctx.caster.role === 'main' ? factionAllies.length * 12 : 0)
       targets.forEach((target) => {
-        total += h.dealSkillDamage(ctx, target, 72, statOf(ctx.caster, 'val') >= statOf(ctx.caster, 'int') ? 'physical' : 'strategy')
+        // 防御属性を参照しない個別式で、防御無視の一揆ダメージを与える。
+        total += h.dealSkillDamage(ctx, target, damageRate, damageKind, {
+          attackStats: [attackStat],
+          defenseStats: [],
+          coefficient: 1.37,
+        })
       })
-      const believers = living(ctx.allies).filter((ally) => /本願寺|雑賀/.test(ally.faction))
-      ;(believers.length > 0 ? believers : h.weakest(ctx.allies, 1)).forEach((ally) => h.healBySkill(ctx, ally, Math.max(20, total * 0.25 / Math.max(1, statOf(ctx.caster, 'int') * 2.64)), 'strategy'))
+      // 与えた合計ダメージの25%を、生存する雑賀・本願寺武将へ均等配分する。
+      if (factionAllies.length > 0 && total > 0) {
+        const healRate = total * 0.25 / factionAllies.length / Math.max(1, statOf(ctx.caster, 'int') * 2.64) * 100
+        factionAllies.forEach((ally) => h.healBySkill(ctx, ally, healRate, 'strategy'))
+      }
       return true
     }
     // 通常攻撃を受けた時に反撃し、兵刃吸血を段階的に蓄積する。
@@ -374,12 +395,18 @@ export const applySUniqueSkillEffect = (
     // 敵の兵力が減るほど威力を増し、条件達成時に能動発動率を上げる。
     case '冷徹無情': {
       randomMany(ctx, h, ctx.enemies, 2).forEach((target) => {
+        // 対象の兵力損失率に応じ、142%の兵刃ダメージを最大50%増幅する。
         const lostRatio = 1 - target.hp / Math.max(1, target.maxHp)
         h.dealSkillDamage(ctx, target, 142 * (1 + Math.min(0.5, lostRatio * 0.5)), 'physical')
         const threshold = (ctx.caster.specialState.ruthlessRateStacks ?? 0) === 0 ? 0.75 : 0.5
         if (target.hp / Math.max(1, target.maxHp) <= threshold && (ctx.caster.specialState.ruthlessRateStacks ?? 0) < 2) {
-          ctx.caster.specialState.ruthlessRateStacks = (ctx.caster.specialState.ruthlessRateStacks ?? 0) + 1
-          ctx.caster.specialState.activeSkillActivationRateBonus = (ctx.caster.specialState.activeSkillActivationRateBonus ?? 0) + 10
+          // 1回目は兵力75%以下、2回目は50%以下で能動発動率を10%ずつ上げる。
+          const stacks = (ctx.caster.specialState.ruthlessRateStacks ?? 0) + 1
+          ctx.caster.specialState.ruthlessRateStacks = stacks
+          ctx.caster.specialState.ruthlessActiveRateBonus = stacks * 10
+          // 大将なら4ターン、それ以外は2ターン持続する。
+          ctx.caster.specialState.ruthlessActiveRateUntil = expires(ctx.turn, ctx.caster.role === 'main' ? 4 : 2)
+          log(ctx, `${ctx.caster.name}の能動戦法発動率が10.00%上昇（合計+${stacks * 10}.00%）`)
         }
       })
       return true

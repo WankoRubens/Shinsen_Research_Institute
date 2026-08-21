@@ -25,6 +25,7 @@ import {
 import {
   BATTLE_SKILL_EFFECT_TRIGGERS,
   ENEMY_AFTER_ACTION_SKILL_NAMES,
+  ENEMY_AFTER_NORMAL_ATTACK_SKILL_NAMES,
   ENEMY_STRATEGY_DAMAGE_RECEIVED_SKILL_NAMES,
   HEAL_STOCK_DAMAGE_SKILL_NAMES,
   IMPLEMENTED_BATTLE_SKILL_NAMES,
@@ -39,6 +40,7 @@ import {
   TEAM_ACTION_BATTLE_SKILL_NAMES,
   TEAM_MILITARY_GOD_SKILL_NAMES,
   TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES,
+  OWN_SKILL_ACTIVATION_SKILL_NAMES,
   WISE_WATER_SHARE_UNTIL_KEY,
   applyNamedSkillEffect,
   battleSkillMaxPerTurn,
@@ -813,9 +815,14 @@ const resolveTargets = (
 const applyDamage = (target: BattleFighter, amount: number): number => {
   const actual = Math.min(target.hp, Math.max(0, Math.round(amount)))
   target.hp -= actual
+  // 一領具足の追加兵力は通常兵より先に消費し、残存傭兵だけを期限終了時に除去する。
+  const mercenaryLoss = Math.min(actual, target.specialState.mercenaryTroops ?? 0)
+  target.specialState.mercenaryTroops = Math.max(0, (target.specialState.mercenaryTroops ?? 0) - mercenaryLoss)
+  target.maxHp = Math.max(0, target.maxHp - mercenaryLoss)
+  const regularTroopLoss = Math.max(0, actual - mercenaryLoss)
   // 通常は被ダメージの10%が即時戦死。不死身・無傷の誇りは戦死率を8%へ下げる。
-  const dead = Math.min(actual, Math.round(actual * traitImmediateDeathRate(target)))
-  const wounded = actual - dead
+  const dead = Math.min(regularTroopLoss, Math.round(regularTroopLoss * traitImmediateDeathRate(target)))
+  const wounded = regularTroopLoss - dead
   target.wounded += wounded
   target.dead += dead
   target.maxHp = Math.max(0, target.maxHp - dead)
@@ -1102,6 +1109,13 @@ const baseDamage = (
       target.specialState.nextActiveDamageTaken = 0
     }
   }
+  // 剛毅果断・金鼓連天は、能動/突撃の種類ごとに被ダメージを軽減する。
+  if (
+    resolvedSkillType === '突撃'
+    && (target.specialState.assaultDamageReductionUntil ?? 0) >= currentTurn
+  ) {
+    incomingSpecialMultiplier *= 1 - Math.min(0.95, (target.specialState.assaultDamageReductionPercent ?? 0) / 100)
+  }
   // 金城湯池は戦法から受けるダメージだけを軽減し、通常攻撃には適用しない。
   if (
     resolvedSkillType !== null
@@ -1179,6 +1193,10 @@ const baseDamage = (
   if (resolvedSkillType === '突撃' && (caster.specialState.assaultDamagePenaltyUntil ?? 0) >= currentTurn) {
     conditionalMultiplier *= 1 - Math.min(0.95, (caster.specialState.assaultDamagePenalty ?? 0) / 100)
   }
+  // 剛毅果断の突撃強化は、通常攻撃や能動戦法には掛けない。
+  if (resolvedSkillType === '突撃' && (caster.specialState.assaultDamageBonusUntil ?? 0) >= currentTurn) {
+    conditionalMultiplier *= 1 + Math.max(0, caster.specialState.assaultDamageBonus ?? 0) / 100
+  }
   // 罵詈雑言は最初の3ターン、通常攻撃と突撃戦法から受けるダメージを軽減する。
   if (
     currentTurn > 0
@@ -1199,6 +1217,15 @@ const baseDamage = (
   // 落花啼鳥の与ダメージ上昇は能動戦法だけを対象にする。
   if (resolvedSkillType === '能動' && (caster.specialState.activeDamageBonusUntil ?? 0) >= currentTurn) {
     conditionalMultiplier *= 1 + Math.max(0, caster.specialState.activeDamageBonus ?? 0) / 100
+  }
+  // 出奇制勝は固有能動戦法のダメージだけを強化する。
+  if (
+    resolvedSkillType === '能動'
+    && skill
+    && isUniqueBattleSkill(skill)
+    && (caster.specialState.uniqueActiveDamageBonusUntil ?? 0) >= currentTurn
+  ) {
+    conditionalMultiplier *= 1 + Math.max(0, caster.specialState.uniqueActiveDamageBonus ?? 0) / 100
   }
   // 謀神は計略ダメージ時に25%で知略差を追加反映し、1戦3回まで発動する。
   if (
@@ -1556,7 +1583,12 @@ const fireMilitaryGodSkillActivationWatchers = (
   activator.specialState.currentActivatedSkillCombatState = /状態|獲得|付与/.test(textOfSkill(activatedSkill)) ? 1 : 0
 
   // 槍の又左・越後流軍学・風流武者は、所持者本人の能動・突撃発動を監視する。
-  const ownWatcherSkills = skillsNamedIn(activator, S_UNIQUE_OWN_SKILL_WATCHERS)
+  const ownWatcherSkills = activator.skills.filter((skill) =>
+    S_UNIQUE_OWN_SKILL_WATCHERS.has(skillDisplayName(skill))
+    || S_UNIQUE_OWN_SKILL_WATCHERS.has(skill.name)
+    || OWN_SKILL_ACTIVATION_SKILL_NAMES.has(skillDisplayName(skill))
+    || OWN_SKILL_ACTIVATION_SKILL_NAMES.has(skill.name),
+  )
   if (ownWatcherSkills.length > 0) {
     fireTriggeredSkillList(
       activator,
@@ -1685,6 +1717,41 @@ const fireDamageWatcherSkills = (
       controlStats,
       undefined,
       damaged,
+    )
+  })
+}
+
+// 相手武将の通常攻撃が完了したことを、表裏比興などの監視戦法へ通知する。
+const fireEnemyAfterNormalAttackWatchers = (
+  attacker: BattleFighter,
+  attacked: BattleFighter | null,
+  attackerAllies: BattleFighter[],
+  attackerEnemies: BattleFighter[],
+  turn: number,
+  logs: BattleLogEntry[],
+  rng: () => number,
+  stats: SkillStatMap,
+  turnStat: BattleTurnStat,
+  controlStats: Record<string, number>,
+) => {
+  attackerEnemies.filter(isAlive).forEach((owner) => {
+    const skills = skillsNamedIn(owner, ENEMY_AFTER_NORMAL_ATTACK_SKILL_NAMES)
+    if (skills.length === 0) return
+    fireTriggeredSkillList(
+      owner,
+      skills,
+      'enemyAfterNormalAttack',
+      attacked,
+      attackerEnemies,
+      attackerAllies,
+      turn,
+      logs,
+      rng,
+      stats,
+      turnStat,
+      controlStats,
+      undefined,
+      attacker,
     )
   })
 }
@@ -2562,11 +2629,23 @@ const activationRateOf = (caster: BattleFighter, skill: Skill, turn = 0): number
   const skillType = battleSkillType(skill)
   const unique = isUniqueBattleSkill(skill)
   const sharedSkillBonus = (caster.buffs.activationRate ?? 0) / 100
-  const skillActivationBonus = caster.specialState[`activationRateBonus:${resolvedSkillName}`] ?? 0
+  const skillActivationBonusUntil = caster.specialState[`activationRateBonusUntil:${resolvedSkillName}`]
+  const skillActivationBonus = skillActivationBonusUntil === undefined || skillActivationBonusUntil >= turn
+    ? (caster.specialState[`activationRateBonus:${resolvedSkillName}`] ?? 0)
+    : 0
   const skillActivationPenalty = caster.specialState[`activationRatePenalty:${resolvedSkillName}`] ?? 0
   // 一上一下・一行三昧は能動戦法だけを強化し、指揮・突撃などには加算しない。
   const activeSkillPassiveBonus = skillType === '能動'
     ? (caster.specialState.activeSkillActivationRateBonus ?? 0) / 100
+    : 0
+  // 独立独歩は突撃戦法だけの発動率を上げる。
+  const assaultSkillPassiveBonus = skillType === '突撃'
+    ? (caster.specialState.assaultSkillActivationRateBonus ?? 0) / 100
+    : 0
+  // 冷徹無情の条件達成時に得た上昇は、説明どおり能動戦法へだけ一定ターン加算する。
+  const ruthlessActiveBonus = skillType === '能動'
+    && (caster.specialState.ruthlessActiveRateUntil ?? 0) >= turn
+    ? (caster.specialState.ruthlessActiveRateBonus ?? 0) / 100
     : 0
   const uniqueSkillBonus = unique && (caster.specialState.uniqueActivationRateBonusUntil ?? 0) >= turn
     ? (caster.specialState.uniqueActivationRateBonus ?? 0) / 100
@@ -2579,6 +2658,8 @@ const activationRateOf = (caster: BattleFighter, skill: Skill, turn = 0): number
   const externalSkillBonus = sharedSkillBonus
     + skillActivationBonus / 100
     + activeSkillPassiveBonus
+    + assaultSkillPassiveBonus
+    + ruthlessActiveBonus
     + uniqueSkillBonus
     + nonUniqueActiveBonus
   const adjustedExternalSkillBonus = resolvedSkillName === '直諫敢行' && turn === 1
@@ -2956,6 +3037,37 @@ const trySkill = (
   }
 
   let prep = trigger === 'beforeAction' ? preparationTurns(skill) : 0
+  // 運勝の鼻は、準備が必要な固有能動戦法が発動した時に75%で準備を省略する。
+  if (
+    prep > 0
+    && resolvedSkillType === '能動'
+    && unique
+    && caster.skills.some((ownedSkill) => ['運勝の鼻'].includes(skillDisplayName(ownedSkill)))
+  ) {
+    if (rng() < 0.75) {
+      prep = 0
+      if (logs !== NO_LOGS) logs.push({
+        turn,
+        side: caster.side,
+        actor: caster.name,
+        actorHp: caster.hp,
+        effect: '運勝の鼻',
+        message: `運勝の鼻で${resolvedSkillName}の準備を省略`,
+      })
+    } else {
+      // 省略に失敗した場合は、対象戦法の発動率を以後3ターンだけ10%上げる。
+      caster.specialState[`activationRateBonus:${resolvedSkillName}`] = 10
+      caster.specialState[`activationRateBonusUntil:${resolvedSkillName}`] = turn + 3
+      if (logs !== NO_LOGS) logs.push({
+        turn,
+        side: caster.side,
+        actor: caster.name,
+        actorHp: caster.hp,
+        effect: '運勝の鼻',
+        message: `${resolvedSkillName}の準備省略に失敗、発動率が10.00%上昇(3T)`,
+      })
+    }
+  }
   if (prep > 0 && (caster.specialState.skipPreparationOnce ?? 0) > 0) {
     caster.specialState.skipPreparationOnce = 0
     prep = 0
@@ -3203,6 +3315,17 @@ const tickFighter = (fighter: BattleFighter, turn: number, _logs: BattleLogEntry
     if (Math.abs(fighter.buffs[modifier.stat] ?? 0) < 0.0001) delete fighter.buffs[modifier.stat]
   })
   fighter.timedModifiers = activeModifiers
+  // 一領具足の3ターンが終了したら、消費されず残った傭兵を部隊兵力から取り除く。
+  if (
+    (fighter.specialState.mercenaryTroops ?? 0) > 0
+    && turn > (fighter.specialState.mercenaryTroopsUntil ?? 0)
+  ) {
+    const remaining = Math.min(fighter.hp, fighter.specialState.mercenaryTroops ?? 0)
+    fighter.hp = Math.max(0, fighter.hp - remaining)
+    fighter.maxHp = Math.max(0, fighter.maxHp - remaining)
+    fighter.specialState.mercenaryTroops = 0
+    fighter.specialState.mercenaryTroopsUntil = 0
+  }
   Object.keys(fighter.skillCooldowns).forEach((key) => {
     fighter.skillCooldowns[key] = Math.max(0, fighter.skillCooldowns[key] - 1)
   })
@@ -3847,6 +3970,19 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
                 actor,
               )
             })
+          // 表裏比興は、混乱を付与した敵が行った次の通常攻撃の対象を確認する。
+          fireEnemyAfterNormalAttackWatchers(
+            actor,
+            target,
+            allies,
+            enemies,
+            turn,
+            logs,
+            rng,
+            skillStats,
+            turnStat,
+            controlStats,
+          )
           }
         }
         if (dateMasamuneHasDragonCavalry(allies) && grantedActionSkills.length > 0) {

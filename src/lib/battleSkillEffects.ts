@@ -98,7 +98,12 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   地黄八幡: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
   相模の獅子: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
   啄木鳥: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
-  表裏比興: defineBattleSkillMeta({ type: '能動' }),
+  表裏比興: defineBattleSkillMeta({
+    type: '能動',
+    triggers: ['beforeAction', 'enemyAfterNormalAttack'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['enemyAfterNormalAttack'],
+  }),
   瞬息万変: defineBattleSkillMeta({ type: '能動' }),
   沈魚落雁: defineBattleSkillMeta({ type: '受動', triggers: ['onNormalAttackReceived'] }),
   毘沙門天: defineBattleSkillMeta({ type: '受動', triggers: ['afterAction'], replaceStructuredTriggers: true }),
@@ -202,6 +207,63 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   大太刀力士隊: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'onNormalAttackReceived'], followUpTriggers: ['onNormalAttackReceived'] }),
   鉄砲僧兵: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'beforeAction'], followUpTriggers: ['beforeAction'] }),
   母衣武者: defineBattleSkillMeta({ type: '兵種', triggers: ['preparationTurn', 'afterNormalAttack'], followUpTriggers: ['afterNormalAttack'] }),
+  盤石耽々: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn', 'turnStart'], replaceStructuredTriggers: true, followUpTriggers: ['turnStart'] }),
+  運勝の鼻: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  独立独歩: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  一領具足: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn', 'beforeAction'], replaceStructuredTriggers: true, followUpTriggers: ['beforeAction'] }),
+  静動自在: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  気勢衝天: defineBattleSkillMeta({ type: '指揮', triggers: ['turnStart'], replaceStructuredTriggers: true, followUpTriggers: ['turnStart'] }),
+  大智不智: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  前後挟撃: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  深慮遠謀: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  百戦錬磨: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  剛毅果断: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  金鼓連天: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  戦意崩壊: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'], replaceStructuredTriggers: true }),
+  嚢沙之計: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  全力戦闘: defineBattleSkillMeta({ type: '受動', triggers: ['turnStart'], replaceStructuredTriggers: true, followUpTriggers: ['turnStart'] }),
+  荒切: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'], replaceStructuredTriggers: true }),
+  奮戦: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  後方支援: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn', 'turnStart'], replaceStructuredTriggers: true, followUpTriggers: ['turnStart'] }),
+  祓除: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  奪気: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  捨て身の義: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn', 'onPhysicalDamageReceived', 'onStrategyDamageReceived'], replaceStructuredTriggers: true, followUpTriggers: ['onPhysicalDamageReceived', 'onStrategyDamageReceived'] }),
+  百錬成鋼: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  融通自在: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  警戒周到: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  弓調馬服: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  参謀の助言: defineBattleSkillMeta({ type: '指揮', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  刺突: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  救援: defineBattleSkillMeta({
+    type: '能動',
+    triggers: ['beforeAction', 'onPhysicalDamageReceived', 'onStrategyDamageReceived'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['onPhysicalDamageReceived', 'onStrategyDamageReceived'],
+  }),
+  水計: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  猛撃: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'], replaceStructuredTriggers: true }),
+  看破: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  火計: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  奮起: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  殿軍: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  破甲: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'], replaceStructuredTriggers: true }),
+  威圧: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  姻戚同盟: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  出奇制勝: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn', 'ownSkillActivated'], replaceStructuredTriggers: true, followUpTriggers: ['ownSkillActivated'] }),
+  士気高揚: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  初級鼓舞: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  初期激昂: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  初級圧制: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  初級撹乱: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
+  初級治療: defineBattleSkillMeta({
+    type: '能動',
+    triggers: ['beforeAction', 'onPhysicalDamageReceived', 'onStrategyDamageReceived'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['onPhysicalDamageReceived', 'onStrategyDamageReceived'],
+  }),
+  勇武: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  固陣: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
+  速戦: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
   攻其不備: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追い崩し: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追亡逐北: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
@@ -263,7 +325,12 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   臨時槍の鈴: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   連戦: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   三河武士: defineBattleSkillMeta({ type: '兵種' }),
-  風林火山: defineBattleSkillMeta({ type: '指揮' }),
+  風林火山: defineBattleSkillMeta({
+    type: '指揮',
+    triggers: ['preparationTurn', 'turnStart'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['turnStart'],
+  }),
   無想掃討: defineBattleSkillMeta({ type: '能動' }),
   ...S_UNIQUE_HANDCRAFTED_META,
 }
@@ -359,10 +426,14 @@ export const TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂', '�
 
 // 友軍の通常攻撃や被ダメージ、敵軍の行動を監視する個別戦法。
 export const TEAM_AFTER_NORMAL_ATTACK_SKILL_NAMES = new Set(['覇王の右筆', '献身'])
-export const TEAM_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['援護射撃', '三河弓兵隊', '所領役帳'])
+export const TEAM_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['援護射撃', '三河弓兵隊', '所領役帳', '救援', '初級治療'])
 export const ENEMY_STRATEGY_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['城盗り'])
 export const TEAM_BEFORE_ACTION_SKILL_NAMES = new Set(['伝馬疾馳'])
 export const ENEMY_AFTER_ACTION_SKILL_NAMES = new Set(['三楽犬'])
+// 相手の通常攻撃終了を監視する個別戦法。
+export const ENEMY_AFTER_NORMAL_ATTACK_SKILL_NAMES = new Set(['表裏比興'])
+// 所持者本人の能動・突撃戦法発動を監視する個別戦法。
+export const OWN_SKILL_ACTIVATION_SKILL_NAMES = new Set(['出奇制勝'])
 // 友軍の通常攻撃・能動戦法・突撃戦法の発動を監視する受動戦法。
 export const TEAM_MILITARY_GOD_SKILL_NAMES = new Set(['軍神'])
 
@@ -931,6 +1002,7 @@ const PRECISE_HANDCRAFTED_SKILLS = new Set([
   // 個別戦法の登録一覧を共有し、追加したcaseを戦法一覧でも実装済みとして扱う。
   ...NAMED_BATTLE_SKILL_NAMES,
   ...S_UNIQUE_HANDCRAFTED_SKILL_NAMES,
+  ...Object.keys(BATTLE_SKILL_EFFECT_META),
   '回天転運',
   '千成瓢箪',
   '水攻干計',
@@ -1423,7 +1495,8 @@ const applyDatabaseDot = (ctx: SkillResolveContext, h: BattleSkillEffectHelpers)
   return true
 }
 
-const applyDatabaseSkillEffect = (ctx: SkillResolveContext, h: BattleSkillEffectHelpers): boolean => {
+// 旧データ検証用の汎用処理。個別caseからは呼ばず、比較テストだけが必要に応じて利用する。
+export const applyDatabaseSkillEffect = (ctx: SkillResolveContext, h: BattleSkillEffectHelpers): boolean => {
   const damageRates = rateValues(ctx.skill, ctx.skill.damage_rate_max, [
     'damage_rate',
     'dmg_rate',
@@ -1863,22 +1936,25 @@ export const applyNamedSkillEffect = (
       // 戦法タイプ: 突撃
       if (!currentTarget) return true
 
-      // 対象に108%の兵刃ダメージ
+      // 通常攻撃対象へ108%の兵刃ダメージを与える。
       const wasSilenced = (currentTarget.statuses['無策'] ?? 0) > 0
       h.dealSkillDamage(ctx, currentTarget, 108, 'physical')
 
-      // 確率で無策を付与
-      const silenceChance = h.varNumber(ctx.skill, 'silence_prob', 0.4)
-      if (h.roll(ctx.rng, silenceChance)) h.addControl(ctx, currentTarget, '無策', Math.round(h.varNumber(ctx.skill, 'duration', 1)))
+      // 無策付与率は基礎40%。この戦法の過去の発動1回につき10%、最大3回分上昇する。
+      const activationStacks = Math.min(3, ctx.caster.specialState.echigoTwoHeavensActivations ?? 0)
+      const silenceChance = 0.4 + activationStacks * 0.1
+      if (h.roll(ctx.rng, silenceChance)) h.addControl(ctx, currentTarget, '無策', 1)
 
-      // すでに無策だった場合は自身を回復
-      if (wasSilenced) h.healBySkill(ctx, ctx.caster, 78, 'bravery')
+      // 発動前から対象が無策中だった場合、自身を116%・武勇依存で回復する。
+      if (wasSilenced) h.healBySkill(ctx, ctx.caster, 116, 'bravery')
 
-      // 確率で別対象へ追加ダメージ
-      if (h.roll(ctx.rng, h.varNumber(ctx.skill, 'extra_prob', 0.5))) {
+      // 大将なら70%、それ以外は50%で別の敵へ98%の兵刃ダメージを追加する。
+      if (h.roll(ctx.rng, ctx.caster.role === 'main' ? 0.7 : 0.5)) {
         const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
         h.dealSkillDamage(ctx, extra, 98, 'physical')
       }
+      // 今回の発動を、次回以降の無策付与率へ反映する。
+      ctx.caster.specialState.echigoTwoHeavensActivations = Math.min(3, activationStacks + 1)
       return true
     }
 
@@ -1906,19 +1982,43 @@ export const applyNamedSkillEffect = (
 
     case '表裏比興': {
       // 戦法タイプ: 能動
-      if (!currentTarget) return true
+      if (ctx.trigger === 'beforeAction') {
+        if (!currentTarget) return true
+        // 敵軍単体へ142%・知略依存の計略ダメージを与える。
+        const wasConfused = (currentTarget.statuses['混乱'] ?? 0) > 0
+        h.dealSkillDamage(ctx, currentTarget, 142, 'strategy')
+        // 同じ対象へ混乱を1ターン付与し、次の初回通常攻撃を監視する。
+        h.addControl(ctx, currentTarget, '混乱', 1)
+        currentTarget.specialState.doubleDealerWatcherRole = roleCode(ctx.caster)
+        currentTarget.specialState.doubleDealerWatcherUntil = ctx.turn + 1
+        currentTarget.specialState.doubleDealerWatcherConsumed = 0
 
-      // 敵単体に142%の計略ダメージ
-      const wasConfused = (currentTarget.statuses['混乱'] ?? 0) > 0
-      h.dealSkillDamage(ctx, currentTarget, 142, 'strategy')
+        if (wasConfused) {
+          // 既に混乱中なら、元の対象の友軍を優先して別の敵へ192%の計略ダメージを与える。
+          const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
+          h.dealSkillDamage(ctx, extra, 192, 'strategy')
+        }
+        return true
+      }
 
-      // 混乱を付与
-      h.addControl(ctx, currentTarget, '混乱', Math.round(h.varNumber(ctx.skill, 'duration', 1)))
+      const attacker = ctx.eventSubject
+      const attacked = ctx.target
+      // 表裏比興を受けた敵の、次の初回通常攻撃だけに反応する。
+      if (
+        !attacker
+        || !attacked
+        || attacker.specialState.doubleDealerWatcherRole !== roleCode(ctx.caster)
+        || (attacker.specialState.doubleDealerWatcherUntil ?? 0) < ctx.turn
+        || (attacker.specialState.doubleDealerWatcherConsumed ?? 0) > 0
+      ) return true
+      attacker.specialState.doubleDealerWatcherConsumed = 1
 
-      // 既に混乱していれば追加で別対象へ192%の計略ダメージ
-      if (wasConfused) {
-        const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
-        h.dealSkillDamage(ctx, extra, 192, 'strategy')
+      if (attacked.side === ctx.caster.side) {
+        // 混乱した敵が自軍を攻撃した場合、その攻撃対象を90%・知略依存で回復する。
+        h.healBySkill(ctx, attacked, 90, 'strategy')
+      } else {
+        // 混乱した敵が敵軍を攻撃した場合、その敵自身へ90%の計略ダメージを与える。
+        h.dealSkillDamage(ctx, attacker, 90, 'strategy')
       }
       return true
     }
@@ -1957,29 +2057,45 @@ export const applyNamedSkillEffect = (
 
     case '風林火山': {
       // 戦法タイプ: 指揮
-      // 偶数ターンごとに風林火山の順で効果を切り替える
-      if (ctx.turn === 0 || ctx.turn % 2 !== 0) return true
-      const phase = ((ctx.turn / 2) - 1) % 4
+      if (ctx.trigger === 'preparationTurn') {
+        // 初回の旗は、自身の最高属性（速度=風、知略=林、武勇=火、統率=山）で決める。
+        const stats: Array<{ stat: Stat, phase: number }> = [
+          { stat: 'spd', phase: 0 },
+          { stat: 'int', phase: 1 },
+          { stat: 'val', phase: 2 },
+          { stat: 'lea', phase: 3 },
+        ]
+        ctx.caster.specialState.furinInitialPhase = [...stats]
+          .sort((a, b) => h.statOf(ctx.caster, b.stat) - h.statOf(ctx.caster, a.stat))[0]!.phase
+        return true
+      }
+      // 旗は1・3・5・7ターン目に切り替わり、初回位置から風・林・火・山の順に巡回する。
+      if (ctx.turn < 1 || ctx.turn % 2 === 0) return true
+      const phase = ((ctx.caster.specialState.furinInitialPhase ?? 0) + Math.floor((ctx.turn - 1) / 2)) % 4
+      // 通常は2名。大将時は対象人数増加率を25%加算し、75%で3名にする。
+      const targetCount = h.roll(ctx.rng, ctx.caster.role === 'main' ? 0.75 : 0.5) ? 3 : 2
 
       if (phase === 0) {
-        // 風: 味方2～3人の兵刃ダメージを上昇
-        h.weakest(ctx.allies, 2 + Math.floor(ctx.rng() * 2)).forEach((ally) => {
-          ally.buffs.attackDamage = (ally.buffs.attackDamage ?? 0) + 22
+        // 風: 自軍2～3名の兵刃与ダメージを速度依存で2ターン最大22%上昇させる。
+        const bonus = attributeDependentValue(22, [h.statOf(ctx.caster, 'spd')])
+        explicitAllyTargets(ctx, h, targetCount).forEach((ally) => {
+          h.addTimedModifier(ctx, ally, 'attackDamage', bonus, 2, 1)
         })
       } else if (phase === 1) {
-        // 林: 敵2～3人へ92%の計略ダメージ
-        h.aliveRandom(ctx.enemies, ctx.rng, ctx).slice(0, 2 + Math.floor(ctx.rng() * 2)).forEach((enemy) => h.dealSkillDamage(ctx, enemy, 92, 'strategy'))
+        // 林: 敵軍2～3名へ92%・知略依存の計略ダメージを与える。
+        explicitEnemyTargets(ctx, h, targetCount).forEach((enemy) => h.dealSkillDamage(ctx, enemy, 92, 'strategy'))
       } else if (phase === 2) {
-        // 火: 敵1～2回へ156%の兵刃ダメージ
+        // 火: ランダムな敵軍単体へ156%の兵刃ダメージを1～2回与える。
         const hits = 1 + Math.floor(ctx.rng() * 2)
         for (let i = 0; i < hits; i += 1) {
           const enemy = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
           if (enemy) h.dealSkillDamage(ctx, enemy, 156, 'physical')
         }
       } else {
-        // 山: 味方2～3人の被ダメージを低下
-        h.weakest(ctx.allies, 2 + Math.floor(ctx.rng() * 2)).forEach((ally) => {
-          ally.buffs.damageTaken = (ally.buffs.damageTaken ?? 0) - 22
+        // 山: 自軍2～3名の兵刃被ダメージを統率依存で2ターン最大22%低下させる。
+        const reduction = attributeDependentValue(22, [h.statOf(ctx.caster, 'lea')])
+        explicitAllyTargets(ctx, h, targetCount).forEach((ally) => {
+          h.addTimedModifier(ctx, ally, 'physicalDamageTaken', -reduction, 2, 1)
         })
       }
       return true
@@ -1992,12 +2108,19 @@ export const applyNamedSkillEffect = (
       // 対象へ102%の兵刃ダメージ
       h.dealSkillDamage(ctx, currentTarget, 102, 'physical')
 
-      // 50%で別対象にも同じダメージ
+      // 50%を基礎として速度依存で、別対象にも同じダメージを与える。
       const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id)
-      if (extra && h.roll(ctx.rng, 0.5)) h.dealSkillDamage(ctx, extra, 102, 'physical')
+      if (extra && h.roll(ctx.rng, attributeDependentChance(0.5, [h.statOf(ctx.caster, 'spd')]))) {
+        h.dealSkillDamage(ctx, extra, 102, 'physical')
+      }
 
-      // 自身の通常攻撃ダメージを上げる
-      ctx.caster.buffs.attackDamage = (ctx.caster.buffs.attackDamage ?? 0) + 50
+      // 自身より先に行動する武将数に応じ、兵刃与ダメージ上昇量を10%ずつ減らす。
+      const actedEarlier = [...ctx.allies, ...ctx.enemies]
+        .filter((fighter) => fighter.id !== ctx.caster.id && fighter.hp > 0 && h.statOf(fighter, 'spd') > h.statOf(ctx.caster, 'spd')).length
+      // 大将時は減少回数を最大2回、それ以外は実人数分まで反映する。
+      const reductions = ctx.caster.role === 'main' ? Math.min(2, actedEarlier) : actedEarlier
+      const bonus = Math.max(0, 50 - reductions * 10)
+      h.addTimedModifier(ctx, ctx.caster, 'attackDamage', bonus, 2, 1)
       return true
     }
 
@@ -3138,13 +3261,22 @@ export const applyNamedSkillEffect = (
     }
     case '盤石耽々': {
       // 戦法タイプ: 受動
-      // 戦闘中、自身の被ダメージが（4.5%→9%、統率依存）低下
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘開始時は統率依存で被ダメージを9%低下させる。
+      const initialReduction = attributeDependentValue(9, [h.statOf(ctx.caster, 'lea')])
+      // 1～8ターン目は、ターン経過ごとに低下量を4%ずつ増やす。
+      const perTurnReduction = attributeDependentValue(4, [h.statOf(ctx.caster, 'lea')])
+      const turnReduction = ctx.trigger === 'turnStart' ? Math.max(0, ctx.turn) * perTurnReduction : 0
+      const totalReduction = initialReduction + turnReduction
+      // 再実行時は前回分との差し替えにし、同じターンで二重加算しない。
+      setPermanentBuffContribution(ctx.caster, 'damageTaken', 'rockSteadyDamageReduction', -totalReduction)
+      log(ctx.logs, ctx, `盤石耽々: ${ctx.caster.name}の被ダメージが${totalReduction.toFixed(2)}%低下（${(100 + (ctx.caster.buffs.damageTaken ?? 0)).toFixed(2)}%）`)
+      return true
     }
     case '運勝の鼻': {
       // 戦法タイプ: 受動
-      // 戦闘中、準備ターンが必要な固有能動戦法発動時、37.5%→75%の確率で準備時間を1ターンスキップ
-      return applyDatabaseSkillEffect(ctx, h)
+      // 準備省略の抽選は、対象となる固有能動戦法が実際に発動した時に
+      // battleSimulator.ts の準備処理から行う。ここでは監視戦法の登録だけを行う。
+      return true
     }
     case '水攻干計': {
       // 戦法タイプ: 能動
@@ -3288,13 +3420,34 @@ export const applyNamedSkillEffect = (
     }
     case '独立独歩': {
       // 戦法タイプ: 受動
-      // 戦闘中、自身の突撃戦法の発動確率が8.5%→17%増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘中、自身の突撃戦法だけの発動率を17%上昇させる。
+      ctx.caster.specialState.assaultSkillActivationRateBonus = 17
+      log(ctx.logs, ctx, `${ctx.caster.name}の突撃戦法発動率が17.00%上昇`)
+      return true
     }
     case '一領具足': {
       // 戦法タイプ: 指揮
-      // 最初の2ターンの間、自軍全体の兵力損害が6%→12%（武勇依存）低下
-      return applyDatabaseSkillEffect(ctx, h)
+      if (ctx.trigger === 'preparationTurn') {
+        // 最初の2ターン、自軍全体の兵力損害を武勇依存で最大12%低下させる。
+        const reduction = attributeDependentValue(12, [h.statOf(ctx.caster, 'val')])
+        living(ctx.allies).forEach((ally) => h.addTimedModifier(ctx, ally, 'damageTaken', -reduction, 2, 1))
+        return true
+      }
+      // 3～4ターン目の自身の行動前に、自軍全体へ統率依存96%の傭兵を3ターン付与する。
+      if (ctx.turn === 3 || ctx.turn === 4) {
+        const mercenaries = Math.max(1, Math.round(h.statOf(ctx.caster, 'lea') * 2.64 * 0.96))
+        living(ctx.allies).forEach((ally) => {
+          ally.hp += mercenaries
+          ally.maxHp += mercenaries
+          ally.specialState.mercenaryTroops = (ally.specialState.mercenaryTroops ?? 0) + mercenaries
+          ally.specialState.mercenaryTroopsUntil = Math.max(
+            ally.specialState.mercenaryTroopsUntil ?? 0,
+            expiresAfterTurns(ctx.turn, 3),
+          )
+          log(ctx.logs, ctx, `一領具足: ${ally.name}が傭兵${mercenaries.toLocaleString()}を獲得(3T)`, ally)
+        })
+      }
+      return true
     }
     case '電光雷轟': {
       // 戦法タイプ: 突撃
@@ -3407,8 +3560,16 @@ export const applyNamedSkillEffect = (
     }
     case '静動自在': {
       // 戦法タイプ: 能動
-      // 自身より行動順が遅い自軍単体を選択し、洞察と先攻状態を付与し、2ターン持続
-      return applyDatabaseSkillEffect(ctx, h)
+      // 自身より速度が遅い友軍を候補にし、いなければ自身を対象にする。
+      const slowerAllies = living(ctx.allies).filter((ally) =>
+        ally.id !== ctx.caster.id && h.statOf(ally, 'spd') < h.statOf(ctx.caster, 'spd'))
+      const target = randomLiving(ctx, h, slowerAllies) ?? ctx.caster
+      // 2ターンの洞察で制御状態を無効化する。
+      target.specialState.insightUntil = expiresAfterTurns(ctx.turn, 2)
+      // 先攻は既存の行動順判定が参照する状態名で2ターン保持する。
+      target.statuses['先攻'] = Math.max(target.statuses['先攻'] ?? 0, 2)
+      log(ctx.logs, ctx, `静動自在: ${target.name}に洞察・先攻を付与(2T)`, target)
+      return true
     }
     case '相模の獅子': {
       // 戦法タイプ: 能動
@@ -3484,8 +3645,15 @@ export const applyNamedSkillEffect = (
     }
     case '気勢衝天': {
       // 戦法タイプ: 指揮
-      // 4ターン目まで、自身の行動時に80%の確率で1ターンの間、武勇が最も高い敵軍武将の兵刃与ダメージが15%→30%低下（武勇依存）、知略が最も高い敵軍武将の計略与
-      return applyDatabaseSkillEffect(ctx, h)
+      // 5ターン目以降は効果を発動しない。
+      if (ctx.turn < 1 || ctx.turn > 4 || !h.roll(ctx.rng, 0.8)) return true
+      const physicalTarget = highestByStat(ctx.enemies, 'val')
+      const strategyTarget = highestByStat(ctx.enemies, 'int')
+      const reduction = attributeDependentValue(30, [h.statOf(ctx.caster, 'val')])
+      // 武勇最高の敵は兵刃与ダメージ、知略最高の敵は計略与ダメージを1ターン低下させる。
+      if (physicalTarget) h.addTimedModifier(ctx, physicalTarget, 'attackDamage', -reduction, 1, 1)
+      if (strategyTarget) h.addTimedModifier(ctx, strategyTarget, 'strategyDamageDealt', -reduction, 1, 1)
+      return true
     }
     case '啄木鳥': {
       // 戦法タイプ: 能動
@@ -3518,15 +3686,23 @@ export const applyNamedSkillEffect = (
     }
     case '大智不智': {
       // 戦法タイプ: 能動
-      // 敵軍複数（2名）に消沈を付与し、2ターンの間、毎ターン持続ダメージ（ダメージ率52%→104%、知略依存）を与え、さらに対象の兵刃被ダメージが10%→20%上昇
-      // 消沈状態を付与し、継続ダメージ（ダメージ率104%）を処理する
-      applyDatabaseDot(ctx, h)
+      // 敵軍2名へ、104%・知略依存の消沈を2ターン付与する。
+      explicitEnemyTargets(ctx, h, 2).forEach((target) => {
+        applyExplicitContinuousDamage(ctx, h, target, '消沈', 2, 104, 'strategy')
+        // 同じ2ターン、対象が受ける兵刃ダメージを20%増加させる。
+        h.addTimedModifier(ctx, target, 'physicalDamageTaken', 20, 2, 1)
+      })
       return true
     }
     case '前後挟撃': {
       // 戦法タイプ: 能動
-      // 1ターンの間、自身と友軍単体は連撃（1ターンに2回通常攻撃）を獲得
-      return applyDatabaseSkillEffect(ctx, h)
+      // 自身と、自身以外の生存友軍1名へ連撃100%を1ターン付与する。
+      const ally = explicitAllyTargets(ctx, h, 1, true)[0]
+      ;[ctx.caster, ally].filter((target): target is BattleFighter => Boolean(target)).forEach((target) => {
+        target.specialState.comboChance = 100
+        target.specialState.comboChanceUntil = expiresAfterTurns(ctx.turn, 1)
+      })
+      return true
     }
     case '沈魚落雁': {
       // 戦法タイプ: 受動
@@ -3557,13 +3733,20 @@ export const applyNamedSkillEffect = (
     }
     case '深慮遠謀': {
       // 戦法タイプ: 指揮
-      // 3ターン目まで、敵軍複数（2名）の与ダメージが14%→28%低下（知略依存）
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘開始時、敵軍2名の与ダメージを知略依存で最大28%低下させる。
+      const reduction = attributeDependentValue(28, [h.statOf(ctx.caster, 'int')])
+      explicitEnemyTargets(ctx, h, 2).forEach((target) => {
+        h.addTimedModifier(ctx, target, 'damageDealt', -reduction, 3, 1)
+      })
+      return true
     }
     case '百戦錬磨': {
       // 戦法タイプ: 受動
-      // 戦闘中、自身の武勇・知略・統率・速度が21→42増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘中、自身の武勇・知略・統率・速度をそれぞれ42増加させる。
+      ;(['val', 'int', 'lea', 'spd'] as Stat[]).forEach((stat) => {
+        setPermanentBuffContribution(ctx.caster, stat, `veteran:${stat}`, 42)
+      })
+      return true
     }
     case '奇謀独断': {
       // 戦法タイプ: 能動
@@ -3573,8 +3756,12 @@ export const applyNamedSkillEffect = (
     }
     case '剛毅果断': {
       // 戦法タイプ: 能動
-      // 3ターンの間、自身の突撃戦法の与ダメージが17.5%→35%上昇、能動戦法の被ダメージが10%→20%低下（1ターン後に再発動可能）
-      return applyDatabaseSkillEffect(ctx, h)
+      // 3ターンの間、自身の突撃戦法与ダメージを35%上昇させる。
+      ctx.caster.specialState.assaultDamageBonus = 35
+      ctx.caster.specialState.assaultDamageBonusUntil = expiresAfterTurns(ctx.turn, 3)
+      // 同じ3ターン、自身が受ける能動戦法ダメージだけを20%軽減する。
+      h.addTimedModifier(ctx, ctx.caster, 'activeDamageTaken', -20, 3, 1)
+      return true
     }
     case '罵詈雑言': {
       // 戦法タイプ: 指揮
@@ -3611,18 +3798,30 @@ export const applyNamedSkillEffect = (
     }
     case '金鼓連天': {
       // 戦法タイプ: 能動
-      // 3ターンの間、自身の能動戦法与ダメージが24%→48%上昇、突撃戦法被ダメージが12.5%→25%低下（1ターン後に再発動可能）
-      return applyDatabaseSkillEffect(ctx, h)
+      // 3ターンの間、自身の能動戦法与ダメージを48%上昇させる。
+      ctx.caster.specialState.activeDamageBonus = 48
+      ctx.caster.specialState.activeDamageBonusUntil = expiresAfterTurns(ctx.turn, 3)
+      // 同じ3ターン、自身が受ける突撃戦法ダメージを25%軽減する。
+      ctx.caster.specialState.assaultDamageReductionPercent = 25
+      ctx.caster.specialState.assaultDamageReductionUntil = expiresAfterTurns(ctx.turn, 3)
+      return true
     }
     case '文武両道': {
       // 戦法タイプ: 受動
-      // 戦闘中、自身は計略ダメージを与えるたびに武勇が15→30増加（最大5回まで重ねがけ可能）、兵刃ダメージを与えるたびに知略が15→30増加（最大5回まで重ねがけ可
-      return applyDatabaseSkillEffect(ctx, h)
+      // 属性上昇は全ダメージ経路共通の recordBunbuDamageHit で処理する。
+      return true
     }
     case '戦意崩壊': {
       // 戦法タイプ: 突撃
-      // 通常攻撃後、2ターンの間、対象の統率と知略が65低下し、自軍大将に2回分の鉄壁（被ダメージ無効）を付与
-      return applyDatabaseSkillEffect(ctx, h)
+      const target = explicitEnemyTarget(ctx, h)
+      if (!target) return true
+      // 通常攻撃対象の統率と知略を2ターン65低下させる。
+      h.addTimedModifier(ctx, target, 'lea', -65, 2, 1)
+      h.addTimedModifier(ctx, target, 'int', -65, 2, 1)
+      // 自軍大将へ鉄壁を付与する。発動者自身が大将なら1回、その他は2回分。
+      const commander = ctx.allies.find((ally) => ally.role === 'main' && ally.hp > 0)
+      if (commander) commander.specialState.ironWallCharges = (commander.specialState.ironWallCharges ?? 0) + (ctx.caster.role === 'main' ? 1 : 2)
+      return true
     }
     case '按甲休兵': {
       // 戦法タイプ: 受動
@@ -3643,25 +3842,38 @@ export const applyNamedSkillEffect = (
     }
     case '嚢沙之計': {
       // 戦法タイプ: 能動
-      // 2ターンの間、敵軍複数（2名）に水攻めを付与し、毎ターン持続ダメージ（ダメージ率51%→102%、知略依存）を与え、さらに対象の計略被ダメージが15%→30%上
-      // 水攻め状態を付与し、継続ダメージ（ダメージ率102%）を処理する
-      applyDatabaseDot(ctx, h)
+      // 敵軍2名へ、102%・知略依存の水攻めを2ターン付与する。
+      explicitEnemyTargets(ctx, h, 2).forEach((target) => {
+        applyExplicitContinuousDamage(ctx, h, target, '水攻め', 2, 102, 'strategy')
+        // 同じ2ターン、対象が受ける計略ダメージを30%増加させる。
+        h.addTimedModifier(ctx, target, 'strategyDamageTaken', 30, 2, 1)
+      })
       return true
     }
     case '全力戦闘': {
       // 戦法タイプ: 受動
-      // 5ターン目以降、戦闘終了まで自身が35%→70%の連撃（1ターンに2回通常攻撃）を獲得
-      return applyDatabaseSkillEffect(ctx, h)
+      // 5ターン目以降、戦闘終了まで連撃70%を維持する。
+      if (ctx.turn >= 5) {
+        ctx.caster.specialState.comboChance = 70
+        ctx.caster.specialState.comboChanceUntil = 99
+      }
+      return true
     }
     case '荒切': {
       // 戦法タイプ: 突撃
-      // 通常攻撃後、1ターンの間連撃（1ターンに2回通常攻撃）を獲得
-      return applyDatabaseSkillEffect(ctx, h)
+      // 通常攻撃後、次の通常攻撃判定まで連撃100%を付与する。
+      ctx.caster.specialState.comboChance = 100
+      ctx.caster.specialState.comboChanceUntil = expiresAfterTurns(ctx.turn, 1)
+      return true
     }
     case '奮戦': {
       // 戦法タイプ: 能動
-      // 自身に連撃（1ターンに2回通常攻撃）を付与するが、1ターンの間与ダメージが15%低下
-      return applyDatabaseSkillEffect(ctx, h)
+      // 自身へ連撃100%を1ターン付与する。
+      ctx.caster.specialState.comboChance = 100
+      ctx.caster.specialState.comboChanceUntil = expiresAfterTurns(ctx.turn, 1)
+      // 代償として同じ1ターン、与ダメージを15%低下させる。
+      h.addTimedModifier(ctx, ctx.caster, 'damageDealt', -15, 1, 1)
+      return true
     }
     case '生死一顧': {
       // 戦法タイプ: 能動
@@ -3689,13 +3901,33 @@ export const applyNamedSkillEffect = (
     }
     case '後方支援': {
       // 戦法タイプ: 指揮
-      // 戦闘中、自身の能動戦法の発動確率が5%→10%減少するが、友軍複数（2名）に9%→18%の与ダメージ上昇効果を付与
-      return applyDatabaseSkillEffect(ctx, h)
+      const supportAllies = living(ctx.allies).filter((ally) => ally.id !== ctx.caster.id).slice(0, 2)
+      if (ctx.trigger === 'preparationTurn') {
+        // 代償として、所持者本人の能動戦法発動率を10%低下させる。
+        ctx.caster.specialState.activeSkillActivationRateBonus = (ctx.caster.specialState.activeSkillActivationRateBonus ?? 0) - 10
+        // 友軍2名へ与ダメージ+18%を付与する。
+        supportAllies.forEach((ally) => setPermanentBuffContribution(ally, 'damageDealt', `rearSupport:${ctx.caster.id}`, 18))
+        return true
+      }
+      // 毎ターン40%で、後方支援による友軍の上昇量を2%ずつ減らす。
+      if (!h.roll(ctx.rng, 0.4)) return true
+      supportAllies.forEach((ally) => {
+        const sourceKey = `rearSupport:${ctx.caster.id}`
+        const nextValue = Math.max(0, (ally.specialState[sourceKey] ?? 18) - 2)
+        setPermanentBuffContribution(ally, 'damageDealt', sourceKey, nextValue)
+      })
+      return true
     }
     case '祓除': {
       // 戦法タイプ: 能動
-      // 2ターンの間、自軍複数（2名）の武勇・知略・速度が12→24増加、弱体化効果を2個浄化
-      return applyDatabaseSkillEffect(ctx, h)
+      // 自軍2名の弱体効果を2個解除し、武勇・知略・速度を2ターン24増加させる。
+      explicitAllyTargets(ctx, h, 2).forEach((target) => {
+        removeDebuffs(target, 2)
+        h.addTimedModifier(ctx, target, 'val', 24, 2, 1)
+        h.addTimedModifier(ctx, target, 'int', 24, 2, 1)
+        h.addTimedModifier(ctx, target, 'spd', 24, 2, 1)
+      })
+      return true
     }
     case '闇討ち': {
       // 戦法タイプ: 能動
@@ -3706,8 +3938,14 @@ export const applyNamedSkillEffect = (
     }
     case '奪気': {
       // 戦法タイプ: 能動
-      // 敵軍複数（2名）の強化効果を2個「強化解除」し、3ターンの間、自身の知略が14→28上昇
-      return applyDatabaseSkillEffect(ctx, h)
+      // 敵軍2名から強化効果を最大2個ずつ解除する。
+      explicitEnemyTargets(ctx, h, 2).forEach((target) => {
+        removeOnePositiveEffect(target)
+        removeOnePositiveEffect(target)
+      })
+      // 自身の知略を3ターン28増加させる。
+      h.addTimedModifier(ctx, ctx.caster, 'int', 28, 3, 1)
+      return true
     }
     case '殿軍奮戦': {
       // 戦法タイプ: 能動
@@ -3734,13 +3972,37 @@ export const applyNamedSkillEffect = (
     }
     case '捨て身の義': {
       // 戦法タイプ: 指揮
-      // 戦闘中、自身の統率が20→40増加し、友軍複数の武勇と知略が10→20増加
-      return applyDatabaseSkillEffect(ctx, h)
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘開始時、自身の統率を40増加させる。
+        setPermanentBuffContribution(ctx.caster, 'lea', 'selfSacrificeLeadership', 40)
+        // 発動者以外の友軍2名は、武勇と知略を20増加させる。
+        living(ctx.allies).filter((ally) => ally.id !== ctx.caster.id).slice(0, 2).forEach((ally) => {
+          setPermanentBuffContribution(ally, 'val', `selfSacrificeValor:${ctx.caster.id}`, 20)
+          setPermanentBuffContribution(ally, 'int', `selfSacrificeIntelligence:${ctx.caster.id}`, 20)
+        })
+        ctx.caster.specialState.selfSacrificeLastThreshold = Math.floor(ctx.caster.hp / Math.max(1, ctx.caster.maxHp) * 5)
+        return true
+      }
+      // 自身の兵力が20%の境界を下回るたび、初期値の60%分を追加で重ねる。
+      const currentThreshold = Math.floor(ctx.caster.hp / Math.max(1, ctx.caster.maxHp) * 5)
+      const previousThreshold = ctx.caster.specialState.selfSacrificeLastThreshold ?? currentThreshold
+      const crossed = Math.max(0, previousThreshold - currentThreshold)
+      if (crossed <= 0) return true
+      ctx.caster.specialState.selfSacrificeLastThreshold = currentThreshold
+      ctx.caster.buffs.lea = (ctx.caster.buffs.lea ?? 0) + 24 * crossed
+      living(ctx.allies).filter((ally) => ally.id !== ctx.caster.id).slice(0, 2).forEach((ally) => {
+        ally.buffs.val = (ally.buffs.val ?? 0) + 12 * crossed
+        ally.buffs.int = (ally.buffs.int ?? 0) + 12 * crossed
+      })
+      return true
     }
     case '百錬成鋼': {
       // 戦法タイプ: 受動
-      // 自身の武勇・知略・統率・速度が17.5→35増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘中、自身の武勇・知略・統率・速度をそれぞれ35増加させる。
+      ;(['val', 'int', 'lea', 'spd'] as Stat[]).forEach((stat) => {
+        setPermanentBuffContribution(ctx.caster, stat, `temperedSteel:${stat}`, 35)
+      })
+      return true
     }
     case '懐柔': {
       // 戦法タイプ: 指揮
@@ -3758,8 +4020,12 @@ export const applyNamedSkillEffect = (
     }
     case '融通自在': {
       // 戦法タイプ: 能動
-      // 2ターンの間、友軍単体の能動戦法の発動確率が6%→12%増加（最大2回重ねがけ可能）
-      return applyDatabaseSkillEffect(ctx, h)
+      const target = explicitAllyTargets(ctx, h, 1, true)[0] ?? ctx.caster
+      // 現在の有効層を数え、最大2層まで能動戦法発動率+12%を重ねる。
+      const activeStacks = target.timedModifiers.filter((modifier) =>
+        modifier.key === '融通自在:activationRate' && modifier.expiresTurn >= ctx.turn).length
+      if (activeStacks < 2) h.addTimedModifier(ctx, target, 'activationRate', 12, 2, 2)
+      return true
     }
     case '腹中鱗甲': {
       // 戦法タイプ: 受動
@@ -3782,8 +4048,11 @@ export const applyNamedSkillEffect = (
     }
     case '警戒周到': {
       // 戦法タイプ: 指揮
-      // 4ターン目まで、自軍複数（2名）の被ダメージが11%→22%低下
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘開始時、自軍2名の被ダメージを最初の4ターン22%低下させる。
+      explicitAllyTargets(ctx, h, 2).forEach((target) => {
+        h.addTimedModifier(ctx, target, 'damageTaken', -22, 4, 1)
+      })
+      return true
     }
     case '魚目混珠': {
       // 戦法タイプ: 受動
@@ -3825,8 +4094,16 @@ export const applyNamedSkillEffect = (
     }
     case '弓調馬服': {
       // 戦法タイプ: 能動
-      // 2ターンの間、敵軍単体の武勇と知略の高い方が50→100減少
-      return applyDatabaseSkillEffect(ctx, h)
+      const target = explicitEnemyTarget(ctx, h)
+      if (!target) return true
+      const valorIsHigher = h.statOf(target, 'val') >= h.statOf(target, 'int')
+      // 対象の武勇と知略を比較し、高い方だけを2ターン100低下させる。
+      h.addTimedModifier(ctx, target, valorIsHigher ? 'val' : 'int', -100, 2, 1)
+      // 20%を基礎として武勇依存で成功した場合、低い方も同量低下させる。
+      if (h.roll(ctx.rng, attributeDependentChance(0.2, [h.statOf(ctx.caster, 'val')]))) {
+        h.addTimedModifier(ctx, target, valorIsHigher ? 'int' : 'val', -100, 2, 1)
+      }
+      return true
     }
     case '回山倒海': {
       // 戦法タイプ: 突撃
@@ -3840,8 +4117,12 @@ export const applyNamedSkillEffect = (
     }
     case '参謀の助言': {
       // 戦法タイプ: 指揮
-      // 自軍全体の武勇と知略が14→28増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘中、自軍全体の武勇と知略を28増加させる。
+      living(ctx.allies).forEach((target) => {
+        setPermanentBuffContribution(target, 'val', `strategistAdviceValor:${ctx.caster.id}`, 28)
+        setPermanentBuffContribution(target, 'int', `strategistAdviceIntelligence:${ctx.caster.id}`, 28)
+      })
+      return true
     }
     case '嘲罵': {
       // 戦法タイプ: 能動
@@ -3851,8 +4132,10 @@ export const applyNamedSkillEffect = (
     }
     case '刺突': {
       // 戦法タイプ: 能動
-      // 3ターンの間、敵軍単体に潰走（毎ターン持続ダメージ
-      return applyDatabaseSkillEffect(ctx, h)
+      const target = explicitEnemyTarget(ctx, h)
+      // 敵軍単体へ70%・武勇依存の潰走を3ターン付与する。
+      if (target) applyExplicitContinuousDamage(ctx, h, target, '潰走', 3, 70, 'physical')
+      return true
     }
     case '対話': {
       // 戦法タイプ: 能動
@@ -3863,48 +4146,85 @@ export const applyNamedSkillEffect = (
     }
     case '救援': {
       // 戦法タイプ: 能動
-      // 2ターンの間、自軍単体に回生（ダメージを受けるたびに50%の確率で兵力を一定量回復
-      return applyDatabaseSkillEffect(ctx, h)
+      if (ctx.trigger === 'beforeAction') {
+        // 自軍単体へ、被ダメージ時に反応する回生を2ターン付与する。
+        const target = explicitAllyTargets(ctx, h, 1)[0]
+        if (target) {
+          target.specialState.rescueRecoverySource = roleCode(ctx.caster)
+          target.specialState.rescueRecoveryUntil = expiresAfterTurns(ctx.turn, 2)
+          log(ctx.logs, ctx, `救援: ${target.name}に回生を付与(2T)`, target)
+        }
+        return true
+      }
+      // 回生対象が兵刃・計略ダメージを受けるたび、50%で75%・知略依存の回復を行う。
+      const damaged = ctx.eventSubject
+      if (
+        damaged
+        && damaged.specialState.rescueRecoverySource === roleCode(ctx.caster)
+        && (damaged.specialState.rescueRecoveryUntil ?? 0) >= ctx.turn
+        && h.roll(ctx.rng, 0.5)
+      ) h.healBySkill(ctx, damaged, 75, 'strategy')
+      return true
     }
     case '水計': {
       // 戦法タイプ: 能動
-      // 3ターンの間、敵軍単体に水攻めを付与し、毎ターン持続ダメージを与える（ダメージ率35%→70%、知略依存）
-      return applyDatabaseSkillEffect(ctx, h)
+      const target = explicitEnemyTarget(ctx, h)
+      // 敵軍単体へ70%・知略依存の水攻めを3ターン付与する。
+      if (target) applyExplicitContinuousDamage(ctx, h, target, '水攻め', 3, 70, 'strategy')
+      return true
     }
     case '猛撃': {
       // 戦法タイプ: 突撃
-      // 通常攻撃後、2ターンの間、自身が7.5%→15%の会心を獲得（発動時、兵刃ダメージが50%上昇）
-      return applyDatabaseSkillEffect(ctx, h)
+      // 通常攻撃後、自身へ会心15%を2ターン付与する。
+      h.addTimedModifier(ctx, ctx.caster, 'physicalCriticalChance', 15, 2, 1)
+      return true
     }
     case '看破': {
       // 戦法タイプ: 能動
-      // 敵軍単体の強化効果を解除し、2ターンの間、対象の知略が9→18低下
-      return applyDatabaseSkillEffect(ctx, h)
+      const target = explicitEnemyTarget(ctx, h)
+      if (!target) return true
+      // 敵軍単体から強化効果を1個解除する。
+      removeOnePositiveEffect(target)
+      // 同じ対象の知略を2ターン18低下させる。
+      h.addTimedModifier(ctx, target, 'int', -18, 2, 1)
+      return true
     }
     case '火計': {
       // 戦法タイプ: 能動
-      // 3ターンの間、敵軍単体を火傷にし、毎ターン持続ダメージを与える（ダメージ率35%→70%、知略依存）
-      return applyDatabaseSkillEffect(ctx, h)
+      const target = explicitEnemyTarget(ctx, h)
+      // 敵軍単体へ70%・知略依存の火傷を3ターン付与する。
+      if (target) applyExplicitContinuousDamage(ctx, h, target, '火傷', 3, 70, 'strategy')
+      return true
     }
     case '奮起': {
       // 戦法タイプ: 受動
-      // 自身の武勇と速度が12.5→25増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘中、自身の武勇と速度を25増加させる。
+      setPermanentBuffContribution(ctx.caster, 'val', 'rouseValor', 25)
+      setPermanentBuffContribution(ctx.caster, 'spd', 'rouseSpeed', 25)
+      return true
     }
     case '殿軍': {
       // 戦法タイプ: 能動
-      // 2ターンの間、自身の武勇が15→30増加、自身が副将の場合は追加で統率が20→40増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 自身の武勇を2ターン30増加させる。
+      h.addTimedModifier(ctx, ctx.caster, 'val', 30, 2, 1)
+      // 副将として編成されている場合だけ、統率も2ターン40増加させる。
+      if (ctx.caster.role !== 'main') h.addTimedModifier(ctx, ctx.caster, 'lea', 40, 2, 1)
+      return true
     }
     case '破甲': {
       // 戦法タイプ: 突撃
-      // 通常攻撃後、2ターンの間攻撃対象の統率が18→36減少
-      return applyDatabaseSkillEffect(ctx, h)
+      const target = explicitEnemyTarget(ctx, h)
+      // 通常攻撃対象の統率を2ターン36低下させる。
+      if (target) h.addTimedModifier(ctx, target, 'lea', -36, 2, 1)
+      return true
     }
     case '威圧': {
       // 戦法タイプ: 能動
-      // 2ターンの間、敵軍複数（2名）の与ダメージが7.5%→15%低下
-      return applyDatabaseSkillEffect(ctx, h)
+      // 敵軍2名の与ダメージを2ターン15%低下させる。
+      explicitEnemyTargets(ctx, h, 2).forEach((target) => {
+        h.addTimedModifier(ctx, target, 'damageDealt', -15, 2, 1)
+      })
+      return true
     }
     case '恵風和雨': {
       // 戦法タイプ: 指揮
@@ -3949,9 +4269,19 @@ export const applyNamedSkillEffect = (
     }
     case '姻戚同盟': {
       // 戦法タイプ: 能動
-      // 自身と異性の友軍単体の被ダメージを10%→20%（知略依存）減少させ、さらにその友軍が受けるダメージを10%→20%分担する
-      // 戦法説明にある能力値/与ダメ/被ダメ補正（20%または20）を反映する
-      applyDatabaseBuffs(ctx, h)
+      const oppositeGender = living(ctx.allies).filter((ally) =>
+        ally.id !== ctx.caster.id && Boolean(ally.gender) && ally.gender !== ctx.caster.gender)
+      const ally = randomLiving(ctx, h, oppositeGender)
+      const reduction = attributeDependentValue(20, [h.statOf(ctx.caster, 'int')])
+      // 自身と異性の友軍1名の被ダメージを2ターン軽減する。
+      h.addTimedModifier(ctx, ctx.caster, 'damageTaken', -reduction, 2, 1)
+      if (ally) {
+        h.addTimedModifier(ctx, ally, 'damageTaken', -reduction, 2, 1)
+        // 友軍が受けるダメージの20%を、発動者が肩代わりする。
+        ally.specialState.damageShoulderSourceRole = roleCode(ctx.caster)
+        ally.specialState.damageShoulderPercent = 20
+        ally.specialState.damageShoulderUntil = expiresAfterTurns(ctx.turn, 2)
+      }
       return true
     }
     case '離心の計': {
@@ -4164,15 +4494,32 @@ export const applyNamedSkillEffect = (
     }
     case '出奇制勝': {
       // 戦法タイプ: 受動
-      // 固有能動戦法の与ダメージを上げ、確率で攻心を獲得
-      // 戦法説明にある能力値/与ダメ/被ダメ補正（28%または28）を反映する
-      applyDatabaseBuffs(ctx, h)
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘中、固有能動戦法の与ダメージを知略依存で最大28%上昇させる。
+        ctx.caster.specialState.uniqueActiveDamageBonus = attributeDependentValue(28, [h.statOf(ctx.caster, 'int')])
+        ctx.caster.specialState.uniqueActiveDamageBonusUntil = 99
+        return true
+      }
+      // 固有能動戦法の発動成功後だけ、70%（知略依存）で攻心を4%獲得する。
+      if (
+        (ctx.caster.specialState.currentActivatedSkillActive ?? 0) > 0
+        && (ctx.caster.specialState.currentActivatedSkillUnique ?? 0) > 0
+        && h.roll(ctx.rng, attributeDependentChance(0.7, [h.statOf(ctx.caster, 'int')]))
+      ) {
+        ctx.caster.specialState.strategyLifeStealPercent = Math.min(
+          16,
+          (ctx.caster.specialState.strategyLifeStealPercent ?? 0) + 4,
+        )
+        ctx.caster.specialState.strategyLifeStealUntil = 99
+        log(ctx.logs, ctx, `出奇制勝: ${ctx.caster.name}の攻心が${ctx.caster.specialState.strategyLifeStealPercent.toFixed(2)}%に上昇`)
+      }
       return true
     }
     case '重農主義': {
       // 戦法タイプ: 指揮
       // 評定衆時に兵糧増産効果を増加
-      return applyDatabaseSkillEffect(ctx, h)
+      // 内政専用戦法のため、戦闘中には効果を発生させない。
+      return true
     }
     case '戮力同心': {
       // 戦法タイプ: 指揮
@@ -4189,48 +4536,77 @@ export const applyNamedSkillEffect = (
     }
     case '士気高揚': {
       // 戦法タイプ: 能動
-      // 自軍単体に洞察を付与する
-      return applyDatabaseSkillEffect(ctx, h)
+      // 自軍単体へ洞察を1ターン付与する。
+      const target = explicitAllyTargets(ctx, h, 1)[0]
+      if (target) target.specialState.insightUntil = expiresAfterTurns(ctx.turn, 1)
+      return true
     }
     case '初級鼓舞': {
       // 戦法タイプ: 能動
-      // 自軍単体の武勇を上げる
-      return applyDatabaseSkillEffect(ctx, h)
+      // 初級戦法の最大値として、自軍単体の武勇を2ターン10増加させる。
+      const target = explicitAllyTargets(ctx, h, 1)[0]
+      if (target) h.addTimedModifier(ctx, target, 'val', 10, 2, 1)
+      return true
     }
     case '初期激昂': {
       // 戦法タイプ: 能動
-      // 自軍単体の速度を上げる
-      return applyDatabaseSkillEffect(ctx, h)
+      // 初級戦法の最大値として、自軍単体の速度を2ターン10増加させる。
+      const target = explicitAllyTargets(ctx, h, 1)[0]
+      if (target) h.addTimedModifier(ctx, target, 'spd', 10, 2, 1)
+      return true
     }
     case '初級圧制': {
       // 戦法タイプ: 能動
-      // 敵単体の統率を下げる
-      return applyDatabaseSkillEffect(ctx, h)
+      // 初級戦法の最大値として、敵軍単体の統率を2ターン10低下させる。
+      const target = explicitEnemyTarget(ctx, h)
+      if (target) h.addTimedModifier(ctx, target, 'lea', -10, 2, 1)
+      return true
     }
     case '初級撹乱': {
       // 戦法タイプ: 能動
-      // 敵単体の速度を下げる
-      return applyDatabaseSkillEffect(ctx, h)
+      // 初級戦法の最大値として、敵軍単体の速度を2ターン10低下させる。
+      const target = explicitEnemyTarget(ctx, h)
+      if (target) h.addTimedModifier(ctx, target, 'spd', -10, 2, 1)
+      return true
     }
     case '初級治療': {
       // 戦法タイプ: 能動
-      // 自軍単体に回生を付与する
-      return applyDatabaseSkillEffect(ctx, h)
+      if (ctx.trigger === 'beforeAction') {
+        // 自軍単体へ、被ダメージ時に反応する回生を2ターン付与する。
+        const target = explicitAllyTargets(ctx, h, 1)[0]
+        if (target) {
+          target.specialState.basicRecoverySource = roleCode(ctx.caster)
+          target.specialState.basicRecoveryUntil = expiresAfterTurns(ctx.turn, 2)
+        }
+        return true
+      }
+      // 回生対象がダメージを受けるたび、暫定50%で75%・知略依存の回復を行う。
+      const damaged = ctx.eventSubject
+      if (
+        damaged
+        && damaged.specialState.basicRecoverySource === roleCode(ctx.caster)
+        && (damaged.specialState.basicRecoveryUntil ?? 0) >= ctx.turn
+        && h.roll(ctx.rng, 0.5)
+      ) h.healBySkill(ctx, damaged, 75, 'strategy')
+      return true
     }
     case '勇武': {
       // 戦法タイプ: 受動
-      // 自身の武勇を上げる
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘中、自身の武勇を10増加させる。
+      setPermanentBuffContribution(ctx.caster, 'val', 'basicValor', 10)
+      return true
     }
     case '固陣': {
       // 戦法タイプ: 受動
-      // 自身の統率を上げる
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘中、自身の統率を10増加させる。
+      setPermanentBuffContribution(ctx.caster, 'lea', 'basicLeadership', 10)
+      return true
     }
     case '速戦': {
       // 戦法タイプ: 受動
-      // 速度上昇
-      return applyDatabaseSkillEffect(ctx, h)
+      // 戦闘中、自身の速度を10増加させる。
+      setPermanentBuffContribution(ctx.caster, 'spd', 'basicSpeed', 10)
+      return true
     }
     // DB戦法: ここまで。
 
