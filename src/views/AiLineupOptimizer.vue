@@ -7,7 +7,10 @@
             <p class="eyebrow">AI編成</p>
             <h2>テンプレ相手に勝率が高い組み合わせを探索</h2>
           </div>
-          <el-button type="primary" :icon="VideoPlay" :loading="running" :disabled="!canOptimize" @click="runOptimizer">
+          <el-button v-if="running" type="danger" :icon="CircleClose" @click="cancelOptimizer">
+            探索を中止
+          </el-button>
+          <el-button v-else type="primary" :icon="VideoPlay" :disabled="!canOptimize" @click="runOptimizer">
             AI探索
           </el-button>
         </div>
@@ -166,7 +169,7 @@
           striped-flow
         />
 
-        <div v-if="topResults.length" class="result-grid">
+        <div v-if="topResults.length" class="result-grid" :class="{ 'is-detailed': showDetailedResults }">
           <article v-for="result in topResults" :key="result.id" class="result-card">
             <header>
               <span class="rank-badge">#{{ result.rank }}</span>
@@ -183,7 +186,18 @@
               <span>試行 <b>{{ formatNumber(result.totalRuns) }}</b></span>
             </div>
 
-            <div class="mini-lineup">
+            <div v-if="showDetailedResults" class="result-lineup-scroll">
+              <div class="result-lineup-detail">
+                <AiResultRoleCard
+                  v-for="role in roleConfigs"
+                  :key="`${result.id}-${role.key}-detail`"
+                  :title="role.label"
+                  :role="result.lineup[role.key]"
+                />
+              </div>
+            </div>
+
+            <div v-else class="mini-lineup">
               <div v-for="role in roleConfigs" :key="`${result.id}-${role.key}`" class="mini-role">
                 <img v-if="result.lineup[role.key].hero?.portrait" :src="result.lineup[role.key].hero?.portrait" loading="lazy" />
                 <div class="mini-copy">
@@ -252,9 +266,10 @@
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue'
-import { VideoPlay } from '@element-plus/icons-vue'
+import { CircleClose, VideoPlay } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import LineupSlot from '../components/LineupSlot.vue'
+import AiResultRoleCard from '../components/ai/AiResultRoleCard.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
 import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
@@ -327,6 +342,8 @@ const MAX_NEIGHBOR_CANDIDATES = 10000
 const PARALLEL_QUEUE_MULTIPLIER = 2
 const aiWorkerCount = recommendedAiWorkerCount()
 const evaluationCache = new Map<string, AiWorkerEvaluationResult>()
+const cancelRequested = ref(false)
+let activeWorkerPool: AiOptimizerWorkerPool | null = null
 const candidatePoolOptions = [
   { label: '所持のみ', value: 'owned' },
   { label: 'すべて', value: 'all' },
@@ -450,12 +467,14 @@ const canOptimize = computed(() =>
   && unsupportedFixedSkillNames.value.length === 0
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
+const showDetailedResults = computed(() => !running.value && (resultPhase.value === 'done' || resultPhase.value === 'cancelled'))
 const resultHeading = computed(() => {
   if (resultPhase.value === 'screen') return '21編成を少数試行で段階評価中'
   if (resultPhase.value === 'scout') return '一次候補を21編成で再評価中'
   if (resultPhase.value === 'neighbor') return '上位編成の周辺を探索中'
   if (resultPhase.value === 'final') return '一次結果を表示中 / 上位を最終再評価中'
   if (resultPhase.value === 'done') return '最終評価 上位 3 組'
+  if (resultPhase.value === 'cancelled') return '中止時点の上位 3 組'
   return '勝率上位 3 組'
 })
 const progressLabel = computed(() => {
@@ -510,14 +529,25 @@ const selectSkillFromLibrary = (skill: Skill) => {
   skillPickerVisible.value = false
 }
 
+const cancelOptimizer = (): void => {
+  if (!running.value) return
+  cancelRequested.value = true
+  // 実行中と待機中のWorkerタスクをまとめて終了する。
+  activeWorkerPool?.destroy()
+}
+
+const ensureSearchContinues = (): void => {
+  if (cancelRequested.value) throw new Error('AI探索を中止しました。')
+}
+
 const runOptimizer = async () => {
   if (!canOptimize.value) return
+  cancelRequested.value = false
   running.value = true
   topResults.value = []
   resultPhase.value = 'screen'
   progress.done = 0
   progress.total = 0
-  let workerPool: AiOptimizerWorkerPool | null = null
   try {
     // Workerにはテンプレを起動時に一度だけ渡し、各候補は武将・戦法IDと属性値だけ送る。
     const workerTemplates: AiWorkerTemplate[] = templateTeams.value.map(({ formation, lineup }) => ({
@@ -525,12 +555,13 @@ const runOptimizer = async () => {
       name: formation.name,
       lineup: snapshotAiLineup(lineup),
     }))
-    workerPool = new AiOptimizerWorkerPool(
+    const workerPool = new AiOptimizerWorkerPool(
       aiWorkerCount,
       heroes.value,
       skills.value,
       workerTemplates,
     )
+    activeWorkerPool = workerPool
 
     // 数値指定は重複を除いたモンテカルロ候補、全通りは候補を溜めず遅延列挙する。
     const initialCandidates: Iterable<Lineup> = searchSampleMode.value === 'sample'
@@ -553,6 +584,7 @@ const runOptimizer = async () => {
       total: initialTotal,
       keep: screenKeep,
     })
+    ensureSearchContinues()
 
     // 第2段階は一次選別を通過した候補だけを、Tier 0・0.5の21編成で評価する。
     resultPhase.value = 'scout'
@@ -563,6 +595,7 @@ const runOptimizer = async () => {
       total: screened.length,
       keep: Math.min(MAX_REFINED_SURVIVORS, screened.length),
     })
+    ensureSearchContinues()
 
     // 上位候補の武将または戦法を一部だけ変え、ランダム探索で見つけた山の周辺を掘る。
     resultPhase.value = 'neighbor'
@@ -587,6 +620,7 @@ const runOptimizer = async () => {
         total: neighborScreened.length,
         keep: Math.min(MAX_REFINED_SURVIVORS, neighborScreened.length),
       })
+      ensureSearchContinues()
     }
 
     const finalists = uniqueOptimizerResults([...refined, ...neighborRefined])
@@ -608,10 +642,16 @@ const runOptimizer = async () => {
     topResults.value = rankedTopResults(finalResults)
     resultPhase.value = 'done'
   } catch (error) {
-    resultPhase.value = topResults.value.length > 0 ? resultPhase.value : 'idle'
-    ElMessage.error(error instanceof Error ? error.message : 'AI探索中にエラーが発生しました。')
+    if (cancelRequested.value) {
+      resultPhase.value = topResults.value.length > 0 ? 'cancelled' : 'idle'
+      ElMessage.info('AI探索を中止しました。')
+    } else {
+      resultPhase.value = topResults.value.length > 0 ? resultPhase.value : 'idle'
+      ElMessage.error(error instanceof Error ? error.message : 'AI探索中にエラーが発生しました。')
+    }
   } finally {
-    workerPool?.destroy()
+    activeWorkerPool?.destroy()
+    activeWorkerPool = null
     running.value = false
   }
 }
@@ -638,6 +678,7 @@ const evaluateCandidateStage = async (
   let candidateIndex = 0
 
   for (const lineup of candidates) {
+    ensureSearchContinues()
     const signature = canonicalCandidateSignature(lineup)
     if (stageSeen.has(signature)) continue
     stageSeen.add(signature)
@@ -1427,6 +1468,10 @@ function waitForPaint(): Promise<void> {
   gap: 12px;
 }
 
+.result-grid.is-detailed {
+  grid-template-columns: 1fr;
+}
+
 .result-card {
   display: grid;
   gap: 12px;
@@ -1505,6 +1550,19 @@ function waitForPaint(): Promise<void> {
 .mini-lineup {
   display: grid;
   gap: 8px;
+}
+
+.result-lineup-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.result-lineup-detail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 860px;
 }
 
 .mini-role {
