@@ -12,6 +12,9 @@ export const TROOP_LEVEL_STAT_RATE = 0.02
 
 // 元データで affinity が欠けている既知の兵種特性を補完する。
 const MANUAL_TROOP_AFFINITY: Readonly<Record<string, { troopTypes: TroopType[]; level: number }>> = {
+  弓術I: { troopTypes: ['弓兵'], level: 1 },
+  槍術I: { troopTypes: ['足軽'], level: 1 },
+  馬術I: { troopTypes: ['騎兵'], level: 1 },
   砲術I: { troopTypes: ['鉄砲'], level: 1 },
 }
 

@@ -16,11 +16,18 @@ export interface TraitImplementation {
 // 兵種レベル・上限効果は affinity の構造化データを使う共通処理で実装済み。
 export const IMPLEMENTED_TRAIT_EFFECTS: Readonly<Record<string, string>> = IMPLEMENTED_NAMED_TRAIT_EFFECTS
 
+const MANUAL_TROOP_LEVEL_TRAIT_DETAILS: Readonly<Record<string, string>> = {
+  弓術I: '弓兵兵種レベル+1',
+  槍術I: '足軽兵種レベル+1',
+  馬術I: '騎兵兵種レベル+1',
+  砲術I: '鉄砲兵種レベル+1',
+}
+
 export const traitImplementation = (trait: Trait): TraitImplementation => {
   const name = trait.name_jp || trait.name
-  if (name.normalize('NFKC') === '砲術I') {
-    return { status: 'implemented', detail: '鉄砲兵種レベル+1' }
-  }
+  const normalizedName = name.normalize('NFKC')
+  const manualTroopLevelDetail = MANUAL_TROOP_LEVEL_TRAIT_DETAILS[normalizedName]
+  if (manualTroopLevelDetail) return { status: 'implemented', detail: manualTroopLevelDetail }
   if (NON_BATTLE_TRAIT_NAMES.has(name)) {
     return { status: 'unimplemented', detail: '内政・成長用特性（戦闘実装対象外）' }
   }
