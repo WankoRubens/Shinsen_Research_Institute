@@ -19,6 +19,7 @@ export interface AiOptimizerResult {
   scoreTier: string
   totalRuns: number
   matchups: AiOptimizerMatchupSummary[]
+  evaluationKind?: 'gpu' | 'cpu'
 }
 
 export type AiOptimizerPhase = 'idle' | 'screen' | 'scout' | 'neighbor' | 'final' | 'done' | 'cancelled'

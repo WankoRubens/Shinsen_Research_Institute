@@ -132,6 +132,8 @@
           <span>評価対象 Tier 0・0.5</span>
           <span>テンプレ {{ templateTeams.length }} 編成</span>
           <span>並列Worker {{ aiWorkerCount }} 個</span>
+          <span>一次選別 {{ screeningBackendLabel }}</span>
+          <span>兵学は主兵法＋副兵法5点の全設定パターン</span>
           <span>段階評価・上位周辺探索・軽量戦闘を使用</span>
           <span>武勇・知略差40以上は低い能力だけに依存する戦法を除外</span>
           <span>推定全組み合わせ {{ formatLargeNumber(estimatedCombinations) }}</span>
@@ -183,7 +185,8 @@
             <div class="result-metrics">
               <span>兵力交換比 <b>{{ result.exchangeRatio.toFixed(2) }}</b></span>
               <span>評価 <b>{{ result.scoreTier }}</b></span>
-              <span>試行 <b>{{ formatNumber(result.totalRuns) }}</b></span>
+              <span v-if="result.evaluationKind === 'gpu'">評価方式 <b>GPU概算</b></span>
+              <span v-else>試行 <b>{{ formatNumber(result.totalRuns) }}</b></span>
             </div>
 
             <div v-if="showDetailedResults" class="result-lineup-scroll">
@@ -273,7 +276,7 @@ import AiResultRoleCard from '../components/ai/AiResultRoleCard.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
 import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
-import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
+import type { BingxueActive, BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
 import { useTroopLevels } from '../composables/useTroopLevels'
 import { useInventory } from '../composables/useInventory'
 import { buildTemplateLookup, useData, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
@@ -287,6 +290,14 @@ import { isAiSkillCompatibleWithStats } from '../lib/aiSkillCompatibility'
 import { autoAllocatedHeroStats } from '../lib/aiHeroStatAllocation'
 import { heroLevel50Stats } from '../lib/heroStats'
 import { AiOptimizerWorkerPool, recommendedAiWorkerCount } from '../lib/aiOptimizerWorkerPool'
+import { AI_GPU_SCREEN_CHUNK_SIZE, AiOptimizerGpuScreener } from '../lib/aiOptimizerGpuScreener'
+import {
+  aiBingxuePatternsForHero,
+  aiBingxuePatternCountForHero,
+  cloneAiBingxue,
+  hasConfiguredAiBingxue,
+  randomAiBingxueForHero,
+} from '../lib/aiBingxueSearch'
 import {
   snapshotAiLineup,
   type AiWorkerEvaluationResult,
@@ -306,7 +317,7 @@ const roleConfigs: Array<{ key: RoleKey; label: string }> = [
 const roleKeys: RoleKey[] = roleConfigs.map((role) => role.key)
 const skillSlotKeys: SkillSlotKey[] = ['skill1', 'skill2']
 
-const { heroes, skills, enemyFormations } = useData()
+const { heroes, skills, bingxue, enemyFormations } = useData()
 const emptyRole = emptyAiOptimizerRole
 const {
   seedTeam,
@@ -343,7 +354,9 @@ const PARALLEL_QUEUE_MULTIPLIER = 2
 const aiWorkerCount = recommendedAiWorkerCount()
 const evaluationCache = new Map<string, AiWorkerEvaluationResult>()
 const cancelRequested = ref(false)
+const screeningBackend = ref<'auto' | 'gpu' | 'cpu'>('auto')
 let activeWorkerPool: AiOptimizerWorkerPool | null = null
+let activeGpuScreener: AiOptimizerGpuScreener | null = null
 const candidatePoolOptions = [
   { label: '所持のみ', value: 'owned' },
   { label: 'すべて', value: 'all' },
@@ -404,6 +417,10 @@ const skillOptions = computed(() =>
 
 const fixedHeroKeys = computed(() => new Set(roleKeys.map((role) => seedTeam[role].hero).filter(Boolean).map((hero) => heroIdentity(hero as Hero))))
 const fixedSkillKeys = computed(() => new Set(roleKeys.flatMap((role) => [seedTeam[role].skill1, seedTeam[role].skill2]).filter(Boolean).map((skill) => skillIdentity(skill as Skill))))
+const fixedConfiguredBingxueHeroKeys = computed(() => new Set(roleKeys
+  .map((role) => seedTeam[role])
+  .filter((role) => role.hero && hasConfiguredAiBingxue(role.bingxue))
+  .map((role) => heroIdentity(role.hero as Hero))))
 const unsupportedFixedSkillNames = computed(() => [...new Set(
   roleKeys
     .flatMap((role) => [seedTeam[role].skill1, seedTeam[role].skill2])
@@ -453,7 +470,29 @@ const estimatedCombinations = computed(() => {
     : 1
   const heroCount = permutationCount(heroCandidates.value.length, emptyHeroSlotCount.value)
   const skillCount = permutationCount(skillCandidates.value.length, emptySkillSlotCount.value)
-  return cappedProduct([rolePatternCount, heroCount, skillCount].map((value) => Math.max(1, value)))
+  const availableHeroes = [
+    ...roleKeys.map((role) => seedTeam[role].hero).filter((hero): hero is Hero => Boolean(hero)),
+    ...heroCandidates.value,
+  ]
+  const configurableCounts = availableHeroes
+    .map((hero) => aiBingxuePatternCountForHero(hero))
+    .filter((count) => count > 0)
+  const averageBingxueCount = configurableCounts.length > 0
+    ? Math.max(1, Math.round(configurableCounts.reduce((sum, count) => sum + count, 0) / configurableCounts.length))
+    : 1
+  const fixedBingxueCount = roleKeys.reduce((total, role) => {
+    const roleData = seedTeam[role]
+    if (!roleData.hero || hasConfiguredAiBingxue(roleData.bingxue)) return total
+    return cappedProduct([total, Math.max(1, aiBingxuePatternCountForHero(roleData.hero))])
+  }, 1)
+  const randomBingxueCount = cappedPower(averageBingxueCount, emptyHeroSlotCount.value)
+  return cappedProduct([
+    rolePatternCount,
+    heroCount,
+    skillCount,
+    fixedBingxueCount,
+    randomBingxueCount,
+  ].map((value) => Math.max(1, value)))
 })
 
 const hasEnoughCandidates = computed(() =>
@@ -467,9 +506,18 @@ const canOptimize = computed(() =>
   && unsupportedFixedSkillNames.value.length === 0
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
+const screeningBackendLabel = computed(() => {
+  if (screeningBackend.value === 'gpu') return 'WebGPU'
+  if (screeningBackend.value === 'cpu') return 'CPU Worker'
+  return 'GPU自動判定'
+})
 const showDetailedResults = computed(() => !running.value && (resultPhase.value === 'done' || resultPhase.value === 'cancelled'))
 const resultHeading = computed(() => {
-  if (resultPhase.value === 'screen') return '21編成を少数試行で段階評価中'
+  if (resultPhase.value === 'screen') {
+    return screeningBackend.value === 'gpu'
+      ? 'GPUで21編成を一次選別中'
+      : '21編成を少数試行で段階評価中'
+  }
   if (resultPhase.value === 'scout') return '一次候補を21編成で再評価中'
   if (resultPhase.value === 'neighbor') return '上位編成の周辺を探索中'
   if (resultPhase.value === 'final') return '一次結果を表示中 / 上位を最終再評価中'
@@ -481,7 +529,8 @@ const progressLabel = computed(() => {
   if (resultPhase.value === 'final') return '最終再評価'
   if (resultPhase.value === 'neighbor') return '周辺探索'
   if (resultPhase.value === 'scout') return '21編成評価'
-  return searchSampleMode.value === 'all' ? '全通り一次選別' : 'モンテカルロ一次選別'
+  const prefix = screeningBackend.value === 'gpu' ? 'GPU ' : ''
+  return prefix + (searchSampleMode.value === 'all' ? '全通り一次選別' : 'モンテカルロ一次選別')
 })
 
 const setHero = (role: RoleKey, value: string) => {
@@ -532,7 +581,8 @@ const selectSkillFromLibrary = (skill: Skill) => {
 const cancelOptimizer = (): void => {
   if (!running.value) return
   cancelRequested.value = true
-  // 実行中と待機中のWorkerタスクをまとめて終了する。
+  // 実行中と待機中のGPU・Workerタスクをまとめて終了する。
+  activeGpuScreener?.destroy()
   activeWorkerPool?.destroy()
 }
 
@@ -546,6 +596,7 @@ const runOptimizer = async () => {
   running.value = true
   topResults.value = []
   resultPhase.value = 'screen'
+  screeningBackend.value = 'auto'
   progress.done = 0
   progress.total = 0
   try {
@@ -563,8 +614,17 @@ const runOptimizer = async () => {
     )
     activeWorkerPool = workerPool
 
+    // WebGPUが使える端末では、全21テンプレに対する一次選別だけをGPUへ任せる。
+    // 最終的な順位は、この後のCPU Workerによる通常戦闘で必ず再評価する。
+    activeGpuScreener = await AiOptimizerGpuScreener.create(
+      skills.value,
+      templateTeams.value.map(({ lineup }) => lineup),
+      bingxue.value,
+    )
+    screeningBackend.value = activeGpuScreener ? 'gpu' : 'cpu'
+
     // 数値指定は重複を除いたモンテカルロ候補、全通りは候補を溜めず遅延列挙する。
-    const initialCandidates: Iterable<Lineup> = searchSampleMode.value === 'sample'
+    const initialCandidateFactory = (): Iterable<Lineup> => searchSampleMode.value === 'sample'
       ? buildMonteCarloLineups(sampleCount.value)
       : buildAllCandidateLineups()
     const initialTotal = searchSampleMode.value === 'sample'
@@ -577,7 +637,7 @@ const runOptimizer = async () => {
     const screenRuns = Math.max(1, Math.min(SCREEN_RUN_LIMIT, scoutRuns.value))
 
     // 第1段階は21編成すべてを少数試行し、明らかに弱い候補を早く除外する。
-    const screened = await evaluateCandidateStage(workerPool, initialCandidates, {
+    const screened = await evaluateScreenStage(workerPool, initialCandidateFactory, {
       runs: screenRuns,
       templateIds: allTemplateIds.value,
       idPrefix: 'screen',
@@ -606,7 +666,7 @@ const runOptimizer = async () => {
     const neighborCandidates = buildNeighborhoodLineups(refined, neighborTarget)
     let neighborRefined: AiOptimizerResult[] = []
     if (neighborCandidates.length > 0) {
-      const neighborScreened = await evaluateCandidateStage(workerPool, neighborCandidates, {
+      const neighborScreened = await evaluateScreenStage(workerPool, () => neighborCandidates, {
         runs: screenRuns,
         templateIds: allTemplateIds.value,
         idPrefix: 'neighbor-screen',
@@ -650,6 +710,8 @@ const runOptimizer = async () => {
       ElMessage.error(error instanceof Error ? error.message : 'AI探索中にエラーが発生しました。')
     }
   } finally {
+    activeGpuScreener?.destroy()
+    activeGpuScreener = null
     activeWorkerPool?.destroy()
     activeWorkerPool = null
     running.value = false
@@ -662,6 +724,84 @@ interface EvaluationStageOptions {
   idPrefix: string
   total: number
   keep: number
+}
+
+// GPU一次選別に失敗した場合は、候補を作り直して同じ段階をCPU Workerで継続する。
+const evaluateScreenStage = async (
+  pool: AiOptimizerWorkerPool,
+  candidateFactory: () => Iterable<Lineup>,
+  options: EvaluationStageOptions,
+): Promise<AiOptimizerResult[]> => {
+  if (activeGpuScreener) {
+    try {
+      return await evaluateGpuCandidateStage(activeGpuScreener, candidateFactory(), options)
+    } catch (error) {
+      if (cancelRequested.value) throw error
+      activeGpuScreener.destroy()
+      activeGpuScreener = null
+      screeningBackend.value = 'cpu'
+      topResults.value = []
+    }
+  }
+  return evaluateCandidateStage(pool, candidateFactory(), options)
+}
+
+// 兵学を含む固定特徴量で候補をまとめてGPU評価し、上位だけを保持する。
+const evaluateGpuCandidateStage = async (
+  screener: AiOptimizerGpuScreener,
+  candidates: Iterable<Lineup>,
+  options: EvaluationStageOptions,
+): Promise<AiOptimizerResult[]> => {
+  progress.done = 0
+  progress.total = options.total
+  const retained: AiOptimizerResult[] = []
+  const stageSeen = new Set<string>()
+  let batch: Lineup[] = []
+  let candidateIndex = 0
+
+  const flush = async (): Promise<void> => {
+    if (batch.length === 0) return
+    ensureSearchContinues()
+    const currentBatch = batch
+    batch = []
+    const scores = await screener.scoreBatch(currentBatch)
+    ensureSearchContinues()
+
+    currentBatch.forEach((lineup, index) => {
+      const score = Math.max(0, Math.min(100, Number(scores[index]) || 0))
+      const exchangeRatio = Math.min(9.99, score / Math.max(1, 100 - score))
+      candidateIndex += 1
+      insertRankedResult(retained, {
+        id: `${options.idPrefix}-gpu-${candidateIndex}-${canonicalCandidateSignature(lineup)}`,
+        rank: 0,
+        lineup: cloneLineup(lineup),
+        winRate: score / 100,
+        drawRate: 0,
+        exchangeRatio,
+        score,
+        scoreTier: tierFromScore(score),
+        totalRuns: 0,
+        matchups: [],
+        evaluationKind: 'gpu',
+      }, options.keep)
+    })
+    progress.done += currentBatch.length
+    topResults.value = rankedTopResults(retained)
+    await nextTick()
+    await waitForPaint()
+  }
+
+  for (const lineup of candidates) {
+    ensureSearchContinues()
+    const signature = canonicalCandidateSignature(lineup)
+    if (stageSeen.has(signature)) continue
+    stageSeen.add(signature)
+    batch.push(lineup)
+    if (batch.length >= AI_GPU_SCREEN_CHUNK_SIZE) await flush()
+  }
+  await flush()
+  progress.total = progress.done
+  return retained
 }
 
 const evaluateCandidateStage = async (
@@ -735,6 +875,7 @@ const evaluateLineup = async (
     scoreTier: tierFromScore(evaluation.score),
     totalRuns: evaluation.totalRuns,
     matchups: evaluation.matchups,
+    evaluationKind: 'cpu',
   }
 }
 
@@ -789,10 +930,23 @@ const mutateCandidateLineup = (base: Lineup, index: number): Lineup | null => {
       return skill && !fixedSkillKeys.value.has(skillIdentity(skill))
     })
     .map((slot) => ({ role, slot })))
+  const mutableBingxueRoles = roleKeys.filter((role) => {
+    const hero = team[role].hero
+    return hero
+      && !fixedConfiguredBingxueHeroKeys.value.has(heroIdentity(hero))
+      && aiBingxuePatternCountForHero(hero) > 0
+  })
 
-  // 武将を変えられる場合は約35%、それ以外は戦法を1つ差し替える。
-  const replaceHero = mutableHeroRoles.length > 0 && (mutableSkillSlots.length === 0 || Math.random() < 0.35)
-  if (replaceHero) {
+  // 武将・戦法・兵学のうち変更できる項目を1つ選び、上位候補の周辺を探索する。
+  const mutationChoices = [
+    ...Array.from({ length: mutableHeroRoles.length > 0 ? 6 : 0 }, () => 'hero' as const),
+    ...Array.from({ length: mutableSkillSlots.length > 0 ? 9 : 0 }, () => 'skill' as const),
+    ...Array.from({ length: mutableBingxueRoles.length > 0 ? 5 : 0 }, () => 'bingxue' as const),
+  ]
+  const mutationKind = randomItem(mutationChoices)
+  if (!mutationKind) return null
+
+  if (mutationKind === 'hero') {
     const role = randomItem(mutableHeroRoles)
     if (!role) return null
     const currentHero = team[role].hero
@@ -807,13 +961,24 @@ const mutateCandidateLineup = (base: Lineup, index: number): Lineup | null => {
     const hero = randomItem(replacements)
     if (!hero) return null
     team[role] = autoRole(hero)
-  } else {
+  } else if (mutationKind === 'skill') {
     const target = randomItem(mutableSkillSlots)
     if (!target) return null
     team[target.role][target.slot] = null
+  } else {
+    const role = randomItem(mutableBingxueRoles)
+    const hero = role ? team[role].hero : null
+    if (!role || !hero) return null
+    const currentSignature = bingxueSignature(team[role].bingxue)
+    const alternatives = aiBingxuePatternsForHero(hero)
+      .filter((pattern) => bingxueSignature(pattern) !== currentSignature)
+    const selected = randomItem(alternatives)
+    if (!selected) return null
+    team[role].bingxue = cloneAiBingxue(selected)
   }
 
   normalizeExclusiveTeamSkills(team)
+  fillRandomBingxueSlots(team)
   if (!fillRandomSkillSlots(team)) return null
   team.name = `AI周辺候補 ${index}`
   return team
@@ -831,11 +996,14 @@ function* buildAllCandidateLineups(): Generator<Lineup> {
     // 残りの武将枠へ、重複なしですべての武将順列を入れる。
     for (const heroTeam of fillAllHeroSlots(placedTeam, heroes)) {
       normalizeExclusiveTeamSkills(heroTeam)
-      // 残りの戦法枠へ、能力適性と兵種・陣法の制約を満たすすべての戦法順列を入れる。
-      for (const completedTeam of fillAllSkillSlots(heroTeam, skills)) {
-        index += 1
-        completedTeam.name = `AI候補 ${index}`
-        yield completedTeam
+      // 固定していない兵学を、武将ごとの主兵法＋副兵法5点の全設定へ展開する。
+      for (const bingxueTeam of fillAllBingxueSlots(heroTeam)) {
+        // 残りの戦法枠へ、能力適性と兵種・陣法の制約を満たすすべての戦法順列を入れる。
+        for (const completedTeam of fillAllSkillSlots(bingxueTeam, skills)) {
+          index += 1
+          completedTeam.name = `AI候補 ${index}`
+          yield completedTeam
+        }
       }
     }
   }
@@ -889,6 +1057,35 @@ function* fillAllHeroSlots(team: Lineup, candidates: Hero[]): Generator<Lineup> 
   }
 
   yield* visit(0, candidates)
+}
+
+// 画面で兵学を指定した武将はその設定を維持し、空欄の武将だけ全有効パターンへ展開する。
+function* fillAllBingxueSlots(team: Lineup): Generator<Lineup> {
+  const working = cloneLineup(team)
+  const roles = roleKeys.filter((role) => working[role].hero && !hasConfiguredAiBingxue(working[role].bingxue))
+
+  function* visit(roleIndex: number): Generator<Lineup> {
+    if (roleIndex >= roles.length) {
+      yield cloneLineup(working)
+      return
+    }
+
+    const role = roles[roleIndex]
+    const hero = role ? working[role].hero : null
+    if (!role || !hero) return
+    const patterns = aiBingxuePatternsForHero(hero)
+    if (patterns.length === 0) {
+      yield* visit(roleIndex + 1)
+      return
+    }
+    for (const pattern of patterns) {
+      working[role].bingxue = cloneAiBingxue(pattern)
+      yield* visit(roleIndex + 1)
+    }
+    working[role].bingxue = { direction: null, major: null, minors: [] }
+  }
+
+  yield* visit(0)
 }
 
 // 空いている戦法枠へ、候補戦法を重複なし・能力適性ありで全通り割り当てる。
@@ -987,10 +1184,20 @@ const randomCandidateLineup = (index: number): Lineup | null => {
     usedHeroes.add(heroIdentity(hero))
   }
 
+  fillRandomBingxueSlots(team)
   if (!fillRandomSkillSlots(team)) return null
 
   team.name = `AI候補 ${index}`
   return team
+}
+
+// モンテカルロ探索では、未指定の各武将へ設定可能な兵学を一様に1組選ぶ。
+const fillRandomBingxueSlots = (team: Lineup): void => {
+  for (const role of roleKeys) {
+    const roleData = team[role]
+    if (!roleData.hero || hasConfiguredAiBingxue(roleData.bingxue)) continue
+    roleData.bingxue = randomAiBingxueForHero(roleData.hero)
+  }
 }
 
 const fillRandomSkillSlots = (team: Lineup): boolean => {
@@ -1238,6 +1445,15 @@ const cappedProduct = (values: number[]): number => {
   return total
 }
 
+const cappedPower = (base: number, exponent: number): number => {
+  let total = 1
+  for (let index = 0; index < exponent; index += 1) {
+    if (total > Number.MAX_SAFE_INTEGER / base) return Number.MAX_SAFE_INTEGER
+    total *= base
+  }
+  return total
+}
+
 const heroKey = (hero: Hero): string => hero.sim_id || hero.name
 const skillKey = (skill: Skill): string => skill.sim_id || skill.id || skill.name_jp || skill.name
 const heroIdentity = (hero: Hero): string => hero.sim_id || hero.name_jp || hero.name
@@ -1260,6 +1476,11 @@ const roleSignature = (role: RoleData): string => [
   role.bingxue.direction ?? '',
   role.bingxue.major ?? '',
   ...role.bingxue.minors.map((minor) => `${minor.name}:${minor.level}`).sort(),
+].join(':')
+const bingxueSignature = (value: BingxueActive): string => [
+  value.direction ?? '',
+  value.major ?? '',
+  ...value.minors.map((minor) => `${minor.name}:${minor.level}`).sort(),
 ].join(':')
 
 const lineupSignature = (lineup: Lineup): string => [
