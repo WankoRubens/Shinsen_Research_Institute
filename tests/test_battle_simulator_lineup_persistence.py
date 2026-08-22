@@ -18,7 +18,8 @@ class BattleSimulatorLineupPersistenceTests(unittest.TestCase):
 
     def test_all_saved_groups_are_available_for_import(self):
         self.assertIn("groups.flatMap", self.source)
-        self.assertIn("共存編成・自由編成から部隊を呼び出す", self.source)
+        self.assertIn("保存した編成を呼び出す", self.source)
+        self.assertIn("保存した編成（共存編成・自由編成）", self.source)
         self.assertIn("copyLineupIntoSimulator(option.lineup)", self.source)
 
     def test_direct_entry_restores_group_storage(self):

@@ -24,11 +24,11 @@
             filterable
             clearable
             :disabled="savedLineupOptions.length === 0"
-            placeholder="共存編成・自由編成から部隊を呼び出す"
+            placeholder="保存した編成を呼び出す"
             no-data-text="保存された部隊がありません"
             @change="loadSavedLineup"
           >
-            <el-option-group label="共存編成・自由編成">
+            <el-option-group label="保存した編成（共存編成・自由編成）">
               <el-option
                 v-for="option in savedLineupOptions"
                 :key="option.key"
@@ -1097,7 +1097,7 @@ const LineSeries = defineComponent({
 .builder-metrics { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .eyebrow { margin: 0 0 4px; font-size: 14px; font-weight: 800; }
 .cost-pill { color: #b45309; font-weight: 900; font-variant-numeric: tabular-nums; }
-.lineup-source-row { width: min(520px, 100%); margin-top: 12px; }
+.lineup-source-row { width: 100%; margin-top: 12px; }
 .lineup-source-row .el-select { width: 100%; }
 .sim-lineup-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; align-items: stretch; }
 .sim-lineup-grid > * { min-width: 0; min-height: 0; }
