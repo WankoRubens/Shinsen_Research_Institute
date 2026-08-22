@@ -2,8 +2,10 @@ import type { Lineup, RoleData } from '../composables/useLineups'
 import type { BingxueOption, Skill } from '../composables/useData'
 
 const FEATURE_COUNT = 8
-const WORKGROUP_SIZE = 64
-export const AI_GPU_SCREEN_CHUNK_SIZE = 512
+// 1候補を1ワークグループへ割り当て、21テンプレを32スレッドで同時評価する。
+const WORKGROUP_SIZE = 32
+// 小分け送信の待ち時間を減らし、GPUへ十分な候補をまとめて渡す。
+export const AI_GPU_SCREEN_CHUNK_SIZE = 4096
 
 const GPU_BUFFER_USAGE = {
   MAP_READ: 0x0001,
@@ -32,26 +34,36 @@ struct Params {
 @group(0) @binding(1) var<storage, read> templates: array<f32>;
 @group(0) @binding(2) var<storage, read_write> scores: array<f32>;
 @group(0) @binding(3) var<uniform> params: Params;
+var<workgroup> candidateFeatures: array<f32, ${FEATURE_COUNT}>;
+var<workgroup> partialScores: array<f32, ${WORKGROUP_SIZE}>;
 
 @compute @workgroup_size(${WORKGROUP_SIZE})
-fn main(@builtin(global_invocation_id) globalId: vec3<u32>) {
-  let candidateIndex = globalId.x;
-  if (candidateIndex >= params.candidateCount) {
-    return;
+fn main(
+  @builtin(workgroup_id) workgroupId: vec3<u32>,
+  @builtin(local_invocation_id) localId: vec3<u32>,
+) {
+  let candidateIndex = workgroupId.x;
+  let lane = localId.x;
+  let candidateBase = candidateIndex * params.featureCount;
+
+  // 候補側の8特徴量はワークグループ内で共有し、同じ値の読み直しを減らす。
+  if (lane < params.featureCount) {
+    candidateFeatures[lane] = candidates[candidateBase + lane];
   }
+  workgroupBarrier();
 
   var totalScore = 0.0;
-  let candidateBase = candidateIndex * params.featureCount;
-  let ownPhysical = candidates[candidateBase + 0u];
-  let ownStrategy = candidates[candidateBase + 1u];
-  let ownDefense = candidates[candidateBase + 2u];
-  let ownSpeed = candidates[candidateBase + 3u];
-  let ownSustain = candidates[candidateBase + 4u];
-  let ownControl = candidates[candidateBase + 5u];
-  let ownReliability = candidates[candidateBase + 6u];
-  let ownVersatility = candidates[candidateBase + 7u];
+  let ownPhysical = candidateFeatures[0u];
+  let ownStrategy = candidateFeatures[1u];
+  let ownDefense = candidateFeatures[2u];
+  let ownSpeed = candidateFeatures[3u];
+  let ownSustain = candidateFeatures[4u];
+  let ownControl = candidateFeatures[5u];
+  let ownReliability = candidateFeatures[6u];
+  let ownVersatility = candidateFeatures[7u];
 
-  for (var templateIndex = 0u; templateIndex < params.templateCount; templateIndex += 1u) {
+  // 各スレッドが別テンプレを担当する。現在は21編成なので1回の評価で完了する。
+  for (var templateIndex = lane; templateIndex < params.templateCount; templateIndex += ${WORKGROUP_SIZE}u) {
     let templateBase = templateIndex * params.featureCount;
     let enemyPhysical = templates[templateBase + 0u];
     let enemyStrategy = templates[templateBase + 1u];
@@ -75,7 +87,25 @@ fn main(@builtin(global_invocation_id) globalId: vec3<u32>) {
     totalScore += clamp(50.0 + pressureEdge + speedEdge + utilityEdge, 0.0, 100.0);
   }
 
-  scores[candidateIndex] = totalScore / max(1.0, f32(params.templateCount));
+  partialScores[lane] = totalScore;
+  workgroupBarrier();
+
+  // 32スレッド分の結果をワークグループ内で二分木状に合計する。
+  var stride = ${WORKGROUP_SIZE / 2}u;
+  loop {
+    if (stride == 0u) {
+      break;
+    }
+    if (lane < stride) {
+      partialScores[lane] += partialScores[lane + stride];
+    }
+    workgroupBarrier();
+    stride /= 2u;
+  }
+
+  if (lane == 0u) {
+    scores[candidateIndex] = partialScores[0u] / max(1.0, f32(params.templateCount));
+  }
 }
 `
 
@@ -185,7 +215,7 @@ export class AiOptimizerGpuScreener {
   private constructor(
     private readonly device: any,
     private readonly pipeline: any,
-    private readonly templateFeatures: Float32Array,
+    private readonly templateBuffer: any,
     private readonly templateCount: number,
     private readonly uniqueSkills: Map<string, Skill>,
     private readonly bingxueCatalog: Record<string, BingxueOption>,
@@ -199,15 +229,19 @@ export class AiOptimizerGpuScreener {
     const gpu = (typeof navigator === 'undefined' ? undefined : (navigator as WebGpuNavigator).gpu)
     if (!gpu || templates.length === 0) return null
 
+    let device: any = null
     try {
       const adapter = await gpu.requestAdapter({ powerPreference: 'high-performance' })
         ?? await gpu.requestAdapter()
       if (!adapter) return null
-      const device = await adapter.requestDevice()
+      device = await adapter.requestDevice()
       const module = device.createShaderModule({ code: GPU_SHADER })
       if (typeof module.getCompilationInfo === 'function') {
         const info = await module.getCompilationInfo()
-        if (info.messages?.some((message: { type: string }) => message.type === 'error')) return null
+        if (info.messages?.some((message: { type: string }) => message.type === 'error')) {
+          device.destroy()
+          return null
+        }
       }
       const pipeline = await device.createComputePipelineAsync({
         layout: 'auto',
@@ -223,15 +257,22 @@ export class AiOptimizerGpuScreener {
       templates.forEach((lineup, index) => {
         templateFeatures.set(lineupFeatures(lineup, uniqueSkills, bingxueCatalog), index * FEATURE_COUNT)
       })
+      // テンプレ特徴量は全バッチ共通なので、GPUメモリへ一度だけ転送して再利用する。
+      const templateBuffer = device.createBuffer({
+        size: templateFeatures.byteLength,
+        usage: GPU_BUFFER_USAGE.STORAGE | GPU_BUFFER_USAGE.COPY_DST,
+      })
+      device.queue.writeBuffer(templateBuffer, 0, templateFeatures)
       return new AiOptimizerGpuScreener(
         device,
         pipeline,
-        templateFeatures,
+        templateBuffer,
         templates.length,
         uniqueSkills,
         bingxueCatalog,
       )
     } catch {
+      device?.destroy()
       return null
     }
   }
@@ -249,10 +290,6 @@ export class AiOptimizerGpuScreener {
       size: candidateFeatures.byteLength,
       usage: GPU_BUFFER_USAGE.STORAGE | GPU_BUFFER_USAGE.COPY_DST,
     })
-    const templateBuffer = this.device.createBuffer({
-      size: this.templateFeatures.byteLength,
-      usage: GPU_BUFFER_USAGE.STORAGE | GPU_BUFFER_USAGE.COPY_DST,
-    })
     const scoreBuffer = this.device.createBuffer({
       size: lineups.length * Float32Array.BYTES_PER_ELEMENT,
       usage: GPU_BUFFER_USAGE.STORAGE | GPU_BUFFER_USAGE.COPY_SRC,
@@ -268,7 +305,6 @@ export class AiOptimizerGpuScreener {
 
     try {
       this.device.queue.writeBuffer(candidateBuffer, 0, candidateFeatures)
-      this.device.queue.writeBuffer(templateBuffer, 0, this.templateFeatures)
       this.device.queue.writeBuffer(paramsBuffer, 0, new Uint32Array([
         lineups.length,
         this.templateCount,
@@ -280,7 +316,7 @@ export class AiOptimizerGpuScreener {
         layout: this.pipeline.getBindGroupLayout(0),
         entries: [
           { binding: 0, resource: { buffer: candidateBuffer } },
-          { binding: 1, resource: { buffer: templateBuffer } },
+          { binding: 1, resource: { buffer: this.templateBuffer } },
           { binding: 2, resource: { buffer: scoreBuffer } },
           { binding: 3, resource: { buffer: paramsBuffer } },
         ],
@@ -289,7 +325,8 @@ export class AiOptimizerGpuScreener {
       const pass = encoder.beginComputePass()
       pass.setPipeline(this.pipeline)
       pass.setBindGroup(0, bindGroup)
-      pass.dispatchWorkgroups(Math.ceil(lineups.length / WORKGROUP_SIZE))
+      // 1候補につき1ワークグループを起動し、その中でテンプレ評価を並列化する。
+      pass.dispatchWorkgroups(lineups.length)
       pass.end()
       encoder.copyBufferToBuffer(scoreBuffer, 0, readBuffer, 0, lineups.length * Float32Array.BYTES_PER_ELEMENT)
       this.device.queue.submit([encoder.finish()])
@@ -299,7 +336,6 @@ export class AiOptimizerGpuScreener {
     } finally {
       if (readBuffer.mapState === 'mapped') readBuffer.unmap()
       candidateBuffer.destroy()
-      templateBuffer.destroy()
       scoreBuffer.destroy()
       readBuffer.destroy()
       paramsBuffer.destroy()
@@ -309,6 +345,7 @@ export class AiOptimizerGpuScreener {
   destroy(): void {
     if (this.destroyed) return
     this.destroyed = true
+    this.templateBuffer.destroy()
     this.device.destroy()
   }
 }
