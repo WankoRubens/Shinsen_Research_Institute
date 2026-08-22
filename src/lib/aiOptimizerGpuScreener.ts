@@ -8,6 +8,7 @@ const FEATURE_COUNT = AI_GPU_FEATURE_COUNT
 // 1候補を1ワークグループへ割り当て、概算戦闘を256スレッドで同時評価する。
 const WORKGROUP_SIZE = 256
 const APPROXIMATE_TURNS = 8
+export const AI_GPU_COARSE_SCENARIOS = 64
 export const AI_GPU_SCREEN_SCENARIOS = 1024
 // 1024通りの評価は重いため、WindowsのGPUタイムアウトを避けられる単位に分割する。
 export const AI_GPU_SCREEN_CHUNK_SIZE = 512
@@ -32,7 +33,7 @@ struct Params {
   candidateCount: u32,
   templateCount: u32,
   featureCount: u32,
-  padding: u32,
+  scenarioCount: u32,
 }
 
 @group(0) @binding(0) var<storage, read> candidates: array<f32>;
@@ -78,8 +79,8 @@ fn main(
   let ownReliability = candidateFeatures[6u];
   let ownVersatility = candidateFeatures[7u];
 
-  // 候補ごとに21テンプレ×1024通りを分担し、発動の揺れを含む8ターン概算を行う。
-  let jobCount = params.templateCount * ${AI_GPU_SCREEN_SCENARIOS}u;
+  // 指定された通り数を分担し、発動の揺れを含む8ターン概算を行う。
+  let jobCount = params.templateCount * params.scenarioCount;
   for (var jobIndex = lane; jobIndex < jobCount; jobIndex += ${WORKGROUP_SIZE}u) {
     let templateIndex = jobIndex % params.templateCount;
     let scenarioIndex = jobIndex / params.templateCount;
@@ -224,7 +225,10 @@ export class AiOptimizerGpuScreener {
     }
   }
 
-  async scoreBatch(lineups: Lineup[]): Promise<Float32Array> {
+  async scoreBatch(
+    lineups: Lineup[],
+    scenarioCount = AI_GPU_SCREEN_SCENARIOS,
+  ): Promise<Float32Array> {
     if (this.destroyed) throw new Error('GPU一次選別を終了しました。')
     if (lineups.length === 0) return new Float32Array()
 
@@ -254,7 +258,7 @@ export class AiOptimizerGpuScreener {
         lineups.length,
         this.templateCount,
         FEATURE_COUNT,
-        0,
+        Math.max(1, Math.floor(scenarioCount)),
       ]))
 
       const bindGroup = this.device.createBindGroup({
@@ -276,7 +280,8 @@ export class AiOptimizerGpuScreener {
       encoder.copyBufferToBuffer(scoreBuffer, 0, readBuffer, 0, lineups.length * Float32Array.BYTES_PER_ELEMENT)
       this.device.queue.submit([encoder.finish()])
 
-      await readBuffer.mapAsync(GPU_MAP_MODE_READ)
+      // ドライバー停止時に一次選別全体が永久に待たないよう、1バッチへ上限を設ける。
+      await withTimeout(readBuffer.mapAsync(GPU_MAP_MODE_READ), 20000)
       return new Float32Array(readBuffer.getMappedRange().slice(0))
     } finally {
       if (readBuffer.mapState === 'mapped') readBuffer.unmap()
@@ -293,5 +298,19 @@ export class AiOptimizerGpuScreener {
     this.featureWorkers.destroy()
     this.templateBuffer.destroy()
     this.device.destroy()
+  }
+}
+
+const withTimeout = async <T>(task: Promise<T>, timeoutMs: number): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      task,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('GPU一次選別がタイムアウトしました。')), timeoutMs)
+      }),
+    ])
+  } finally {
+    if (timer !== undefined) clearTimeout(timer)
   }
 }

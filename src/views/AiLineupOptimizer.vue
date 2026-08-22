@@ -141,6 +141,9 @@
           <span v-if="unsupportedFixedSkillNames.length" class="warning">
             「{{ unsupportedFixedSkillNames.join('、') }}」は戦法一覧で実装済みではないため使用できません。
           </span>
+          <span v-if="allSearchTooLarge" class="warning">
+            全通りは最大 {{ formatNumber(MAX_EXHAUSTIVE_COMBINATIONS) }} 組までです。数値指定を選んでください。
+          </span>
           <span v-if="!hasEnoughCandidates" class="warning">空き枠を埋める候補が不足しています。</span>
           <span v-else-if="searchSampleMode === 'sample'">
             {{ candidatePoolMode === 'owned' ? '所持中のS武将と実装済みS/A戦法' : 'S武将全体と実装済みS/A戦法全体' }}から
@@ -291,6 +294,7 @@ import { autoAllocatedHeroStats } from '../lib/aiHeroStatAllocation'
 import { heroLevel50Stats } from '../lib/heroStats'
 import { AiOptimizerWorkerPool, recommendedAiWorkerCount } from '../lib/aiOptimizerWorkerPool'
 import {
+  AI_GPU_COARSE_SCENARIOS,
   AI_GPU_SCREEN_CHUNK_SIZE,
   AI_GPU_SCREEN_SCENARIOS,
   AiOptimizerGpuScreener,
@@ -354,6 +358,7 @@ const SCREEN_RUN_LIMIT = 3
 const MAX_SCREEN_SURVIVORS = 1000
 const MAX_REFINED_SURVIVORS = 200
 const MAX_NEIGHBOR_CANDIDATES = 10000
+const MAX_EXHAUSTIVE_COMBINATIONS = 100000
 const PARALLEL_QUEUE_MULTIPLIER = 2
 const aiWorkerCount = recommendedAiWorkerCount()
 const evaluationCache = new Map<string, AiWorkerEvaluationResult>()
@@ -508,10 +513,17 @@ const canOptimize = computed(() =>
   && templateTeams.value.length > 0
   && hasEnoughCandidates.value
   && unsupportedFixedSkillNames.value.length === 0
+  && !allSearchTooLarge.value
+)
+const allSearchTooLarge = computed(() =>
+  searchSampleMode.value === 'all'
+  && estimatedCombinations.value > MAX_EXHAUSTIVE_COMBINATIONS,
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
 const screeningBackendLabel = computed(() => {
-  if (screeningBackend.value === 'gpu') return `WebGPU（8ターン概算×${AI_GPU_SCREEN_SCENARIOS}通り・4バッチ並列）`
+  if (screeningBackend.value === 'gpu') {
+    return `WebGPU（全候補${AI_GPU_COARSE_SCENARIOS}通り→上位${AI_GPU_SCREEN_SCENARIOS}通り・4バッチ並列）`
+  }
   if (screeningBackend.value === 'cpu') return 'CPU Worker'
   return 'GPU自動判定'
 })
@@ -729,6 +741,7 @@ interface EvaluationStageOptions {
   idPrefix: string
   total: number
   keep: number
+  gpuScenarios?: number
 }
 
 // GPU一次選別に失敗した場合は、候補を作り直して同じ段階をCPU Workerで継続する。
@@ -739,7 +752,25 @@ const evaluateScreenStage = async (
 ): Promise<AiOptimizerResult[]> => {
   if (activeGpuScreener) {
     try {
-      return await evaluateGpuCandidateStage(activeGpuScreener, candidateFactory(), options)
+      const coarseScenarios = options.total <= 1000
+        ? AI_GPU_SCREEN_SCENARIOS
+        : options.total <= 2000
+          ? 256
+          : AI_GPU_COARSE_SCENARIOS
+      const coarseResults = await evaluateGpuCandidateStage(activeGpuScreener, candidateFactory(), {
+        ...options,
+        gpuScenarios: coarseScenarios,
+      })
+      if (coarseScenarios >= AI_GPU_SCREEN_SCENARIOS || coarseResults.length === 0) return coarseResults
+
+      // 全候補は軽く絞り、最大1000組の上位だけを1024通りで再選別する。
+      return await evaluateGpuCandidateStage(activeGpuScreener, coarseResults.map((result) => result.lineup), {
+        ...options,
+        idPrefix: `${options.idPrefix}-gpu1024`,
+        total: coarseResults.length,
+        keep: Math.min(options.keep, coarseResults.length),
+        gpuScenarios: AI_GPU_SCREEN_SCENARIOS,
+      })
     } catch (error) {
       if (cancelRequested.value) throw error
       activeGpuScreener.destroy()
@@ -767,7 +798,7 @@ const evaluateGpuCandidateStage = async (
 
   const processBatch = async (currentBatch: Lineup[]): Promise<void> => {
     ensureSearchContinues()
-    const scores = await screener.scoreBatch(currentBatch)
+    const scores = await screener.scoreBatch(currentBatch, options.gpuScenarios)
     ensureSearchContinues()
 
     currentBatch.forEach((lineup, index) => {
@@ -819,6 +850,7 @@ const evaluateGpuCandidateStage = async (
     await Promise.all(inFlight)
   } catch (error) {
     // 先に失敗したバッチがあっても、残りのPromiseを回収して未処理例外を残さない。
+    screener.destroy()
     await Promise.allSettled(inFlight)
     throw error
   }
