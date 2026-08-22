@@ -132,6 +132,8 @@ export interface TimedBattleModifier {
   value: number
   expiresTurn: number
   sourceSkill: string
+  // 回数制限付き効果は、ダメージ成立時に1ずつ消費する。
+  remainingUses?: number
 }
 
 interface PendingSkill {
@@ -1312,8 +1314,9 @@ const baseDamage = (
   })
   if (bingxueDamage.evaded) return { amount: 0, critical: false }
   // 兵種相性は、最低保証を含むダメージが確定した後に全体へ掛ける。
-  // 破竹の勢い・湖水渡りで増えた会心ダメージ率は、会心成立時だけ最終値へ加算する。
-  const uniqueCriticalMultiplier = bingxueDamage.critical
+  // 破竹の勢いで増えた会心ダメージ率は、兵刃会心が成立した時だけ最終値へ加算する。
+  // 湖水渡りの奇策ダメージ率は resolveBingxueDamage 側で計略ダメージだけに加算する。
+  const uniqueCriticalMultiplier = bingxueDamage.critical && actualKind === 'physical'
     ? 1 + Math.max(0, caster.specialState.criticalDamageBonus ?? 0) / 150
     : 1
   const resolvedAmount = Math.max(floor, raw)
@@ -2668,6 +2671,7 @@ const addTimedModifier = (
   value: number,
   duration: number,
   maxStacks = Number.POSITIVE_INFINITY,
+  remainingUses?: number,
 ) => {
   if (!isAlive(target) || value === 0) return
   const sourceSkill = skillDisplayName(ctx.skill)
@@ -2691,6 +2695,7 @@ const addTimedModifier = (
     // 準備ターン(0)で付与した1ターン効果も、第1ターン中は有効にする。
     expiresTurn: Math.max(1, ctx.turn) + Math.max(1, Math.round(duration)),
     sourceSkill,
+    remainingUses,
   })
 }
 
@@ -3316,7 +3321,12 @@ const trySkill = (
       })
     }
   }
-  if (prep > 0 && (caster.specialState.skipPreparationOnce ?? 0) > 0) {
+  // 笹の才蔵の撃破ボーナスは、撃破した次ターンの同戦法だけ準備を省略する。
+  const skillSpecificPreparationSkip = (caster.specialState[`skipPreparationUntil:${resolvedSkillName}`] ?? 0) === turn
+  if (prep > 0 && skillSpecificPreparationSkip) {
+    caster.specialState[`skipPreparationUntil:${resolvedSkillName}`] = 0
+    prep = 0
+  } else if (prep > 0 && (caster.specialState.skipPreparationOnce ?? 0) > 0) {
     caster.specialState.skipPreparationOnce = 0
     prep = 0
   }

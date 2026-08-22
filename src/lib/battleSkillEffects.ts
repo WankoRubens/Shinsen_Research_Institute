@@ -73,9 +73,9 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   }),
   会盟の陣: defineBattleSkillMeta({
     type: '陣法',
-    triggers: ['preparationTurn', 'turnStart'],
+    triggers: ['preparationTurn', 'beforeAction'],
     replaceStructuredTriggers: true,
-    followUpTriggers: ['turnStart'],
+    followUpTriggers: ['beforeAction'],
   }),
   知者楽水: defineBattleSkillMeta({
     type: '指揮',
@@ -183,6 +183,12 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   戮力同心: defineBattleSkillMeta({
     type: '指揮',
     triggers: ['turnStart'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['turnStart'],
+  }),
+  罵詈雑言: defineBattleSkillMeta({
+    type: '指揮',
+    triggers: ['preparationTurn', 'turnStart'],
     replaceStructuredTriggers: true,
     followUpTriggers: ['turnStart'],
   }),
@@ -324,7 +330,12 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   勇猛無比: defineBattleSkillMeta({ type: '能動' }),
   臨時槍の鈴: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   連戦: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
-  三河武士: defineBattleSkillMeta({ type: '兵種' }),
+  三河武士: defineBattleSkillMeta({
+    type: '兵種',
+    triggers: ['preparationTurn', 'onNormalAttackReceived', 'turnStart'],
+    replaceStructuredTriggers: true,
+    followUpTriggers: ['onNormalAttackReceived', 'turnStart'],
+  }),
   風林火山: defineBattleSkillMeta({
     type: '指揮',
     triggers: ['preparationTurn', 'turnStart'],
@@ -422,7 +433,7 @@ export const TEAM_ACTION_BATTLE_SKILL_NAMES = new Set([
 ])
 
 // 所持者本人ではなく、同じ部隊の友軍が通常攻撃を受けた時にも反応する戦法。
-export const TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂', '月華鶴影', '大太刀力士隊'])
+export const TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂', '月華鶴影', '大太刀力士隊', '三河武士'])
 
 // 友軍の通常攻撃や被ダメージ、敵軍の行動を監視する個別戦法。
 export const TEAM_AFTER_NORMAL_ATTACK_SKILL_NAMES = new Set(['覇王の右筆', '献身'])
@@ -534,6 +545,7 @@ export interface BattleSkillEffectHelpers {
     value: number,
     duration: number,
     maxStacks?: number,
+    remainingUses?: number,
   ) => void
   statOf: (fighter: BattleFighter, stat: Stat) => number
   activationRateOf: (fighter: BattleFighter, skill: Skill) => number
@@ -713,6 +725,17 @@ export const recordDamageDealtSkillEffects = (
   recordDateIkiDamageHit(fighter, kind, turn, logs)
   recordBunbuDamageHit(fighter, kind, turn, logs)
   recordSUniqueDamageEvent(fighter, kind, critical, turn, logs)
+
+  // 威風凛凛の各層は、対象がダメージを与えるたびに残り回数を1消費する。
+  // 同時に存在する層はすべて同じ与ダメージへ作用するため、各層をまとめて減算する。
+  const consumedModifiers = fighter.timedModifiers.filter((modifier) =>
+    modifier.sourceSkill === '威風凛凛' && (modifier.remainingUses ?? 0) > 0)
+  consumedModifiers.forEach((modifier) => {
+    modifier.remainingUses = Math.max(0, (modifier.remainingUses ?? 0) - 1)
+    if ((modifier.remainingUses ?? 0) > 0) return
+    fighter.buffs[modifier.stat] = (fighter.buffs[modifier.stat] ?? 0) - modifier.value
+    fighter.timedModifiers = fighter.timedModifiers.filter((active) => active !== modifier)
+  })
 }
 
 const log = (logs: BattleLogEntry[], ctx: SkillResolveContext, message: string, target?: BattleFighter) => {
@@ -877,6 +900,8 @@ const databaseHealKind = (skill: Skill): 'bravery' | 'strategy' => {
 }
 
 const living = (fighters: BattleFighter[]) => fighters.filter((fighter) => fighter.hp > 0)
+// 南蛮渡来の強化回復を受ける「南蛮好尚」「南蛮信奉」対象武将。
+const NANBAN_HEAL_BONUS_HEROES = new Set(['織田信長', '徳川家康', '黒田官兵衛', 'お初'])
 const roleCode = (fighter: BattleFighter): number => fighter.role === 'main' ? 1 : fighter.role === 'vice1' ? 2 : 3
 const highestByStat = (fighters: BattleFighter[], stat: Stat): BattleFighter | null =>
   [...living(fighters)].sort((a, b) => (b.baseStats[stat] + (b.buffs[stat] ?? 0)) - (a.baseStats[stat] + (a.buffs[stat] ?? 0)))[0] ?? null
@@ -1724,8 +1749,8 @@ export const applyNamedSkillEffect = (
           if (ally.hp > 0) h.healBySkill(ctx, ally, 76, 'strategy')
         })
       } else {
-        // 生きている味方のうち兵力割合が低い2人に76%の回復
-        h.weakest(ctx.allies, 2).forEach((ally) => {
+        // 生きている自軍からランダムな2人を76%で回復する。
+        explicitAllyTargets(ctx, h, 2).forEach((ally) => {
           h.healBySkill(ctx, ally, 76, 'strategy')
         })
       }
@@ -1925,16 +1950,20 @@ export const applyNamedSkillEffect = (
 
     case '南蛮渡来': {
       // 戦法タイプ: 能動
-      // 兵力の低い味方2～3人を144%で回復
+      // 生きている自軍からランダムな2～3人を選ぶ。
       const count = 2 + Math.floor(ctx.rng() * 2)
-      h.weakest(ctx.allies, count).forEach((ally) => h.healBySkill(ctx, ally, 144, 'strategy'))
+      explicitAllyTargets(ctx, h, count).forEach((ally) => {
+        // 南蛮好尚・南蛮信奉を持つ武将だけ、回復率を172%へ上げる。
+        const rate = NANBAN_HEAL_BONUS_HEROES.has(ally.name) ? 172 : 144
+        h.healBySkill(ctx, ally, rate, 'strategy')
+      })
       return true
     }
 
     case '一舟軒': {
       // 戦法タイプ: 能動
-      // 兵力の低い味方2人を152%で回復
-      h.weakest(ctx.allies, 2).forEach((ally) => {
+      // 生きている自軍からランダムな2人を152%で回復する。
+      explicitAllyTargets(ctx, h, 2).forEach((ally) => {
         h.healBySkill(ctx, ally, 152, 'strategy')
 
         // 52%で鉄壁を付与し、被ダメージを少し下げる
@@ -1956,9 +1985,15 @@ export const applyNamedSkillEffect = (
       const hits = hitsMin + Math.floor(ctx.rng() * Math.max(1, hitsMax - hitsMin + 1))
       for (let i = 0; i < hits; i += 1) h.dealSkillDamage(ctx, currentTarget, 126, 'physical')
 
-      // 75%で無策。すでに無策なら封撃へ置き換える
-      if (h.roll(ctx.rng, 0.75)) {
-        const status = (currentTarget.statuses['無策'] ?? 0) > 0 ? '封撃' : '無策'
+      // 継続性弱体状態があれば付与率を15%加算する。
+      const hasContinuousDebuff = currentTarget.timedStatuses.some((status) =>
+        CONTINUOUS_DAMAGE_NAMES.has(status.name))
+      const statusChance = Math.min(1, 0.75 + (hasContinuousDebuff ? 0.15 : 0))
+      if (h.roll(ctx.rng, statusChance)) {
+        // まだ付与されていない無策・封撃を優先し、両方未付与ならランダムに選ぶ。
+        const statuses = ['無策', '封撃'].filter((status) => (currentTarget.statuses[status] ?? 0) <= 0)
+        const pool = statuses.length > 0 ? statuses : ['無策', '封撃']
+        const status = pool[Math.floor(ctx.rng() * pool.length)]!
         h.addControl(ctx, currentTarget, status, Math.round(h.varNumber(ctx.skill, 'duration', 1)))
       }
 
@@ -2093,11 +2128,62 @@ export const applyNamedSkillEffect = (
 
     case '三河武士': {
       // 戦法タイプ: 兵種
-      // 自軍全体の統率を上昇
-      const statBuff = h.varNumber(ctx.skill, 'stat_buff', 16)
-      ctx.allies.forEach((ally) => {
-        ally.buffs.lea = (ally.buffs.lea ?? 0) + statBuff
-      })
+      if (ctx.trigger === 'preparationTurn') {
+        // 戦闘開始時の統率上昇は一度だけ。徳川家康装備時は自身の統率依存で増加する。
+        const baseBuff = h.varNumber(ctx.skill, 'stat_buff', 16)
+        const statBuff = ctx.caster.name === '徳川家康'
+          ? attributeDependentValue(baseBuff, [h.statOf(ctx.caster, 'lea')])
+          : baseBuff
+        ctx.allies.forEach((ally) => {
+          ally.buffs.lea = (ally.buffs.lea ?? 0) + statBuff
+        })
+        ctx.caster.specialState.mikawaWarriorActive = 1
+        ctx.caster.specialState.mikawaWarriorRequiredHits = 3
+        log(ctx.logs, ctx, `三河武士: 自軍全体の統率が${statBuff.toFixed(2)}上昇`)
+        return true
+      }
+
+      if (ctx.trigger === 'onNormalAttackReceived') {
+        // 不屈を予約済み、または4回発動済みなら新しい被弾を数えない。
+        if (
+          (ctx.caster.specialState.mikawaWarriorActive ?? 0) <= 0
+          || (ctx.caster.specialState.mikawaWarriorPendingTurn ?? 0) > 0
+          || (ctx.caster.specialState.mikawaWarriorUnyieldingCount ?? 0) >= 4
+        ) return true
+        const hits = (ctx.caster.specialState.mikawaWarriorNormalHits ?? 0) + 1
+        const required = ctx.caster.specialState.mikawaWarriorRequiredHits ?? 3
+        ctx.caster.specialState.mikawaWarriorNormalHits = hits
+        if (hits >= required) {
+          ctx.caster.specialState.mikawaWarriorPendingTurn = ctx.turn + 1
+          log(ctx.logs, ctx, `三河武士: 通常攻撃を累計${hits}回受け、次ターンの不屈を予約`)
+        }
+        return true
+      }
+
+      // 予約された次ターン開始時だけ不屈を発動する。
+      if ((ctx.caster.specialState.mikawaWarriorPendingTurn ?? 0) !== ctx.turn) return true
+      const count = Math.min(4, (ctx.caster.specialState.mikawaWarriorUnyieldingCount ?? 0) + 1)
+      ctx.caster.specialState.mikawaWarriorUnyieldingCount = count
+      ctx.caster.specialState.mikawaWarriorPendingTurn = 0
+      ctx.caster.specialState.mikawaWarriorNormalHits = 0
+
+      // 不屈の発動時は、自軍全体を60%・統率依存で回復する。
+      living(ctx.allies).forEach((ally) => h.healBySkill(ctx, ally, 60, 'leadership'))
+      log(ctx.logs, ctx, `三河武士: 不屈を発動（${count}回目）`)
+
+      if (count === 4) {
+        // 4回目は各武将が、ランダムな敵単体へ高い方の属性で82%ダメージを与える。
+        living(ctx.allies).forEach((ally) => {
+          const target = randomLiving({ ...ctx, caster: ally }, h, ctx.enemies)
+          if (!target) return
+          const kind = h.statOf(ally, 'val') >= h.statOf(ally, 'int') ? 'physical' : 'strategy'
+          h.dealSkillDamage({ ...ctx, caster: ally }, target, 82, kind)
+        })
+        ctx.caster.specialState.mikawaWarriorActive = 0
+      } else {
+        // 次回の不屈に必要な通常攻撃被弾数を1回ずつ増やす。
+        ctx.caster.specialState.mikawaWarriorRequiredHits = 3 + count
+      }
       return true
     }
 
@@ -2276,8 +2362,8 @@ export const applyNamedSkillEffect = (
       // 戦法タイプ: 能動。1ターン準備後、敵2名へ142%計略ダメージ。
       h.aliveRandom(ctx.enemies, ctx.rng, ctx).slice(0, 2)
         .forEach((enemy) => h.dealSkillDamage(ctx, enemy, 142, 'strategy'))
-      // 同時に兵力割合が低い自軍2名を106%で回復する。
-      h.weakest(ctx.allies, 2).forEach((ally) => h.healBySkill(ctx, ally, 106, 'strategy'))
+      // 同時にランダムな自軍2名を106%で回復する。
+      explicitAllyTargets(ctx, h, 2).forEach((ally) => h.healBySkill(ctx, ally, 106, 'strategy'))
       return true
     }
 
@@ -2463,8 +2549,10 @@ export const applyNamedSkillEffect = (
       if (!currentTarget) return true
       const kind = h.statOf(ctx.caster, 'val') >= h.statOf(ctx.caster, 'int') ? 'physical' : 'strategy'
       h.dealSkillDamage(ctx, currentTarget, 188, kind)
-      // 対象の与ダメージを30%低下。兵力50%超なら2ターン、それ以外は1ターン。
-      h.addTimedModifier(ctx, currentTarget, 'damageDealt', -30, currentTarget.hp > currentTarget.maxHp * 0.5 ? 2 : 1)
+      // 対象の与ダメージ低下率も、自身の武勇・知略の高い方に依存する。
+      const debuffStat: Stat = kind === 'physical' ? 'val' : 'int'
+      const reduction = attributeDependentValue(30, [h.statOf(ctx.caster, debuffStat)])
+      h.addTimedModifier(ctx, currentTarget, 'damageDealt', -reduction, currentTarget.hp > currentTarget.maxHp * 0.5 ? 2 : 1)
       return true
     }
 
@@ -2714,8 +2802,12 @@ export const applyNamedSkillEffect = (
       // 戦法タイプ: 突撃。通常攻撃対象へ238%の兵刃ダメージ。
       if (!currentTarget) return true
       h.dealSkillDamage(ctx, currentTarget, toPercent(h.varNumber(ctx.skill, 'damage_rate', 2.38)), 'physical')
-      // 対象の与ダメージを42%低下。2ターン、最大4層。
-      h.addTimedModifier(ctx, currentTarget, 'damageDealt', -toPercent(h.varNumber(ctx.skill, 'damage_debuff', 0.42)), 2, 4)
+      // 武勇依存の与ダメージ低下を付与。各層は2ターンまたは次の与ダメージ2回まで、最大4層。
+      const reduction = attributeDependentValue(
+        toPercent(h.varNumber(ctx.skill, 'damage_debuff', 0.42)),
+        [h.statOf(ctx.caster, 'val')],
+      )
+      h.addTimedModifier(ctx, currentTarget, 'damageDealt', -reduction, 2, 4, 2)
       return true
     }
 
@@ -3812,14 +3904,20 @@ export const applyNamedSkillEffect = (
     }
     case '罵詈雑言': {
       // 戦法タイプ: 指揮
-      // 自身が大将でない場合だけ、敵軍2～3名へ3ターンの挑発を付与する。
-      if (ctx.caster.role !== 'main') {
-        const count = 2 + Math.floor(ctx.rng() * 2)
-        explicitEnemyTargets(ctx, h, count).forEach((target) => h.addControl(ctx, target, '挑発', 3))
+      if (ctx.trigger === 'preparationTurn') {
+        // 最初の3ターンは、自身が受ける通常攻撃・突撃戦法ダメージを50%軽減する。
+        ctx.caster.specialState.verbalAbuseReductionUntil = 3
+        ctx.caster.specialState.verbalAbuseReductionPercent = 50
+        return true
       }
-      // 最初の3ターンは、自身が受ける通常攻撃・突撃戦法ダメージを50%軽減する。
-      ctx.caster.specialState.verbalAbuseReductionUntil = 3
-      ctx.caster.specialState.verbalAbuseReductionPercent = 50
+
+      // 大将時は挑発を付与せず、4ターン目以降も新しい挑発を付与しない。
+      if (ctx.caster.role === 'main' || ctx.turn < 1 || ctx.turn > 3) return true
+      // 毎ターン、ランダムな敵軍2～3名へ個別に90%で1ターンの挑発を付与する。
+      const count = 2 + Math.floor(ctx.rng() * 2)
+      explicitEnemyTargets(ctx, h, count).forEach((target) => {
+        if (h.roll(ctx.rng, 0.9)) h.addControl(ctx, target, '挑発', 1)
+      })
       return true
     }
     case '戦意消沈': {
@@ -4516,7 +4614,7 @@ export const applyNamedSkillEffect = (
         return true
       }
 
-      // 準備ターンで条件を満たしていない場合、毎ターンの副将補正を行わない。
+      // 準備ターンで条件を満たしていない場合、所持武将の行動開始時補正を行わない。
       if ((ctx.caster.specialState.allianceFormationActive ?? 0) <= 0) return true
       // 現在兵力を比較するため、戦死した武将を含む副将2名を取得する。
       const deputies = ctx.allies.filter((ally) => ally.role !== 'main')
@@ -4579,7 +4677,7 @@ export const applyNamedSkillEffect = (
       const targets = weakestAlly?.id !== ctx.caster.id
         ? living(ctx.allies)
         : [ctx.caster, ...explicitAllyTargets(ctx, h, 1, true)]
-      targets.forEach((target) => h.healBySkill(ctx, target, 82, 'strategy'))
+      targets.forEach((target) => h.healBySkill(ctx, target, 82, 'leadership'))
       return true
     }
     case '士気高揚': {

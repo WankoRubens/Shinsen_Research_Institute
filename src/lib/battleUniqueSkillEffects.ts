@@ -229,25 +229,41 @@ export const recordSUniqueDamageEvent = (
   if (critical && hasSkill('武田之赤備')) fighter.specialState.takedaRedCriticalTurn = turn
 
   if (critical && hasSkill('破竹の勢い')) {
-    const stacks = fighter.specialState.hachikuCriticalStacks ?? 0
-    if (stacks < (fighter.role === 'main' ? 15 : 10)) {
-      fighter.specialState.hachikuCriticalStacks = stacks + 1
-      fighter.specialState.criticalDamageBonus = 30 + (stacks + 1) * 5
+    // 最初の会心は重ね掛け回数へ含めない。
+    if ((fighter.specialState.hachikuFirstCriticalSeen ?? 0) <= 0) {
+      fighter.specialState.hachikuFirstCriticalSeen = 1
+    } else {
+      const stacks = fighter.specialState.hachikuCriticalStacks ?? 0
+      if (stacks < (fighter.role === 'main' ? 15 : 10)) {
+        fighter.specialState.hachikuCriticalStacks = stacks + 1
+        fighter.specialState.criticalDamageBonus = 30 + (stacks + 1) * 5
+        logs.push({
+          turn,
+          side: fighter.side,
+          actor: fighter.name,
+          actorHp: fighter.hp,
+          effect: '破竹の勢い',
+          message: `${fighter.name}の会心ダメージが5%上昇（${150 + fighter.specialState.criticalDamageBonus}%）`,
+        })
+      }
+    }
+  }
+
+  if (kind === 'strategy' && critical && (fighter.specialState.lakeCriticalUntil ?? 0) >= turn) {
+    const previousStacks = fighter.specialState.lakeCriticalStacks ?? 0
+    if (previousStacks < 4) {
+      const stacks = previousStacks + 1
+      fighter.specialState.lakeCriticalStacks = stacks
+      fighter.specialState.strategyCriticalDamageBonus = (fighter.specialState.strategyCriticalDamageBonus ?? 0) + 15
       logs.push({
         turn,
         side: fighter.side,
         actor: fighter.name,
         actorHp: fighter.hp,
-        effect: '破竹の勢い',
-        message: `${fighter.name}の会心ダメージが5%上昇（${150 + fighter.specialState.criticalDamageBonus}%）`,
+        effect: '湖水渡り',
+        message: `${fighter.name}の奇策ダメージ率が15%上昇（${150 + (fighter.specialState.strategyCriticalDamageBonus ?? 0)}%）`,
       })
     }
-  }
-
-  if (critical && (fighter.specialState.lakeCriticalUntil ?? 0) >= turn) {
-    const stacks = Math.min(4, (fighter.specialState.lakeCriticalStacks ?? 0) + 1)
-    fighter.specialState.lakeCriticalStacks = stacks
-    fighter.specialState.criticalDamageBonus = (fighter.specialState.criticalDamageBonus ?? 0) + 15
   }
 
   if (kind === 'physical' && hasSkill('七本槍筆頭')) {
@@ -445,7 +461,17 @@ export const applySUniqueSkillEffect = (
         const stacks = stackPermanent(ally, 'val', `graceValor:${ctx.caster.id}`, statOf(ally, 'val') * 0.04, 4)
         if (stacks >= 4 && h.roll(ctx.rng, attributeChance(0.65, statOf(ctx.caster, 'int')))) {
           const target = random(ctx, h, ctx.enemies)
-          if (target) applyControlRandom(ctx, h, target, ['混乱', '封撃', '無策', '疲弊'], 1)
+          if (target) {
+            // この戦法が過去に同じ対象へ付与した制御状態は、解除後も再選択しない。
+            const controls = ['混乱', '封撃', '無策', '疲弊'].filter((control) =>
+              (target.specialState[`graceControlApplied:${ctx.caster.id}:${control}`] ?? 0) <= 0
+              && !hasControl(target, control))
+            const control = controls[Math.floor(ctx.rng() * controls.length)]
+            if (control) {
+              h.addControl(ctx, target, control, 1)
+              target.specialState[`graceControlApplied:${ctx.caster.id}:${control}`] = 1
+            }
+          }
         }
       })
       return true
@@ -458,6 +484,8 @@ export const applySUniqueSkillEffect = (
         return true
       }
       if (ctx.trigger === 'beforeAction') {
+        // 行動前に48%（知略依存）でのみ、敵軍2～3名をこのターンの標的として記録する。
+        if (!h.roll(ctx.rng, attributeChance(0.48, statOf(ctx.caster, 'int')))) return true
         randomMany(ctx, h, ctx.enemies, h.roll(ctx.rng, 0.5) ? 3 : 2).forEach((enemy) => {
           enemy.specialState[`sameBranchMarked:${ctx.caster.id}`] = ctx.turn
         })
@@ -465,8 +493,15 @@ export const applySUniqueSkillEffect = (
       }
       const source = ctx.target
       const damaged = subject ?? ctx.caster
-      if (source && source.specialState[`sameBranchMarked:${ctx.caster.id}`] === ctx.turn && h.roll(ctx.rng, 0.8)) {
-        h.healBySkill(ctx, damaged, attributeValue(28, statOf(ctx.caster, 'int')), 'strategy')
+      if (
+        source
+        && source.specialState[`sameBranchMarked:${ctx.caster.id}`] === ctx.turn
+        && h.roll(ctx.rng, attributeChance(0.8, statOf(ctx.caster, 'int')))
+      ) {
+        // 直前に実際に失った兵力の28%（知略依存）を、負傷兵の範囲内で回復する。
+        const actualDamage = Math.max(0, damaged.specialState.lastDamageAmount ?? 0)
+        const healPercent = attributeValue(28, statOf(ctx.caster, 'int'))
+        h.healFixedBySkill(ctx, damaged, actualDamage * healPercent / 100)
       }
       return true
     }
@@ -552,6 +587,7 @@ export const applySUniqueSkillEffect = (
     case '破竹の勢い': {
       setPermanent(ctx.caster, 'physicalCriticalChance', name, 70)
       ctx.caster.specialState.criticalDamageBonus = Math.max(ctx.caster.specialState.criticalDamageBonus ?? 0, 30)
+      ctx.caster.specialState.hachikuFirstCriticalSeen = 0
       return true
     }
     // 最も兵力の少ない味方を回復・軽減し、全快時は自身も回復する。
@@ -634,9 +670,8 @@ export const applySUniqueSkillEffect = (
       const ally = random(ctx, h, ctx.allies.filter((fighter) => fighter.id !== ctx.caster.id))
       ;[ctx.caster, ally].filter((fighter): fighter is BattleFighter => Boolean(fighter)).forEach((fighter) => {
         h.addTimedModifier(ctx, fighter!, 'strategyCriticalChance', 65, 2)
-        h.addTimedModifier(ctx, fighter!, 'physicalCriticalChance', 65, 2)
         fighter!.specialState.lakeCriticalUntil = expires(ctx.turn, 2)
-        fighter!.specialState.lakeCriticalStacks = 0
+        fighter!.specialState.lakeCriticalStacks = fighter!.specialState.lakeCriticalStacks ?? 0
       })
       return true
     }
@@ -935,7 +970,8 @@ export const applySUniqueSkillEffect = (
       h.addControl(ctx, target, '回復不可', 3)
       if (target.hp <= 0) {
         ctx.caster.specialState[`activationRateBonus:${name}`] = 100
-        ctx.caster.specialState.skipPreparationOnce = 1
+        ctx.caster.specialState[`activationRateBonusUntil:${name}`] = ctx.turn + 1
+        ctx.caster.specialState[`skipPreparationUntil:${name}`] = ctx.turn + 1
       }
       return true
     }
@@ -988,6 +1024,7 @@ export const applySUniqueSkillEffect = (
         return true
       }
       if (!subject || subject.role !== 'main' || (subject.specialState.currentActivatedSkillCombatState ?? 0) <= 0) return true
+      if (!h.roll(ctx.rng, attributeChance(0.65, statOf(ctx.caster, 'int')))) return true
       randomMany(ctx, h, ctx.allies.filter((ally) => ally.role !== 'main'), 2).forEach((ally) => {
         h.addTimedModifier(ctx, ally, 'damageTaken', -attributeValue(5, statOf(ctx.caster, 'int')), 2, 2)
       })
