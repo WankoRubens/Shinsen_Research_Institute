@@ -2,10 +2,12 @@ import type { Lineup, RoleData } from '../composables/useLineups'
 import type { BingxueOption, Skill } from '../composables/useData'
 
 const FEATURE_COUNT = 8
-// 1候補を1ワークグループへ割り当て、21テンプレを32スレッドで同時評価する。
-const WORKGROUP_SIZE = 32
-// 小分け送信の待ち時間を減らし、GPUへ十分な候補をまとめて渡す。
-export const AI_GPU_SCREEN_CHUNK_SIZE = 4096
+// 1候補を1ワークグループへ割り当て、概算戦闘を256スレッドで同時評価する。
+const WORKGROUP_SIZE = 256
+const APPROXIMATE_TURNS = 8
+export const AI_GPU_SCREEN_SCENARIOS = 1024
+// 1024通りの評価は重いため、WindowsのGPUタイムアウトを避けられる単位に分割する。
+export const AI_GPU_SCREEN_CHUNK_SIZE = 512
 
 const GPU_BUFFER_USAGE = {
   MAP_READ: 0x0001,
@@ -37,6 +39,17 @@ struct Params {
 var<workgroup> candidateFeatures: array<f32, ${FEATURE_COUNT}>;
 var<workgroup> partialScores: array<f32, ${WORKGROUP_SIZE}>;
 
+// 同じ候補は毎回同じ結果になり、候補間では異なる疑似乱数を返す。
+fn random01(seed: u32) -> f32 {
+  var value = seed;
+  value ^= value >> 16u;
+  value *= 0x7feb352du;
+  value ^= value >> 15u;
+  value *= 0x846ca68bu;
+  value ^= value >> 16u;
+  return f32(value & 0x00ffffffu) / 16777216.0;
+}
+
 @compute @workgroup_size(${WORKGROUP_SIZE})
 fn main(
   @builtin(workgroup_id) workgroupId: vec3<u32>,
@@ -62,8 +75,11 @@ fn main(
   let ownReliability = candidateFeatures[6u];
   let ownVersatility = candidateFeatures[7u];
 
-  // 各スレッドが別テンプレを担当する。現在は21編成なので1回の評価で完了する。
-  for (var templateIndex = lane; templateIndex < params.templateCount; templateIndex += ${WORKGROUP_SIZE}u) {
+  // 候補ごとに21テンプレ×1024通りを分担し、発動の揺れを含む8ターン概算を行う。
+  let jobCount = params.templateCount * ${AI_GPU_SCREEN_SCENARIOS}u;
+  for (var jobIndex = lane; jobIndex < jobCount; jobIndex += ${WORKGROUP_SIZE}u) {
+    let templateIndex = jobIndex % params.templateCount;
+    let scenarioIndex = jobIndex / params.templateCount;
     let templateBase = templateIndex * params.featureCount;
     let enemyPhysical = templates[templateBase + 0u];
     let enemyStrategy = templates[templateBase + 1u];
@@ -84,7 +100,39 @@ fn main(
     let utilityEdge = (ownControl - enemyControl) * 0.050
       + (ownReliability - enemyReliability) * 0.035
       + (ownVersatility - enemyVersatility) * 0.025;
-    totalScore += clamp(50.0 + pressureEdge + speedEdge + utilityEdge, 0.0, 100.0);
+    var scenarioScore = 50.0 + pressureEdge + speedEdge + utilityEdge;
+
+    let ownProcChance = clamp(0.28 + ownReliability * 0.0018, 0.18, 0.92);
+    let enemyProcChance = clamp(0.28 + enemyReliability * 0.0018, 0.18, 0.92);
+    let ownControlChance = clamp(ownControl * 0.0012, 0.0, 0.55);
+    let enemyControlChance = clamp(enemyControl * 0.0012, 0.0, 0.55);
+    let ownRoundValue = 0.8 + ownVersatility * 0.0025 + ownSustain * 0.0015;
+    let enemyRoundValue = 0.8 + enemyVersatility * 0.0025 + enemySustain * 0.0015;
+
+    for (var turn = 0u; turn < ${APPROXIMATE_TURNS}u; turn += 1u) {
+      let baseSeed = candidateIndex * 747796405u
+        + templateIndex * 2891336453u
+        + scenarioIndex * 277803737u
+        + turn * 1402946737u;
+      let ownProc = random01(baseSeed + 1u);
+      let enemyProc = random01(baseSeed + 2u);
+      let ownControlRoll = random01(baseSeed + 3u);
+      let enemyControlRoll = random01(baseSeed + 4u);
+
+      if (ownProc < ownProcChance) {
+        scenarioScore += ownRoundValue;
+      }
+      if (enemyProc < enemyProcChance) {
+        scenarioScore -= enemyRoundValue;
+      }
+      if (ownControlRoll < ownControlChance) {
+        scenarioScore += 0.9;
+      }
+      if (enemyControlRoll < enemyControlChance) {
+        scenarioScore -= 0.9;
+      }
+    }
+    totalScore += clamp(scenarioScore, 0.0, 100.0);
   }
 
   partialScores[lane] = totalScore;
@@ -104,7 +152,7 @@ fn main(
   }
 
   if (lane == 0u) {
-    scores[candidateIndex] = partialScores[0u] / max(1.0, f32(params.templateCount));
+    scores[candidateIndex] = partialScores[0u] / max(1.0, f32(jobCount));
   }
 }
 `

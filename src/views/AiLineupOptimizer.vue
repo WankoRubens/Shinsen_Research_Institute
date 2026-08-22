@@ -290,7 +290,11 @@ import { isAiSkillCompatibleWithStats } from '../lib/aiSkillCompatibility'
 import { autoAllocatedHeroStats } from '../lib/aiHeroStatAllocation'
 import { heroLevel50Stats } from '../lib/heroStats'
 import { AiOptimizerWorkerPool, recommendedAiWorkerCount } from '../lib/aiOptimizerWorkerPool'
-import { AI_GPU_SCREEN_CHUNK_SIZE, AiOptimizerGpuScreener } from '../lib/aiOptimizerGpuScreener'
+import {
+  AI_GPU_SCREEN_CHUNK_SIZE,
+  AI_GPU_SCREEN_SCENARIOS,
+  AiOptimizerGpuScreener,
+} from '../lib/aiOptimizerGpuScreener'
 import {
   aiBingxuePatternsForHero,
   aiBingxuePatternCountForHero,
@@ -507,7 +511,7 @@ const canOptimize = computed(() =>
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
 const screeningBackendLabel = computed(() => {
-  if (screeningBackend.value === 'gpu') return 'WebGPU'
+  if (screeningBackend.value === 'gpu') return `WebGPU（8ターン概算×${AI_GPU_SCREEN_SCENARIOS}通り）`
   if (screeningBackend.value === 'cpu') return 'CPU Worker'
   return 'GPU自動判定'
 })
