@@ -3688,6 +3688,31 @@ const logTroopStatBonus = (
   })
 }
 
+// 3名全員の勢力が同じ部隊へ、兵学より先に連携バフを一度だけ適用する。
+const applyFactionCoordinationBonus = (
+  fighters: BattleFighter[],
+  logs: BattleLogEntry[],
+  label: string,
+): void => {
+  if (fighters.length !== 3) return
+  const factions = fighters.map((fighter) => fighter.faction.normalize('NFKC').trim())
+  if (factions.some((faction) => !faction) || new Set(factions).size !== 1) return
+
+  fighters.forEach((fighter) => {
+    CORE_STATS.forEach((stat) => {
+      fighter.baseStats[stat] = Math.round((fighter.baseStats[stat] ?? 0) * 1.07 * 100) / 100
+    })
+    fighter.specialState.factionCoordinationApplied = 1
+  })
+
+  if (logs !== NO_LOGS) logs.push({
+    turn: 0,
+    side: fighters[0].side,
+    effect: '連携バフ',
+    message: `${label}連携バフ: ${factions[0]}勢力の3名編成 / 全属性+7%`,
+  })
+}
+
 export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options: BattleOptions): BattleResult => {
   const rng = makeRng(`${options.seed}:${allyLineup.name}:${enemyLineup.name}`)
   const ally = makeSide('ally', allyLineup, options.allyTroopAffinity ?? 'neutral')
@@ -3721,6 +3746,9 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
   if (logs !== NO_LOGS) logs.push({ turn: 0, side: 'system', message: `${allyLineup.name} vs ${enemyLineup.name} 開始` })
   logTroopStatBonus(logs, '自軍', ally)
   logTroopStatBonus(logs, '敵軍', enemy)
+  // 連携バフは兵学より前に判定し、以後の属性依存効果から参照できるようにする。
+  applyFactionCoordinationBonus(ally, logs, '自軍')
+  applyFactionCoordinationBonus(enemy, logs, '敵軍')
   // 特性は、兵学および準備ターンに発動する全戦法より先に適用する。
   ;[
     { fighters: ally, allies: ally },
