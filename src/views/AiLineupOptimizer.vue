@@ -75,20 +75,37 @@
             <el-segmented
               v-model="candidatePoolMode"
               :options="candidatePoolOptions"
+              :disabled="running"
               @change="handleCandidatePoolChange"
             />
           </label>
           <label>
+            <span>探索方法</span>
+            <el-segmented
+              v-model="searchSampleMode"
+              :options="searchSampleModeOptions"
+              :disabled="running"
+              @change="clearOptimizerResults"
+            />
+          </label>
+          <label>
             <span>探索サンプル数</span>
-            <el-input-number v-model="sampleCount" :min="1" :max="5000" controls-position="right" />
+            <el-input-number
+              v-model="sampleCount"
+              :min="1"
+              :max="5000"
+              :disabled="running || searchSampleMode === 'all'"
+              controls-position="right"
+              @change="clearOptimizerResults"
+            />
           </label>
           <label>
             <span>一次試行 / テンプレ</span>
-            <el-input-number v-model="scoutRuns" :min="1" :max="200" controls-position="right" />
+            <el-input-number v-model="scoutRuns" :min="1" :max="200" :disabled="running" controls-position="right" />
           </label>
           <label>
             <span>最終試行 / テンプレ</span>
-            <el-input-number v-model="finalRuns" :min="10" :max="1000" controls-position="right" />
+            <el-input-number v-model="finalRuns" :min="10" :max="1000" :disabled="running" controls-position="right" />
           </label>
           <label>
             <span>指定武将の位置</span>
@@ -99,6 +116,7 @@
                 active-text="可変"
                 inactive-text="固定"
                 :width="58"
+                :disabled="running"
                 @change="clearOptimizerResults"
               />
             </div>
@@ -108,7 +126,7 @@
         <div class="status-row">
           <span>空き武将 {{ emptyHeroSlotCount }} 枠</span>
           <span>空き戦法 {{ emptySkillSlotCount }} 枠</span>
-          <span>評価対象 Tier 0・0.5・1</span>
+          <span>評価対象 Tier 0・0.5</span>
           <span>テンプレ {{ templateTeams.length }} 編成</span>
           <span>武勇・知略差40以上は低い能力だけに依存する戦法を除外</span>
           <span>推定全組み合わせ {{ formatLargeNumber(estimatedCombinations) }}</span>
@@ -117,9 +135,12 @@
             「{{ unsupportedFixedSkillNames.join('、') }}」は戦法一覧で実装済みではないため使用できません。
           </span>
           <span v-if="!hasEnoughCandidates" class="warning">空き枠を埋める候補が不足しています。</span>
-          <span v-else>
+          <span v-else-if="searchSampleMode === 'sample'">
             {{ candidatePoolMode === 'owned' ? '所持中のS武将と実装済みS/A戦法' : 'S武将全体と実装済みS/A戦法全体' }}から
             ランダムに {{ formatNumber(sampleCount) }} 組を探索します。
+          </span>
+          <span v-else>
+            条件を満たす全組み合わせを探索します（推定上限 {{ formatLargeNumber(estimatedCombinations) }} 組）。
           </span>
         </div>
       </section>
@@ -278,6 +299,7 @@ const {
   finalRuns,
   reorderFixedHeroes,
   candidatePoolMode,
+  searchSampleMode,
 } = useAiLineupOptimizerState()
 const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs } = useInventory()
 const seedTroopLevels = useTroopLevels(computed(() => seedTeam))
@@ -291,11 +313,16 @@ const skillPickerVisible = ref(false)
 const emptyConflictSet = new Set<string>()
 const autoBreakthrough = 5
 const finalistCount = 8
-const AI_TEMPLATE_TIERS = new Set(['tier0', 'tier05', 'tier1'])
+const AI_TEMPLATE_TIERS = new Set(['tier0', 'tier05'])
+const AI_TEMPLATE_LIMIT = 21
 const MATCHUPS_PER_BROWSER_YIELD = 4
 const candidatePoolOptions = [
   { label: '所持のみ', value: 'owned' },
   { label: 'すべて', value: 'all' },
+]
+const searchSampleModeOptions = [
+  { label: '数値指定', value: 'sample' },
+  { label: '全通り', value: 'all' },
 ]
 
 const clearOptimizerResults = (): void => {
@@ -380,9 +407,10 @@ const skillCandidates = computed(() =>
     .sort((a, b) => skillCandidateScore(b) - skillCandidateScore(a) || skillName(a).localeCompare(skillName(b), 'ja'))
 )
 
-// AI探索では環境上位のTier 0からTier 1までを評価対象にする。
+// AI探索では、データの並び順で上位にあるTier 0・0.5の21編成だけを評価対象にする。
 const templateTeams = computed(() => enemyFormations.value
   .filter((formation) => AI_TEMPLATE_TIERS.has(formation.tier ?? ''))
+  .slice(0, AI_TEMPLATE_LIMIT)
   .map((formation) => ({
     formation,
     lineup: lineupFromTemplate(formation),
@@ -390,10 +418,12 @@ const templateTeams = computed(() => enemyFormations.value
 
 const estimatedCombinations = computed(() => {
   const fixedRoleCountValue = fixedRoleCount.value
-  const rolePatternCount = permutationCount(roleKeys.length, fixedRoleCountValue)
+  const rolePatternCount = reorderFixedHeroes.value
+    ? permutationCount(roleKeys.length, fixedRoleCountValue)
+    : 1
   const heroCount = permutationCount(heroCandidates.value.length, emptyHeroSlotCount.value)
   const skillCount = permutationCount(skillCandidates.value.length, emptySkillSlotCount.value)
-  return Math.max(1, rolePatternCount) * Math.max(1, heroCount) * Math.max(1, skillCount)
+  return cappedProduct([rolePatternCount, heroCount, skillCount].map((value) => Math.max(1, value)))
 })
 
 const hasEnoughCandidates = computed(() =>
@@ -413,7 +443,10 @@ const resultHeading = computed(() => {
   if (resultPhase.value === 'done') return '最終評価 上位 3 組'
   return '勝率上位 3 組'
 })
-const progressLabel = computed(() => resultPhase.value === 'final' ? '最終再評価' : '一次探索')
+const progressLabel = computed(() => {
+  if (resultPhase.value === 'final') return '最終再評価'
+  return searchSampleMode.value === 'all' ? '全通り探索' : '一次探索'
+})
 
 const setHero = (role: RoleKey, value: string) => {
   const hero = heroByKey.value.get(value) ?? null
@@ -468,18 +501,30 @@ const runOptimizer = async () => {
   progress.done = 0
   progress.total = 0
   try {
-    const candidates = buildMonteCarloLineups(sampleCount.value)
-    progress.total = candidates.length
+    // 数値指定はランダム候補、全通りは条件を満たす候補を遅延列挙する。
+    // 全通りで巨大な候補配列を先に作らないため、メモリ使用量を抑えたまま1組ずつ評価できる。
+    const candidates: Iterable<Lineup> = searchSampleMode.value === 'sample'
+      ? buildMonteCarloLineups(sampleCount.value)
+      : buildAllCandidateLineups()
+    progress.total = searchSampleMode.value === 'sample'
+      ? (candidates as Lineup[]).length
+      : estimatedCombinations.value
 
     const scoutResults: AiOptimizerResult[] = []
-    for (const [index, lineup] of candidates.entries()) {
+    let candidateIndex = 0
+    for (const lineup of candidates) {
+      const index = candidateIndex
+      candidateIndex += 1
       scoutResults.push(await evaluateLineup(lineup, scoutRuns.value, `scout-${index}`))
-      progress.done = index + 1
+      progress.done = candidateIndex
       // 1組の評価が終わるたびに、現時点の上位候補を画面へ反映する。
       topResults.value = rankedTopResults(scoutResults)
       await nextTick()
       await waitForPaint()
     }
+
+    // 全通りでは能力適性や兵種・陣法重複の制約で上限より候補が減るため、完了時に実数へ合わせる。
+    if (searchSampleMode.value === 'all') progress.total = progress.done
 
     const finalists = [...scoutResults]
       .sort(compareOptimizerResults)
@@ -568,6 +613,141 @@ const buildMonteCarloLineups = (count: number): Lineup[] => {
     lineups.push(lineup)
   }
   return lineups
+}
+
+// 固定条件と候補条件を満たす編成を、配列へ溜めず1組ずつ全列挙する。
+function* buildAllCandidateLineups(): Generator<Lineup> {
+  // 探索開始時点の候補を固定し、実行中に画面設定が変わっても列挙内容を変えない。
+  const heroes = [...heroCandidates.value]
+  const skills = [...skillCandidates.value]
+  let index = 0
+
+  // 指定武将の配置パターンを順に作る。
+  for (const placedTeam of fixedHeroPlacementLineups()) {
+    // 残りの武将枠へ、重複なしですべての武将順列を入れる。
+    for (const heroTeam of fillAllHeroSlots(placedTeam, heroes)) {
+      normalizeExclusiveTeamSkills(heroTeam)
+      // 残りの戦法枠へ、能力適性と兵種・陣法の制約を満たすすべての戦法順列を入れる。
+      for (const completedTeam of fillAllSkillSlots(heroTeam, skills)) {
+        index += 1
+        completedTeam.name = `AI候補 ${index}`
+        yield completedTeam
+      }
+    }
+  }
+}
+
+// 指定済み武将を、位置固定なら元の枠へ、位置可変なら主将・副将の全配置へ展開する。
+function* fixedHeroPlacementLineups(): Generator<Lineup> {
+  if (!reorderFixedHeroes.value) {
+    const team = emptyLineup('AI探索編成')
+    roleKeys.forEach((role) => {
+      if (seedTeam[role].hero) team[role] = cloneRole(seedTeam[role])
+    })
+    yield team
+    return
+  }
+
+  const fixedBlocks = roleKeys
+    .map((role) => seedTeam[role])
+    .filter((role) => role.hero)
+    .map((role) => cloneRole(role))
+
+  for (const assignedRoles of orderedSelections(roleKeys, fixedBlocks.length)) {
+    const team = emptyLineup('AI探索編成')
+    fixedBlocks.forEach((block, index) => {
+      const role = assignedRoles[index]
+      if (role) team[role] = cloneRole(block)
+    })
+    yield team
+  }
+}
+
+// 空いている武将枠へ、候補武将を重複なしで全通り割り当てる。
+function* fillAllHeroSlots(team: Lineup, candidates: Hero[]): Generator<Lineup> {
+  const emptyRoles = roleKeys.filter((role) => !team[role].hero)
+  const working = cloneLineup(team)
+
+  function* visit(slotIndex: number, available: Hero[]): Generator<Lineup> {
+    if (slotIndex >= emptyRoles.length) {
+      yield cloneLineup(working)
+      return
+    }
+
+    const role = emptyRoles[slotIndex]
+    if (!role) return
+    for (const [candidateIndex, hero] of available.entries()) {
+      working[role] = autoRole(hero)
+      const remaining = available.filter((_, index) => index !== candidateIndex)
+      yield* visit(slotIndex + 1, remaining)
+    }
+    working[role] = emptyRole()
+  }
+
+  yield* visit(0, candidates)
+}
+
+// 空いている戦法枠へ、候補戦法を重複なし・能力適性ありで全通り割り当てる。
+function* fillAllSkillSlots(team: Lineup, candidates: Skill[]): Generator<Lineup> {
+  const working = cloneLineup(team)
+  const slots = roleKeys.flatMap((role) =>
+    skillSlotKeys
+      .filter((slot) => working[role].hero && !working[role][slot])
+      .map((slot) => ({ role, slot })),
+  )
+  const usedSkills = new Set(roleKeys.flatMap((role) => [working[role].skill1, working[role].skill2])
+    .filter(Boolean)
+    .map((skill) => skillIdentity(skill as Skill)))
+  const exclusiveTypes = new Set(roleKeys.flatMap((role) => [working[role].skill1, working[role].skill2])
+    .filter(Boolean)
+    .filter((skill) => isExclusiveTeamSkillType(skill as Skill))
+    .map((skill) => battleSkillType(skill as Skill)))
+
+  function* visit(slotIndex: number): Generator<Lineup> {
+    if (slotIndex >= slots.length) {
+      yield cloneLineup(working)
+      return
+    }
+
+    const slot = slots[slotIndex]
+    if (!slot) return
+    const roleStats = working[slot.role].stats
+    for (const skill of candidates) {
+      const key = skillIdentity(skill)
+      const type = battleSkillType(skill)
+      if (usedSkills.has(key)) continue
+      if (!isAiSkillCompatibleWithStats(skill, Number(roleStats.val), Number(roleStats.int))) continue
+      if (isExclusiveTeamSkillType(skill) && exclusiveTypes.has(type)) continue
+
+      working[slot.role][slot.slot] = skill
+      usedSkills.add(key)
+      if (isExclusiveTeamSkillType(skill)) exclusiveTypes.add(type)
+
+      yield* visit(slotIndex + 1)
+
+      working[slot.role][slot.slot] = null
+      usedSkills.delete(key)
+      if (isExclusiveTeamSkillType(skill)) exclusiveTypes.delete(type)
+    }
+  }
+
+  yield* visit(0)
+}
+
+// n個から重複なしでr個を選ぶ順列を、全パターン返す。
+function* orderedSelections<T>(items: T[], count: number): Generator<T[]> {
+  if (count <= 0) {
+    yield []
+    return
+  }
+  if (items.length < count) return
+
+  for (const [index, item] of items.entries()) {
+    const remaining = items.filter((_, candidateIndex) => candidateIndex !== index)
+    for (const tail of orderedSelections(remaining, count - 1)) {
+      yield [item, ...tail]
+    }
+  }
 }
 
 const randomCandidateLineup = (index: number): Lineup | null => {
@@ -818,7 +998,20 @@ const permutationCount = (n: number, r: number): number => {
   if (r <= 0) return 1
   if (n < r) return 0
   let total = 1
-  for (let i = 0; i < r; i += 1) total *= n - i
+  for (let i = 0; i < r; i += 1) {
+    const factor = n - i
+    if (total > Number.MAX_SAFE_INTEGER / factor) return Number.MAX_SAFE_INTEGER
+    total *= factor
+  }
+  return total
+}
+
+const cappedProduct = (values: number[]): number => {
+  let total = 1
+  for (const value of values) {
+    if (total > Number.MAX_SAFE_INTEGER / value) return Number.MAX_SAFE_INTEGER
+    total *= value
+  }
   return total
 }
 
@@ -830,7 +1023,10 @@ const heroName = (hero: Hero | null): string => hero?.name_jp || hero?.name || '
 const skillName = (skill: Skill | null): string => skill?.name_jp || skill?.name || '未設定'
 const teamCost = (team: Lineup): number => roleKeys.reduce((sum, role) => sum + (team[role].hero?.cost ?? 0), 0)
 const formatNumber = (value: number): string => Math.round(value).toLocaleString()
-const formatLargeNumber = (value: number): string => value >= 1_000_000_000 ? value.toExponential(2) : formatNumber(value)
+const formatLargeNumber = (value: number): string => {
+  if (value >= Number.MAX_SAFE_INTEGER) return `${Number.MAX_SAFE_INTEGER.toExponential(2)}以上`
+  return value >= 1_000_000_000 ? value.toExponential(2) : formatNumber(value)
+}
 const formatPercent = (value: number): string => `${(value * 100).toFixed(1)}%`
 const lineupSignature = (lineup: Lineup): string => [
   lineup.troopType ?? '',

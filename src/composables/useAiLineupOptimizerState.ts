@@ -23,6 +23,7 @@ export interface AiOptimizerResult {
 
 export type AiOptimizerPhase = 'idle' | 'scout' | 'final' | 'done'
 export type AiCandidatePoolMode = 'owned' | 'all'
+export type AiSearchSampleMode = 'sample' | 'all'
 
 export const emptyAiOptimizerRole = (): RoleData => ({
   hero: null,
@@ -50,6 +51,7 @@ const scoutRuns = ref(20)
 const finalRuns = ref(100)
 const reorderFixedHeroes = ref(true)
 const candidatePoolMode = ref<AiCandidatePoolMode>('all')
+const searchSampleMode = ref<AiSearchSampleMode>('sample')
 
 export function useAiLineupOptimizerState() {
   return {
@@ -63,5 +65,6 @@ export function useAiLineupOptimizerState() {
     finalRuns,
     reorderFixedHeroes,
     candidatePoolMode,
+    searchSampleMode,
   }
 }
