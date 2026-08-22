@@ -3,7 +3,7 @@
     :model-value="modelValue"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
     title="戦法を選択"
-    width="min(760px, 94vw)"
+    width="min(760px, calc(100vw - 16px))"
     class="skill-select-dialog"
     align-center
     append-to-body

@@ -284,7 +284,14 @@
       <el-empty v-else description="自軍編成と敵軍編成を作成して、模擬対戦を実行してください。" />
     </div>
 
-    <el-dialog v-model="heroPickerVisible" title="武将を選択" width="920px" class="sim-picker-dialog" append-to-body>
+    <el-dialog
+      v-model="heroPickerVisible"
+      title="武将を選択"
+      width="min(920px, calc(100vw - 16px))"
+      class="sim-picker-dialog"
+      align-center
+      append-to-body
+    >
       <div class="picker-body">
         <HeroLibrary
           mode="select"
@@ -298,7 +305,14 @@
       </div>
     </el-dialog>
 
-    <el-dialog v-model="skillPickerVisible" title="戦法を選択" width="760px" class="sim-picker-dialog" append-to-body>
+    <el-dialog
+      v-model="skillPickerVisible"
+      title="戦法を選択"
+      width="min(760px, calc(100vw - 16px))"
+      class="sim-picker-dialog"
+      align-center
+      append-to-body
+    >
       <div class="picker-body">
         <SkillLibrary
           mode="select"

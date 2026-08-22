@@ -11,3 +11,81 @@
     --color-brand: 192 147 39;
   }
 }
+
+/*
+ * 武将・戦法選択は複数ページからbody直下へ移動されるため、ここで共通管理する。
+ * ダイアログ全体は画面内に固定し、絞り込みを残したまま一覧部分だけをスクロールさせる。
+ */
+.el-dialog.sim-picker-dialog,
+.el-dialog.hero-select-dialog,
+.el-dialog.skill-select-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(920px, calc(100vw - 16px)) !important;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  margin: 8px auto !important;
+  overflow: hidden;
+}
+
+.el-dialog.skill-select-dialog {
+  width: min(760px, calc(100vw - 16px)) !important;
+}
+
+.sim-picker-dialog .el-dialog__header,
+.hero-select-dialog .el-dialog__header,
+.skill-select-dialog .el-dialog__header {
+  flex: 0 0 auto;
+  padding: 14px 16px 10px;
+}
+
+.sim-picker-dialog .el-dialog__body,
+.hero-select-dialog .el-dialog__body,
+.skill-select-dialog .el-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px 12px 12px;
+  overflow: hidden;
+}
+
+.sim-picker-dialog .picker-body,
+.hero-select-dialog .el-dialog__body > div,
+.skill-select-dialog .el-dialog__body > div {
+  display: flex;
+  width: 100%;
+  height: min(72dvh, 720px);
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .el-dialog.sim-picker-dialog,
+  .el-dialog.hero-select-dialog,
+  .el-dialog.skill-select-dialog {
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px);
+    max-height: calc(100dvh - 8px);
+    margin: 4px auto !important;
+    border-radius: 8px;
+  }
+
+  .sim-picker-dialog .el-dialog__header,
+  .hero-select-dialog .el-dialog__header,
+  .skill-select-dialog .el-dialog__header {
+    padding: 12px 12px 8px;
+  }
+
+  .sim-picker-dialog .el-dialog__body,
+  .hero-select-dialog .el-dialog__body,
+  .skill-select-dialog .el-dialog__body {
+    padding: 4px 6px 8px;
+  }
+
+  .sim-picker-dialog .picker-body,
+  .hero-select-dialog .el-dialog__body > div,
+  .skill-select-dialog .el-dialog__body > div {
+    height: calc(100dvh - 64px) !important;
+    min-height: 0 !important;
+  }
+}

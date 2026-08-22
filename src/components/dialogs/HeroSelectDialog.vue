@@ -3,7 +3,7 @@
     :model-value="modelValue"
     @update:model-value="(value: boolean) => $emit('update:modelValue', value)"
     title="武将を選択"
-    width="min(920px, 94vw)"
+    width="min(920px, calc(100vw - 16px))"
     class="hero-select-dialog"
     align-center
     append-to-body
