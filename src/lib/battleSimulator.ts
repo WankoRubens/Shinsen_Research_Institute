@@ -85,10 +85,13 @@ export type BattleTroopAffinity = 'advantage' | 'neutral' | 'disadvantage'
 
 export const BATTLE_TURN_LIMIT = 8
 const BASE_TROOPS = 10000
+const NO_SKILL_STATS = new Map<string, SkillBattleStat>()
 
 export interface BattleOptions {
   seed: string
   collectLogs?: boolean
+  // AI探索では表示用集計を作らず、勝敗と残存兵力だけを計算する。
+  summaryOnly?: boolean
   allyTroopAffinity?: BattleTroopAffinity
   enemyTroopAffinity?: BattleTroopAffinity
 }
@@ -261,6 +264,23 @@ export interface BattleBatchResult {
   metrics: BattleScoreMetrics
   turnStats: BattleTurnStat[]
   controlStats: Record<string, number>
+}
+
+// AI探索専用の軽量結果。グラフ・戦法別集計を持たないためWorker間の転送も小さい。
+export interface BattleScoreBatchResult {
+  runs: number
+  allyWins: number
+  enemyWins: number
+  draws: number
+  allyWinRate: number
+  enemyWinRate: number
+  drawRate: number
+  averageAllyHp: number
+  averageEnemyHp: number
+  allyMaxHp: number
+  enemyMaxHp: number
+  exchangeRatio: number
+  scoreValue: number
 }
 
 const ROLE_LABELS: Record<BattleFighter['role'], string> = {
@@ -566,12 +586,15 @@ const ensureSkillStat = (stats: SkillStatMap, caster: BattleFighter, skill: Skil
 }
 
 const recordActivation = (stats: SkillStatMap, caster: BattleFighter, skill: Skill) => {
+  if (stats === NO_SKILL_STATS) return
   ensureSkillStat(stats, caster, skill).activations += 1
 }
 const recordDamage = (stats: SkillStatMap, caster: BattleFighter, skill: Skill, amount: number) => {
+  if (stats === NO_SKILL_STATS) return
   ensureSkillStat(stats, caster, skill).damage += amount
 }
 const recordHealing = (stats: SkillStatMap, caster: BattleFighter, skill: Skill, amount: number) => {
+  if (stats === NO_SKILL_STATS) return
   ensureSkillStat(stats, caster, skill).healing += amount
 }
 
@@ -3671,7 +3694,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
   const enemy = makeSide('enemy', enemyLineup, options.enemyTroopAffinity ?? 'neutral')
   const collectLogs = options.collectLogs !== false
   const logs: BattleLogEntry[] = collectLogs ? [] : NO_LOGS
-  const skillStats = new Map<string, SkillBattleStat>()
+  const skillStats = options.summaryOnly ? NO_SKILL_STATS : new Map<string, SkillBattleStat>()
   const turnStats: BattleTurnStat[] = []
   const controlStats: Record<string, number> = {}
   let finalTurn = 0
@@ -4383,7 +4406,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
     turnStat.enemyHp = sideHp(enemy)
     turnStat.allyMembers = ally.map((fighter) => Math.max(0, fighter.hp))
     turnStat.enemyMembers = enemy.map((fighter) => Math.max(0, fighter.hp))
-    turnStats.push(turnStat)
+    if (!options.summaryOnly) turnStats.push(turnStat)
 
     if (living(enemy).length === 0 || living(ally).length === 0) break
   }
@@ -4406,7 +4429,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
     ally,
     enemy,
     logs: collectLogs ? logs : [],
-    skillStats: [...skillStats.values()],
+    skillStats: options.summaryOnly ? [] : [...skillStats.values()],
     turnStats,
     controlStats,
     summary: {
@@ -4582,6 +4605,72 @@ export const simulateBattleBatch = (
     metrics,
     turnStats,
     controlStats,
+  }
+}
+
+// AI探索では勝敗・兵力交換比だけを使う。戦法別統計やターングラフを集計しないことで、
+// 大量試行時のMap更新・配列生成・Worker転送を省く。
+export const simulateBattleScoreBatch = (
+  allyLineup: Lineup,
+  enemyLineup: Lineup,
+  options: BattleOptions & { runs?: number },
+): BattleScoreBatchResult => {
+  const runs = Math.max(1, Math.floor(options.runs ?? 1))
+  let allyWins = 0
+  let enemyWins = 0
+  let draws = 0
+  let totalAllyHp = 0
+  let totalEnemyHp = 0
+  let allyMaxHp = 0
+  let enemyMaxHp = 0
+
+  // 同じ候補は同じ乱数列で比較し、少ない試行でも編成差を見つけやすくする。
+  for (let index = 0; index < runs; index += 1) {
+    const result = simulateBattle(allyLineup, enemyLineup, {
+      ...options,
+      collectLogs: false,
+      summaryOnly: true,
+      seed: `${options.seed}-${index}`,
+    })
+    if (result.summary.outcome === 'ally') allyWins += 1
+    else if (result.summary.outcome === 'enemy') enemyWins += 1
+    else draws += 1
+    totalAllyHp += result.summary.allyHp
+    totalEnemyHp += result.summary.enemyHp
+    allyMaxHp = result.summary.allyMaxHp
+    enemyMaxHp = result.summary.enemyMaxHp
+  }
+
+  const averageAllyHp = totalAllyHp / runs
+  const averageEnemyHp = totalEnemyHp / runs
+  const allyLoss = Math.max(1, allyMaxHp - averageAllyHp)
+  const enemyLoss = Math.max(0, enemyMaxHp - averageEnemyHp)
+  const exchangeRatio = enemyLoss / allyLoss
+  const allyWinRate = allyWins / runs
+  const drawRate = draws / runs
+  const survivalRate = allyMaxHp > 0 ? averageAllyHp / allyMaxHp : 0
+  const exchangeScore = clamp(exchangeRatio / 2.4, 0, 1)
+  const scoreValue = Math.round(
+    allyWinRate * 55
+    + drawRate * 10
+    + exchangeScore * 20
+    + survivalRate * 15,
+  )
+
+  return {
+    runs,
+    allyWins,
+    enemyWins,
+    draws,
+    allyWinRate,
+    enemyWinRate: enemyWins / runs,
+    drawRate,
+    averageAllyHp,
+    averageEnemyHp,
+    allyMaxHp,
+    enemyMaxHp,
+    exchangeRatio,
+    scoreValue,
   }
 }
 

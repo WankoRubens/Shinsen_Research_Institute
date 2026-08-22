@@ -114,7 +114,7 @@ const routes: RouteRecordRaw[] = [
         component: AiLineupOptimizer,
         meta: {
           title: 'AI編成',
-          description: '固定した武将・戦法をもとに、空き枠の組み合わせを総当たりで探索します。',
+          description: '固定した武将・戦法をもとに、並列計算と段階評価で有力な組み合わせを探索します。',
         },
       }),
       ...publishedRoute('settings', {

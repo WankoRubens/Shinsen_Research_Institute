@@ -93,7 +93,7 @@
             <el-input-number
               v-model="sampleCount"
               :min="1"
-              :max="5000"
+              :max="100000"
               :disabled="running || searchSampleMode === 'all'"
               controls-position="right"
               @change="clearOptimizerResults"
@@ -128,6 +128,8 @@
           <span>空き戦法 {{ emptySkillSlotCount }} 枠</span>
           <span>評価対象 Tier 0・0.5</span>
           <span>テンプレ {{ templateTeams.length }} 編成</span>
+          <span>並列Worker {{ aiWorkerCount }} 個</span>
+          <span>段階評価・上位周辺探索・軽量戦闘を使用</span>
           <span>武勇・知略差40以上は低い能力だけに依存する戦法を除外</span>
           <span>推定全組み合わせ {{ formatLargeNumber(estimatedCombinations) }}</span>
           <span>{{ reorderFixedHeroes ? '指定武将も主将/副将の配置替えを試行' : '指定武将の主将/副将位置を固定' }}</span>
@@ -251,6 +253,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue'
 import { VideoPlay } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
@@ -264,14 +267,16 @@ import {
   useAiLineupOptimizerState,
   type AiOptimizerResult,
 } from '../composables/useAiLineupOptimizerState'
-import {
-  simulateBattleBatch,
-  type BattleBatchResult,
-} from '../lib/battleSimulator'
 import { battleSkillImplementation, battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { isAiSkillCompatibleWithStats } from '../lib/aiSkillCompatibility'
 import { autoAllocatedHeroStats } from '../lib/aiHeroStatAllocation'
 import { heroLevel50Stats } from '../lib/heroStats'
+import { AiOptimizerWorkerPool, recommendedAiWorkerCount } from '../lib/aiOptimizerWorkerPool'
+import {
+  snapshotAiLineup,
+  type AiWorkerEvaluationResult,
+  type AiWorkerTemplate,
+} from '../lib/aiOptimizerWorkerTypes'
 import { normalizeTroopType } from '../constants/traits'
 import type { TroopType } from '../constants/traits'
 
@@ -315,7 +320,13 @@ const autoBreakthrough = 5
 const finalistCount = 8
 const AI_TEMPLATE_TIERS = new Set(['tier0', 'tier05'])
 const AI_TEMPLATE_LIMIT = 21
-const MATCHUPS_PER_BROWSER_YIELD = 4
+const SCREEN_RUN_LIMIT = 3
+const MAX_SCREEN_SURVIVORS = 1000
+const MAX_REFINED_SURVIVORS = 200
+const MAX_NEIGHBOR_CANDIDATES = 10000
+const PARALLEL_QUEUE_MULTIPLIER = 2
+const aiWorkerCount = recommendedAiWorkerCount()
+const evaluationCache = new Map<string, AiWorkerEvaluationResult>()
 const candidatePoolOptions = [
   { label: '所持のみ', value: 'owned' },
   { label: 'すべて', value: 'all' },
@@ -416,6 +427,8 @@ const templateTeams = computed(() => enemyFormations.value
     lineup: lineupFromTemplate(formation),
   })))
 
+const allTemplateIds = computed(() => templateTeams.value.map(({ formation }) => formation.id))
+
 const estimatedCombinations = computed(() => {
   const fixedRoleCountValue = fixedRoleCount.value
   const rolePatternCount = reorderFixedHeroes.value
@@ -438,14 +451,18 @@ const canOptimize = computed(() =>
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
 const resultHeading = computed(() => {
-  if (resultPhase.value === 'scout') return '一次探索中'
+  if (resultPhase.value === 'screen') return '21編成を少数試行で段階評価中'
+  if (resultPhase.value === 'scout') return '一次候補を21編成で再評価中'
+  if (resultPhase.value === 'neighbor') return '上位編成の周辺を探索中'
   if (resultPhase.value === 'final') return '一次結果を表示中 / 上位を最終再評価中'
   if (resultPhase.value === 'done') return '最終評価 上位 3 組'
   return '勝率上位 3 組'
 })
 const progressLabel = computed(() => {
   if (resultPhase.value === 'final') return '最終再評価'
-  return searchSampleMode.value === 'all' ? '全通り探索' : '一次探索'
+  if (resultPhase.value === 'neighbor') return '周辺探索'
+  if (resultPhase.value === 'scout') return '21編成評価'
+  return searchSampleMode.value === 'all' ? '全通り一次選別' : 'モンテカルロ一次選別'
 })
 
 const setHero = (role: RoleKey, value: string) => {
@@ -497,122 +514,268 @@ const runOptimizer = async () => {
   if (!canOptimize.value) return
   running.value = true
   topResults.value = []
-  resultPhase.value = 'scout'
+  resultPhase.value = 'screen'
   progress.done = 0
   progress.total = 0
+  let workerPool: AiOptimizerWorkerPool | null = null
   try {
-    // 数値指定はランダム候補、全通りは条件を満たす候補を遅延列挙する。
-    // 全通りで巨大な候補配列を先に作らないため、メモリ使用量を抑えたまま1組ずつ評価できる。
-    const candidates: Iterable<Lineup> = searchSampleMode.value === 'sample'
+    // Workerにはテンプレを起動時に一度だけ渡し、各候補は武将・戦法IDと属性値だけ送る。
+    const workerTemplates: AiWorkerTemplate[] = templateTeams.value.map(({ formation, lineup }) => ({
+      id: formation.id,
+      name: formation.name,
+      lineup: snapshotAiLineup(lineup),
+    }))
+    workerPool = new AiOptimizerWorkerPool(
+      aiWorkerCount,
+      heroes.value,
+      skills.value,
+      workerTemplates,
+    )
+
+    // 数値指定は重複を除いたモンテカルロ候補、全通りは候補を溜めず遅延列挙する。
+    const initialCandidates: Iterable<Lineup> = searchSampleMode.value === 'sample'
       ? buildMonteCarloLineups(sampleCount.value)
       : buildAllCandidateLineups()
-    progress.total = searchSampleMode.value === 'sample'
-      ? (candidates as Lineup[]).length
+    const initialTotal = searchSampleMode.value === 'sample'
+      ? sampleCount.value
       : estimatedCombinations.value
+    const screenKeep = Math.min(
+      MAX_SCREEN_SURVIVORS,
+      Math.max(finalistCount * 5, Math.ceil(Math.min(initialTotal, MAX_SCREEN_SURVIVORS * 10) * 0.1)),
+    )
+    const screenRuns = Math.max(1, Math.min(SCREEN_RUN_LIMIT, scoutRuns.value))
 
-    const scoutResults: AiOptimizerResult[] = []
-    let candidateIndex = 0
-    for (const lineup of candidates) {
-      const index = candidateIndex
-      candidateIndex += 1
-      scoutResults.push(await evaluateLineup(lineup, scoutRuns.value, `scout-${index}`))
-      progress.done = candidateIndex
-      // 1組の評価が終わるたびに、現時点の上位候補を画面へ反映する。
-      topResults.value = rankedTopResults(scoutResults)
-      await nextTick()
-      await waitForPaint()
+    // 第1段階は21編成すべてを少数試行し、明らかに弱い候補を早く除外する。
+    const screened = await evaluateCandidateStage(workerPool, initialCandidates, {
+      runs: screenRuns,
+      templateIds: allTemplateIds.value,
+      idPrefix: 'screen',
+      total: initialTotal,
+      keep: screenKeep,
+    })
+
+    // 第2段階は一次選別を通過した候補だけを、Tier 0・0.5の21編成で評価する。
+    resultPhase.value = 'scout'
+    const refined = await evaluateCandidateStage(workerPool, screened.map((result) => result.lineup), {
+      runs: scoutRuns.value,
+      templateIds: allTemplateIds.value,
+      idPrefix: 'scout',
+      total: screened.length,
+      keep: Math.min(MAX_REFINED_SURVIVORS, screened.length),
+    })
+
+    // 上位候補の武将または戦法を一部だけ変え、ランダム探索で見つけた山の周辺を掘る。
+    resultPhase.value = 'neighbor'
+    const neighborTarget = Math.min(
+      MAX_NEIGHBOR_CANDIDATES,
+      Math.max(100, Math.round((searchSampleMode.value === 'sample' ? initialTotal : sampleCount.value) * 0.2)),
+    )
+    const neighborCandidates = buildNeighborhoodLineups(refined, neighborTarget)
+    let neighborRefined: AiOptimizerResult[] = []
+    if (neighborCandidates.length > 0) {
+      const neighborScreened = await evaluateCandidateStage(workerPool, neighborCandidates, {
+        runs: screenRuns,
+        templateIds: allTemplateIds.value,
+        idPrefix: 'neighbor-screen',
+        total: neighborCandidates.length,
+        keep: Math.min(MAX_SCREEN_SURVIVORS, Math.max(finalistCount * 3, Math.ceil(neighborCandidates.length * 0.1))),
+      })
+      neighborRefined = await evaluateCandidateStage(workerPool, neighborScreened.map((result) => result.lineup), {
+        runs: scoutRuns.value,
+        templateIds: allTemplateIds.value,
+        idPrefix: 'neighbor',
+        total: neighborScreened.length,
+        keep: Math.min(MAX_REFINED_SURVIVORS, neighborScreened.length),
+      })
     }
 
-    // 全通りでは能力適性や兵種・陣法重複の制約で上限より候補が減るため、完了時に実数へ合わせる。
-    if (searchSampleMode.value === 'all') progress.total = progress.done
-
-    const finalists = [...scoutResults]
+    const finalists = uniqueOptimizerResults([...refined, ...neighborRefined])
       .sort(compareOptimizerResults)
       .slice(0, finalistCount)
-
     topResults.value = rankedTopResults(finalists)
     resultPhase.value = 'final'
-    progress.done = 0
-    progress.total = finalists.length
     await nextTick()
     await waitForPaint()
 
-    const finalResults = new Map<string, AiOptimizerResult>()
-    for (const [index, result] of finalists.entries()) {
-      const evaluated = await evaluateLineup(result.lineup, finalRuns.value, `final-${index}`)
-      finalResults.set(lineupSignature(result.lineup), evaluated)
-      progress.done = index + 1
-      // 未評価の候補は一次結果を残し、再評価が終わった候補から順次差し替える。
-      topResults.value = rankedTopResults(finalists.map((finalist) =>
-        finalResults.get(lineupSignature(finalist.lineup)) ?? finalist,
-      ))
-      await nextTick()
-      await waitForPaint()
-    }
-
-    topResults.value = rankedTopResults([...finalResults.values()])
+    // 最後に上位だけ試行数を増やし、少数試行の乱数ぶれを抑えて順位を確定する。
+    const finalResults = await evaluateCandidateStage(workerPool, finalists.map((result) => result.lineup), {
+      runs: finalRuns.value,
+      templateIds: allTemplateIds.value,
+      idPrefix: 'final',
+      total: finalists.length,
+      keep: finalists.length,
+    })
+    topResults.value = rankedTopResults(finalResults)
     resultPhase.value = 'done'
+  } catch (error) {
+    resultPhase.value = topResults.value.length > 0 ? resultPhase.value : 'idle'
+    ElMessage.error(error instanceof Error ? error.message : 'AI探索中にエラーが発生しました。')
   } finally {
+    workerPool?.destroy()
     running.value = false
   }
 }
 
-const evaluateLineup = async (lineup: Lineup, runs: number, idPrefix: string): Promise<AiOptimizerResult> => {
-  const matchupResults: Array<{ formation: EnemyFormation; result: BattleBatchResult }> = []
-  for (const [index, { formation, lineup: enemy }] of templateTeams.value.entries()) {
-    const result = simulateBattleBatch(lineup, enemy, {
-      seed: `${idPrefix}-${formation.id}`,
-      runs,
-    })
-    matchupResults.push({ formation, result })
+interface EvaluationStageOptions {
+  runs: number
+  templateIds: string[]
+  idPrefix: string
+  total: number
+  keep: number
+}
 
-    // 長い1候補の評価中も定期的にブラウザへ制御を返し、操作不能を防ぐ。
-    if ((index + 1) % MATCHUPS_PER_BROWSER_YIELD === 0) await yieldToBrowser()
+const evaluateCandidateStage = async (
+  pool: AiOptimizerWorkerPool,
+  candidates: Iterable<Lineup>,
+  options: EvaluationStageOptions,
+): Promise<AiOptimizerResult[]> => {
+  progress.done = 0
+  progress.total = options.total
+  const retained: AiOptimizerResult[] = []
+  const stageSeen = new Set<string>()
+  const inFlight = new Set<Promise<void>>()
+  const queueLimit = Math.max(1, pool.size * PARALLEL_QUEUE_MULTIPLIER)
+  let candidateIndex = 0
+
+  for (const lineup of candidates) {
+    const signature = canonicalCandidateSignature(lineup)
+    if (stageSeen.has(signature)) continue
+    stageSeen.add(signature)
+    candidateIndex += 1
+    const index = candidateIndex
+    let task: Promise<void>
+    task = evaluateLineup(pool, lineup, options.runs, options.idPrefix, options.templateIds, index)
+      .then((result) => {
+        insertRankedResult(retained, result, options.keep)
+        progress.done += 1
+        // Workerが1組を返すたびに、現在の上位3組を即座に表示する。
+        topResults.value = rankedTopResults(retained)
+      })
+      .finally(() => inFlight.delete(task))
+    inFlight.add(task)
+
+    if (inFlight.size >= queueLimit) await Promise.race(inFlight)
   }
-  const average = (pick: (result: BattleBatchResult) => number) =>
-    matchupResults.reduce((sum, item) => sum + pick(item.result), 0) / Math.max(1, matchupResults.length)
-  const winRate = average((result) => result.allyWinRate)
-  const drawRate = average((result) => result.drawRate)
-  const exchangeRatio = average((result) => result.exchangeRatio)
-  const score = average((result) => result.scoreValue)
-  const matchups = matchupResults
-    .map(({ formation, result }) => ({
-      id: formation.id,
-      name: formation.name,
-      winRate: result.allyWinRate,
-      exchangeRatio: result.exchangeRatio,
-    }))
-    .sort((a, b) => b.winRate - a.winRate || b.exchangeRatio - a.exchangeRatio)
+  await Promise.all(inFlight)
+  // 全通り列挙や対称重複除外では推定上限と実評価数が異なるため、完了時に実数へ合わせる。
+  progress.total = progress.done
+  return retained
+}
+
+const evaluateLineup = async (
+  pool: AiOptimizerWorkerPool,
+  lineup: Lineup,
+  runs: number,
+  idPrefix: string,
+  templateIds: string[],
+  index: number,
+): Promise<AiOptimizerResult> => {
+  const signature = canonicalCandidateSignature(lineup)
+  const cacheKey = `${signature}::${runs}::${templateIds.join(',')}`
+  let evaluation = evaluationCache.get(cacheKey)
+  if (!evaluation) {
+    evaluation = await pool.evaluate(snapshotAiLineup(lineup), runs, signature, templateIds)
+    evaluationCache.set(cacheKey, evaluation)
+    // 長時間利用時もキャッシュが無制限に増えないよう、古い結果から破棄する。
+    if (evaluationCache.size > 25000) {
+      const oldestKey = evaluationCache.keys().next().value
+      if (typeof oldestKey === 'string') evaluationCache.delete(oldestKey)
+    }
+  }
 
   return {
-    id: `${idPrefix}-${lineupSignature(lineup)}`,
+    id: `${idPrefix}-${index}-${signature}`,
     rank: 0,
     lineup: cloneLineup(lineup),
-    winRate,
-    drawRate,
-    exchangeRatio,
-    score,
-    scoreTier: tierFromScore(score),
-    totalRuns: runs * matchupResults.length,
-    matchups,
+    winRate: evaluation.winRate,
+    drawRate: evaluation.drawRate,
+    exchangeRatio: evaluation.exchangeRatio,
+    score: evaluation.score,
+    scoreTier: tierFromScore(evaluation.score),
+    totalRuns: evaluation.totalRuns,
+    matchups: evaluation.matchups,
   }
 }
 
-const buildMonteCarloLineups = (count: number): Lineup[] => {
-  const lineups: Lineup[] = []
+function* buildMonteCarloLineups(count: number): Generator<Lineup> {
   const seen = new Set<string>()
   let attempts = 0
+  let generated = 0
   const maxAttempts = Math.max(100, count * 80)
-  while (lineups.length < count && attempts < maxAttempts) {
+  while (generated < count && attempts < maxAttempts) {
     attempts += 1
-    const lineup = randomCandidateLineup(lineups.length + 1)
+    const lineup = randomCandidateLineup(generated + 1)
     if (!lineup) continue
-    const signature = lineupSignature(lineup)
+    const signature = canonicalCandidateSignature(lineup)
     if (seen.has(signature)) continue
     seen.add(signature)
-    lineups.push(lineup)
+    generated += 1
+    yield lineup
+  }
+}
+
+// 一次評価上位の編成から、武将または戦法を1か所だけ変えた近傍候補を作る。
+const buildNeighborhoodLineups = (seeds: AiOptimizerResult[], count: number): Lineup[] => {
+  if (seeds.length === 0 || count <= 0) return []
+  const lineups: Lineup[] = []
+  const seen = new Set(seeds.map((result) => canonicalCandidateSignature(result.lineup)))
+  let attempts = 0
+  const maxAttempts = Math.max(200, count * 60)
+
+  while (lineups.length < count && attempts < maxAttempts) {
+    const base = seeds[attempts % seeds.length]
+    attempts += 1
+    if (!base) continue
+    const candidate = mutateCandidateLineup(base.lineup, lineups.length + 1)
+    if (!candidate) continue
+    const signature = canonicalCandidateSignature(candidate)
+    if (seen.has(signature)) continue
+    seen.add(signature)
+    lineups.push(candidate)
   }
   return lineups
+}
+
+const mutateCandidateLineup = (base: Lineup, index: number): Lineup | null => {
+  const team = cloneLineup(base)
+  const mutableHeroRoles = roleKeys.filter((role) => {
+    const hero = team[role].hero
+    return hero && !fixedHeroKeys.value.has(heroIdentity(hero))
+  })
+  const mutableSkillSlots = roleKeys.flatMap((role) => skillSlotKeys
+    .filter((slot) => {
+      const skill = team[role][slot]
+      return skill && !fixedSkillKeys.value.has(skillIdentity(skill))
+    })
+    .map((slot) => ({ role, slot })))
+
+  // 武将を変えられる場合は約35%、それ以外は戦法を1つ差し替える。
+  const replaceHero = mutableHeroRoles.length > 0 && (mutableSkillSlots.length === 0 || Math.random() < 0.35)
+  if (replaceHero) {
+    const role = randomItem(mutableHeroRoles)
+    if (!role) return null
+    const currentHero = team[role].hero
+    const usedHeroes = new Set(roleKeys
+      .filter((candidateRole) => candidateRole !== role)
+      .map((candidateRole) => team[candidateRole].hero)
+      .filter(Boolean)
+      .map((hero) => heroIdentity(hero as Hero)))
+    const replacements = heroCandidates.value.filter((hero) =>
+      heroIdentity(hero) !== (currentHero ? heroIdentity(currentHero) : '')
+      && !usedHeroes.has(heroIdentity(hero)))
+    const hero = randomItem(replacements)
+    if (!hero) return null
+    team[role] = autoRole(hero)
+  } else {
+    const target = randomItem(mutableSkillSlots)
+    if (!target) return null
+    team[target.role][target.slot] = null
+  }
+
+  normalizeExclusiveTeamSkills(team)
+  if (!fillRandomSkillSlots(team)) return null
+  team.name = `AI周辺候補 ${index}`
+  return team
 }
 
 // 固定条件と候補条件を満たす編成を、配列へ溜めず1組ずつ全列挙する。
@@ -783,6 +946,13 @@ const randomCandidateLineup = (index: number): Lineup | null => {
     usedHeroes.add(heroIdentity(hero))
   }
 
+  if (!fillRandomSkillSlots(team)) return null
+
+  team.name = `AI候補 ${index}`
+  return team
+}
+
+const fillRandomSkillSlots = (team: Lineup): boolean => {
   const usedSkills = new Set(roleKeys.flatMap((role) => [team[role].skill1, team[role].skill2])
     .filter(Boolean)
     .map((skill) => skillIdentity(skill as Skill)))
@@ -790,37 +960,26 @@ const randomCandidateLineup = (index: number): Lineup | null => {
     .filter(Boolean)
     .filter((skill) => isExclusiveTeamSkillType(skill as Skill))
     .map((skill) => battleSkillType(skill as Skill)))
-
-  const slots = roleKeys.flatMap((role) =>
-    skillSlotKeys
-      .filter((slot) => team[role].hero && !team[role][slot])
-      .map((slot) => ({ role, slot })),
-  )
+  const slots = roleKeys.flatMap((role) => skillSlotKeys
+    .filter((slot) => team[role].hero && !team[role][slot])
+    .map((slot) => ({ role, slot })))
 
   for (const { role, slot } of slots) {
+    const roleStats = team[role].stats
     const candidates = skillCandidates.value.filter((skill) => {
       const key = skillIdentity(skill)
       const type = battleSkillType(skill)
-      const roleStats = team[role].stats
-      const hasCompatibleStats = isAiSkillCompatibleWithStats(
-        skill,
-        Number(roleStats.val),
-        Number(roleStats.int),
-      )
       return !usedSkills.has(key)
-        && hasCompatibleStats
+        && isAiSkillCompatibleWithStats(skill, Number(roleStats.val), Number(roleStats.int))
         && (!isExclusiveTeamSkillType(skill) || !exclusiveTypes.has(type))
     })
     const skill = randomItem(candidates)
-    if (!skill) return null
-
+    if (!skill) return false
     team[role][slot] = skill
     usedSkills.add(skillIdentity(skill))
     if (isExclusiveTeamSkillType(skill)) exclusiveTypes.add(battleSkillType(skill))
   }
-
-  team.name = `AI候補 ${index}`
-  return team
+  return true
 }
 
 const roleFromTemplateMember = (member: EnemyFormation['members'][number]): RoleData => {
@@ -979,6 +1138,29 @@ const compareOptimizerResults = (a: AiOptimizerResult, b: AiOptimizerResult) =>
   || b.exchangeRatio - a.exchangeRatio
   || b.score - a.score
 
+const insertRankedResult = (results: AiOptimizerResult[], result: AiOptimizerResult, limit: number): void => {
+  let low = 0
+  let high = results.length
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2)
+    const current = results[middle]
+    if (current && compareOptimizerResults(result, current) < 0) high = middle
+    else low = middle + 1
+  }
+  results.splice(low, 0, result)
+  if (results.length > Math.max(1, limit)) results.length = Math.max(1, limit)
+}
+
+const uniqueOptimizerResults = (results: AiOptimizerResult[]): AiOptimizerResult[] => {
+  const bestBySignature = new Map<string, AiOptimizerResult>()
+  results.forEach((result) => {
+    const key = canonicalCandidateSignature(result.lineup)
+    const current = bestBySignature.get(key)
+    if (!current || compareOptimizerResults(result, current) < 0) bestBySignature.set(key, result)
+  })
+  return [...bestBySignature.values()]
+}
+
 const rankedTopResults = (results: AiOptimizerResult[]): AiOptimizerResult[] =>
   [...results]
     .sort(compareOptimizerResults)
@@ -1028,14 +1210,30 @@ const formatLargeNumber = (value: number): string => {
   return value >= 1_000_000_000 ? value.toExponential(2) : formatNumber(value)
 }
 const formatPercent = (value: number): string => `${(value * 100).toFixed(1)}%`
+const roleSignature = (role: RoleData): string => [
+  role.hero ? heroIdentity(role.hero) : '',
+  role.skill1 ? skillIdentity(role.skill1) : '',
+  role.skill2 ? skillIdentity(role.skill2) : '',
+  role.breakthrough,
+  ...(['lea', 'val', 'int', 'pol', 'cha', 'spd'] as const).map((stat) => Number(role.stats[stat]).toFixed(2)),
+  role.bingxue.direction ?? '',
+  role.bingxue.major ?? '',
+  ...role.bingxue.minors.map((minor) => `${minor.name}:${minor.level}`).sort(),
+].join(':')
+
 const lineupSignature = (lineup: Lineup): string => [
   lineup.troopType ?? '',
-  ...roleKeys.map((role) => [
-    heroIdentity(lineup[role].hero as Hero),
-    lineup[role].skill1 ? skillIdentity(lineup[role].skill1) : '',
-    lineup[role].skill2 ? skillIdentity(lineup[role].skill2) : '',
-  ].join(':')),
+  roleSignature(lineup.main),
+  roleSignature(lineup.vice1),
+  roleSignature(lineup.vice2),
 ].join('|')
+
+const canonicalCandidateSignature = (lineup: Lineup): string => {
+  if (!reorderFixedHeroes.value) return lineupSignature(lineup)
+  // 副将1・副将2は戦闘上同じ役割なので、可変探索では入れ替えを同一候補として扱う。
+  const viceSignatures = [roleSignature(lineup.vice1), roleSignature(lineup.vice2)].sort()
+  return [lineup.troopType ?? '', roleSignature(lineup.main), ...viceSignatures].join('|')
+}
 const shortFormationName = (name: string): string => {
   const cleaned = name.replace(/（.*?）/g, '')
   const parts = cleaned.split(/[・,、/]/).map((part) => part.trim()).filter(Boolean)
@@ -1082,10 +1280,6 @@ function waitForPaint(): Promise<void> {
   })
 }
 
-function yieldToBrowser(): Promise<void> {
-  if (typeof window === 'undefined') return Promise.resolve()
-  return new Promise((resolve) => window.setTimeout(resolve, 0))
-}
 </script>
 
 <style scoped>

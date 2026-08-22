@@ -21,7 +21,7 @@ export interface AiOptimizerResult {
   matchups: AiOptimizerMatchupSummary[]
 }
 
-export type AiOptimizerPhase = 'idle' | 'scout' | 'final' | 'done'
+export type AiOptimizerPhase = 'idle' | 'screen' | 'scout' | 'neighbor' | 'final' | 'done'
 export type AiCandidatePoolMode = 'owned' | 'all'
 export type AiSearchSampleMode = 'sample' | 'all'
 
