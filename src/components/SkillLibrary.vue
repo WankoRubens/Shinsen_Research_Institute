@@ -186,6 +186,7 @@ const props = defineProps({
   filterOwned: { type: Boolean, default: false },
   battleImplementedOnly: { type: Boolean, default: false },
   preciseBattleImplementedOnly: { type: Boolean, default: false },
+  allowedSkillNames: { type: Object as PropType<ReadonlySet<string> | string[] | null>, default: null },
 })
 
 const emit = defineEmits(['select', 'update:ownedSkills', 'update:filterOwned', 'skill-drag-start', 'skill-drag-end'])
@@ -286,6 +287,14 @@ const filteredSkills = computed(() => {
     if (filterType.value && s.type !== filterType.value) return false
     if (filterRarity.value && s.rarity !== filterRarity.value) return false
     if (props.mode !== 'manage' && props.filterOwned && !props.ownedSkills.includes(s.name)) return false
+    if (props.allowedSkillNames) {
+      const names = [s.name_jp, s.name].filter(Boolean) as string[]
+      const allowedNames = props.allowedSkillNames
+      const callerAllowsSkill = Array.isArray(allowedNames)
+        ? names.some((name) => allowedNames.includes(name))
+        : names.some((name) => (allowedNames as ReadonlySet<string>).has(name))
+      if (!callerAllowsSkill) return false
+    }
 
     return true
   })

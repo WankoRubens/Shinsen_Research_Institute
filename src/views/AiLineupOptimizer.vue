@@ -158,6 +158,9 @@
           <span v-if="unsupportedFixedSkillNames.length" class="warning">
             「{{ unsupportedFixedSkillNames.join('、') }}」は戦法一覧で実装済みではないため使用できません。
           </span>
+          <span v-if="incompatibleFixedTroopSkillNames.length" class="warning">
+            「{{ incompatibleFixedTroopSkillNames.join('、') }}」は{{ seedTeam.troopType }}に対応しない兵種戦法です。
+          </span>
           <span v-if="!hasEnoughCandidates" class="warning">空き枠を埋める候補が不足しています。</span>
           <span v-else-if="searchSampleMode === 'sample'">
             {{ candidatePoolMode === 'owned' ? '所持中のS武将と実装済みS/A戦法' : 'S武将全体と実装済みS/A戦法全体' }}から
@@ -277,6 +280,7 @@
           :used-skills="usedSkillNames"
           :owned-skills="ownedSkills"
           :filter-owned="candidatePoolMode === 'owned'"
+          :allowed-skill-names="compatibleSkillNames"
           @select="selectSkillFromLibrary"
         />
       </div>
@@ -307,6 +311,7 @@ import { battleSkillImplementation, battleSkillType, isExclusiveTeamSkillType } 
 import { isAiSkillCompatibleWithStats } from '../lib/aiSkillCompatibility'
 import { autoAllocatedHeroStats } from '../lib/aiHeroStatAllocation'
 import { heroLevel50Stats } from '../lib/heroStats'
+import { isSkillCompatibleWithTroopType, requiredTroopTypeForSkill } from '../lib/skillTroopCompatibility'
 import { AiOptimizerWorkerPool, recommendedAiWorkerCount } from '../lib/aiOptimizerWorkerPool'
 import {
   AI_GPU_COARSE_SCENARIOS,
@@ -425,8 +430,22 @@ const handleCandidatePoolChange = (): void => {
 
 const setSeedTroopType = (troopType: TroopType | null): void => {
   seedTeam.troopType = troopType
+  const removedSkills: string[] = []
+  if (troopType) {
+    for (const role of roleKeys) {
+      for (const slot of skillSlotKeys) {
+        const skill = seedTeam[role][slot]
+        if (!skill || isSkillCompatibleWithTroopType(skill, troopType)) continue
+        removedSkills.push(skillName(skill))
+        seedTeam[role][slot] = null
+      }
+    }
+  }
   topResults.value = []
   resultPhase.value = 'idle'
+  if (removedSkills.length > 0) {
+    ElMessage.info(`${troopType}に対応しない兵種戦法「${[...new Set(removedSkills)].join('、')}」を外しました。`)
+  }
 }
 
 const heroByKey = computed(() => new Map(heroOptions.value.map((hero) => [heroKey(hero), hero])))
@@ -451,6 +470,9 @@ const skillOptions = computed(() =>
     .filter((skill) => isSelectableBattleSkill(skill))
     .sort((a, b) => skillName(a).localeCompare(skillName(b), 'ja')),
 )
+const compatibleSkillNames = computed(() => new Set(skillOptions.value
+  .filter((skill) => isSkillCompatibleWithTroopType(skill, seedTeam.troopType))
+  .flatMap((skill) => [skill.name, skill.name_jp].filter(Boolean) as string[])))
 
 const fixedHeroKeys = computed(() => new Set(roleKeys.map((role) => seedTeam[role].hero).filter(Boolean).map((hero) => heroIdentity(hero as Hero))))
 const fixedSkillKeys = computed(() => new Set(roleKeys.flatMap((role) => [seedTeam[role].skill1, seedTeam[role].skill2]).filter(Boolean).map((skill) => skillIdentity(skill as Skill))))
@@ -463,6 +485,13 @@ const unsupportedFixedSkillNames = computed(() => [...new Set(
     .flatMap((role) => [seedTeam[role].skill1, seedTeam[role].skill2])
     .filter((skill): skill is Skill => Boolean(skill))
     .filter((skill) => battleSkillImplementation(skill).status !== 'implemented')
+    .map((skill) => skillName(skill)),
+)])
+const incompatibleFixedTroopSkillNames = computed(() => [...new Set(
+  roleKeys
+    .flatMap((role) => [seedTeam[role].skill1, seedTeam[role].skill2])
+    .filter((skill): skill is Skill => Boolean(skill))
+    .filter((skill) => !isSkillCompatibleWithTroopType(skill, seedTeam.troopType))
     .map((skill) => skillName(skill)),
 )])
 const fixedRoleCount = computed(() => roleKeys.filter((role) => seedTeam[role].hero).length)
@@ -484,6 +513,7 @@ const skillCandidates = computed(() =>
   uniqueBy(skills.value, skillIdentity)
     .filter((skill) => isSelectableBattleSkill(skill))
     .filter((skill) => isSearchSkill(skill))
+    .filter((skill) => isSkillCompatibleWithTroopType(skill, seedTeam.troopType))
     .filter((skill) => candidatePoolMode.value === 'all' || ownedSkills.value.includes(skill.name))
     .filter((skill) => !fixedSkillKeys.value.has(skillIdentity(skill)))
     .sort((a, b) => skillCandidateScore(b) - skillCandidateScore(a) || skillName(a).localeCompare(skillName(b), 'ja'))
@@ -555,6 +585,7 @@ const canOptimize = computed(() =>
   && templateTeams.value.length > 0
   && hasEnoughCandidates.value
   && unsupportedFixedSkillNames.value.length === 0
+  && incompatibleFixedTroopSkillNames.value.length === 0
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
 const screeningBackendLabel = computed(() => {
@@ -616,19 +647,24 @@ const openSkillPicker = (role: RoleKey, slot: number) => {
   skillPickerVisible.value = true
 }
 
-const assignSkill = (role: RoleKey, slot: number, skill: Skill) => {
+const assignSkill = (role: RoleKey, slot: number, skill: Skill): boolean => {
   const slotKey = slot === 1 ? 'skill1' : 'skill2'
   const nextSkill = skillByKey.value.get(skillKey(skill)) ?? skill
+  if (!isSkillCompatibleWithTroopType(nextSkill, seedTeam.troopType)) {
+    const requiredTroopType = requiredTroopTypeForSkill(nextSkill)
+    ElMessage.warning(`「${skillName(nextSkill)}」は${requiredTroopType ?? '別兵種'}用の兵種戦法です。`)
+    return false
+  }
   clearExclusiveTeamSkill(seedTeam, nextSkill, role, slotKey)
   seedTeam[role][slotKey] = nextSkill
   topResults.value = []
   resultPhase.value = 'idle'
+  return true
 }
 
 const selectSkillFromLibrary = (skill: Skill) => {
   if (!picker.role || !picker.skillSlot) return
-  assignSkill(picker.role, picker.skillSlot, skill)
-  skillPickerVisible.value = false
+  if (assignSkill(picker.role, picker.skillSlot, skill)) skillPickerVisible.value = false
 }
 
 const cancelOptimizer = (): void => {
