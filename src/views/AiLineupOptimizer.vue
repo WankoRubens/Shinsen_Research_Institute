@@ -237,6 +237,24 @@
                 <b>{{ formatPercent(row.winRate) }}</b>
               </div>
             </div>
+
+            <el-dropdown
+              v-if="showDetailedResults"
+              class="result-import-menu"
+              trigger="click"
+              @command="importResultLineup(result, $event)"
+            >
+              <el-button type="primary" plain :icon="Download">
+                編成へ取り込む
+                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="lineup">共存編成へ取り込む</el-dropdown-item>
+                  <el-dropdown-item command="freeLineup">自由編成へ取り込む</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </article>
         </div>
       </section>
@@ -290,14 +308,16 @@
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue'
-import { CircleClose, VideoPlay } from '@element-plus/icons-vue'
+import { ArrowDown, CircleClose, Download, VideoPlay } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 import LineupSlot from '../components/LineupSlot.vue'
 import AiResultRoleCard from '../components/ai/AiResultRoleCard.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
 import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
-import type { BingxueActive, BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
+import { useLineups, type BingxueActive, type BingxueMinor, type Lineup, type RoleData } from '../composables/useLineups'
+import { useGroupPersistence } from '../composables/useGroupPersistence'
 import { useTroopLevels } from '../composables/useTroopLevels'
 import { useInventory } from '../composables/useInventory'
 import { buildTemplateLookup, useData, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
@@ -323,6 +343,7 @@ import {
   aiBingxuePatternsForHero,
   aiBingxuePatternCountForHero,
   cloneAiBingxue,
+  hasCompleteAiBingxue,
   hasConfiguredAiBingxue,
   randomAiBingxueForHero,
 } from '../lib/aiBingxueSearch'
@@ -336,6 +357,7 @@ import type { TroopType } from '../constants/traits'
 
 type RoleKey = 'main' | 'vice1' | 'vice2'
 type SkillSlotKey = 'skill1' | 'skill2'
+type LineupImportTarget = 'lineup' | 'freeLineup'
 
 const roleConfigs: Array<{ key: RoleKey; label: string }> = [
   { key: 'main', label: '主将' },
@@ -362,6 +384,9 @@ const {
   selectedTemplateTiers,
 } = useAiLineupOptimizerState()
 const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs } = useInventory()
+const { addTeamFromSnapshot } = useLineups()
+const { flushLocalAutosave } = useGroupPersistence()
+const router = useRouter()
 const seedTroopLevels = useTroopLevels(computed(() => seedTeam))
 
 const picker = reactive<{ role: RoleKey | null; skillSlot: number | null }>({
@@ -563,8 +588,8 @@ const estimatedCombinations = computed(() => {
     : 1
   const fixedBingxueCount = roleKeys.reduce((total, role) => {
     const roleData = seedTeam[role]
-    if (!roleData.hero || hasConfiguredAiBingxue(roleData.bingxue)) return total
-    return cappedProduct([total, Math.max(1, aiBingxuePatternCountForHero(roleData.hero))])
+    if (!roleData.hero || hasCompleteAiBingxue(roleData.bingxue)) return total
+    return cappedProduct([total, Math.max(1, aiBingxuePatternCountForHero(roleData.hero, roleData.bingxue))])
   }, 1)
   const randomBingxueCount = cappedPower(averageBingxueCount, emptyHeroSlotCount.value)
   return cappedProduct([
@@ -1186,10 +1211,10 @@ function* fillAllHeroSlots(team: Lineup, candidates: Hero[]): Generator<Lineup> 
   yield* visit(0, candidates)
 }
 
-// 画面で兵学を指定した武将はその設定を維持し、空欄の武将だけ全有効パターンへ展開する。
+// 完成済みの兵学は維持し、空欄または5点未満の武将だけ残りの有効パターンへ展開する。
 function* fillAllBingxueSlots(team: Lineup): Generator<Lineup> {
   const working = cloneLineup(team)
-  const roles = roleKeys.filter((role) => working[role].hero && !hasConfiguredAiBingxue(working[role].bingxue))
+  const roles = roleKeys.filter((role) => working[role].hero && !hasCompleteAiBingxue(working[role].bingxue))
 
   function* visit(roleIndex: number): Generator<Lineup> {
     if (roleIndex >= roles.length) {
@@ -1200,7 +1225,8 @@ function* fillAllBingxueSlots(team: Lineup): Generator<Lineup> {
     const role = roles[roleIndex]
     const hero = role ? working[role].hero : null
     if (!role || !hero) return
-    const patterns = aiBingxuePatternsForHero(hero)
+    const configured = cloneAiBingxue(working[role].bingxue)
+    const patterns = aiBingxuePatternsForHero(hero, working[role].bingxue)
     if (patterns.length === 0) {
       yield* visit(roleIndex + 1)
       return
@@ -1209,7 +1235,7 @@ function* fillAllBingxueSlots(team: Lineup): Generator<Lineup> {
       working[role].bingxue = cloneAiBingxue(pattern)
       yield* visit(roleIndex + 1)
     }
-    working[role].bingxue = { direction: null, major: null, minors: [] }
+    working[role].bingxue = configured
   }
 
   yield* visit(0)
@@ -1318,12 +1344,12 @@ const randomCandidateLineup = (index: number): Lineup | null => {
   return team
 }
 
-// モンテカルロ探索では、未指定の各武将へ設定可能な兵学を一様に1組選ぶ。
+// モンテカルロ探索では、空欄または5点未満の各武将へ設定可能な兵学を一様に1組選ぶ。
 const fillRandomBingxueSlots = (team: Lineup): void => {
   for (const role of roleKeys) {
     const roleData = team[role]
-    if (!roleData.hero || hasConfiguredAiBingxue(roleData.bingxue)) continue
-    roleData.bingxue = randomAiBingxueForHero(roleData.hero)
+    if (!roleData.hero || hasCompleteAiBingxue(roleData.bingxue)) continue
+    roleData.bingxue = randomAiBingxueForHero(roleData.hero, roleData.bingxue)
   }
 }
 
@@ -1445,6 +1471,20 @@ const cloneLineup = (lineup: Lineup): Lineup => ({
   vice1: cloneRole(lineup.vice1),
   vice2: cloneRole(lineup.vice2),
 })
+
+// 確定したAI候補を現在の編成グループへ追加し、編集できる状態で共存編成を開く。
+const importResultLineup = async (result: AiOptimizerResult, command: unknown): Promise<void> => {
+  const target: LineupImportTarget = command === 'freeLineup' ? 'freeLineup' : 'lineup'
+  const imported = cloneLineup(result.lineup)
+  imported.name = `AI編成 ${result.rank}位`
+  if (!addTeamFromSnapshot(imported)) {
+    ElMessage.error('現在の編成は部隊数の上限に達しているため、追加できません。')
+    return
+  }
+  flushLocalAutosave()
+  ElMessage.success(`「${imported.name}」を${target === 'freeLineup' ? '自由編成' : '共存編成'}へ取り込みました。`)
+  await router.push({ name: target })
+}
 
 const emptyLineup = (name: string): Lineup => ({
   name,
@@ -1926,6 +1966,10 @@ function waitForPaint(): Promise<void> {
 .result-metrics b,
 .matchups b {
   color: #b86b1d;
+}
+
+.result-import-menu {
+  justify-self: end;
 }
 
 .mini-lineup {

@@ -15,6 +15,11 @@ export const cloneAiBingxue = (value: BingxueActive): BingxueActive => ({
 export const hasConfiguredAiBingxue = (value: BingxueActive): boolean =>
   Boolean(value.direction && value.major)
 
+// 主兵法に加えて副兵法の5点をすべて使い切った時だけ、AI上の設定完了とみなす。
+export const hasCompleteAiBingxue = (value: BingxueActive): boolean =>
+  hasConfiguredAiBingxue(value)
+  && value.minors.reduce((sum, minor) => sum + minor.level, 0) >= BINGXUE_POINT_BUDGET
+
 // 副兵法は各Lv IIまで、合計5点をすべて使い切る設定だけを全列挙する。
 // 未使用ポイントを残した構成は、同じ選択の上位Lv構成より不利なのでAI候補から省く。
 const buildMinorPatterns = (names: string[]): BingxueMinor[][] => {
@@ -60,23 +65,7 @@ const countMinorPatterns = (minorCount: number): number => {
   return count
 }
 
-export const aiBingxuePatternCountForHero = (hero: Hero): number => {
-  const cached = patternCountCache.get(hero)
-  if (cached !== undefined) return cached
-  let count = 0
-  for (const direction of BINGXUE_DIRECTIONS) {
-    const options = hero.bingxue?.[direction]
-    if (!options) continue
-    const majorCount = new Set(options.major.filter(Boolean)).size
-    const minorCount = new Set(options.minor.filter(Boolean)).size
-    count += majorCount * countMinorPatterns(minorCount)
-  }
-  patternCountCache.set(hero, count)
-  return count
-}
-
-// 武将に開放されている全系統について、主兵法と副兵法5点の直積を返す。
-export const aiBingxuePatternsForHero = (hero: Hero): BingxueActive[] => {
+const allAiBingxuePatternsForHero = (hero: Hero): BingxueActive[] => {
   const cached = patternCache.get(hero)
   if (cached) return cached
 
@@ -102,8 +91,39 @@ export const aiBingxuePatternsForHero = (hero: Hero): BingxueActive[] => {
   return patterns
 }
 
-export const randomAiBingxueForHero = (hero: Hero): BingxueActive => {
-  const patterns = aiBingxuePatternsForHero(hero)
+// 画面で選択済みの系統・主兵法・副兵法を維持し、未使用点だけを補える候補に絞る。
+const matchesConfiguredBingxue = (pattern: BingxueActive, configured?: BingxueActive): boolean => {
+  if (!configured) return true
+  if (configured.direction && pattern.direction !== configured.direction) return false
+  if (configured.major && pattern.major !== configured.major) return false
+  return configured.minors.every((selectedMinor) =>
+    pattern.minors.some((minor) => minor.name === selectedMinor.name && minor.level >= selectedMinor.level))
+}
+
+export const aiBingxuePatternCountForHero = (hero: Hero, configured?: BingxueActive): number => {
+  if (configured && (configured.direction || configured.major || configured.minors.length > 0)) {
+    return allAiBingxuePatternsForHero(hero).filter((pattern) => matchesConfiguredBingxue(pattern, configured)).length
+  }
+  const cached = patternCountCache.get(hero)
+  if (cached !== undefined) return cached
+  let count = 0
+  for (const direction of BINGXUE_DIRECTIONS) {
+    const options = hero.bingxue?.[direction]
+    if (!options) continue
+    const majorCount = new Set(options.major.filter(Boolean)).size
+    const minorCount = new Set(options.minor.filter(Boolean)).size
+    count += majorCount * countMinorPatterns(minorCount)
+  }
+  patternCountCache.set(hero, count)
+  return count
+}
+
+// 武将に開放されている全系統について、主兵法と副兵法5点の直積を返す。
+export const aiBingxuePatternsForHero = (hero: Hero, configured?: BingxueActive): BingxueActive[] =>
+  allAiBingxuePatternsForHero(hero).filter((pattern) => matchesConfiguredBingxue(pattern, configured))
+
+export const randomAiBingxueForHero = (hero: Hero, configured?: BingxueActive): BingxueActive => {
+  const patterns = aiBingxuePatternsForHero(hero, configured)
   if (patterns.length === 0) return { direction: null, major: null, minors: [] }
   const selected = patterns[Math.floor(Math.random() * patterns.length)]
   return selected ? cloneAiBingxue(selected) : { direction: null, major: null, minors: [] }
