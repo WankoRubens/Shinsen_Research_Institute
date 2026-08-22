@@ -18,6 +18,27 @@
           </div>
         </div>
 
+        <div class="lineup-source-row">
+          <el-select
+            v-model="selectedSavedLineupKey"
+            filterable
+            clearable
+            :disabled="savedLineupOptions.length === 0"
+            placeholder="共存編成・自由編成から部隊を呼び出す"
+            no-data-text="保存された部隊がありません"
+            @change="loadSavedLineup"
+          >
+            <el-option-group label="共存編成・自由編成">
+              <el-option
+                v-for="option in savedLineupOptions"
+                :key="option.key"
+                :label="option.label"
+                :value="option.key"
+              />
+            </el-option-group>
+          </el-select>
+        </div>
+
         <div class="sim-lineup-grid">
           <LineupSlot
             v-for="role in roleConfigs"
@@ -374,20 +395,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, reactive, ref, watch } from 'vue'
+import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
 import { VideoPlay } from '@element-plus/icons-vue'
 import LineupSlot from '../components/LineupSlot.vue'
 import HeroLibrary from '../components/HeroLibrary.vue'
 import SkillLibrary from '../components/SkillLibrary.vue'
 import TroopLevelSummary from '../components/lineup-builder/TroopLevelSummary.vue'
-import { useLineups, isEmptyTeam } from '../composables/useLineups'
+import { isEmptyTeam } from '../composables/useLineups'
 import type { BingxueMinor, Lineup, RoleData } from '../composables/useLineups'
+import { useGroups } from '../composables/useGroups'
+import { useGroupPersistence } from '../composables/useGroupPersistence'
 import { useTroopLevels } from '../composables/useTroopLevels'
 import { simulateBattleBatch, type BattleBatchResult, type BattleTurnStat } from '../lib/battleSimulator'
 import { battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { BINGXUE_DIRECTIONS, buildTemplateLookup, useData, type BingxueDirection, type EnemyFormation, type Hero, type Skill } from '../composables/useData'
 import { heroLevel50Stats } from '../lib/heroStats'
 import { normalizeTroopType } from '../constants/traits'
+import { hydrateShareableTeam, makeSerializer } from '../lib/lineupSerialize'
+import type { ShareableLineup } from '../constants/gameData'
 
 type RoleKey = 'main' | 'vice1' | 'vice2'
 
@@ -413,7 +438,9 @@ interface Segment {
 const BATTLE_TURN_INDEX_LAST = 7
 const TEMPLATE_SIM_RUNS = 300
 const BATTLE_TEMPLATE_TIERS = new Set(['tier0', 'tier05'])
-const { lineups } = useLineups()
+const BATTLE_LINEUP_STORAGE_KEY = 'nobunaga.battle-simulator.lineup.v1'
+const { groups } = useGroups()
+const { restoreFromLocalStorage, enableAutosave } = useGroupPersistence()
 const { heroes, skills, enemyFormations, bingxue: bingxueCatalog } = useData()
 
 const roleConfigs: Array<{ key: RoleKey; label: string }> = [
@@ -456,6 +483,24 @@ const statsWithFocus = (hero: Hero | null, focus?: string, breakthrough = templa
   return stats
 }
 
+const hydratedStats = (role: RoleData): RoleData['stats'] => {
+  const isUninitialized = role.hero && Object.values(role.stats).every((value) => Number(value) === 100)
+  return isUninitialized ? statsWithFocus(role.hero) : { ...role.stats }
+}
+
+const cloneRole = (role: RoleData): RoleData => ({
+  hero: role.hero,
+  skill1: role.skill1,
+  skill2: role.skill2,
+  stats: hydratedStats(role),
+  breakthrough: role.breakthrough,
+  bingxue: {
+    direction: role.bingxue.direction,
+    major: role.bingxue.major,
+    minors: role.bingxue.minors.map((minor): BingxueMinor => ({ ...minor })),
+  },
+})
+
 const simTeam = reactive<Lineup>({
   name: 'シミュレーター編成',
   troopType: null,
@@ -468,6 +513,7 @@ const simTroopLevels = useTroopLevels(computed(() => simTeam))
 const selectedHeroes = reactive<Record<RoleKey, string>>({ main: '', vice1: '', vice2: '' })
 const selectedSkill1 = reactive<Record<RoleKey, string>>({ main: '', vice1: '', vice2: '' })
 const selectedSkill2 = reactive<Record<RoleKey, string>>({ main: '', vice1: '', vice2: '' })
+const selectedSavedLineupKey = ref('')
 const running = ref(false)
 const batchResult = ref<BattleBatchResult | null>(null)
 const matchupRows = ref<MatchupRow[]>([])
@@ -477,6 +523,26 @@ const skillPickerSlot = ref<number | null>(null)
 const heroPickerVisible = ref(false)
 const skillPickerVisible = ref(false)
 const emptyConflictSet = new Set<string>()
+
+const syncSelectedKeys = () => {
+  roleConfigs.forEach(({ key }) => {
+    selectedHeroes[key] = simTeam[key].hero ? heroKey(simTeam[key].hero) : ''
+    selectedSkill1[key] = simTeam[key].skill1 ? skillKey(simTeam[key].skill1) : ''
+    selectedSkill2[key] = simTeam[key].skill2 ? skillKey(simTeam[key].skill2) : ''
+  })
+}
+
+const copyLineupIntoSimulator = (source: Lineup) => {
+  simTeam.name = source.name || 'シミュレーター編成'
+  simTeam.troopType = source.troopType ?? null
+  simTeam.main = cloneRole(source.main)
+  simTeam.vice1 = cloneRole(source.vice1)
+  simTeam.vice2 = cloneRole(source.vice2)
+  normalizeExclusiveTeamSkills(simTeam)
+  syncSelectedKeys()
+  batchResult.value = null
+  matchupRows.value = []
+}
 
 const roleSignature = (role: RoleData): string => JSON.stringify({
   hero: role.hero?.sim_id || role.hero?.name_jp || role.hero?.name || '',
@@ -492,10 +558,22 @@ watch(
   () => {
     batchResult.value = null
     matchupRows.value = []
+    try {
+      const serializer = makeSerializer({ heroes: heroes.value, skills: skills.value })
+      localStorage.setItem(BATTLE_LINEUP_STORAGE_KEY, JSON.stringify(serializer.serializeLineup(simTeam)))
+    } catch {
+      // 端末の保存領域が無効な場合も、シミュレーション自体はそのまま利用できる。
+    }
   },
 )
 
-const playableTeams = computed(() => lineups.map((team, index) => ({ team, index })).filter(({ team }) => !isEmptyTeam(team)))
+const savedLineupOptions = computed(() => groups.flatMap((group, groupIndex) =>
+  group.teams.map((lineup, teamIndex) => ({
+    key: `saved:${groupIndex}:${teamIndex}`,
+    label: `${group.name} / ${lineup.name || `部隊 ${teamIndex + 1}`}`,
+    lineup,
+  })),
+).filter((option) => !isEmptyTeam(option.lineup)))
 const heroOptions = computed(() => [...heroes.value].sort((a, b) => heroNameForSort(a).localeCompare(heroNameForSort(b), 'ja')))
 const skillOptions = computed(() =>
   uniqueBy(skills.value, skillKey)
@@ -515,6 +593,37 @@ const usedSkillNames = computed(() => new Set([
   simTeam.vice2.skill1?.name,
   simTeam.vice2.skill2?.name,
 ].filter(Boolean) as string[]))
+
+const loadSavedLineup = (key: string) => {
+  if (!key) return
+  const option = savedLineupOptions.value.find((item) => item.key === key)
+  if (option) copyLineupIntoSimulator(option.lineup)
+  // 同じ部隊を再度呼び出せるよう、読み込み後は選択表示だけを戻す。
+  selectedSavedLineupKey.value = ''
+}
+
+const restoreBattleSimulatorLineup = () => {
+  try {
+    const raw = localStorage.getItem(BATTLE_LINEUP_STORAGE_KEY)
+    if (!raw) return
+    const saved = JSON.parse(raw) as ShareableLineup
+    const { team } = hydrateShareableTeam(saved, 0, { heroes: heroes.value, skills: skills.value })
+    copyLineupIntoSimulator(team)
+  } catch {
+    try {
+      localStorage.removeItem(BATTLE_LINEUP_STORAGE_KEY)
+    } catch {
+      // 保存領域へアクセスできない環境では、空の編成で通常表示を続ける。
+    }
+  }
+}
+
+onMounted(() => {
+  // 戦闘シミュレータへ直接アクセスした場合も、共存・自由編成の保存データを復元する。
+  restoreFromLocalStorage()
+  enableAutosave()
+  restoreBattleSimulatorLineup()
+})
 
 const clearExclusiveTeamSkill = (team: Lineup, incoming: Skill, keepRole: RoleKey, keepSlot: 'skill1' | 'skill2') => {
   if (!isExclusiveTeamSkillType(incoming)) return
@@ -988,6 +1097,8 @@ const LineSeries = defineComponent({
 .builder-metrics { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .eyebrow { margin: 0 0 4px; font-size: 14px; font-weight: 800; }
 .cost-pill { color: #b45309; font-weight: 900; font-variant-numeric: tabular-nums; }
+.lineup-source-row { width: min(520px, 100%); margin-top: 12px; }
+.lineup-source-row .el-select { width: 100%; }
 .sim-lineup-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; align-items: stretch; }
 .sim-lineup-grid > * { min-width: 0; min-height: 0; }
 .picker-body { height: min(72vh, 720px); min-height: 480px; display: flex; }
