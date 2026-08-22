@@ -25,6 +25,7 @@ export interface AiOptimizerResult {
 export type AiOptimizerPhase = 'idle' | 'screen' | 'scout' | 'neighbor' | 'final' | 'done' | 'cancelled'
 export type AiCandidatePoolMode = 'owned' | 'all'
 export type AiSearchSampleMode = 'sample' | 'all'
+export type AiTemplateTier = 'tier0' | 'tier05' | 'tier1'
 
 export const emptyAiOptimizerRole = (): RoleData => ({
   hero: null,
@@ -53,6 +54,11 @@ const finalRuns = ref(100)
 const reorderFixedHeroes = ref(true)
 const candidatePoolMode = ref<AiCandidatePoolMode>('all')
 const searchSampleMode = ref<AiSearchSampleMode>('sample')
+const selectedTemplateTiers = reactive<Record<AiTemplateTier, boolean>>({
+  tier0: true,
+  tier05: true,
+  tier1: false,
+})
 
 export function useAiLineupOptimizerState() {
   return {
@@ -67,5 +73,6 @@ export function useAiLineupOptimizerState() {
     reorderFixedHeroes,
     candidatePoolMode,
     searchSampleMode,
+    selectedTemplateTiers,
   }
 }

@@ -96,7 +96,6 @@
             <el-input-number
               v-model="sampleCount"
               :min="1"
-              :max="100000"
               :disabled="running || searchSampleMode === 'all'"
               controls-position="right"
               @change="clearOptimizerResults"
@@ -124,12 +123,30 @@
               />
             </div>
           </label>
+          <label class="tier-target-setting">
+            <span>評価対象</span>
+            <div class="tier-switches">
+              <div v-for="option in templateTierOptions" :key="option.value" class="tier-switch-item">
+                <strong>{{ option.label }}</strong>
+                <el-switch
+                  :model-value="selectedTemplateTiers[option.value]"
+                  inline-prompt
+                  active-text="対象"
+                  inactive-text="除外"
+                  :width="58"
+                  :disabled="running"
+                  @change="updateTemplateTier(option.value, Boolean($event))"
+                />
+                <small>{{ templateTierCounts[option.value] }}編成</small>
+              </div>
+            </div>
+          </label>
         </div>
 
         <div class="status-row">
           <span>空き武将 {{ emptyHeroSlotCount }} 枠</span>
           <span>空き戦法 {{ emptySkillSlotCount }} 枠</span>
-          <span>評価対象 Tier 0・0.5</span>
+          <span>評価対象 {{ selectedTemplateTierLabel }}</span>
           <span>テンプレ {{ templateTeams.length }} 編成</span>
           <span>並列Worker {{ aiWorkerCount }} 個</span>
           <span>一次選別 {{ screeningBackendLabel }}</span>
@@ -140,9 +157,6 @@
           <span>{{ reorderFixedHeroes ? '指定武将も主将/副将の配置替えを試行' : '指定武将の主将/副将位置を固定' }}</span>
           <span v-if="unsupportedFixedSkillNames.length" class="warning">
             「{{ unsupportedFixedSkillNames.join('、') }}」は戦法一覧で実装済みではないため使用できません。
-          </span>
-          <span v-if="allSearchTooLarge" class="warning">
-            全通りは最大 {{ formatNumber(MAX_EXHAUSTIVE_COMBINATIONS) }} 組までです。数値指定を選んでください。
           </span>
           <span v-if="!hasEnoughCandidates" class="warning">空き枠を埋める候補が不足しています。</span>
           <span v-else-if="searchSampleMode === 'sample'">
@@ -287,6 +301,7 @@ import {
   emptyAiOptimizerRole,
   useAiLineupOptimizerState,
   type AiOptimizerResult,
+  type AiTemplateTier,
 } from '../composables/useAiLineupOptimizerState'
 import { battleSkillImplementation, battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { isAiSkillCompatibleWithStats } from '../lib/aiSkillCompatibility'
@@ -339,6 +354,7 @@ const {
   reorderFixedHeroes,
   candidatePoolMode,
   searchSampleMode,
+  selectedTemplateTiers,
 } = useAiLineupOptimizerState()
 const { ownedHeroes, ownedSkills, ownedHeroBreakthroughs } = useInventory()
 const seedTroopLevels = useTroopLevels(computed(() => seedTeam))
@@ -352,13 +368,10 @@ const skillPickerVisible = ref(false)
 const emptyConflictSet = new Set<string>()
 const autoBreakthrough = 5
 const finalistCount = 8
-const AI_TEMPLATE_TIERS = new Set(['tier0', 'tier05'])
-const AI_TEMPLATE_LIMIT = 21
 const SCREEN_RUN_LIMIT = 3
 const MAX_SCREEN_SURVIVORS = 1000
 const MAX_REFINED_SURVIVORS = 200
 const MAX_NEIGHBOR_CANDIDATES = 10000
-const MAX_EXHAUSTIVE_COMBINATIONS = 100000
 const PARALLEL_QUEUE_MULTIPLIER = 2
 const aiWorkerCount = recommendedAiWorkerCount()
 const evaluationCache = new Map<string, AiWorkerEvaluationResult>()
@@ -374,10 +387,25 @@ const searchSampleModeOptions = [
   { label: '数値指定', value: 'sample' },
   { label: '全通り', value: 'all' },
 ]
+const templateTierOptions: Array<{ label: string; value: AiTemplateTier }> = [
+  { label: 'Tier 0', value: 'tier0' },
+  { label: 'Tier 0.5', value: 'tier05' },
+  { label: 'Tier 1', value: 'tier1' },
+]
 
 const clearOptimizerResults = (): void => {
   topResults.value = []
   resultPhase.value = 'idle'
+}
+
+const updateTemplateTier = (tier: AiTemplateTier, enabled: boolean): void => {
+  const selectedCount = templateTierOptions.filter((option) => selectedTemplateTiers[option.value]).length
+  if (!enabled && selectedTemplateTiers[tier] && selectedCount <= 1) {
+    ElMessage.warning('評価対象のTierを1つ以上選択してください。')
+    return
+  }
+  selectedTemplateTiers[tier] = enabled
+  clearOptimizerResults()
 }
 
 const breakthroughForHero = (hero: Hero): number => {
@@ -461,10 +489,24 @@ const skillCandidates = computed(() =>
     .sort((a, b) => skillCandidateScore(b) - skillCandidateScore(a) || skillName(a).localeCompare(skillName(b), 'ja'))
 )
 
-// AI探索では、データの並び順で上位にあるTier 0・0.5の21編成だけを評価対象にする。
+const selectedTemplateTierSet = computed(() => new Set(
+  templateTierOptions
+    .filter((option) => selectedTemplateTiers[option.value])
+    .map((option) => option.value),
+))
+const selectedTemplateTierLabel = computed(() => templateTierOptions
+  .filter((option) => selectedTemplateTiers[option.value])
+  .map((option) => option.label)
+  .join('・'))
+const templateTierCounts = computed<Record<AiTemplateTier, number>>(() => ({
+  tier0: enemyFormations.value.filter((formation) => formation.tier === 'tier0').length,
+  tier05: enemyFormations.value.filter((formation) => formation.tier === 'tier05').length,
+  tier1: enemyFormations.value.filter((formation) => formation.tier === 'tier1').length,
+}))
+
+// 選択したTierに含まれるテンプレを、GPU一次選別とCPU精密評価で共通して使用する。
 const templateTeams = computed(() => enemyFormations.value
-  .filter((formation) => AI_TEMPLATE_TIERS.has(formation.tier ?? ''))
-  .slice(0, AI_TEMPLATE_LIMIT)
+  .filter((formation) => selectedTemplateTierSet.value.has((formation.tier ?? '') as AiTemplateTier))
   .map((formation) => ({
     formation,
     lineup: lineupFromTemplate(formation),
@@ -513,11 +555,6 @@ const canOptimize = computed(() =>
   && templateTeams.value.length > 0
   && hasEnoughCandidates.value
   && unsupportedFixedSkillNames.value.length === 0
-  && !allSearchTooLarge.value
-)
-const allSearchTooLarge = computed(() =>
-  searchSampleMode.value === 'all'
-  && estimatedCombinations.value > MAX_EXHAUSTIVE_COMBINATIONS,
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
 const screeningBackendLabel = computed(() => {
@@ -531,10 +568,10 @@ const showDetailedResults = computed(() => !running.value && (resultPhase.value 
 const resultHeading = computed(() => {
   if (resultPhase.value === 'screen') {
     return screeningBackend.value === 'gpu'
-      ? 'GPUで21編成を一次選別中'
-      : '21編成を少数試行で段階評価中'
+      ? `GPUで${templateTeams.value.length}編成を一次選別中`
+      : `${templateTeams.value.length}編成を少数試行で段階評価中`
   }
-  if (resultPhase.value === 'scout') return '一次候補を21編成で再評価中'
+  if (resultPhase.value === 'scout') return `一次候補を${templateTeams.value.length}編成で再評価中`
   if (resultPhase.value === 'neighbor') return '上位編成の周辺を探索中'
   if (resultPhase.value === 'final') return '一次結果を表示中 / 上位を最終再評価中'
   if (resultPhase.value === 'done') return '最終評価 上位 3 組'
@@ -544,7 +581,7 @@ const resultHeading = computed(() => {
 const progressLabel = computed(() => {
   if (resultPhase.value === 'final') return '最終再評価'
   if (resultPhase.value === 'neighbor') return '周辺探索'
-  if (resultPhase.value === 'scout') return '21編成評価'
+  if (resultPhase.value === 'scout') return `${templateTeams.value.length}編成評価`
   const prefix = screeningBackend.value === 'gpu' ? 'GPU ' : ''
   return prefix + (searchSampleMode.value === 'all' ? '全通り一次選別' : 'モンテカルロ一次選別')
 })
@@ -653,7 +690,7 @@ const runOptimizer = async () => {
     )
     const screenRuns = Math.max(1, Math.min(SCREEN_RUN_LIMIT, scoutRuns.value))
 
-    // 第1段階は21編成すべてを少数試行し、明らかに弱い候補を早く除外する。
+    // 第1段階は選択したTierの全テンプレを少数試行し、明らかに弱い候補を早く除外する。
     const screened = await evaluateScreenStage(workerPool, initialCandidateFactory, {
       runs: screenRuns,
       templateIds: allTemplateIds.value,
@@ -663,7 +700,7 @@ const runOptimizer = async () => {
     })
     ensureSearchContinues()
 
-    // 第2段階は一次選別を通過した候補だけを、Tier 0・0.5の21編成で評価する。
+    // 第2段階は一次選別を通過した候補だけを、選択したTierの全テンプレで評価する。
     resultPhase.value = 'scout'
     const refined = await evaluateCandidateStage(workerPool, screened.map((result) => result.lineup), {
       runs: scoutRuns.value,
@@ -1517,8 +1554,8 @@ const skillName = (skill: Skill | null): string => skill?.name_jp || skill?.name
 const teamCost = (team: Lineup): number => roleKeys.reduce((sum, role) => sum + (team[role].hero?.cost ?? 0), 0)
 const formatNumber = (value: number): string => Math.round(value).toLocaleString()
 const formatLargeNumber = (value: number): string => {
-  if (value >= Number.MAX_SAFE_INTEGER) return `${Number.MAX_SAFE_INTEGER.toExponential(2)}以上`
-  return value >= 1_000_000_000 ? value.toExponential(2) : formatNumber(value)
+  const displayValue = Math.min(Math.round(value), Number.MAX_SAFE_INTEGER).toLocaleString('ja-JP')
+  return value >= Number.MAX_SAFE_INTEGER ? `${displayValue}以上` : displayValue
 }
 const formatPercent = (value: number): string => `${(value * 100).toFixed(1)}%`
 const roleSignature = (role: RoleData): string => [
@@ -1702,6 +1739,39 @@ function waitForPaint(): Promise<void> {
   display: flex;
   align-items: center;
   min-height: 32px;
+}
+
+.tier-target-setting {
+  grid-column: span 2;
+}
+
+.tier-switches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tier-switch-item {
+  display: grid;
+  grid-template-columns: minmax(52px, auto) auto minmax(42px, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 1px solid #e2d4c1;
+  border-radius: 6px;
+  background: #fbf8f2;
+}
+
+.tier-switch-item strong {
+  color: #40382f;
+  font-size: 12px;
+}
+
+.tier-switch-item small {
+  color: #807466;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .status-row {
@@ -1895,6 +1965,16 @@ function waitForPaint(): Promise<void> {
   .settings-grid,
   .result-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tier-target-setting {
+    grid-column: auto;
+  }
+
+  .tier-switches {
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 
   .lineup-panel {
