@@ -771,7 +771,10 @@ const normalizeExclusiveTeamSkills = (team: Lineup) => {
 
 const isPlayableHero = (hero: Hero): boolean => Number(hero.rarity) >= 4 || hero.rarity === 'S' || hero.rarity === 'A'
 const isSearchHero = (hero: Hero): boolean => Number(hero.rarity) === 5 || hero.rarity === 'S'
-const isSearchSkill = (skill: Skill): boolean => skill.rarity === 'S' || skill.rarity === 'A'
+const isSearchSkill = (skill: Skill): boolean =>
+  (skill.rarity === 'S' || skill.rarity === 'A')
+  // 重農主義は内政専用なので、実装済み表示になっても戦闘用のAI候補へは入れない。
+  && ![skill.name_jp, skill.name].includes('重農主義')
 const isSelectableBattleSkill = (skill: Skill): boolean => {
   if (!skill || skill.is_fixed || skill.is_unique) return false
   return battleSkillImplementation(skill).status === 'implemented'

@@ -1259,14 +1259,19 @@ const baseDamage = (
   ) {
     incomingSpecialMultiplier *= 1 - Math.min(0.95, (target.specialState.verbalAbuseReductionPercent ?? 0) / 100)
   }
-  // 専横専断の強化は、次に成立する能動戦法の兵刃ダメージ1回だけへ適用する。
+  // 専横専断の強化は、次に成立する能動戦法が与える兵刃ダメージ全体へ適用する。
   if (
     actualKind === 'physical'
     && resolvedSkillType === '能動'
     && (caster.specialState.nextActivePhysicalDamageBonus ?? 0) > 0
   ) {
-    conditionalMultiplier *= 1 + (caster.specialState.nextActivePhysicalDamageBonus ?? 0) / 100
-    caster.specialState.nextActivePhysicalDamageBonus = 0
+    const resolutionToken = caster.specialState.currentSkillResolutionToken ?? 0
+    const consumingToken = caster.specialState.nextActivePhysicalDamageBonusConsumedToken ?? 0
+    // 最初に兵刃ダメージを発生させた能動戦法へ消費権を固定し、同じ戦法の全ヒットへ適用する。
+    if (consumingToken === 0 || consumingToken === resolutionToken) {
+      conditionalMultiplier *= 1 + (caster.specialState.nextActivePhysicalDamageBonus ?? 0) / 100
+      caster.specialState.nextActivePhysicalDamageBonusConsumedToken = resolutionToken
+    }
   }
   // 落花啼鳥の与ダメージ上昇は能動戦法だけを対象にする。
   if (resolvedSkillType === '能動' && (caster.specialState.activeDamageBonusUntil ?? 0) >= currentTurn) {
@@ -2940,6 +2945,18 @@ const resolveSkill = (
   controlStats: Record<string, number>,
   eventSubject?: BattleFighter,
 ) => {
+  // 入れ子で別戦法が発動しても、専横専断の強化を元の能動戦法単位で管理できるよう識別番号を振る。
+  const previousResolutionToken = caster.specialState.currentSkillResolutionToken ?? 0
+  const resolutionToken = (caster.specialState.skillResolutionSequence ?? 0) + 1
+  caster.specialState.skillResolutionSequence = resolutionToken
+  caster.specialState.currentSkillResolutionToken = resolutionToken
+  const finishResolution = () => {
+    if ((caster.specialState.nextActivePhysicalDamageBonusConsumedToken ?? 0) === resolutionToken) {
+      caster.specialState.nextActivePhysicalDamageBonus = 0
+      caster.specialState.nextActivePhysicalDamageBonusConsumedToken = 0
+    }
+    caster.specialState.currentSkillResolutionToken = previousResolutionToken
+  }
   const targets = resolveTargets(skill, caster, target, allies, enemies, rng)
   const skillName = skill.name_jp || skill.name
   const kind = damageKind(skill)
@@ -2949,7 +2966,10 @@ const resolveSkill = (
   const canApplyDirectTroopChange = trigger !== 'preparationTurn'
 
   // 個別実装がある戦法を優先し、未対応の戦法だけ汎用ダメージ/回復/制御へ流す。
-  if (applyNamedSkill({ caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats, eventSubject })) return
+  if (applyNamedSkill({ caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats, eventSubject })) {
+    finishResolution()
+    return
+  }
 
   if (canApplyDirectTroopChange && rate > 0 && !isHeal) {
     targets.forEach((fighter) => {
@@ -3139,6 +3159,7 @@ const resolveSkill = (
   if (rate === 0 && hRate === 0 && !skill.control_type && !skill.dot_name && (skill.buff_types || skill.debuff_types)) {
     if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skillName}の効果を適用` })
   }
+  finishResolution()
 }
 
 const skillControlBlock = (caster: BattleFighter, skill: Skill): string | null => {
