@@ -249,6 +249,7 @@ import {
 } from '../lib/battleSimulator'
 import { battleSkillImplementation, battleSkillType, isExclusiveTeamSkillType } from '../lib/battleSkillEffects'
 import { isAiSkillCompatibleWithStats } from '../lib/aiSkillCompatibility'
+import { autoAllocatedHeroStats } from '../lib/aiHeroStatAllocation'
 import { heroLevel50Stats } from '../lib/heroStats'
 import { normalizeTroopType } from '../constants/traits'
 import type { TroopType } from '../constants/traits'
@@ -690,12 +691,20 @@ const statsWithFocus = (hero: Hero | null, focus?: string, breakthrough = autoBr
   return stats
 }
 
-const autoRole = (hero: Hero): RoleData => ({
-  ...emptyRole(),
-  hero,
-  breakthrough: breakthroughForHero(hero),
-  stats: { ...heroLevel50Stats(hero) },
-})
+const autoRole = (hero: Hero): RoleData => {
+  const breakthrough = breakthroughForHero(hero)
+  const uniqueSkill = hero.unique_skill
+    ? skillByTemplateKey.value.get(hero.unique_skill) ?? null
+    : null
+
+  return {
+    ...emptyRole(),
+    hero,
+    breakthrough,
+    // 空き枠へ自動選出した武将は、固有戦法の依存属性へ追加ポイントも配分する。
+    stats: autoAllocatedHeroStats(hero, uniqueSkill, breakthrough),
+  }
+}
 
 const hydratedStats = (role: RoleData): RoleData['stats'] => {
   const isUninitialized = role.hero && Object.values(role.stats).every((value) => Number(value) === 100)
