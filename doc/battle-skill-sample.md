@@ -1,265 +1,327 @@
 # 戦法個別実装サンプル
 
-戦法を個別実装する時は、`src/lib/battleSimulator.ts` の `applyNamedSkill` に `case` を追加します。
-ここで `true` を返すと、その戦法は汎用推定ロジックを通らず、ここに書いた処理だけで解決されます。
+戦法を個別実装する時は、基本的に `src/lib/battleSkillEffects.ts` の次の2か所を更新します。
 
-## 基本形
+1. `BATTLE_SKILL_EFFECT_META` に戦法タイプと発動タイミングを登録する。
+2. `applyNamedSkillEffect` の `switch` に `case '戦法名'` を追加する。
+
+この2か所へ同じ戦法名を登録すると、戦法一覧でも「個別戦法ロジック・実装済み」と判定されます。
+
+Sランク武将の固有戦法は、同じ仕組みを使う `src/lib/battleUniqueSkillEffects.ts` にまとめています。
+`battleSimulator.ts` には戦闘全体の共通処理だけを置き、個別戦法の `case` は追加しません。
+
+## 1. 戦法タイプと発動タイミングを登録する
 
 ```ts
-case 'サンプル戦法': { // 戦法名が「サンプル戦法」の時だけ、この個別処理を使う
-  const target = ctx.target ?? chooseTarget(ctx.enemies, ctx.rng) // 既に対象があれば使い、無ければ敵から対象を選ぶ
-  if (!target) return true // 対象がいない場合は、何もせず個別処理済みとして終了する
+export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
+  サンプル戦法: defineBattleSkillMeta({ // 個別実装する戦法名を登録する
+    type: '能動', // 戦法タイプを指定する
+    triggers: ['beforeAction'], // 所持武将の行動開始前に発動判定する
+    replaceStructuredTriggers: true, // skills.json側の発動タイミングを使わず、この指定だけを使う
+  }),
+}
+```
 
-  dealSkillDamage(ctx, target, 120, 'physical') // 対象に120%の兵刃ダメージを与える
+戦法タイプの優先順位は次のとおりです。同じタイミングでは、同タイプ内を武将の第1・第2・第3戦法の装備順で処理します。
 
-  if (roll(ctx.rng, 0.4)) { // 40%の確率判定を行う
-    addControl(ctx, target, '無策', Math.round(varNumber(ctx.skill, 'duration', 1))) // 成功したら対象に無策を付与する
+```text
+受動 -> 兵種 -> 指揮 -> 陣法 -> 能動 -> 突撃
+```
+
+### 使用できる主な発動タイミング
+
+| 指定値 | 発動タイミング |
+| --- | --- |
+| `preparationTurn` | 準備ターン |
+| `turnStart` | 各ターン開始時 |
+| `beforeAction` | 所持武将の行動開始前 |
+| `beforeNormalAttack` | 通常攻撃前 |
+| `afterNormalAttack` | 通常攻撃後 |
+| `onNormalAttackReceived` | 通常攻撃を受けた時 |
+| `onHealed` | 戦法による回復を受けた時 |
+| `onPhysicalDamageReceived` | 兵刃ダメージを受けた時 |
+| `onStrategyDamageReceived` | 計略ダメージを受けた時 |
+| `beforeUniqueSkill` | 固有戦法を発動する前 |
+| `afterAction` | 所持武将の行動終了後 |
+| `turnEnd` | 各ターン終了時 |
+
+### 1つの戦法に複数のタイミングがある場合
+
+```ts
+複数タイミング戦法: defineBattleSkillMeta({ // 1つの戦法に複数の効果がある
+  type: '指揮', // 指揮戦法として処理する
+  triggers: ['preparationTurn', 'beforeAction', 'onHealed'], // 必要なイベントをすべて購読する
+  replaceStructuredTriggers: true, // この個別指定だけを使用する
+  followUpTriggers: ['beforeAction', 'onHealed'], // 準備ターン後の効果では戦法発動率を再抽選しない
+}),
+```
+
+- `replaceStructuredTriggers: true` は、個別実装のタイミングだけを使いたい場合に指定します。
+- `followUpTriggers` に入れたイベントは、最初に成立した指揮・受動効果の後続処理として扱い、発動率を再抽選しません。
+- `maxPerTurn: 1` を追加すると、その戦法を1ターン1回までに制限できます。
+
+## 2. 基本の個別caseを書く
+
+```ts
+case 'サンプル戦法': { // 戦法名が一致した時だけ、この個別処理を使う
+  // 指定済みの対象が生存していれば、その対象を使う。
+  const target = ctx.target && ctx.target.hp > 0
+    ? ctx.target
+    : h.chooseTarget(ctx.enemies, ctx.rng, ctx) // 指定対象がいなければ、生存している敵から選ぶ
+
+  if (!target) return true // 攻撃可能な敵がいなければ、個別処理済みとして終了する
+
+  h.dealSkillDamage(ctx, target, 120, 'physical') // 対象へ120%の兵刃ダメージを与える
+
+  if (h.roll(ctx.rng, 0.4)) { // 40%の追加効果判定を行う
+    h.addControl(ctx, target, '無策', 1) // 成功時、対象へ無策を1ターン付与する
   }
 
-  const ally = weakest(ctx.allies, 1)[0] // 自軍で最も兵力割合が低い武将を1人取得する
-  if (ally) { // 回復対象が存在する場合だけ処理する
-    healBySkill(ctx, ally, 80, 'strategy') // 対象を80%の知略依存回復で回復する
-  }
-
-  return true // 個別戦法として処理済みなので、汎用ロジックへ進ませない
+  return true // 個別戦法として処理済みなので、共通処理へ進ませない
 }
 ```
 
-## ターン開始で発動する戦法
+能動・突撃戦法の基本発動率は戦闘エンジン側で判定されます。`case` 内で同じ発動率をもう一度抽選しないでください。
+`h.roll` は「40%で制御状態を付与」など、戦法が発動した後の追加判定に使います。
 
-`triggerForSkill` の戦法名リストにも追加します。
+## 3. よく使うhelper
 
-```ts
-if (['疾風迅雷', '恵風和雨', '樽俎折衝', '風林火山', '伊達風采', 'サンプル戦法'].includes(skillName)) { // このリスト内の戦法か判定する
-  return 'turnStart' // 該当する場合は、毎ターン開始時に発動判定する
-}
-```
+- `h.dealSkillDamage(ctx, target, 120, 'physical')`
+  - 120%の兵刃ダメージを与えます。
+- `h.dealSkillDamage(ctx, target, 120, 'strategy')`
+  - 120%の計略ダメージを与えます。
+- `h.healBySkill(ctx, target, 80, 'strategy')`
+  - 80%・知略依存の回復を行います。
+- `h.healBySkill(ctx, target, 80, 'bravery')`
+  - 80%・武勇依存の回復を行います。
+- `h.healBySkill(ctx, target, 80, 'leadership')`
+  - 80%・統率依存の回復を行います。
+- `h.healFixedBySkill(ctx, target, 500)`
+  - ダメージの一定割合など、再計算しない固定量を回復します。
+- `h.addControl(ctx, target, '無策', 1)`
+  - 制御状態を1ターン付与します。同じ制御状態は重ね掛け・上書きされません。
+- `h.addTimedModifier(ctx, target, 'damageDealt', 12, 2, 1)`
+  - 与ダメージを12%上げる効果を2ターン、最大1層で付与します。
+- `h.weakest(ctx.allies, 2)`
+  - 自軍を兵力割合が低い順に2人取得します。
+- `h.aliveRandom(ctx.allies, ctx.rng, ctx).slice(0, 2)`
+  - 生存中の自軍からランダムに2人取得します。
+- `h.statOf(ctx.caster, 'int')`
+  - バフ・デバフを含む現在の知略を取得します。
+- `h.varNumber(ctx.skill, 'duration', 1)`
+  - `vars.duration` があればその値を、なければ `1` を取得します。
 
-## よく使う helper
+## 4. 対象の選び方
 
-- `dealSkillDamage(ctx, target, 120, 'physical')`
-  - 兵刃ダメージ。倍率は `120%`。
-- `dealSkillDamage(ctx, target, 120, 'strategy')`
-  - 計略ダメージ。倍率は `120%`。
-- `healBySkill(ctx, ally, 80, 'strategy')`
-  - 回復。倍率は `80%`。
-- `addControl(ctx, target, '無策', 1)`
-  - 制御状態を1ターン付与。
-- `weakest(ctx.allies, 2)`
-  - 自軍の兵力割合が低い順に2人取得。
-- `aliveRandom(ctx.enemies, ctx.rng).slice(0, 2)`
-  - 生存している敵からランダムに2人取得。
-- `varNumber(ctx.skill, 'duration', 1)`
-  - `vars.duration` があれば使い、無ければ `1` を使う。
-- `roll(ctx.rng, 0.4)`
-  - 40%の確率判定。
-
-## 武勇・知略依存で確率を上げる例
-
-確率だけステータス依存にしたい場合は、基礎確率にステータス差分を足します。
-下の例では、武勇または知略が `100` を超えた分だけ確率が少し上がります。
-
-```ts
-const statScaledChance = (baseChance: number, stat: number, maxChance: number) => { // 基礎確率、参照ステータス、上限確率を受け取る
-  const bonus = Math.max(0, stat - 100) * 0.001 // ステータスが100を超えた分だけ、1につき0.1%加算する
-  return clamp(baseChance + bonus, 0, maxChance) // 0%未満や上限超えにならないように丸めて返す
-}
-```
-
-この helper は `applyNamedSkill` の近くに置いて使います。
-
-### 武勇依存で戦法発動率を上げる
+### ランダムな敵軍2人へダメージ
 
 ```ts
-case '武勇依存発動サンプル': { // 戦法名が一致した時の個別処理
-  const target = ctx.target ?? chooseTarget(ctx.enemies, ctx.rng) // 攻撃対象を取得する
-  if (!target) return true // 対象がいなければ処理済みとして終了する
+case '敵軍複数攻撃サンプル': { // 敵軍複数を攻撃する戦法
+  h.aliveRandom(ctx.enemies, ctx.rng, ctx) // 生存中の敵をランダム順に並べる
+    .slice(0, 2) // 先頭から2人を対象にする
+    .forEach((enemy) => { // 選ばれた敵を1人ずつ処理する
+      h.dealSkillDamage(ctx, enemy, 96, 'physical') // 各対象へ96%の兵刃ダメージを与える
+    })
 
-  const chance = statScaledChance(0.35, statOf(ctx.caster, 'val'), 0.7) // 基礎35%、武勇依存、最大70%の発動率を計算する
-  if (!roll(ctx.rng, chance)) return true // 発動判定に失敗したら何もせず終了する
-
-  dealSkillDamage(ctx, target, 110, 'physical') // 発動成功時、対象に110%の兵刃ダメージを与える
   return true // 個別処理済みとして終了する
 }
 ```
 
-### 知略依存で状態異常付与率を上げる
+### ランダムな自軍2人を回復
 
 ```ts
-case '知略依存制御サンプル': { // 戦法名が一致した時の個別処理
-  const target = ctx.target ?? chooseTarget(ctx.enemies, ctx.rng) // 制御を狙う対象を取得する
+case '自軍ランダム回復サンプル': { // 自軍複数を回復する戦法
+  h.aliveRandom(ctx.allies, ctx.rng, ctx) // 生存中の自軍をランダム順に並べる
+    .slice(0, 2) // 先頭から2人を対象にする
+    .forEach((ally) => { // 選ばれた味方を1人ずつ処理する
+      h.healBySkill(ctx, ally, 122, 'strategy') // 各対象を122%・知略依存で回復する
+    })
+
+  return true // 個別処理済みとして終了する
+}
+```
+
+### 最も兵力割合が低い自軍1人を回復
+
+```ts
+case '自軍最低兵力回復サンプル': { // 最も消耗している味方を回復する戦法
+  const ally = h.weakest(ctx.allies, 1)[0] // 兵力割合が最も低い味方を取得する
+  if (!ally) return true // 生存中の味方がいなければ終了する
+
+  h.healBySkill(ctx, ally, 180, 'strategy') // 対象を180%・知略依存で回復する
+  return true // 個別処理済みとして終了する
+}
+```
+
+「ランダム」と「兵力が最も低い」は別の仕様です。説明文がランダムの場合は `h.weakest` を使わないでください。
+
+## 5. 能力依存の確率と効果量
+
+現在の共通計算に合わせる場合は、次の補助関数を `battleSkillEffects.ts` 内で使用します。
+
+```ts
+const attributeDependentChance = (baseChance: number, stats: number[]): number => { // 基礎確率と参照能力を受け取る
+  const average = stats.reduce((sum, value) => sum + value, 0) / Math.max(1, stats.length) // 複数能力なら平均値を求める
+  return Math.min(0.95, baseChance + Math.max(0, average - 100) * 0.001) // 能力100超過分を加算し、95%を上限にする
+}
+
+const attributeDependentValue = (baseValue: number, stats: number[]): number => { // 基礎効果量と参照能力を受け取る
+  const average = stats.reduce((sum, value) => sum + value, 0) / Math.max(1, stats.length) // 複数能力なら平均値を求める
+  return baseValue * (1 + Math.max(0, average - 100) * 0.001) // 能力100超過分を相対倍率として掛ける
+}
+```
+
+### 知略依存で制御状態付与率を上げる
+
+```ts
+case '知略依存制御サンプル': { // 知略依存の追加効果を持つ戦法
+  const target = h.chooseTarget(ctx.enemies, ctx.rng, ctx) // 生存中の敵から対象を選ぶ
   if (!target) return true // 対象がいなければ終了する
 
-  dealSkillDamage(ctx, target, 90, 'strategy') // まず対象に90%の計略ダメージを与える
+  h.dealSkillDamage(ctx, target, 90, 'strategy') // 対象へ90%の計略ダメージを与える
 
-  const controlChance = statScaledChance(0.3, statOf(ctx.caster, 'int'), 0.75) // 基礎30%、知略依存、最大75%の付与率を計算する
-  if (roll(ctx.rng, controlChance)) { // 付与率で確率判定する
-    addControl(ctx, target, '混乱', 1) // 成功したら混乱を1ターン付与する
+  const chance = attributeDependentChance(0.3, [h.statOf(ctx.caster, 'int')]) // 基礎30%・知略依存の付与率を求める
+  if (h.roll(ctx.rng, chance)) { // 求めた確率で付与判定を行う
+    h.addControl(ctx, target, '混乱', 1) // 成功時、混乱を1ターン付与する
   }
 
   return true // 個別処理済みとして終了する
 }
 ```
 
-### 武勇依存で麻痺付与率を上げる
+## 6. 一時的な能力・与被ダメージ補正
 
 ```ts
-case '武勇依存麻痺サンプル': { // 戦法名が一致した時の個別処理
-  aliveRandom(ctx.enemies, ctx.rng) // 生存している敵をランダム順に並べる
-    .slice(0, 2) // 先頭から2人を対象にする
-    .forEach((enemy) => { // 対象ごとに処理する
-      dealSkillDamage(ctx, enemy, 76, 'physical') // 対象に76%の兵刃ダメージを与える
+case '一時強化サンプル': { // 一時的な強化を付与する戦法
+  const valor = h.statOf(ctx.caster, 'val') // 現在の武勇を取得する
+  const bonus = attributeDependentValue(12, [valor]) // 基礎12%・武勇依存の効果量を計算する
 
-      const paralyzeChance = statScaledChance(0.25, statOf(ctx.caster, 'val'), 0.5) // 基礎25%、武勇依存、最大50%の麻痺付与率を計算する
-      if (roll(ctx.rng, paralyzeChance)) { // 麻痺付与判定を行う
-        addControl(ctx, enemy, '麻痺', 1) // 成功したら麻痺を1ターン付与する
+  h.addTimedModifier(ctx, ctx.caster, 'damageDealt', bonus, 2, 1) // 自身の与ダメージを2ターン、最大1層で上げる
+  h.addTimedModifier(ctx, ctx.caster, 'damageTaken', -10, 2, 1) // 自身の被ダメージを2ターン、最大1層で下げる
+
+  return true // 個別処理済みとして終了する
+}
+```
+
+`damageDealt` と `damageTaken` は割合をそのまま指定します。被ダメージを下げる場合は負の値を使います。
+
+## 7. 効果ごとに発動タイミングが異なる戦法
+
+```ts
+複数効果サンプル: defineBattleSkillMeta({ // メタ情報へ複数の発動タイミングを登録する
+  type: '指揮', // 指揮戦法として処理する
+  triggers: ['preparationTurn', 'beforeAction', 'onHealed'], // 準備、行動前、回復を受けた時に呼び出す
+  replaceStructuredTriggers: true, // 登録したタイミングだけを使用する
+  followUpTriggers: ['beforeAction', 'onHealed'], // 後続効果では発動率を再抽選しない
+}),
+```
+
+```ts
+case '複数効果サンプル': { // 複数のイベントで呼ばれる個別戦法
+  if (ctx.trigger === 'preparationTurn') { // 準備ターンの処理か確認する
+    ctx.caster.specialState.samplePrepared = 1 // 後続効果が有効であることを保存する
+    return true // このイベントの処理を終了する
+  }
+
+  if ((ctx.caster.specialState.samplePrepared ?? 0) <= 0) return true // 準備効果が成立していなければ終了する
+
+  if (ctx.trigger === 'beforeAction') { // 所持武将の行動開始前か確認する
+    h.addTimedModifier(ctx, ctx.caster, 'val', 20, 1, 1) // 自身の武勇を1ターン20上げる
+    return true // このイベントの処理を終了する
+  }
+
+  if (ctx.trigger === 'onHealed') { // 戦法回復を受けた時か確認する
+    h.addTimedModifier(ctx, ctx.caster, 'damageDealt', 5, 1, 1) // 自身の与ダメージを1ターン5%上げる
+    return true // このイベントの処理を終了する
+  }
+
+  return true // 未使用のイベントでも個別処理済みとして終了する
+}
+```
+
+## 8. 如水の現在仕様に沿った例
+
+```ts
+如水: defineBattleSkillMeta({ // 如水のメタ情報を登録する
+  type: '受動', // 受動戦法として処理する
+  triggers: ['beforeAction', 'onHealed'], // 行動開始前と戦法回復を受けた時に呼び出す
+}),
+```
+
+```ts
+case '如水': { // 黒田官兵衛の固有戦法を処理する
+  const gainKisaku = (reason: string) => { // 奇策獲得処理を共通化する
+    const stacks = ctx.caster.specialState.josuiKisakuStacks ?? 0 // 現在の奇策スタックを取得する
+    if (stacks >= 8) return // 最大8スタックなら何もしない
+
+    const intelligence = h.statOf(ctx.caster, 'int') // 現在の知略を取得する
+    const chance = Math.min(0.9, 0.48 + Math.max(0, intelligence - 100) * 0.001) // 基礎48%・知略依存、上限90%で求める
+    if (!h.roll(ctx.rng, chance)) return // 奇策獲得判定に失敗したら終了する
+
+    const nextStacks = Math.min(8, stacks + 1) // 奇策を1つ増やし、8を上限にする
+    ctx.caster.specialState.josuiKisakuStacks = nextStacks // 新しいスタック数を保存する
+
+    setSpecialStateContribution( // 他の奇策率上昇効果と共存できる形で反映する
+      ctx.caster, // 奇策を得る武将を指定する
+      'strategyCriticalChance', // 計略最終ダメージが150%になる確率へ加算する
+      'josuiStrategyCriticalChance', // 如水による加算分を識別するキーを指定する
+      nextStacks * 5, // 1スタックにつき奇策率を5%上げる
+    )
+
+    log(ctx.logs, ctx, `如水: ${reason}で奇策を獲得（奇策率${nextStacks * 5}%）`) // 現在の奇策率をログへ表示する
+  }
+
+  if (ctx.trigger === 'beforeAction') { // 所持武将の行動開始前か確認する
+    gainKisaku('行動前') // 行動開始前の奇策獲得判定を行う
+
+    const target = h.chooseTarget(ctx.enemies, ctx.rng, ctx) // 生存中の敵から対象を選ぶ
+    const damageChance = ctx.caster.role === 'main' ? 0.75 : 0.6 // 大将なら75%、副将なら60%にする
+    if (target && h.roll(ctx.rng, damageChance)) { // 対象が存在し、ダメージ判定に成功したか確認する
+      const hits = 1 + Math.floor(ctx.rng() * 2) // 攻撃回数を1～2回から決める
+      for (let index = 0; index < hits; index += 1) { // 決めた回数だけ繰り返す
+        h.dealSkillDamage(ctx, target, 88, 'strategy') // 対象へ88%の計略ダメージを与える
       }
-    })
-
-  return true // 個別処理済みとして終了する
-}
-```
-
-## 複数対象ダメージの例
-
-```ts
-case '敵軍集団攻撃サンプル': { // 戦法名が一致した時の個別処理
-  aliveRandom(ctx.enemies, ctx.rng) // 生存している敵をランダム順に並べる
-    .slice(0, 2) // 2人を対象にする
-    .forEach((enemy) => { // 対象ごとに処理する
-      dealSkillDamage(ctx, enemy, 96, 'physical') // 各対象に96%の兵刃ダメージを与える
-    })
-
-  return true // 個別処理済みとして終了する
-}
-```
-
-## 回復戦法の例
-
-```ts
-case '自軍回復サンプル': { // 戦法名が一致した時の個別処理
-  weakest(ctx.allies, 2).forEach((ally) => { // 自軍の兵力割合が低い2人を対象にする
-    healBySkill(ctx, ally, 122, 'strategy') // 各対象を122%の知略依存回復で回復する
-  })
-
-  return true // 個別処理済みとして終了する
-}
-```
-
-## バフ戦法の例
-
-```ts
-case '自軍強化サンプル': { // 戦法名が一致した時の個別処理
-  ctx.allies.forEach((ally) => { // 自軍全員に対して処理する
-    ally.buffs.damageDealt = (ally.buffs.damageDealt ?? 0) + 12 // 与ダメージ補正を12%加算する
-    ally.buffs.lea = (ally.buffs.lea ?? 0) + varNumber(ctx.skill, 'leadership_buff', 20) // 統率をvars値、無ければ20上げる
-  })
-
-  return true // 個別処理済みとして終了する
-}
-```
-
-## 如水の例
-
-`毎ターン行動前` は `triggerForSkill` で `beforeAction` にします。
-`毎ターン初めて戦法回復を受けた時` は、回復処理の中から呼ぶ補助関数に分けると書きやすいです。
-
-```ts
-const statScaledChance = (baseChance: number, fighter: BattleFighter, stat: Stat, maxChance: number) => { // 基礎確率、参照武将、参照能力、上限確率を受け取る
-  const bonus = Math.max(0, statOf(fighter, stat) - 100) * 0.001 // 能力が100を超えた分だけ、1につき0.1%を加算する
-  return clamp(baseChance + bonus, 0, maxChance) // 0%未満や上限超えにならないように丸める
-}
-
-const gainJosuiKisaku = (fighter: BattleFighter, turn: number, logs: BattleLogEntry[], rng: () => number, reason: string) => { // 如水の奇策獲得だけを担当する
-  const stacks = fighter.specialState.josuiKisakuStacks ?? 0 // 現在の奇策スタック数を取得する
-  if (stacks >= 8) return // 最大8回までなので、8以上なら何もしない
-  if (!roll(rng, statScaledChance(0.48, fighter, 'int', 0.9))) return // 48%、知略依存、上限90%で獲得判定する
-
-  const nextStacks = Math.min(8, stacks + 1) // スタックを1増やし、8を超えないようにする
-  fighter.specialState.josuiKisakuStacks = nextStacks // 新しいスタック数を保存する
-  fighter.buffs.strategyDamageDealt = (fighter.buffs.strategyDamageDealt ?? 0) + 5 // 奇策1回分として計略与ダメージを5%上げる
-  logs.push({ turn, side: fighter.side, actor: fighter.name, message: `如水: ${reason}で奇策を獲得(${nextStacks}/8)` }) // 戦闘ログに獲得内容を残す
-}
-
-const tryJosuiHealTrigger = (target: BattleFighter, turn: number, logs: BattleLogEntry[], rng: () => number) => { // 回復を受けた時の如水判定を担当する
-  if (!target.skills.some((skill) => skillDisplayName(skill) === '如水')) return // 対象が如水を持っていなければ終了する
-  if (target.specialState.josuiHealTurn === turn) return // このターンに既に回復時判定をしていれば終了する
-  target.specialState.josuiHealTurn = turn // このターンの回復時判定を済みにする
-  gainJosuiKisaku(target, turn, logs, rng, 'このターン初めて戦法回復を受けた時') // 回復時の奇策獲得判定を行う
-}
-
-case '如水': { // 黒田官兵衛の固有戦法
-  gainJosuiKisaku(ctx.caster, ctx.turn, ctx.logs, ctx.rng, '行動前') // 行動前に48%、知略依存で奇策を獲得する
-
-  const damageChance = ctx.caster.role === 'main' ? 0.75 : 0.6 // 大将なら75%、それ以外なら60%にする
-  if (currentTarget && roll(ctx.rng, damageChance)) { // 対象がいて、計略ダメージ発動判定に成功した時だけ処理する
-    const hits = 1 + Math.floor(ctx.rng() * 2) // 1〜2回の実行回数をランダムに決める
-    for (let i = 0; i < hits; i += 1) { // 決まった回数だけ繰り返す
-      dealSkillDamage(ctx, currentTarget, 88, 'strategy') // 敵軍単体に88%の知略依存計略ダメージを与える
     }
   }
 
-  return true // 如水は個別実装で処理済みとして終了する
-}
-```
-
-## 回復蓄積から計略ダメージを出す例
-
-この例では戦法名を `回復蓄積サンプル` にしています。
-実際に使う時は、`HEAL_STOCK_DAMAGE_SKILL_NAMES` と `case '回復蓄積サンプル'` を実戦法名に差し替えます。
-
-```ts
-const HEAL_STOCK_DAMAGE_SKILL_NAMES = ['回復蓄積サンプル'] // 回復蓄積型として扱う戦法名をまとめる
-
-const hasAnySkillNamed = (fighter: BattleFighter, names: string[]) => // 武将が指定した名前の戦法をどれか持っているか調べる
-  names.some((name) => hasSkillNamed(fighter, name)) // 1つでも一致すればtrueを返す
-
-const addHealingStock = (allies: BattleFighter[], amount: number, turn: number, logs: BattleLogEntry[]) => { // 戦法回復量を蓄積する
-  const stockAmount = Math.floor(amount * 0.75) // 回復量の75%だけ蓄積量に変換する
-  if (stockAmount <= 0) return // 蓄積量が0以下なら何もしない
-
-  allies // 回復した側の味方全体を見る
-    .filter((ally) => hasAnySkillNamed(ally, HEAL_STOCK_DAMAGE_SKILL_NAMES)) // 回復蓄積型の戦法を持つ武将だけに絞る
-    .forEach((owner) => { // 対象の武将ごとに処理する
-      owner.specialState.healingStock = (owner.specialState.healingStock ?? 0) + stockAmount // 既存の蓄積量に加算する
-      logs.push({ turn, side: owner.side, actor: owner.name, message: `回復蓄積: ${stockAmount}蓄積(合計${owner.specialState.healingStock})` }) // ログに蓄積量を残す
-    })
-}
-
-case '回復蓄積サンプル': { // 回復蓄積型の個別戦法
-  if (ctx.caster.role !== 'main') return true // 自軍大将の行動終了時だけ発動するので、大将以外なら終了する
-
-  const stock = ctx.caster.specialState.healingStock ?? 0 // 現在の回復蓄積量を取得する
-  if (stock <= 0) return true // 蓄積量が無ければ何もしない
-
-  if (roll(ctx.rng, 0.8)) { // 80%の確率でダメージ処理を行う
-    const targetCount = 1 + Math.floor(ctx.rng() * 2) // 敵軍複数1〜2名を決める
-    const damageRate = 92 + Math.min(180, Math.floor(stock / 200)) // 基礎92%、蓄積200ごとに1%加算、上限+180%にする
-    aliveRandom(ctx.enemies, ctx.rng) // 生存している敵をランダム順に並べる
-      .slice(0, targetCount) // 決めた人数だけ対象にする
-      .forEach((enemy) => dealSkillDamage(ctx, enemy, damageRate, 'strategy')) // 知略依存の計略ダメージを与える
+  if (ctx.trigger === 'onHealed' && ctx.turn > 0) { // 準備ターン以外に戦法回復を受けたか確認する
+    if (ctx.caster.specialState.josuiHealTurn !== ctx.turn) { // このターンにまだ回復反応していないか確認する
+      ctx.caster.specialState.josuiHealTurn = ctx.turn // このターンの回復反応済みを記録する
+      gainKisaku('このターン初めて戦法回復を受けた時') // 回復を受けた時の奇策獲得判定を行う
+    }
   }
 
-  ctx.logs.push({ turn: ctx.turn, side: ctx.caster.side, actor: ctx.caster.name, message: `回復蓄積をリセット(${stock})` }) // リセット前の蓄積量をログに残す
-  ctx.caster.specialState.healingStock = 0 // 発動判定後、蓄積された回復量をリセットする
   return true // 個別処理済みとして終了する
 }
 ```
 
-回復蓄積は `healBySkill` と汎用回復処理の中で、実際に回復量が出た後に呼びます。
+奇策は計略与ダメージを固定加算する効果ではありません。奇策率が50%なら、50%の確率でその計略ダメージの最終値を150%にします。
+
+## 9. 部隊全体や敵軍の行動を監視する戦法
+
+所持武将以外の行動・被ダメージにも反応する戦法は、`case` とメタ情報だけでなく監視対象の一覧へ登録します。
 
 ```ts
-if (actual > 0) { // 実回復量がある時だけ処理する
-  addHealingStock(ctx.allies, actual, ctx.turn, ctx.logs) // 回復した側の味方に、回復量の75%を蓄積する
-  tryJosuiHealTrigger(target, ctx.turn, ctx.logs, ctx.rng) // 如水など、回復を受けた時の別効果も処理する
-}
+export const TEAM_ACTION_BATTLE_SKILL_NAMES = new Set([ // 自軍各武将の行動を監視する兵種戦法
+  'サンプル兵種戦法', // 所持者以外の行動開始時にもcaseを呼び出す
+])
+
+export const TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set([ // 自軍各武将の通常攻撃被弾を監視する戦法
+  'サンプル被弾戦法', // 友軍が通常攻撃を受けた時にもcaseを呼び出す
+])
 ```
 
-## 実装時の目安
+必要な監視一覧は効果によって異なります。既存の類似戦法を探し、同じイベントを監視する一覧へ追加してください。
 
-1. 戦法名を `case '戦法名':` にする。
-2. 発動タイミングが特殊なら `triggerForSkill` に追加する。
-3. ダメージ、回復、制御、バフを helper で書く。
-4. 確率がステータス依存なら `statScaledChance` で補正する。
-5. 最後に必ず `return true` する。
-6. まだ完全再現できない条件は、近似実装としてコメントを残す。
+## 10. 実装時チェックリスト
+
+1. `BATTLE_SKILL_EFFECT_META` に戦法タイプと全発動タイミングを登録する。
+2. 複数タイミングでは、後続効果を `followUpTriggers` に入れるか確認する。
+3. `applyNamedSkillEffect` に `case '戦法名'` を追加する。
+4. S固有戦法は `battleUniqueSkillEffects.ts` に追加する。
+5. ランダム対象と最低兵力対象を区別する。
+6. 能動・突撃戦法の基本発動率を `case` 内で二重抽選しない。
+7. 制御状態は `h.addControl`、一時効果は `h.addTimedModifier` を使う。
+8. 部隊全体の行動を監視する効果は、対応する監視一覧にも登録する。
+9. 最後に必ず `return true` を返す。
+10. `pnpm run build` を実行し、データ検査と本番ビルドが成功することを確認する。
