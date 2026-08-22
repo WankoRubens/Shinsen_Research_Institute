@@ -1,7 +1,10 @@
-import type { Lineup, RoleData } from '../composables/useLineups'
-import type { BingxueOption, Skill } from '../composables/useData'
+import type { Lineup } from '../composables/useLineups'
+import type { BingxueOption, Hero, Skill } from '../composables/useData'
+import { snapshotAiLineup, type AiWorkerLineupSnapshot } from './aiOptimizerWorkerTypes'
+import { AI_GPU_FEATURE_COUNT } from './aiOptimizerGpuFeatures'
+import { AiOptimizerGpuFeatureWorkerPool } from './aiOptimizerGpuFeatureWorkerPool'
 
-const FEATURE_COUNT = 8
+const FEATURE_COUNT = AI_GPU_FEATURE_COUNT
 // 1候補を1ワークグループへ割り当て、概算戦闘を256スレッドで同時評価する。
 const WORKGROUP_SIZE = 256
 const APPROXIMATE_TURNS = 8
@@ -157,106 +160,6 @@ fn main(
 }
 `
 
-const roleKeys = ['main', 'vice1', 'vice2'] as const
-
-const parseActivationRate = (skill: Skill): number => {
-  if (Number.isFinite(Number(skill.probability))) return Math.max(0, Math.min(1, Number(skill.probability)))
-  const rates = String(skill.activation_rate ?? '').match(/\d+(?:\.\d+)?/g)?.map(Number) ?? []
-  if (rates.length > 0) return Math.max(...rates) / 100
-  return ['受動', '指揮', '兵種', '陣法'].includes(skill.type) ? 1 : 0.4
-}
-
-const skillText = (skill: Skill): string => [
-  skill.name_jp,
-  skill.name,
-  skill.description_jp,
-  skill.brief_description_jp,
-  skill.damage_type,
-  skill.battle_type,
-  ...(skill.tags ?? []),
-  ...(skill.battle_tags ?? []),
-].filter(Boolean).join(' ')
-
-const addSkillFeatures = (features: Float32Array, skill: Skill): void => {
-  const text = skillText(skill)
-  const activation = parseActivationRate(skill)
-  const damageRate = Math.max(0, Number(skill.damage_rate_max) || 0)
-  const dotRate = Math.max(0, Number(skill.dot_rate_max) || 0) * Math.max(1, Number(skill.dot_turns) || 1)
-  const healRate = Math.max(0, Number(skill.heal_rate_max) || 0)
-  const physical = /兵刃|武勇|bravery|physical/.test(text)
-  const strategy = /計略|知略|strategy/.test(text)
-  const damagePower = (damageRate + dotRate * 0.65) * activation
-
-  if (physical && strategy) {
-    features[0] += damagePower * 0.5
-    features[1] += damagePower * 0.5
-  } else if (strategy) {
-    features[1] += damagePower
-  } else {
-    features[0] += damagePower
-  }
-  features[4] += healRate * activation
-  if (skill.control_type || /混乱|無策|封撃|麻痺|威圧|疲弊|挑発|牽制|萎縮|回復不可/.test(text)) {
-    features[5] += 35 * activation * Math.max(1, Number(skill.control_turns) || 1)
-  }
-  if (/発動確率|先攻|連撃|必中|洞察/.test(text)) features[6] += 24 * activation
-  if (/被ダメージ.*低下|防御|統率.*増加|援護/.test(text)) features[2] += 22 * activation
-  if (/速度.*増加|先攻/.test(text)) features[3] += 16 * activation
-}
-
-const addBingxueFeatures = (
-  features: Float32Array,
-  role: RoleData,
-  catalog: Record<string, BingxueOption>,
-): void => {
-  const selected = [
-    role.bingxue.major,
-    ...role.bingxue.minors.flatMap((minor) => Array.from({ length: minor.level }, () => minor.name)),
-  ].filter((name): name is string => Boolean(name))
-
-  for (const name of selected) {
-    const option = catalog[name]
-    const text = `${name} ${option?.description_jp ?? option?.description ?? ''}`
-    if (/兵刃|武勇|会心|通常攻撃|突撃/.test(text)) features[0] += 14
-    if (/計略|知略|奇策|能動/.test(text)) features[1] += 14
-    if (/被ダメージ|統率|防御|援護|抵抗/.test(text)) features[2] += 12
-    if (/速度|先攻|機動|早駆/.test(text)) features[3] += 12
-    if (/回復|救援|離反|攻心|仁愛|恩顧/.test(text)) features[4] += 14
-    if (/混乱|無策|封撃|麻痺|威圧|疲弊|挑発|牽制|萎縮|制御/.test(text)) features[5] += 12
-    if (/発動確率|必中|洞察|果敢|活路|兵家/.test(text)) features[6] += 11
-    features[7] += 3
-  }
-}
-
-const lineupFeatures = (
-  lineup: Lineup,
-  uniqueSkills: Map<string, Skill>,
-  catalog: Record<string, BingxueOption>,
-): Float32Array => {
-  const features = new Float32Array(FEATURE_COUNT)
-  for (const roleKey of roleKeys) {
-    const role = lineup[roleKey]
-    if (!role.hero) continue
-    features[0] += Number(role.stats.val) || 0
-    features[1] += Number(role.stats.int) || 0
-    features[2] += Number(role.stats.lea) || 0
-    features[3] += Number(role.stats.spd) || 0
-    features[7] += Math.min(Number(role.stats.val) || 0, Number(role.stats.int) || 0) * 0.08
-
-    const uniqueName = role.hero.unique_skill
-    const roleSkills = [
-      uniqueName ? uniqueSkills.get(uniqueName) ?? null : null,
-      role.skill1,
-      role.skill2,
-    ]
-    roleSkills.forEach((skill) => {
-      if (skill) addSkillFeatures(features, skill)
-    })
-    addBingxueFeatures(features, role, catalog)
-  }
-  return features
-}
-
 export class AiOptimizerGpuScreener {
   private destroyed = false
 
@@ -265,19 +168,23 @@ export class AiOptimizerGpuScreener {
     private readonly pipeline: any,
     private readonly templateBuffer: any,
     private readonly templateCount: number,
-    private readonly uniqueSkills: Map<string, Skill>,
-    private readonly bingxueCatalog: Record<string, BingxueOption>,
+    private readonly featureWorkers: AiOptimizerGpuFeatureWorkerPool,
   ) {}
 
+  // 特徴量WorkerとGPU読み戻しを同時進行させるバッチ数。
+  readonly maxInFlightBatches = 4
+
   static async create(
+    heroes: Hero[],
     skills: Skill[],
-    templates: Lineup[],
+    templates: AiWorkerLineupSnapshot[],
     bingxueCatalog: Record<string, BingxueOption>,
   ): Promise<AiOptimizerGpuScreener | null> {
     const gpu = (typeof navigator === 'undefined' ? undefined : (navigator as WebGpuNavigator).gpu)
     if (!gpu || templates.length === 0) return null
 
     let device: any = null
+    let featureWorkers: AiOptimizerGpuFeatureWorkerPool | null = null
     try {
       const adapter = await gpu.requestAdapter({ powerPreference: 'high-performance' })
         ?? await gpu.requestAdapter()
@@ -295,16 +202,8 @@ export class AiOptimizerGpuScreener {
         layout: 'auto',
         compute: { module, entryPoint: 'main' },
       })
-      const uniqueSkills = new Map<string, Skill>()
-      skills.forEach((skill) => {
-        if (skill.name) uniqueSkills.set(skill.name, skill)
-        if (skill.name_jp) uniqueSkills.set(skill.name_jp, skill)
-        if (skill.sim_id) uniqueSkills.set(skill.sim_id, skill)
-      })
-      const templateFeatures = new Float32Array(templates.length * FEATURE_COUNT)
-      templates.forEach((lineup, index) => {
-        templateFeatures.set(lineupFeatures(lineup, uniqueSkills, bingxueCatalog), index * FEATURE_COUNT)
-      })
+      featureWorkers = new AiOptimizerGpuFeatureWorkerPool(heroes, skills, bingxueCatalog)
+      const templateFeatures = await featureWorkers.build(templates)
       // テンプレ特徴量は全バッチ共通なので、GPUメモリへ一度だけ転送して再利用する。
       const templateBuffer = device.createBuffer({
         size: templateFeatures.byteLength,
@@ -316,10 +215,10 @@ export class AiOptimizerGpuScreener {
         pipeline,
         templateBuffer,
         templates.length,
-        uniqueSkills,
-        bingxueCatalog,
+        featureWorkers,
       )
     } catch {
+      featureWorkers?.destroy()
       device?.destroy()
       return null
     }
@@ -329,10 +228,8 @@ export class AiOptimizerGpuScreener {
     if (this.destroyed) throw new Error('GPU一次選別を終了しました。')
     if (lineups.length === 0) return new Float32Array()
 
-    const candidateFeatures = new Float32Array(lineups.length * FEATURE_COUNT)
-    lineups.forEach((lineup, index) => {
-      candidateFeatures.set(lineupFeatures(lineup, this.uniqueSkills, this.bingxueCatalog), index * FEATURE_COUNT)
-    })
+    // 特徴量は専用Workerで作り、GPUへそのまま転送できるFloat32配列として受け取る。
+    const candidateFeatures = await this.featureWorkers.build(lineups.map(snapshotAiLineup))
 
     const candidateBuffer = this.device.createBuffer({
       size: candidateFeatures.byteLength,
@@ -393,6 +290,7 @@ export class AiOptimizerGpuScreener {
   destroy(): void {
     if (this.destroyed) return
     this.destroyed = true
+    this.featureWorkers.destroy()
     this.templateBuffer.destroy()
     this.device.destroy()
   }

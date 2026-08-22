@@ -511,7 +511,7 @@ const canOptimize = computed(() =>
 )
 const progressPercent = computed(() => progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0)
 const screeningBackendLabel = computed(() => {
-  if (screeningBackend.value === 'gpu') return `WebGPU（8ターン概算×${AI_GPU_SCREEN_SCENARIOS}通り）`
+  if (screeningBackend.value === 'gpu') return `WebGPU（8ターン概算×${AI_GPU_SCREEN_SCENARIOS}通り・4バッチ並列）`
   if (screeningBackend.value === 'cpu') return 'CPU Worker'
   return 'GPU自動判定'
 })
@@ -621,8 +621,9 @@ const runOptimizer = async () => {
     // WebGPUが使える端末では、全21テンプレに対する一次選別だけをGPUへ任せる。
     // 最終的な順位は、この後のCPU Workerによる通常戦闘で必ず再評価する。
     activeGpuScreener = await AiOptimizerGpuScreener.create(
+      heroes.value,
       skills.value,
-      templateTeams.value.map(({ lineup }) => lineup),
+      workerTemplates.map((template) => template.lineup),
       bingxue.value,
     )
     screeningBackend.value = activeGpuScreener ? 'gpu' : 'cpu'
@@ -760,14 +761,12 @@ const evaluateGpuCandidateStage = async (
   progress.total = options.total
   const retained: AiOptimizerResult[] = []
   const stageSeen = new Set<string>()
+  const inFlight = new Set<Promise<void>>()
   let batch: Lineup[] = []
   let candidateIndex = 0
 
-  const flush = async (): Promise<void> => {
-    if (batch.length === 0) return
+  const processBatch = async (currentBatch: Lineup[]): Promise<void> => {
     ensureSearchContinues()
-    const currentBatch = batch
-    batch = []
     const scores = await screener.scoreBatch(currentBatch)
     ensureSearchContinues()
 
@@ -795,15 +794,34 @@ const evaluateGpuCandidateStage = async (
     await waitForPaint()
   }
 
-  for (const lineup of candidates) {
-    ensureSearchContinues()
-    const signature = canonicalCandidateSignature(lineup)
-    if (stageSeen.has(signature)) continue
-    stageSeen.add(signature)
-    batch.push(lineup)
-    if (batch.length >= AI_GPU_SCREEN_CHUNK_SIZE) await flush()
+  const submitBatch = async (): Promise<void> => {
+    if (batch.length === 0) return
+    const currentBatch = batch
+    batch = []
+    let task: Promise<void>
+    task = processBatch(currentBatch).finally(() => inFlight.delete(task))
+    inFlight.add(task)
+
+    // 特徴量作成・GPU実行・結果読み戻しを最大4バッチまで重ねて待ち時間を隠す。
+    if (inFlight.size >= screener.maxInFlightBatches) await Promise.race(inFlight)
   }
-  await flush()
+
+  try {
+    for (const lineup of candidates) {
+      ensureSearchContinues()
+      const signature = canonicalCandidateSignature(lineup)
+      if (stageSeen.has(signature)) continue
+      stageSeen.add(signature)
+      batch.push(lineup)
+      if (batch.length >= AI_GPU_SCREEN_CHUNK_SIZE) await submitBatch()
+    }
+    await submitBatch()
+    await Promise.all(inFlight)
+  } catch (error) {
+    // 先に失敗したバッチがあっても、残りのPromiseを回収して未処理例外を残さない。
+    await Promise.allSettled(inFlight)
+    throw error
+  }
   progress.total = progress.done
   return retained
 }
