@@ -346,20 +346,16 @@ export const bingxueLifeStealPercent = (fighter: BattleFighter): number => {
   return temporary + (fighter.specialState.bingxueDrainStacks ?? 0)
 }
 
-export const preferredBingxueTarget = (
-  candidates: BattleFighter[],
+export const bingxueTargetWeight = (
+  candidate: BattleFighter,
   mode: TargetMode,
-  turn: number,
-): BattleFighter | null => {
-  // 先陣誘導: 最初の3ターンは通常攻撃を自分へ引きつける。
-  if (mode === 'normal' && turn <= 3) {
-    return alive(candidates).find(candidate => hasBingxue(candidate, '先陣誘導')) ?? null
-  }
-  // 陽動の策: 4ターン目以降は戦法の対象を自分へ引きつける。
-  if (mode === 'skill' && turn >= 4) {
-    return alive(candidates).find(candidate => hasBingxue(candidate, '陽動の策')) ?? null
-  }
-  return null
+  _turn: number,
+): number => {
+  // 先陣誘導は対象を固定せず、通常攻撃の対象抽選ウェイトを20%上げる。
+  if (mode === 'normal' && hasBingxue(candidate, '先陣誘導')) return 1.2
+  // 陽動の策も対象を固定せず、戦法の対象抽選ウェイトを20%上げる。
+  if (mode === 'skill' && hasBingxue(candidate, '陽動の策')) return 1.2
+  return 1
 }
 
 // 冷静沈着で得た封撃耐性がある間は封撃付与を無効化する。
@@ -413,11 +409,11 @@ export const runBingxueBeforeAction = (ctx: BingxueActionContext): void => {
     owner.specialState.bingxueDefectionUntil = turn
     helpers.log(owner, '舟中敵国: 離反6%を獲得')
   }
-  // 表裏一体: 知略依存の確率で、この行動の通常攻撃後に追加攻撃する。
+  // 表裏一体: 知略依存の確率で、この行動に本来の「連撃」状態を付与する。
   if (hasBingxue(owner, '表裏一体')) {
     const chance = Math.min(0.45, 0.1 + Math.max(0, helpers.statOf(owner, 'int') - 100) * 0.0005)
     if (roll(rng, chance)) {
-      owner.specialState.bingxueComboThisAction = 1
+      owner.specialState.doubleAttackUntil = Math.max(owner.specialState.doubleAttackUntil ?? 0, turn)
       helpers.log(owner, '表裏一体: 連撃を獲得')
     }
   }
@@ -446,8 +442,8 @@ export const runBingxueBeforeAction = (ctx: BingxueActionContext): void => {
 
 // 通常攻撃と突撃戦法の処理が終わった直後に呼ばれる兵学効果。
 export const runBingxueAfterNormalAttack = (ctx: BingxueActionContext): void => {
-  const { owner, currentTarget, turn, rng, helpers } = ctx
-  // 当意即妙: 1回目50%、2回目25%で自身を回復し、1ターン最大2回まで。
+  const { owner, turn, rng, helpers } = ctx
+  // 当意即妙: 1回目が成功した場合だけ2回目を25%にする。失敗時の次回判定は50%のまま。
   if (hasBingxue(owner, '当意即妙')) {
     const countKey = 'bingxueQuickHealCount'
     const turnKey = 'bingxueQuickHealTurn'
@@ -461,11 +457,6 @@ export const runBingxueAfterNormalAttack = (ctx: BingxueActionContext): void => 
       owner.specialState[countKey] = count + 1
       helpers.heal(owner, owner, 60, '当意即妙')
     }
-  }
-  // 表裏一体: 行動前に獲得した連撃フラグを消費して、同じ対象へ追加攻撃する。
-  if (currentTarget && currentTarget.hp > 0 && (owner.specialState.bingxueComboThisAction ?? 0) > 0) {
-    owner.specialState.bingxueComboThisAction = 0
-    helpers.damage(owner, currentTarget, 100, 'physical', '表裏一体')
   }
 }
 
@@ -516,7 +507,7 @@ export const runBingxueNormalAttackReceived = (
 export const runBingxueSkillHeal = (
   caster: BattleFighter,
   target: BattleFighter,
-  allies: BattleFighter[],
+  _allies: BattleFighter[],
   turn: number,
   helpers: BingxueActionHelpers,
   wasLowestBeforeHeal = true,
@@ -561,10 +552,11 @@ export const runBingxueControlApplied = (
   }
 
   // 返り討ちの計: 自身が制御状態を受けた直後、90%の確率でランダムな敵へ反撃する。
-  if (hasBingxue(target, '返り討ちの計')) {
+  if (hasBingxue(target, '返り討ちの計') && (target.specialState.bingxueRetaliationUses ?? 0) < 3) {
     const livingEnemies = alive(targetEnemies)
     const retaliationTarget = livingEnemies[Math.floor(rng() * livingEnemies.length)]
     if (retaliationTarget && roll(rng, 0.9)) {
+      target.specialState.bingxueRetaliationUses = (target.specialState.bingxueRetaliationUses ?? 0) + 1
       // 武勇が知略を上回る場合は兵刃、それ以外（同値を含む）は計略ダメージにする。
       const kind: DamageKind = helpers.statOf(target, 'val') > helpers.statOf(target, 'int') ? 'physical' : 'strategy'
       helpers.damage(target, retaliationTarget, 100, kind, '返り討ちの計')
@@ -581,12 +573,11 @@ export const runBingxueControlApplied = (
     }
   })
 
-  // 明鏡: 自身が状態異常を受けた時、戦闘中2回まで兵力割合最低の味方を回復する。
+  // 明鏡: 自身が状態異常を受けた時、戦闘中2回までランダムな友軍単体を回復する。
   const clearMind = bingxueLevel(target, '明鏡')
   if (turn >= 1 && clearMind > 0 && (target.specialState.bingxueClearMindUses ?? 0) < 2) {
-    const friend = alive(targetAllies)
-      .filter(ally => ally.id !== target.id)
-      .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0]
+    const friends = alive(targetAllies).filter(ally => ally.id !== target.id)
+    const friend = friends[Math.floor(rng() * friends.length)]
     if (friend) {
       target.specialState.bingxueClearMindUses = (target.specialState.bingxueClearMindUses ?? 0) + 1
       helpers.heal(target, friend, 25 * clearMind, '明鏡')

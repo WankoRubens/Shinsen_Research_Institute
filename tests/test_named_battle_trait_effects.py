@@ -21,7 +21,7 @@ class NamedBattleTraitEffectsTests(unittest.TestCase):
             ("忍耐III", "0.7"),
         ):
             self.assertIn(f"{name}: {multiplier}", self.effects)
-        self.assertIn("if (mode === 'normal')", self.simulator)
+        self.assertIn("mode === 'normal'", self.simulator)
         self.assertIn("traitNormalTargetWeight(fighter)", self.simulator)
 
     def test_casualty_traits_reduce_immediate_death_rate(self):

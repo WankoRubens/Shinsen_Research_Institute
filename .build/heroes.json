@@ -17871,10 +17871,17 @@
         "name": "砲術Ⅰ",
         "name_jp": "砲術Ⅰ",
         "description": "",
-        "description_jp": "",
+        "description_jp": "部隊の鉄砲レベルが1増加する。",
         "vars": {},
         "rank": "C",
-        "active": true
+        "active": true,
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "牢固Ⅰ",
@@ -18047,10 +18054,17 @@
         "name": "砲術Ⅰ",
         "name_jp": "砲術Ⅰ",
         "description": "",
-        "description_jp": "",
+        "description_jp": "部隊の鉄砲レベルが1増加する。",
         "vars": {},
         "rank": "C",
-        "active": true
+        "active": true,
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "猛攻Ⅰ",
@@ -18267,10 +18281,17 @@
         "name": "砲術Ⅰ",
         "name_jp": "砲術Ⅰ",
         "description": "",
-        "description_jp": "",
+        "description_jp": "部隊の鉄砲レベルが1増加する。",
         "vars": {},
         "rank": "C",
-        "active": true
+        "active": true,
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "血気Ⅰ",
@@ -18399,16 +18420,23 @@
         "name": "砲術Ⅰ",
         "name_jp": "砲術Ⅰ",
         "description": "",
-        "description_jp": "",
+        "description_jp": "部隊の鉄砲レベルが1増加する。",
         "vars": {},
         "rank": "C",
-        "active": true
+        "active": true,
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "破敵Ⅰ",
         "name_jp": "破敵Ⅰ",
         "description": "",
-        "description_jp": "",
+        "description_jp": "与ダメージが1.2%増加する。",
         "vars": {},
         "rank": "C",
         "active": true
@@ -18496,7 +18524,7 @@
         "name": "猛闘Ⅰ",
         "name_jp": "猛闘Ⅰ",
         "description": "",
-        "description_jp": "",
+        "description_jp": "このターンに通常攻撃を受けていない場合、固有以外の突撃戦法の発動確率が1%増加する。",
         "vars": {},
         "rank": "C",
         "active": true
@@ -18540,7 +18568,7 @@
         "name": "謀攻Ⅰ",
         "name_jp": "謀攻Ⅰ",
         "description": "",
-        "description_jp": "",
+        "description_jp": "自軍全体の計略与ダメージが2.3%増加する。",
         "vars": {},
         "rank": "C",
         "active": true
@@ -18619,10 +18647,17 @@
         "name": "砲術Ⅰ",
         "name_jp": "砲術Ⅰ",
         "description": "",
-        "description_jp": "",
+        "description_jp": "部隊の鉄砲レベルが1増加する。",
         "vars": {},
         "rank": "C",
-        "active": true
+        "active": true,
+        "affinity": {
+          "troop_types": [
+            "鉄砲"
+          ],
+          "level": 1,
+          "level_cap_bonus": 0
+        }
       },
       {
         "name": "牢固Ⅰ",
@@ -18672,7 +18707,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/sanhaochangyi.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "初級擾亂",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18697,7 +18732,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/jinchuanshizhen.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "初級激昂",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18747,7 +18782,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/zhaitenglongxing.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "初級急救",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18772,7 +18807,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/niziyijiu.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "初級鼓舞",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18797,7 +18832,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/jingyizhiqin.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "初級壓制",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18822,7 +18857,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/piantongqieyuan.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "初級壓制",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18847,7 +18882,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/zhongcunyishi.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "初級擾亂",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18872,7 +18907,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/qibing.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "速戰",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18897,7 +18932,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/gongbing.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "固陣",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18922,7 +18957,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/tiepao.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "勇武",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {
@@ -18947,7 +18982,7 @@
     "gender": "",
     "portrait": "https://p11386-media-cdn.sialiagames.com.tw/meta_10000270/1777454501829/res/card/hero/zuqing.png?x-oss-process=image/format,webp/interlace,1/quality,Q_80/resize,w_256&t=1",
     "detail_url": "",
-    "unique_skill": "勇武",
+    "unique_skill": "",
     "teachable_skill": "",
     "assembly_skill": "",
     "stats": {

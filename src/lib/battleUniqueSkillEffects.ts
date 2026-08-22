@@ -58,7 +58,7 @@ export const S_UNIQUE_HANDCRAFTED_META: Record<string, BattleSkillEffectMeta> = 
   甲山猛虎: meta('能動', ['beforeAction']),
   陣前無我: meta('能動', ['beforeAction']),
   湖水渡り: meta('能動', ['beforeAction']),
-  内助の賢: meta('指揮', ['turnStart']),
+  内助の賢: meta('指揮', ['preparationTurn', 'turnStart']),
   七本槍筆頭: meta('受動', ['preparationTurn', 'beforeAction']),
   勇志不抜: meta('能動', ['beforeAction']),
   尼御台: meta('指揮', ['preparationTurn', 'turnStart']),
@@ -105,8 +105,9 @@ export const S_UNIQUE_ENEMY_ACTIVE_SKILL_WATCHERS = new Set(['百万一心', '�
 export const S_UNIQUE_OWN_SKILL_WATCHERS = new Set(['槍の又左', '越後流軍学', '風流武者', '疑心暗鬼'])
 
 const living = (fighters: BattleFighter[]) => fighters.filter((fighter) => fighter.hp > 0)
-const fighterHasSkill = (fighter: BattleFighter, name: string) =>
-  fighter.skills.some((skill) => (skill.name_jp || skill.name) === name)
+// 玄謀で選ばれた武将は、配置を変えず大将技の条件だけを満たす。
+const hasCommanderSkill = (fighter: BattleFighter): boolean =>
+  fighter.role === 'main' || (fighter.specialState.commanderSkillEnabled ?? 0) > 0
 const statOf = (fighter: BattleFighter, stat: Stat) => Math.max(0, (fighter.baseStats[stat] ?? 0) + (fighter.buffs[stat] ?? 0))
 const roleCode = (fighter: BattleFighter) => fighter.role === 'main' ? 1 : fighter.role === 'vice1' ? 2 : 3
 const roleFighter = (fighters: BattleFighter[], code: number) => living(fighters).find((fighter) => roleCode(fighter) === code) ?? null
@@ -172,10 +173,10 @@ const addDot = (
   kind: 'physical' | 'strategy',
 ) => {
   const skillName = ctx.skill.name_jp || ctx.skill.name
-  // 内助の賢は味方が付与する継続状態を知略依存の確率で1ターン延長する。
-  const extensionOwner = living(ctx.allies).find((fighter) => fighterHasSkill(fighter, '内助の賢'))
-  const extendedTurns = extensionOwner
-    && ctx.rng() < attributeChance(0.5, statOf(extensionOwner, 'int'))
+  // 内助の賢で選ばれた発動者だけが、継続状態を知略依存の確率で1ターン延長する。
+  const extensionChance = ctx.caster.specialState.dotDurationExtensionChance ?? 0
+  const extendedTurns = extensionChance > 0
+    && ctx.rng() < extensionChance
     ? turns + 1
     : turns
   const existing = target.timedStatuses.find((status) =>
@@ -199,6 +200,15 @@ const addDot = (
 
 const hasDot = (fighter: BattleFighter, name?: string) => fighter.timedStatuses.some((status) => !name || status.name === name)
 const hasControl = (fighter: BattleFighter, name: string) => (fighter.statuses[name] ?? 0) > 0
+const WEAKENING_STATUS_NAMES = new Set(['無策', '封撃', '麻痺', '混乱', '挑発', '牽制', '畏縮', '萎縮', '疲弊', '威圧', '回復不可'])
+const INVERTED_WEAKENING_MODIFIER_STATS = new Set(['damageTaken', 'physicalDamageTaken', 'strategyDamageTaken'])
+const isWeakeningModifier = (stat: string, value: number) =>
+  INVERTED_WEAKENING_MODIFIER_STATS.has(stat) ? value > 0 : value < 0
+const hasWeakeningEffect = (fighter: BattleFighter) =>
+  Object.keys(fighter.statuses).some((name) => WEAKENING_STATUS_NAMES.has(name) && (fighter.statuses[name] ?? 0) > 0)
+  || fighter.timedStatuses.length > 0
+  || Object.entries(fighter.buffs).some(([stat, value]) => isWeakeningModifier(stat, value ?? 0))
+  || fighter.timedModifiers.some((modifier) => isWeakeningModifier(modifier.stat, modifier.value))
 const primaryStat = (fighter: BattleFighter): Stat => {
   const stats: Stat[] = ['val', 'int', 'lea']
   return stats.sort((a, b) => statOf(fighter, b) - statOf(fighter, a))[0] ?? 'val'
@@ -234,7 +244,7 @@ export const recordSUniqueDamageEvent = (
       fighter.specialState.hachikuFirstCriticalSeen = 1
     } else {
       const stacks = fighter.specialState.hachikuCriticalStacks ?? 0
-      if (stacks < (fighter.role === 'main' ? 15 : 10)) {
+      if (stacks < (hasCommanderSkill(fighter) ? 15 : 10)) {
         fighter.specialState.hachikuCriticalStacks = stacks + 1
         fighter.specialState.criticalDamageBonus = 30 + (stacks + 1) * 5
         logs.push({
@@ -270,7 +280,7 @@ export const recordSUniqueDamageEvent = (
     const hits = (fighter.specialState.spearSevenPhysicalHits ?? 0) + 1
     fighter.specialState.spearSevenPhysicalHits = hits
     if (hits % 5 === 0) {
-      const maxStacks = fighter.role === 'main' ? 5 : 3
+      const maxStacks = hasCommanderSkill(fighter) ? 5 : 3
       const stacks = Math.min(maxStacks, (fighter.specialState.spearSevenLockStacks ?? 0) + 1)
       fighter.specialState.spearSevenLockStacks = stacks
       logs.push({ turn, side: fighter.side, actor: fighter.name, actorHp: fighter.hp, effect: '七本槍筆頭', message: `通常攻撃固定率が13%上昇（${30 + stacks * 13}%）` })
@@ -294,7 +304,7 @@ export const applySUniqueSkillEffect = (
         return true
       }
       const bonus = ctx.caster.specialState.takedaRedCriticalTurn === ctx.turn ? 0.25 : 0
-      const chance = attributeChance(0.25 + bonus + (ctx.caster.role === 'main' ? 0.1 : 0), statOf(ctx.caster, 'val'))
+      const chance = attributeChance(0.25 + bonus + (hasCommanderSkill(ctx.caster) ? 0.1 : 0), statOf(ctx.caster, 'val'))
       const target = random(ctx, h, ctx.enemies)
       if (target && h.roll(ctx.rng, chance)) {
         h.dealSkillDamage(ctx, target, 138, 'physical')
@@ -308,7 +318,7 @@ export const applySUniqueSkillEffect = (
     // 敵の能動戦法発動を監視し、確率で発動を阻止して計略ダメージを返す。
     case '百万一心': {
       if (!subject || subject.side === ctx.caster.side) return true
-      const allChance = ctx.caster.role === 'main' ? 0.35 : 0.15
+      const allChance = hasCommanderSkill(ctx.caster) ? 0.35 : 0.15
       const watched = h.roll(ctx.rng, allChance) ? living(ctx.enemies) : randomMany(ctx, h, ctx.enemies, 2)
       if (!watched.some((fighter) => fighter.id === subject.id) || !h.roll(ctx.rng, 0.3)) return true
       subject.specialState.cancelCurrentActiveSkill = 1
@@ -333,7 +343,7 @@ export const applySUniqueSkillEffect = (
         ctx.caster.buffs.val = (ctx.caster.buffs.val ?? 0) + lost
         ctx.caster.buffs.int = (ctx.caster.buffs.int ?? 0) + lost
       }
-      if (ctx.caster.role === 'main' && ctx.turn === 5) {
+      if (hasCommanderSkill(ctx.caster) && ctx.turn === 5) {
         setPermanent(ctx.caster, 'physicalCriticalChance', '海道一大将', 12)
         setPermanent(ctx.caster, 'strategyCriticalChance', '海道一大将', 12)
       }
@@ -341,7 +351,7 @@ export const applySUniqueSkillEffect = (
     }
     // 戦闘開始時に味方へ連撃と統率上昇を付与する。
     case '鬼若子': {
-      const targets = randomMany(ctx, h, ctx.allies, h.roll(ctx.rng, ctx.caster.role === 'main' ? 0.75 : 0.5) ? 3 : 2)
+      const targets = randomMany(ctx, h, ctx.allies, h.roll(ctx.rng, hasCommanderSkill(ctx.caster) ? 0.75 : 0.5) ? 3 : 2)
       targets.forEach((ally) => {
         ally.specialState.comboChance = Math.max(ally.specialState.comboChance ?? 0, 50)
         ally.specialState.comboChanceUntil = 4
@@ -362,7 +372,7 @@ export const applySUniqueSkillEffect = (
       })
       if (ctx.turn >= 5 && h.roll(ctx.rng, 0.5)) {
         h.addTimedModifier(ctx, ctx.caster, 'int', statOf(ctx.caster, 'int') * 0.25, 8)
-        if (ctx.caster.role !== 'main') h.addControl(ctx, ctx.caster, '混乱', 8)
+        if (!hasCommanderSkill(ctx.caster)) h.addControl(ctx, ctx.caster, '混乱', 8)
       }
       return true
     }
@@ -385,7 +395,7 @@ export const applySUniqueSkillEffect = (
       const damageKind = attackStat === 'val' ? 'physical' : 'strategy'
       // 大将時は、自軍にいる雑賀・本願寺武将1名につきダメージ率を12%加算する。
       const factionAllies = living(ctx.allies).filter((ally) => /本願寺|雑賀/.test(ally.faction))
-      const damageRate = 72 + (ctx.caster.role === 'main' ? factionAllies.length * 12 : 0)
+      const damageRate = 72 + (hasCommanderSkill(ctx.caster) ? factionAllies.length * 12 : 0)
       targets.forEach((target) => {
         // 防御属性を参照しない個別式で、防御無視の一揆ダメージを与える。
         total += h.dealSkillDamage(ctx, target, damageRate, damageKind, {
@@ -406,7 +416,7 @@ export const applySUniqueSkillEffect = (
     case '古今独歩': {
       if (!ctx.target || !h.roll(ctx.rng, 0.48)) return true
       h.dealSkillDamage(ctx, ctx.target, 70, 'physical')
-      const stacks = Math.min(ctx.caster.role === 'main' ? 10 : 8, (ctx.caster.specialState.kokonLifeStealStacks ?? 0) + 1)
+      const stacks = Math.min(hasCommanderSkill(ctx.caster) ? 10 : 8, (ctx.caster.specialState.kokonLifeStealStacks ?? 0) + 1)
       ctx.caster.specialState.kokonLifeStealStacks = stacks
       ctx.caster.specialState.physicalLifeStealPercent = stacks * 4
       ctx.caster.specialState.physicalLifeStealUntil = 8
@@ -427,7 +437,7 @@ export const applySUniqueSkillEffect = (
           ctx.caster.specialState.ruthlessRateStacks = stacks
           ctx.caster.specialState.ruthlessActiveRateBonus = stacks * 10
           // 大将なら4ターン、それ以外は2ターン持続する。
-          ctx.caster.specialState.ruthlessActiveRateUntil = expires(ctx.turn, ctx.caster.role === 'main' ? 4 : 2)
+          ctx.caster.specialState.ruthlessActiveRateUntil = expires(ctx.turn, hasCommanderSkill(ctx.caster) ? 4 : 2)
           log(ctx, `${ctx.caster.name}の能動戦法発動率が10.00%上昇（合計+${stacks * 10}.00%）`)
         }
       })
@@ -447,7 +457,7 @@ export const applySUniqueSkillEffect = (
       }
       if ((ctx.caster.specialState.breakFormationNormalUntil ?? 0) >= ctx.turn && ctx.target) {
         h.dealSkillDamage(ctx, ctx.target, 206, 'physical')
-        if (ctx.caster.role === 'main' && h.roll(ctx.rng, 0.35)) {
+        if (hasCommanderSkill(ctx.caster) && h.roll(ctx.rng, 0.35)) {
           const extra = random(ctx, h, ctx.enemies.filter((enemy) => enemy.id !== ctx.target?.id))
           if (extra) h.dealSkillDamage(ctx, extra, 206, 'physical')
         }
@@ -513,7 +523,7 @@ export const applySUniqueSkillEffect = (
         setPermanent(strategist, 'strategyDamageDealt', name, attributeValue(14, statOf(ctx.caster, 'lea')))
         strategist.specialState.strategyLifeStealPercent = attributeValue(14, statOf(ctx.caster, 'lea'))
       }
-      if (warrior) h.addTimedModifier(ctx, warrior, 'val', -statOf(warrior, 'val') * 0.1, ctx.caster.role === 'main' ? 4 : 8)
+      if (warrior) h.addTimedModifier(ctx, warrior, 'val', -statOf(warrior, 'val') * 0.1, hasCommanderSkill(ctx.caster) ? 4 : 8)
       return true
     }
     // 自身へ洞察と最も高い戦闘属性に応じた恒久強化を与える。
@@ -523,7 +533,7 @@ export const applySUniqueSkillEffect = (
       if (top === 'val') setPermanent(ctx.caster, 'attackDamage', name, attributeValue(12, statOf(ctx.caster, 'val')))
       else if (top === 'int') setPermanent(ctx.caster, 'strategyDamageDealt', name, attributeValue(12, statOf(ctx.caster, 'int')))
       else ctx.caster.specialState.activeSkillActivationRateBonus = attributeValue(8, statOf(ctx.caster, 'lea'))
-      if (ctx.caster.role === 'main') setPermanent(ctx.caster, top, `${name}大将`, 20)
+      if (hasCommanderSkill(ctx.caster)) setPermanent(ctx.caster, top, `${name}大将`, 20)
       return true
     }
     // 通常攻撃対象へ兵刃追撃し、敵大将へ混乱または属性奪取を行う。
@@ -550,7 +560,7 @@ export const applySUniqueSkillEffect = (
     case 'かかれ柴田': {
       removeDebuffs(ctx.caster, 2)
       living(ctx.enemies).forEach((enemy) => h.dealSkillDamage(ctx, enemy, 154, 'physical'))
-      if (ctx.caster.role === 'main' && ctx.turn >= 5) {
+      if (hasCommanderSkill(ctx.caster) && ctx.turn >= 5) {
         const ally = random(ctx, h, ctx.allies.filter((fighter) => fighter.id !== ctx.caster.id))
         if (ally) removeDebuffs(ally, 2)
       }
@@ -560,7 +570,7 @@ export const applySUniqueSkillEffect = (
     // 自身と味方一人へ乱舞を付与し、後半は速度も上昇させる。
     case '掃疑平乱': {
       const friendPool = ctx.allies.filter((ally) => ally.id !== ctx.caster.id)
-      const friend = ctx.caster.role === 'main' ? highest(friendPool, 'val') : random(ctx, h, friendPool)
+      const friend = hasCommanderSkill(ctx.caster) ? highest(friendPool, 'val') : random(ctx, h, friendPool)
       ;[ctx.caster, friend].filter((fighter): fighter is BattleFighter => Boolean(fighter)).forEach((fighter) => {
         fighter!.specialState.splashAttackChance = attributeValue(78, statOf(ctx.caster, 'spd'))
         fighter!.specialState.splashAttackUntil = expires(ctx.turn, 2)
@@ -573,6 +583,7 @@ export const applySUniqueSkillEffect = (
       if (ctx.trigger === 'ownSkillActivated') {
         if ((ctx.caster.specialState.currentActivatedSkillActive ?? 0) <= 0 || !h.roll(ctx.rng, 0.9)) return true
         ctx.caster.specialState.ironWallCharges = (ctx.caster.specialState.ironWallCharges ?? 0) + 1
+        ctx.caster.specialState.matazaIronWallCharges = (ctx.caster.specialState.matazaIronWallCharges ?? 0) + 1
         const checks = (ctx.caster.specialState.matazaIronWallChecks ?? 0) + 1
         ctx.caster.specialState.matazaIronWallChecks = checks
         if (checks % 2 === 0) ctx.caster.specialState.matazaEnhancedNormal = 1
@@ -580,7 +591,7 @@ export const applySUniqueSkillEffect = (
       }
       if ((ctx.caster.specialState.matazaEnhancedNormal ?? 0) <= 0) return true
       ctx.caster.specialState.matazaEnhancedNormal = 0
-      living(ctx.enemies).forEach((enemy) => h.dealSkillDamage(ctx, enemy, ctx.caster.role === 'main' ? 70 : 50, 'physical'))
+      living(ctx.enemies).forEach((enemy) => h.dealSkillDamage(ctx, enemy, hasCommanderSkill(ctx.caster) ? 70 : 50, 'physical'))
       return true
     }
     // 戦闘開始時に高い会心率を得て、会心成立ごとに会心ダメージを伸ばす。
@@ -597,14 +608,15 @@ export const applySUniqueSkillEffect = (
       const missingBefore = Math.max(0, target.maxHp - target.hp)
       const healed = h.healBySkill(ctx, target, 276, 'strategy')
       h.addTimedModifier(ctx, target, 'damageTaken', -attributeValue(18, statOf(ctx.caster, 'int')), 1)
-      if (healed >= missingBefore && missingBefore > 0) h.healBySkill(ctx, ctx.caster, 108, 'strategy')
+      // 対象がすでに全快でも回復超過として扱い、自身への回復を発生させる。
+      if (healed >= missingBefore) h.healBySkill(ctx, ctx.caster, 108, 'strategy')
       return true
     }
     // 敵全体の被ダメージを上げた後、計略ダメージを与える。
     case '十面埋伏': {
       living(ctx.enemies).forEach((enemy) => {
         const value = attributeValue(18, statOf(ctx.caster, 'int'))
-        if (ctx.caster.role === 'main' && ctx.turn >= 5) setPermanent(enemy, 'damageTaken', `${name}:${ctx.caster.id}`, value)
+        if (hasCommanderSkill(ctx.caster) && ctx.turn >= 5) setPermanent(enemy, 'damageTaken', `${name}:${ctx.caster.id}`, value)
         else h.addTimedModifier(ctx, enemy, 'damageTaken', value, 2)
         h.dealSkillDamage(ctx, enemy, 138, 'strategy')
       })
@@ -640,7 +652,7 @@ export const applySUniqueSkillEffect = (
       if ((ctx.caster.specialState.currentActivatedSkillActive ?? 0) <= 0 || !h.roll(ctx.rng, attributeChance(0.5, statOf(ctx.caster, 'int')))) return true
       const pool = ['封撃', '無策', '威圧', '疲弊'].filter((control) => living(ctx.allies).some((ally) => (ally.specialState[`controlImmunityUntil:${control}`] ?? 0) < ctx.turn + 1))
       const control = pool[Math.floor(ctx.rng() * pool.length)] ?? ['封撃', '無策', '威圧', '疲弊'][0]
-      living(ctx.allies).forEach((ally) => { ally.specialState[`controlImmunityUntil:${control}`] = expires(ctx.turn, ctx.caster.role === 'main' ? 3 : 2) })
+      living(ctx.allies).forEach((ally) => { ally.specialState[`controlImmunityUntil:${control}`] = expires(ctx.turn, hasCommanderSkill(ctx.caster) ? 3 : 2) })
       return true
     }
     // 敵複数を兵刃攻撃し、封撃の有無で追加付与と威力を切り替える。
@@ -677,6 +689,16 @@ export const applySUniqueSkillEffect = (
     }
     // 偶数ターンに敵全体へ継続状態がある場合、味方全体を回復する。
     case '内助の賢': {
+      if (ctx.trigger === 'preparationTurn') {
+        // 自分以外の友軍2名へ、継続状態を1ターン延長する知略依存判定を登録する。
+        randomMany(ctx, h, ctx.allies.filter((ally) => ally.id !== ctx.caster.id), 2).forEach((ally) => {
+          ally.specialState.dotDurationExtensionChance = Math.max(
+            ally.specialState.dotDurationExtensionChance ?? 0,
+            attributeChance(0.5, statOf(ctx.caster, 'int')),
+          )
+        })
+        return true
+      }
       if (ctx.turn % 2 !== 0 || !living(ctx.enemies).every((enemy) => hasDot(enemy))) return true
       living(ctx.allies).forEach((ally) => h.healBySkill(ctx, ally, 96, 'strategy'))
       return true
@@ -730,7 +752,7 @@ export const applySUniqueSkillEffect = (
     case '信義貫徹': {
       ctx.caster.specialState.physicalLifeStealPercent = 15
       ctx.caster.specialState.physicalLifeStealUntil = ctx.turn
-      if (ctx.caster.role === 'main') {
+      if (hasCommanderSkill(ctx.caster)) {
         const ally = random(ctx, h, ctx.allies.filter((fighter) => fighter.id !== ctx.caster.id))
         if (ally) {
           ally.specialState.physicalLifeStealPercent = 15
@@ -743,7 +765,7 @@ export const applySUniqueSkillEffect = (
     // 敵複数へ計略ダメージと、指揮・受動の所持数に応じた恐慌を与える。
     case '旋乾転坤': {
       randomMany(ctx, h, ctx.enemies, h.roll(ctx.rng, 0.5) ? 3 : 2).forEach((enemy) => {
-        h.dealSkillDamage(ctx, enemy, ctx.caster.role === 'main' ? 146 : 126, 'strategy')
+        h.dealSkillDamage(ctx, enemy, hasCommanderSkill(ctx.caster) ? 146 : 126, 'strategy')
         const passiveCount = enemy.skills.filter((skill) => /指揮|受動|被動/.test(`${skill.type ?? ''}${skill.category_jp ?? ''}`)).length
         addDot(ctx, enemy, '恐慌', 64 + passiveCount * 34, 2, 'strategy')
       })
@@ -752,7 +774,7 @@ export const applySUniqueSkillEffect = (
     }
     // 敵複数へ高倍率兵刃ダメージを与え、撃破時に破陣を得る。
     case '怪力無双': {
-      const targets = randomMany(ctx, h, ctx.enemies, ctx.caster.role === 'main' ? 3 : (h.roll(ctx.rng, 0.5) ? 3 : 2))
+      const targets = randomMany(ctx, h, ctx.enemies, hasCommanderSkill(ctx.caster) ? 3 : (h.roll(ctx.rng, 0.5) ? 3 : 2))
       let defeated = false
       targets.forEach((target) => {
         h.dealSkillDamage(ctx, target, 333, 'physical')
@@ -787,7 +809,7 @@ export const applySUniqueSkillEffect = (
       if (enemy) h.dealSkillDamage(ctx, enemy, 242, 'physical')
       const ally = random(ctx, h, ctx.allies)
       if (ally) {
-        ally.specialState.uniqueActivationRateBonus = (ally.specialState.uniqueActivationRateBonus ?? 0) + 16 + (ctx.caster.role === 'main' ? 4 : 0)
+        ally.specialState.uniqueActivationRateBonus = (ally.specialState.uniqueActivationRateBonus ?? 0) + 16 + (hasCommanderSkill(ctx.caster) ? 4 : 0)
         ally.specialState.uniqueActivationRateBonusUntil = expires(ctx.turn, 2)
       }
       return true
@@ -872,8 +894,11 @@ export const applySUniqueSkillEffect = (
         h.addControl(ctx, enemy, '挑発', 2)
         h.addControl(ctx, enemy, '牽制', 2)
       }
-      if (Object.keys(ctx.caster.statuses).length > 0 || ctx.caster.timedStatuses.length > 0) {
+      // 属性上昇などの強化は数えず、制御・継続ダメージ・負の能力補正だけを弱体状態とする。
+      if (hasWeakeningEffect(ctx.caster)) {
         ctx.caster.specialState.ironWallCharges = (ctx.caster.specialState.ironWallCharges ?? 0) + 2
+        ctx.caster.specialState.ittetsuIronWallCharges = (ctx.caster.specialState.ittetsuIronWallCharges ?? 0) + 2
+        ctx.caster.specialState.ittetsuIronWallUntil = expires(ctx.turn, 2)
       }
       ctx.caster.skillCooldowns[ctx.skill.id || ctx.skill.name] = 1
       return true
@@ -891,7 +916,8 @@ export const applySUniqueSkillEffect = (
     case '仏の高力': {
       const ally = random(ctx, h, ctx.allies)
       if (!ally) return true
-      ally.specialState.activeSkillActivationRateBonus = (ally.specialState.activeSkillActivationRateBonus ?? 0) + attributeValue(9, statOf(ctx.caster, 'lea'))
+      ally.specialState.buddhaActiveSkillActivationRateBonus = attributeValue(9, statOf(ctx.caster, 'lea'))
+      ally.specialState.buddhaActiveSkillActivationRateUntil = expires(ctx.turn, 2)
       ally.specialState.buddhaLeadershipBonus = attributeValue(30, statOf(ctx.caster, 'int'))
       ally.specialState.buddhaLeadershipUntil = expires(ctx.turn, 2)
       return true
@@ -901,7 +927,7 @@ export const applySUniqueSkillEffect = (
       const enemy = random(ctx, h, ctx.enemies)
       if (!enemy) return true
       h.dealSkillDamage(ctx, enemy, 196, 'strategy')
-      if (ctx.caster.role === 'main' && hasControl(enemy, '威圧')) h.addControl(ctx, enemy, '疲弊', 2)
+      if (hasCommanderSkill(ctx.caster) && hasControl(enemy, '威圧')) h.addControl(ctx, enemy, '疲弊', 2)
       else h.addControl(ctx, enemy, '威圧', 2)
       return true
     }
@@ -912,7 +938,7 @@ export const applySUniqueSkillEffect = (
         h.addControl(ctx, enemy, '挑発', 2)
         enemy.specialState.assaultDamagePenalty = attributeValue(30, statOf(ctx.caster, 'lea'))
         enemy.specialState.assaultDamagePenaltyUntil = expires(ctx.turn, 2)
-        if (ctx.caster.role === 'main') {
+        if (hasCommanderSkill(ctx.caster)) {
           enemy.specialState.normalDamagePenalty = attributeValue(30, statOf(ctx.caster, 'lea'))
           enemy.specialState.normalDamagePenaltyUntil = expires(ctx.turn, 2)
         }
@@ -923,9 +949,10 @@ export const applySUniqueSkillEffect = (
     case '満ちゆく月': {
       const target = living(ctx.enemies).find((enemy) => !hasDot(enemy, '潰走')) ?? random(ctx, h, ctx.enemies)
       if (!target) return true
-      addDot(ctx, target, '潰走', 108, ctx.caster.role === 'main' ? 8 : 4, 'physical')
+      addDot(ctx, target, '潰走', 108, hasCommanderSkill(ctx.caster) ? 8 : 4, 'physical')
       target.specialState.nextDamagePenalty = 40
       target.specialState.nextDamagePenaltyCharges = 2
+      target.specialState.nextDamagePenaltyUntil = expires(ctx.turn, 2)
       return true
     }
     // 通常攻撃対象へ兵刃追撃し、威圧を付与する。
@@ -947,7 +974,7 @@ export const applySUniqueSkillEffect = (
     case '仁者の沈勇': {
       if (!ctx.target) return true
       h.dealSkillDamage(ctx, ctx.target, 184, 'strategy')
-      if (h.roll(ctx.rng, ctx.caster.role === 'main' ? 0.9 : 0.7)) {
+      if (h.roll(ctx.rng, hasCommanderSkill(ctx.caster) ? 0.9 : 0.7)) {
         const ally = random(ctx, h, ctx.allies.filter((fighter) => fighter.id !== ctx.caster.id))
         if (ally) h.dealSkillDamage({ ...ctx, caster: ally }, ctx.target, 154, 'strategy')
       }
@@ -981,7 +1008,7 @@ export const applySUniqueSkillEffect = (
         // 先攻は行動順判定が参照する状態として付与する。
         ally.statuses['先攻'] = Math.max(ally.statuses['先攻'] ?? 0, 2)
         // 与ダメージ上昇は説明どおり能動戦法にだけ適用する。
-        ally.specialState.activeDamageBonus = ctx.caster.role === 'main' ? 85 : 75
+        ally.specialState.activeDamageBonus = hasCommanderSkill(ctx.caster) ? 85 : 75
         ally.specialState.activeDamageBonusUntil = expires(ctx.turn, 2)
       })
       return true
@@ -1009,7 +1036,7 @@ export const applySUniqueSkillEffect = (
       const turnKey = `gokiFirstDamage:${ctx.caster.id}`
       if (damaged.specialState[turnKey] === ctx.turn || !ctx.target) return true
       damaged.specialState[turnKey] = ctx.turn
-      const chance = ctx.caster.role === 'main' ? attributeChance(0.45, statOf(ctx.caster, 'lea')) : 0.45
+      const chance = hasCommanderSkill(ctx.caster) ? attributeChance(0.45, statOf(ctx.caster, 'lea')) : 0.45
       if (h.roll(ctx.rng, chance)) {
         h.dealSkillDamage(ctx, ctx.target, 86, 'physical')
         h.healBySkill(ctx, damaged, 86, 'strategy')
@@ -1039,7 +1066,7 @@ export const applySUniqueSkillEffect = (
       if (hasControl(ctx.caster, '封撃') || !hasControl(ctx.caster, '無策')) h.addControl(ctx, target, '封撃', 2)
       if (living(ctx.allies).some((ally) => ally.id !== ctx.caster.id)) {
         ctx.caster.specialState.damageShoulderEnemyRole = roleCode(target)
-        ctx.caster.specialState.damageShoulderPercent = attributeValue(ctx.caster.role === 'main' ? 7 : 4, statOf(ctx.caster, 'lea'))
+        ctx.caster.specialState.damageShoulderPercent = attributeValue(hasCommanderSkill(ctx.caster) ? 7 : 4, statOf(ctx.caster, 'lea'))
         ctx.caster.specialState.damageShoulderUntil = expires(ctx.turn, 2)
         ctx.caster.specialState.damageShoulderEffect = 2
       }
@@ -1074,7 +1101,7 @@ export const applySUniqueSkillEffect = (
       targets.forEach((target) => {
         if (!h.roll(ctx.rng, chance)) return
         if (hasDot(target, '消沈')) {
-          if (h.roll(ctx.rng, attributeChance(0.36 + (ctx.caster.role === 'main' ? 0.05 : 0), statOf(ctx.caster, 'lea')))) h.addControl(ctx, target, '疲弊', 1)
+          if (h.roll(ctx.rng, attributeChance(0.36 + (hasCommanderSkill(ctx.caster) ? 0.05 : 0), statOf(ctx.caster, 'lea')))) h.addControl(ctx, target, '疲弊', 1)
         } else addDot(ctx, target, '消沈', 46, 3, 'strategy')
       })
       return true
@@ -1109,9 +1136,9 @@ export const applySUniqueSkillEffect = (
         if (ally) h.addControl(ctx, ally, '混乱', 1)
         return true
       }
-      const rounds = ctx.caster.role === 'main' ? 5 : 4
+      const rounds = hasCommanderSkill(ctx.caster) ? 5 : 4
       if (ctx.turn <= 0 || ctx.turn > rounds) return true
-      const reduction = ctx.caster.role === 'main' ? 0.2 : 0.25
+      const reduction = hasCommanderSkill(ctx.caster) ? 0.2 : 0.25
       const value = attributeValue(60 * Math.pow(1 - reduction, ctx.turn - 1), statOf(ctx.caster, 'int'))
       h.addTimedModifier(ctx, ctx.caster, 'val', value, 1)
       h.addTimedModifier(ctx, ctx.caster, 'int', value, 1)

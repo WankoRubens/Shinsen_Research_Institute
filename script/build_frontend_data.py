@@ -338,6 +338,22 @@ def _merge_game8_skill_index(skills: list[dict]) -> tuple[list[dict], int]:
 # Chinese trait text. Keep the verified Japanese display text here so every UI
 # (lineup cards, hero database, and trait database) receives the same names.
 MANUAL_TRAIT_JA_TEXT = {
+    "砲術Ⅰ": {
+        "name_jp": "砲術Ⅰ",
+        "description_jp": "部隊の鉄砲レベルが1増加する。",
+    },
+    "破敵Ⅰ": {
+        "name_jp": "破敵Ⅰ",
+        "description_jp": "与ダメージが1.2%増加する。",
+    },
+    "猛闘Ⅰ": {
+        "name_jp": "猛闘Ⅰ",
+        "description_jp": "このターンに通常攻撃を受けていない場合、固有以外の突撃戦法の発動確率が1%増加する。",
+    },
+    "謀攻Ⅰ": {
+        "name_jp": "謀攻Ⅰ",
+        "description_jp": "自軍全体の計略与ダメージが2.3%増加する。",
+    },
     "花枝招展": {
         "name_jp": "花枝招展",
         "description_jp": "自身が通常攻撃を受けた際、45%の確率（魅力依存）で自身の兵力を回復する（回復率68%、知略依存）。最大3回まで発動する。",
@@ -524,6 +540,13 @@ MANUAL_SKILL_JA_TEXT = {
         "description_jp": "自身の統率が{1}上昇する。",
         "brief_description_jp": "自身の統率を上げる",
     },
+}
+
+# プレイヤーが使用しない初期・仮置き戦法は、最終JSONと武将参照の両方から除外する。
+REMOVED_SKILL_NAMES = {
+    "臨時槍の鈴", "初級鼓舞", "初期激昂", "初級圧制", "初級撹乱",
+    "初級治療", "勇武", "固陣", "速戦",
+    "臨時槍之鈴", "初級擾亂", "初級激昂", "初級急救", "初級壓制", "速戰",
 }
 
 # cfg.tips / short_tips / target_tips wrap highlighted spans in
@@ -1379,8 +1402,16 @@ def postprocess_hero(hero: dict) -> dict:
 
 def postprocess(heroes: list[dict], skills: list[dict]) -> tuple[list[dict], list[dict]]:
     """Run all post-processing on final heroes and skills lists."""
-    skills = [postprocess_skill(s) for s in skills]
+    skills = [
+        postprocess_skill(s)
+        for s in skills
+        if (s.get("name_jp") or s.get("name")) not in REMOVED_SKILL_NAMES
+    ]
     heroes = [postprocess_hero(h) for h in heroes]
+    for hero in heroes:
+        for field in ("unique_skill", "teachable_skill"):
+            if hero.get(field) in REMOVED_SKILL_NAMES:
+                hero[field] = ""
     heroes.sort(key=lambda h: (-h.get("rarity", 0), -h.get("cost", 0)))
     return heroes, skills
 

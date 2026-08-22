@@ -257,19 +257,6 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   姻戚同盟: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
   出奇制勝: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn', 'ownSkillActivated'], replaceStructuredTriggers: true, followUpTriggers: ['ownSkillActivated'] }),
   士気高揚: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
-  初級鼓舞: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
-  初期激昂: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
-  初級圧制: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
-  初級撹乱: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'], replaceStructuredTriggers: true }),
-  初級治療: defineBattleSkillMeta({
-    type: '能動',
-    triggers: ['beforeAction', 'onPhysicalDamageReceived', 'onStrategyDamageReceived'],
-    replaceStructuredTriggers: true,
-    followUpTriggers: ['onPhysicalDamageReceived', 'onStrategyDamageReceived'],
-  }),
-  勇武: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
-  固陣: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
-  速戦: defineBattleSkillMeta({ type: '受動', triggers: ['preparationTurn'], replaceStructuredTriggers: true }),
   攻其不備: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追い崩し: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
   追亡逐北: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction'] }),
@@ -328,7 +315,6 @@ export const BATTLE_SKILL_EFFECT_META: Record<string, BattleSkillEffectMeta> = {
   不屈の精神: defineBattleSkillMeta({ type: '能動', triggers: ['beforeAction', 'onNormalAttackReceived'], followUpTriggers: ['onNormalAttackReceived'] }),
   不退転: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   勇猛無比: defineBattleSkillMeta({ type: '能動' }),
-  臨時槍の鈴: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   連戦: defineBattleSkillMeta({ type: '突撃', triggers: ['afterNormalAttack'] }),
   三河武士: defineBattleSkillMeta({
     type: '兵種',
@@ -437,7 +423,7 @@ export const TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES = new Set(['三河魂', '�
 
 // 友軍の通常攻撃や被ダメージ、敵軍の行動を監視する個別戦法。
 export const TEAM_AFTER_NORMAL_ATTACK_SKILL_NAMES = new Set(['覇王の右筆', '献身'])
-export const TEAM_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['援護射撃', '三河弓兵隊', '所領役帳', '救援', '初級治療'])
+export const TEAM_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['援護射撃', '三河弓兵隊', '所領役帳', '救援'])
 export const ENEMY_STRATEGY_DAMAGE_RECEIVED_SKILL_NAMES = new Set(['城盗り'])
 export const TEAM_BEFORE_ACTION_SKILL_NAMES = new Set(['伝馬疾馳'])
 export const ENEMY_AFTER_ACTION_SKILL_NAMES = new Set(['三楽犬'])
@@ -457,7 +443,7 @@ export const DIRECT_DAMAGE_HANDCRAFTED_SKILL_NAMES = [
   '矢石飛交', '秋水一色', '槍の鈴', '妖怪退治', '驍勇善戦', '甲州流軍学', '忠勤励行',
   '一六勝負', '攻守兼備', '反撃', '神出鬼没', '威風凛凛', '伝馬疾馳', '鬼義重',
   '荷駄崩', '一力当先', '火攻め', '奇策縦横', '攻其不備', '三楽犬', '城盗り',
-  '電光石火', '同討', '薙ぎ払い', '不屈の精神', '不退転', '勇猛無比', '臨時槍の鈴', '連戦',
+  '電光石火', '同討', '薙ぎ払い', '不屈の精神', '不退転', '勇猛無比', '連戦',
 ] as const
 
 const DESCRIPTION_BASED_BATTLE_SKILL_NAMES = (skillsData as unknown as Skill[])
@@ -547,6 +533,8 @@ export interface BattleSkillEffectHelpers {
     maxStacks?: number,
     remainingUses?: number,
   ) => void
+  // 内助の賢など、発動者に付与された継続時間補正を適用する。
+  extendDotDuration: (ctx: SkillResolveContext, duration: number) => number
   statOf: (fighter: BattleFighter, stat: Stat) => number
   activationRateOf: (fighter: BattleFighter, skill: Skill) => number
 }
@@ -639,7 +627,7 @@ const recordDateIkiDamageHit = (
 
       const nextBuffStacks = buffStacks + 1
       fighter.specialState.dateIkiBuffStacks = nextBuffStacks
-      if (fighter.role === 'main' && nextBuffStacks === 4) {
+      if (hasCommanderSkill(fighter) && nextBuffStacks === 4) {
         fighter.specialState.dateIkiCommanderReady = 1
       }
       // ログには「何回目」ではなく、伊達の粋だけで現在上昇している累計値を表示する。
@@ -900,8 +888,11 @@ const databaseHealKind = (skill: Skill): 'bravery' | 'strategy' => {
 }
 
 const living = (fighters: BattleFighter[]) => fighters.filter((fighter) => fighter.hp > 0)
-// 南蛮渡来の強化回復を受ける「南蛮好尚」「南蛮信奉」対象武将。
-const NANBAN_HEAL_BONUS_HEROES = new Set(['織田信長', '徳川家康', '黒田官兵衛', 'お初'])
+// 玄謀で選ばれた武将は、配置を変えず大将技の条件だけを満たす。
+const hasCommanderSkill = (fighter: BattleFighter): boolean =>
+  fighter.role === 'main' || (fighter.specialState.commanderSkillEnabled ?? 0) > 0
+// 南蛮渡来の強化回復を受ける武将ラベル。
+const NANBAN_HEAL_BONUS_LABELS = new Set(['南蛮', '黄巾', '南蛮好尚', '南蛮信奉'])
 const roleCode = (fighter: BattleFighter): number => fighter.role === 'main' ? 1 : fighter.role === 'vice1' ? 2 : 3
 const highestByStat = (fighters: BattleFighter[], stat: Stat): BattleFighter | null =>
   [...living(fighters)].sort((a, b) => (b.baseStats[stat] + (b.buffs[stat] ?? 0)) - (a.baseStats[stat] + (a.buffs[stat] ?? 0)))[0] ?? null
@@ -953,19 +944,20 @@ const applyExplicitContinuousDamage = (
   ) return
 
   const sourceSkill = h.skillDisplayName(ctx.skill)
+  const appliedTurns = h.extendDotDuration(ctx, turns)
   // 同じ発動者・同じ戦法による同名状態は重複させず、持続時間と威力を更新する。
   const existing = target.timedStatuses.find((status) =>
     status.name === name
     && status.sourceSkill === sourceSkill
     && status.sourceActorId === ctx.caster.id)
   if (existing) {
-    existing.turns = turns
+    existing.turns = appliedTurns
     existing.dotRate = rate
     existing.dotType = kind
   } else {
     target.timedStatuses.push({
       name,
-      turns,
+      turns: appliedTurns,
       sourceSkill,
       sourceActorId: ctx.caster.id,
       sourceActor: ctx.caster.name,
@@ -973,7 +965,7 @@ const applyExplicitContinuousDamage = (
       dotType: kind,
     })
   }
-  log(ctx.logs, ctx, `${target.name}に${name}(${turns}T)`, target)
+  log(ctx.logs, ctx, `${target.name}に${name}(${appliedTurns}T)`, target)
 }
 
 const removeOnePositiveEffect = (target: BattleFighter): string | null => {
@@ -1261,7 +1253,7 @@ const structuredCondition = (
   if (/ability_type|skill_type/.test(text)) return ['beforeAction', 'afterNormalAttack'].includes(ctx.trigger)
   if (/ability_triggered_success/.test(text)) return true
   if (/is_prep_active_strategy/.test(text)) return ctx.trigger === 'beforeAction'
-  if (/commander_strategy_type/.test(text)) return ctx.caster.role === 'main'
+  if (/commander_strategy_type/.test(text)) return hasCommanderSkill(ctx.caster)
   if (/all_three_affiliations_different|is_assembly_member|target_is_barbarian|prev_turn_attacked_by_normal/.test(text)) return true
 
   // 未知の付帯条件だけを理由に戦法全体を無効化せず、既知の効果は実行する。
@@ -1396,7 +1388,7 @@ const executeStructuredNodes = (
         const dotRate = structuredNumber(ctx.skill, node.damage_rate, 0)
         if (dotRate > 0) target.timedStatuses.push({
           name: status,
-          turns: duration,
+          turns: h.extendDotDuration(ctx, duration),
           sourceSkill: h.skillDisplayName(ctx.skill),
           sourceActorId: ctx.caster.id,
           sourceActor: ctx.caster.name,
@@ -1436,7 +1428,7 @@ const applyStructuredBattleSkillEffect = (ctx: SkillResolveContext, h: BattleSki
   const directNodes = (battle.do ?? []).filter((node) => node.trigger || rootMatches)
   executeStructuredNodes(ctx, h, directNodes, [ctx.caster])
 
-  if (rootMatches && ctx.caster.role === 'main' && battle.bonus && typeof battle.bonus === 'object') {
+  if (rootMatches && hasCommanderSkill(ctx.caster) && battle.bonus && typeof battle.bonus === 'object') {
     const commander = (battle.bonus as Record<string, unknown>).commander
     if (commander && typeof commander === 'object') {
       executeStructuredNodes(ctx, h, structuredArray((commander as Record<string, unknown>).do), [ctx.caster])
@@ -1536,7 +1528,7 @@ const applyDatabaseBuffs = (ctx: SkillResolveContext, h: BattleSkillEffectHelper
 
 const applyDatabaseDot = (ctx: SkillResolveContext, h: BattleSkillEffectHelpers): boolean => {
   if (!ctx.skill.dot_name || !ctx.skill.dot_rate_max) return false
-  const turns = Math.max(1, Math.round(ctx.skill.dot_turns ?? durationFromDatabase(ctx.skill, 1)))
+  const turns = h.extendDotDuration(ctx, Math.max(1, Math.round(ctx.skill.dot_turns ?? durationFromDatabase(ctx.skill, 1))))
   const rate = toPercent(ctx.skill.dot_rate_max)
   databaseTargets(ctx, h, 'dot').forEach((target) => {
     if (
@@ -1741,7 +1733,7 @@ export const applyNamedSkillEffect = (
     case '千成瓢箪': {
       // 戦法タイプ: 指揮
       // 自身が大将なら70%、それ以外なら35%
-      const allHealChance = ctx.caster.role === 'main' ? 0.7 : 0.35
+      const allHealChance = hasCommanderSkill(ctx.caster) ? 0.7 : 0.35
 
       // 上の確率で自軍全体を回復
       if (h.roll(ctx.rng, allHealChance)) {
@@ -1797,7 +1789,7 @@ export const applyNamedSkillEffect = (
       // 効果3: 毎ターン自分の行動開始前に敵軍単体へ計略ダメージ判定
       if (ctx.trigger === 'beforeAction') {
         // 自身が大将なら75%、それ以外なら60%
-        const damageChance = ctx.caster.role === 'main' ? 0.75 : 0.6
+        const damageChance = hasCommanderSkill(ctx.caster) ? 0.75 : 0.6
         if (currentTarget && h.roll(ctx.rng, damageChance)) {
           // 敵軍単体に計略ダメージを1～2回
           const hits = 1 + Math.floor(ctx.rng() * 2)
@@ -1847,7 +1839,7 @@ export const applyNamedSkillEffect = (
       if (stacks <= 0) return true
 
       // 大将追加攻撃は、属性上昇4回到達後の「次の粋消費」時に予約分を使う
-      const useCommanderExtra = ctx.caster.role === 'main'
+      const useCommanderExtra = hasCommanderSkill(ctx.caster)
         && (ctx.caster.specialState.dateIkiCommanderReady ?? 0) > 0
       if (useCommanderExtra) ctx.caster.specialState.dateIkiCommanderReady = 0
 
@@ -1953,8 +1945,8 @@ export const applyNamedSkillEffect = (
       // 生きている自軍からランダムな2～3人を選ぶ。
       const count = 2 + Math.floor(ctx.rng() * 2)
       explicitAllyTargets(ctx, h, count).forEach((ally) => {
-        // 南蛮好尚・南蛮信奉を持つ武将だけ、回復率を172%へ上げる。
-        const rate = NANBAN_HEAL_BONUS_HEROES.has(ally.name) ? 172 : 144
+        // 対象自身が南蛮・黄巾・南蛮信奉タグを持つ場合だけ、その対象の回復率を172%へ上げる。
+        const rate = ally.labels.some((label) => NANBAN_HEAL_BONUS_LABELS.has(label)) ? 172 : 144
         h.healBySkill(ctx, ally, rate, 'strategy')
       })
       return true
@@ -1966,10 +1958,12 @@ export const applyNamedSkillEffect = (
       explicitAllyTargets(ctx, h, 2).forEach((ally) => {
         h.healBySkill(ctx, ally, 152, 'strategy')
 
-        // 52%で鉄壁を付与し、被ダメージを少し下げる
-        if (h.roll(ctx.rng, 0.52)) {
-          ally.statuses['鉄壁'] = Math.max(ally.statuses['鉄壁'] ?? 0, Math.round(h.varNumber(ctx.skill, 'duration', 2)))
-          ally.buffs.damageTaken = (ally.buffs.damageTaken ?? 0) - 8
+        // 知略依存の52%判定に成功した対象へ、2ターン有効な鉄壁を1回付与する。
+        const chance = attributeDependentChance(0.52, [h.statOf(ctx.caster, 'int')])
+        if (h.roll(ctx.rng, chance)) {
+          ally.specialState.ironWallCharges = (ally.specialState.ironWallCharges ?? 0) + 1
+          ally.specialState.isshukenIronWallCharges = (ally.specialState.isshukenIronWallCharges ?? 0) + 1
+          ally.specialState.isshukenIronWallUntil = expiresAfterTurns(ctx.turn, 2)
         }
       })
       return true
@@ -2022,7 +2016,7 @@ export const applyNamedSkillEffect = (
       if (wasSilenced) h.healBySkill(ctx, ctx.caster, 116, 'bravery')
 
       // 大将なら70%、それ以外は50%で別の敵へ98%の兵刃ダメージを追加する。
-      if (h.roll(ctx.rng, ctx.caster.role === 'main' ? 0.7 : 0.5)) {
+      if (h.roll(ctx.rng, hasCommanderSkill(ctx.caster) ? 0.7 : 0.5)) {
         const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== currentTarget.id) ?? currentTarget
         h.dealSkillDamage(ctx, extra, 98, 'physical')
       }
@@ -2033,16 +2027,18 @@ export const applyNamedSkillEffect = (
 
     case '疾風迅雷': {
       // 戦法タイプ: 指揮
-      // 45%で発動
-      if (!h.roll(ctx.rng, 0.45)) return true
+      // 武勇依存の45%で発動する。
+      const triggerChance = attributeDependentChance(0.45, [h.statOf(ctx.caster, 'val')])
+      if (!h.roll(ctx.rng, triggerChance)) return true
 
       // 敵軍複数に76%の兵刃ダメージ
       h.aliveRandom(ctx.enemies, ctx.rng, ctx).slice(0, Math.round(h.varNumber(ctx.skill, 'target_count', 2))).forEach((enemy) => {
         const wasParalyzed = (enemy.statuses['麻痺'] ?? 0) > 0
         h.dealSkillDamage(ctx, enemy, 76, 'physical')
 
-        // 50%で麻痺を付与
-        if (h.roll(ctx.rng, 0.5)) h.addControl(ctx, enemy, '麻痺', Math.round(h.varNumber(ctx.skill, 'status_duration', 1)))
+        // 武勇依存の50%で麻痺を付与する。
+        const statusChance = attributeDependentChance(0.5, [h.statOf(ctx.caster, 'val')])
+        if (h.roll(ctx.rng, statusChance)) h.addControl(ctx, enemy, '麻痺', Math.round(h.varNumber(ctx.skill, 'status_duration', 1)))
 
         // すでに麻痺だった場合、兵力の低い味方1人を回復
         if (wasParalyzed) {
@@ -2067,7 +2063,7 @@ export const applyNamedSkillEffect = (
         currentTarget.specialState.doubleDealerWatcherConsumed = 0
 
         // 大将時は、混乱を付与した敵へ自身の被ダメージを3%（知略依存）肩代わりさせる。
-        if (ctx.caster.role === 'main') {
+        if (hasCommanderSkill(ctx.caster)) {
           ctx.caster.specialState.damageShoulderEnemyRole = roleCode(currentTarget)
           ctx.caster.specialState.damageShoulderPercent = attributeDependentValue(3, [h.statOf(ctx.caster, 'int')])
           ctx.caster.specialState.damageShoulderUntil = expiresAfterTurns(ctx.turn, 1)
@@ -2205,7 +2201,7 @@ export const applyNamedSkillEffect = (
       if (ctx.turn < 1 || ctx.turn % 2 === 0) return true
       const phase = ((ctx.caster.specialState.furinInitialPhase ?? 0) + Math.floor((ctx.turn - 1) / 2)) % 4
       // 通常は2名。大将時は対象人数増加率を25%加算し、75%で3名にする。
-      const targetCount = h.roll(ctx.rng, ctx.caster.role === 'main' ? 0.75 : 0.5) ? 3 : 2
+      const targetCount = h.roll(ctx.rng, hasCommanderSkill(ctx.caster) ? 0.75 : 0.5) ? 3 : 2
 
       if (phase === 0) {
         // 風: 自軍2～3名の兵刃与ダメージを速度依存で2ターン最大22%上昇させる。
@@ -2251,7 +2247,7 @@ export const applyNamedSkillEffect = (
       const actedEarlier = [...ctx.allies, ...ctx.enemies]
         .filter((fighter) => fighter.id !== ctx.caster.id && fighter.specialState.lastCompletedActionTurn === ctx.turn).length
       // 大将時は減少回数を最大2回、それ以外は実人数分まで反映する。
-      const reductions = ctx.caster.role === 'main' ? Math.min(2, actedEarlier) : actedEarlier
+      const reductions = hasCommanderSkill(ctx.caster) ? Math.min(2, actedEarlier) : actedEarlier
       const bonus = Math.max(0, 50 - reductions * 10)
       h.addTimedModifier(ctx, ctx.caster, 'attackDamage', bonus, 2, 1)
       return true
@@ -2299,7 +2295,7 @@ export const applyNamedSkillEffect = (
       }
 
       // 大将本人が受撃した時は80%で、武勇が最も高い生存友軍へ援護を依頼する。
-      if (ctx.caster.role === 'main' && h.roll(ctx.rng, h.varNumber(ctx.skill, 'guard_chance', 0.8))) {
+      if (hasCommanderSkill(ctx.caster) && h.roll(ctx.rng, h.varNumber(ctx.skill, 'guard_chance', 0.8))) {
         const guardian = living(ctx.allies)
           .filter((ally) => ally.id !== ctx.caster.id)
           .sort((a, b) => h.statOf(b, 'val') - h.statOf(a, 'val'))[0]
@@ -2695,8 +2691,7 @@ export const applyNamedSkillEffect = (
       return true
     }
 
-    case '槍の鈴':
-    case '臨時槍の鈴': {
+    case '槍の鈴': {
       // 戦法タイプ: 突撃。通常攻撃後、敵軍単体へ232%の兵刃ダメージ。
       const target = currentTarget ?? randomLiving(ctx, h, ctx.enemies)
       if (target) h.dealSkillDamage(ctx, target, 232, 'physical')
@@ -2815,35 +2810,37 @@ export const applyNamedSkillEffect = (
       if (ctx.trigger === 'beforeAction') {
         // 戦法タイプ: 能動。友軍1名の武勇・速度を20上昇させ、行動前攻撃を予約する。
         const target = randomLiving(ctx, h, ctx.allies.filter((ally) => ally.id !== ctx.caster.id)) ?? ctx.caster
-        h.addTimedModifier(ctx, target, 'val', h.varNumber(ctx.skill, 'valor_speed_buff', 20), 2)
-        h.addTimedModifier(ctx, target, 'spd', h.varNumber(ctx.skill, 'valor_speed_buff', 20), 2)
+        h.addTimedModifier(ctx, target, 'val', h.varNumber(ctx.skill, 'valor_speed_buff', 20), 1)
+        h.addTimedModifier(ctx, target, 'spd', h.varNumber(ctx.skill, 'valor_speed_buff', 20), 1)
         ctx.caster.specialState.postHorseTargetRole = roleCode(target)
-        ctx.caster.specialState.postHorseUntil = ctx.turn + 1
+        ctx.caster.specialState.postHorseUntil = ctx.turn
         ctx.caster.specialState.postHorseTransferred = 0
         return true
       }
       if (ctx.trigger === 'allyBeforeAction') {
         const actor = ctx.eventSubject
+        // 最初の友軍への効果が終わった次のターンは、これから行動する別の友軍へ残り1ターン分を移す。
+        if (
+          actor
+          && (ctx.caster.specialState.postHorseUntil ?? 0) < ctx.turn
+          && (ctx.caster.specialState.postHorseTransferred ?? 0) === 0
+        ) {
+          const oldRole = ctx.caster.specialState.postHorseTargetRole ?? 0
+          const candidates = ctx.allies.filter((ally) => roleCode(ally) !== oldRole)
+          // 現在行動しようとしている武将が候補なら優先し、効果が行動後に空振りするのを防ぐ。
+          const next = candidates.find((ally) => ally.id === actor.id) ?? randomLiving(ctx, h, candidates)
+          if (next) {
+            h.addTimedModifier(ctx, next, 'val', h.varNumber(ctx.skill, 'valor_speed_buff', 20), 1)
+            h.addTimedModifier(ctx, next, 'spd', h.varNumber(ctx.skill, 'valor_speed_buff', 20), 1)
+            ctx.caster.specialState.postHorseTargetRole = roleCode(next)
+            ctx.caster.specialState.postHorseUntil = ctx.turn
+          }
+          ctx.caster.specialState.postHorseTransferred = 1
+        }
         if (!actor || roleCode(actor) !== ctx.caster.specialState.postHorseTargetRole || (ctx.caster.specialState.postHorseUntil ?? 0) < ctx.turn) return true
         const target = randomLiving(ctx, h, ctx.enemies)
         if (target) h.dealSkillDamage({ ...ctx, caster: actor }, target, toPercent(h.varNumber(ctx.skill, 'damage_rate', 1.02)), 'physical')
         return true
-      }
-      // 持続終了時に未移動なら、別の友軍へ一度だけ効果を移す。
-      if (
-        ctx.trigger === 'turnStart'
-        && (ctx.caster.specialState.postHorseUntil ?? 0) < ctx.turn
-        && (ctx.caster.specialState.postHorseTransferred ?? 0) === 0
-      ) {
-        const oldRole = ctx.caster.specialState.postHorseTargetRole ?? 0
-        const next = randomLiving(ctx, h, ctx.allies.filter((ally) => roleCode(ally) !== oldRole))
-        if (next) {
-          h.addTimedModifier(ctx, next, 'val', h.varNumber(ctx.skill, 'valor_speed_buff', 20), 1)
-          h.addTimedModifier(ctx, next, 'spd', h.varNumber(ctx.skill, 'valor_speed_buff', 20), 1)
-          ctx.caster.specialState.postHorseTargetRole = roleCode(next)
-          ctx.caster.specialState.postHorseUntil = ctx.turn
-        }
-        ctx.caster.specialState.postHorseTransferred = 1
       }
       return true
     }
@@ -3011,8 +3008,12 @@ export const applyNamedSkillEffect = (
       h.addTimedModifier(ctx, ctx.caster, 'physicalCriticalChance', toPercent(h.varNumber(ctx.skill, 'crit_rate_1', 0.25)), 2)
       const first = currentTarget ?? randomLiving(ctx, h, ctx.enemies)
       if (first) h.dealSkillDamage(ctx, first, toPercent(h.varNumber(ctx.skill, 'damage_1', 1.16)), 'physical')
-      // 65%で会心+15%（最大2層）と、別対象への98%追加攻撃。
-      if (h.roll(ctx.rng, toChance(h.varNumber(ctx.skill, 'extra_trigger_chance', 0.65)))) {
+      // 速度依存の65%で会心+15%（最大2層）と、別対象への98%追加攻撃。
+      const extraChance = attributeDependentChance(
+        toChance(h.varNumber(ctx.skill, 'extra_trigger_chance', 0.65)),
+        [h.statOf(ctx.caster, 'spd')],
+      )
+      if (h.roll(ctx.rng, extraChance)) {
         h.addTimedModifier(ctx, ctx.caster, 'physicalCriticalChance', toPercent(h.varNumber(ctx.skill, 'crit_rate_2', 0.15)), 2, 2)
         const extra = h.aliveRandom(ctx.enemies, ctx.rng, ctx).find((enemy) => enemy.id !== first?.id) ?? first
         if (extra) h.dealSkillDamage(ctx, extra, toPercent(h.varNumber(ctx.skill, 'damage_2', 0.98)), 'physical')
@@ -3343,7 +3344,7 @@ export const applyNamedSkillEffect = (
         )
       })
 
-      if (ctx.caster.role === 'main') {
+      if (hasCommanderSkill(ctx.caster)) {
         // 大将時は自軍全体へ、第1ターンの最終被ダメージ30%分担を予約する。
         ctx.allies.forEach((ally) => {
           ally.specialState[WISE_WATER_SHARE_UNTIL_KEY] = 1
@@ -3371,7 +3372,7 @@ export const applyNamedSkillEffect = (
 
       if (ctx.trigger === 'turnEnd') {
         // 大将時のみ、各ターン終了時に敵軍総兵力が初めて70%以下になったかを確認する。
-        if (ctx.caster.role !== 'main' || (ctx.caster.specialState.newLifeThresholdReached ?? 0) > 0) return true
+        if (!hasCommanderSkill(ctx.caster) || (ctx.caster.specialState.newLifeThresholdReached ?? 0) > 0) return true
         const enemyHp = ctx.enemies.reduce((sum, enemy) => sum + Math.max(0, enemy.hp), 0)
         const enemyMaxHp = ctx.enemies.reduce((sum, enemy) => sum + Math.max(1, enemy.maxHp), 0)
         if (enemyHp / Math.max(1, enemyMaxHp) <= 0.7) {
@@ -3381,7 +3382,7 @@ export const applyNamedSkillEffect = (
         return true
       }
 
-      if (ctx.trigger === 'beforeAction' && ctx.caster.role === 'main' && (ctx.caster.specialState.newLifeThresholdReached ?? 0) > 0) {
+      if (ctx.trigger === 'beforeAction' && hasCommanderSkill(ctx.caster) && (ctx.caster.specialState.newLifeThresholdReached ?? 0) > 0) {
         // 条件成立後は、大将自身が行動するたびに知略依存で回復する。
         h.healBySkill(ctx, ctx.caster, 65, 'strategy')
       }
@@ -3430,14 +3431,15 @@ export const applyNamedSkillEffect = (
           status.name === '水攻め'
           && status.sourceSkill === h.skillDisplayName(ctx.skill)
           && status.sourceActorId === ctx.caster.id)
+        const waterTurns = h.extendDotDuration(ctx, 2)
         if (existing) {
-          existing.turns = 2
+          existing.turns = waterTurns
           existing.dotRate = 98
           existing.dotType = 'strategy'
         } else {
           target.timedStatuses.push({
             name: '水攻め',
-            turns: 2,
+            turns: waterTurns,
             sourceSkill: h.skillDisplayName(ctx.skill),
             sourceActorId: ctx.caster.id,
             sourceActor: ctx.caster.name,
@@ -3470,14 +3472,15 @@ export const applyNamedSkillEffect = (
           status.name === statusName
           && status.sourceSkill === sourceSkill
           && status.sourceActorId === ctx.caster.id)
+        const dotTurns = h.extendDotDuration(ctx, 3)
         if (existing) {
-          existing.turns = 3
+          existing.turns = dotTurns
           existing.dotRate = 56
           existing.dotType = dotType
         } else {
           target.timedStatuses.push({
             name: statusName,
-            turns: 3,
+            turns: dotTurns,
             sourceSkill,
             sourceActorId: ctx.caster.id,
             sourceActor: ctx.caster.name,
@@ -3486,7 +3489,7 @@ export const applyNamedSkillEffect = (
           })
         }
         // 大将時は、対象に5種類が揃っている間の浄化禁止判定を有効にする。
-        if (ctx.caster.role === 'main') target.specialState.timeIsNowDotCleanseLock = 1
+        if (hasCommanderSkill(ctx.caster)) target.specialState.timeIsNowDotCleanseLock = 1
         log(ctx.logs, ctx, `時は今: ${target.name}に${statusName}(3T・ダメージ率56%)`, target)
       })
       return true
@@ -3505,7 +3508,7 @@ export const applyNamedSkillEffect = (
 
       if (ctx.trigger === 'beforeAction') {
         // 大将の時は、毎ターン自身の行動前に確率判定なしで溜めを1つ獲得する。
-        if (ctx.caster.role === 'main') gainMilitaryGodCharge(ctx, h, '大将効果')
+        if (hasCommanderSkill(ctx.caster)) gainMilitaryGodCharge(ctx, h, '大将効果')
         return true
       }
 
@@ -3597,7 +3600,7 @@ export const applyNamedSkillEffect = (
 
       if (targetAlreadyParalyzed) {
         // 通常攻撃対象がすでに麻痺中なら、雷鳴として敵軍全体へ兵刃ダメージを与える。
-        const thunderRate = ctx.caster.role === 'main' ? 60 : 52
+        const thunderRate = hasCommanderSkill(ctx.caster) ? 60 : 52
         ctx.enemies.filter((enemy) => enemy.hp > 0).forEach((enemy) => {
           h.dealSkillDamage(ctx, enemy, thunderRate, 'physical')
         })
@@ -3654,7 +3657,7 @@ export const applyNamedSkillEffect = (
       ctx.enemies.filter((target) => target.hp > 0).forEach((target) => {
         h.dealSkillDamage(ctx, target, 174, 'physical')
         // 制御は対象ごとに1回判定し、成功時は封撃と無策を同時に1ターン付与する。
-        const baseChance = ctx.caster.role === 'main' ? 0.44 : 0.36
+        const baseChance = hasCommanderSkill(ctx.caster) ? 0.44 : 0.36
         const controlChance = attributeDependentChance(baseChance, [h.statOf(ctx.caster, 'val')])
         if (target.hp > 0 && h.roll(ctx.rng, controlChance)) {
           h.addControl(ctx, target, '封撃', 1)
@@ -3727,7 +3730,7 @@ export const applyNamedSkillEffect = (
         for (let attempt = 0; attempt < 2; attempt += 1) {
           if (h.roll(ctx.rng, 0.85)) {
             gainedCharges += 1
-          } else if (ctx.caster.role === 'main') {
+          } else if (hasCommanderSkill(ctx.caster)) {
             // 大将時は、鉄壁の獲得に失敗するたびに対象を回復する。
             h.healBySkill(ctx, ally, 40, 'strategy')
           }
@@ -3816,7 +3819,7 @@ export const applyNamedSkillEffect = (
 
       executeWoodpecker(currentTarget)
       // 大将時は10%で戦法効果一式を追加でもう1回発動する。
-      if (ctx.caster.role === 'main' && h.roll(ctx.rng, 0.1)) {
+      if (hasCommanderSkill(ctx.caster) && h.roll(ctx.rng, 0.1)) {
         const repeatTarget = h.chooseTarget(ctx.enemies, ctx.rng, ctx)
         log(ctx.logs, ctx, '啄木鳥: 大将効果でもう1回発動')
         executeWoodpecker(repeatTarget)
@@ -3912,7 +3915,7 @@ export const applyNamedSkillEffect = (
       }
 
       // 大将時は挑発を付与せず、4ターン目以降も新しい挑発を付与しない。
-      if (ctx.caster.role === 'main' || ctx.turn < 1 || ctx.turn > 3) return true
+      if (hasCommanderSkill(ctx.caster) || ctx.turn < 1 || ctx.turn > 3) return true
       // 毎ターン、ランダムな敵軍2～3名へ個別に90%で1ターンの挑発を付与する。
       const count = 2 + Math.floor(ctx.rng() * 2)
       explicitEnemyTargets(ctx, h, count).forEach((target) => {
@@ -3965,7 +3968,7 @@ export const applyNamedSkillEffect = (
       h.addTimedModifier(ctx, target, 'int', -65, 2, 1)
       // 自軍大将へ鉄壁を付与する。発動者自身が大将なら1回、その他は2回分。
       const commander = ctx.allies.find((ally) => ally.role === 'main' && ally.hp > 0)
-      if (commander) commander.specialState.ironWallCharges = (commander.specialState.ironWallCharges ?? 0) + (ctx.caster.role === 'main' ? 1 : 2)
+      if (commander) commander.specialState.ironWallCharges = (commander.specialState.ironWallCharges ?? 0) + (hasCommanderSkill(ctx.caster) ? 1 : 2)
       return true
     }
     case '按甲休兵': {
@@ -4178,7 +4181,7 @@ export const applyNamedSkillEffect = (
       const attacker = ctx.target
       if (!attacker || attacker.side === ctx.caster.side || attacker.hp <= 0) return true
       // 自身が大将なら52%、副将なら62%の兵刃反撃を与える。
-      h.dealSkillDamage(ctx, attacker, ctx.caster.role === 'main' ? 52 : 62, 'physical')
+      h.dealSkillDamage(ctx, attacker, hasCommanderSkill(ctx.caster) ? 52 : 62, 'physical')
       return true
     }
     case '敵陣攪乱': {
@@ -4353,7 +4356,7 @@ export const applyNamedSkillEffect = (
       // 自身の武勇を2ターン30増加させる。
       h.addTimedModifier(ctx, ctx.caster, 'val', 30, 2, 1)
       // 副将として編成されている場合だけ、統率も2ターン40増加させる。
-      if (ctx.caster.role !== 'main') h.addTimedModifier(ctx, ctx.caster, 'lea', 40, 2, 1)
+      if (!hasCommanderSkill(ctx.caster)) h.addTimedModifier(ctx, ctx.caster, 'lea', 40, 2, 1)
       return true
     }
     case '破甲': {
@@ -4685,73 +4688,6 @@ export const applyNamedSkillEffect = (
       // 自軍単体へ洞察を1ターン付与する。
       const target = explicitAllyTargets(ctx, h, 1)[0]
       if (target) target.specialState.insightUntil = expiresAfterTurns(ctx.turn, 1)
-      return true
-    }
-    case '初級鼓舞': {
-      // 戦法タイプ: 能動
-      // 初級戦法の最大値として、自軍単体の武勇を2ターン10増加させる。
-      const target = explicitAllyTargets(ctx, h, 1)[0]
-      if (target) h.addTimedModifier(ctx, target, 'val', 10, 2, 1)
-      return true
-    }
-    case '初期激昂': {
-      // 戦法タイプ: 能動
-      // 初級戦法の最大値として、自軍単体の速度を2ターン10増加させる。
-      const target = explicitAllyTargets(ctx, h, 1)[0]
-      if (target) h.addTimedModifier(ctx, target, 'spd', 10, 2, 1)
-      return true
-    }
-    case '初級圧制': {
-      // 戦法タイプ: 能動
-      // 初級戦法の最大値として、敵軍単体の統率を2ターン10低下させる。
-      const target = explicitEnemyTarget(ctx, h)
-      if (target) h.addTimedModifier(ctx, target, 'lea', -10, 2, 1)
-      return true
-    }
-    case '初級撹乱': {
-      // 戦法タイプ: 能動
-      // 初級戦法の最大値として、敵軍単体の速度を2ターン10低下させる。
-      const target = explicitEnemyTarget(ctx, h)
-      if (target) h.addTimedModifier(ctx, target, 'spd', -10, 2, 1)
-      return true
-    }
-    case '初級治療': {
-      // 戦法タイプ: 能動
-      if (ctx.trigger === 'beforeAction') {
-        // 自軍単体へ、被ダメージ時に反応する回生を2ターン付与する。
-        const target = explicitAllyTargets(ctx, h, 1)[0]
-        if (target) {
-          target.specialState.basicRecoverySource = roleCode(ctx.caster)
-          target.specialState.basicRecoveryUntil = expiresAfterTurns(ctx.turn, 2)
-        }
-        return true
-      }
-      // 回生対象がダメージを受けるたび、暫定50%で75%・知略依存の回復を行う。
-      const damaged = ctx.eventSubject
-      if (
-        damaged
-        && damaged.specialState.basicRecoverySource === roleCode(ctx.caster)
-        && (damaged.specialState.basicRecoveryUntil ?? 0) >= ctx.turn
-        && h.roll(ctx.rng, 0.5)
-      ) h.healBySkill(ctx, damaged, 75, 'strategy')
-      return true
-    }
-    case '勇武': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の武勇を10増加させる。
-      setPermanentBuffContribution(ctx.caster, 'val', 'basicValor', 10)
-      return true
-    }
-    case '固陣': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の統率を10増加させる。
-      setPermanentBuffContribution(ctx.caster, 'lea', 'basicLeadership', 10)
-      return true
-    }
-    case '速戦': {
-      // 戦法タイプ: 受動
-      // 戦闘中、自身の速度を10増加させる。
-      setPermanentBuffContribution(ctx.caster, 'spd', 'basicSpeed', 10)
       return true
     }
     // DB戦法: ここまで。

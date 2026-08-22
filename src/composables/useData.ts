@@ -395,16 +395,6 @@ const SKILL_JP_OVERRIDES: Record<string, Partial<Skill>> = {
     description_jp: '通常攻撃後、{var:normal_atk_chance}の確率で目標に{var:normal_atk_dmg}の計略ダメージを与える（{scale:知略}）。戦闘開始から4ターンの間、毎ターン行動前に自身の武勇と知略を{var:stat_buff}上昇させる（{scale:知略}）。{var:duration}ターン持続し、毎ターン上昇量は{var:stat_reduction}ずつ減少する。第5ターン開始時、知略が最も高い友軍単体に{status:混乱}を1ターン付与する。',
     brief_description_jp: '通常攻撃後に計略ダメージを与え、序盤は自身の能力を上昇',
   },
-  '臨時槍之鈴': {
-    name_jp: '臨時槍の鈴',
-    description_jp: '通常攻撃後、敵軍単体に兵刃ダメージ（ダメージ率{1%}）を与える。第3ターン以降、追加で自身の兵力を回復する（回復率{2%}、武勇依存）。',
-    brief_description_jp: '兵刃ダメージを与え、条件付きで自身を回復',
-  },
-  '速戰': {
-    name_jp: '速戦',
-    description_jp: '自身の速度を{1}上昇させる。',
-    brief_description_jp: '速度上昇',
-  },
 }
 
 const normalizeSkillType = (type: string): string => {

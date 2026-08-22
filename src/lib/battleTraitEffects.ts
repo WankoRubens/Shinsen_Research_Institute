@@ -53,7 +53,7 @@ export const NAMED_TRAIT_BATTLE_EFFECTS: Readonly<Record<string, string>> = {
   気勢Ⅱ: '会心・奇策ダメージ+6.00%',
   気勢Ⅲ: '会心・奇策ダメージ+7.50%',
   方円の器: '第3ターン以降、毎ターン最初の計略被ダメージ時に50%で自軍全体の知略+5（最大2回）',
-  玄謀: '大将時、友軍大将技を補助。対象がない場合は回避+3%',
+  玄謀: '統率が最も高い自軍武将の大将技を有効化',
   妙計Ⅱ: '奇策ダメージ+8.50%',
   魔王: '行動後、各敵軍が初めて兵力50%以下になった時に追加兵力損失',
   覇王: '自身の回復時、回復量の10%を敵軍単体への追加ダメージへ変換',
@@ -61,11 +61,11 @@ export const NAMED_TRAIT_BATTLE_EFFECTS: Readonly<Record<string, string>> = {
   三河武士: '自軍武将が通常攻撃後、15%で次の被ダメージ-50%',
   古狸: '同じ他勢力の友軍2名と編成時、自身をその勢力として扱う',
   謀神: '計略ダメージ時、25%で知略差に応じた追加ダメージ（最大3回）',
-  三矢家訓: '自身の統率・武勇・知略がすべて異なる時、各属性+8',
+  三矢家訓: '3武将の最高属性がすべて異なる時、それぞれの最高属性+8',
   人たらし: '友軍回復の余剰発生時、50%で対象の主要属性+15（1ターン）',
   連歌百韻: '能動戦法の発動失敗時に再判定（固有35%、その他7%）',
   波風: '通常攻撃後、80%で対象の知略を2吸収（最大10回）',
-  義の将: '混乱付与率を低下',
+  義の将: '混乱を付与される時、30%で無効化',
   越後の龍: 'そのターンに被ダメージがなければ、次の行動まで被ダメージ-22%',
   公家趣味: '装備品効果（戦闘編成で装備品未対応）',
   善戦Ⅱ: '会心率・奇策率+2.90%',
@@ -98,7 +98,7 @@ export const NAMED_TRAIT_BATTLE_EFFECTS: Readonly<Record<string, string>> = {
   忍耐Ⅲ: '通常攻撃の対象抽選ウェイト-30%',
   雄略絶倫: '通常攻撃を受けた時、攻撃者と同じ主要属性を2吸収（最大8回）',
   傾奇者: '制御を12%で無効化',
-  上下一心: '第1ターン、自軍2～3名が制御を30%で無効化',
+  上下一心: '自軍2～3名が制御を30%で1回だけ無効化（ターン制限なし）',
   不死身: '被ダメージ時の兵士死亡率を20%低下（戦死率8%）',
   瓶割り: '第5ターン以降に離反10%。兵力50%以下では与ダメージ+10%',
   算盤勘定: '戦闘開始時、自身の武勇+16',
@@ -118,7 +118,7 @@ export const NAMED_TRAIT_BATTLE_EFFECTS: Readonly<Record<string, string>> = {
   威勢Ⅰ: '通常攻撃を受けていない時、固有能動戦法の発動率+2.10%',
   威勢Ⅱ: '通常攻撃を受けていない時、固有能動戦法の発動率+2.80%',
   威勢Ⅲ: '通常攻撃を受けていない時、固有能動戦法の発動率+3.50%',
-  猛闘Ⅰ: '通常攻撃を受けていない時、非固有突撃戦法の発動率+2.00%',
+  猛闘Ⅰ: '通常攻撃を受けていない時、非固有突撃戦法の発動率+1.00%',
   猛闘Ⅱ: '通常攻撃を受けていない時、非固有突撃戦法の発動率+2.50%',
   猛闘Ⅲ: '通常攻撃を受けていない時、非固有突撃戦法の発動率+3.00%',
   攻陣Ⅰ: '通常攻撃を受けていない時、固有突撃戦法の発動率+2.10%',
@@ -131,14 +131,14 @@ export const NAMED_TRAIT_BATTLE_EFFECTS: Readonly<Record<string, string>> = {
 // 数値が公開説明にないものや、装備品・大将技の追加対応が必要なものは先走って登録しない。
 const IMPLEMENTED_NAMED_TRAIT_NAMES = new Set([
   '赤備え', '勇烈', '気勢Ⅰ', '気勢Ⅱ', '気勢Ⅲ', '方円の器', '妙計Ⅱ', '魔王', '覇王',
-  '人は城', '三河武士', '古狸', '謀神', '三矢家訓', '人たらし', '連歌百韻', '波風',
+  '人は城', '三河武士', '古狸', '謀神', '三矢家訓', '人たらし', '連歌百韻', '波風', '義の将',
   '越後の龍', '善戦Ⅱ', '四州の雄', '雷の化身', '尽力Ⅰ', '尽力Ⅱ', '尽力Ⅲ', '清濁併呑',
   '心尽Ⅰ', '求道', '無傷の誇り', '剛猛Ⅰ', '剛猛Ⅱ', '剛猛Ⅲ', '先駆け', '近衛斉射',
-  '姫家督', '姫城督', '老獪', '独眼竜', '高揚Ⅱ', '金城鉄壁', '坂東太郎', '花枝招展',
+  '姫家督', '姫城督', '老獪', '虚実', '独眼竜', '高揚Ⅱ', '金城鉄壁', '坂東太郎', '花枝招展',
   '手足之愛', '忍耐Ⅰ', '忍耐Ⅱ', '忍耐Ⅲ', '雄略絶倫', '傾奇者', '上下一心', '不死身',
   '瓶割り', '算盤勘定', '築城名手', '奮戦Ⅰ', '奮戦Ⅱ', '奮戦Ⅲ', '側撃', '鳳凰', '姫武者',
   '短刀の契', '老功古実', '猪武者', '淑徳', '物外軒', '一番槍', '威勢Ⅰ', '威勢Ⅱ', '威勢Ⅲ',
-  '猛闘Ⅰ', '猛闘Ⅱ', '猛闘Ⅲ', '攻陣Ⅰ', '攻陣Ⅱ', '攻陣Ⅲ',
+  '猛闘Ⅰ', '猛闘Ⅱ', '猛闘Ⅲ', '攻陣Ⅰ', '攻陣Ⅱ', '攻陣Ⅲ', '玄謀', '死守',
 ])
 
 export const IMPLEMENTED_NAMED_TRAIT_EFFECTS: Readonly<Record<string, string>> = Object.fromEntries(
@@ -214,7 +214,7 @@ export const traitActivationRateBonus = (
   if (!hasReceivedNormalThisTurn && skillType === '突撃') {
     percent += unique
       ? familyLevelValue(fighter, { 攻陣I: 2.1, 攻陣II: 2.8, 攻陣III: 3.5 })
-      : familyLevelValue(fighter, { 猛闘I: 2, 猛闘II: 2.5, 猛闘III: 3 })
+      : familyLevelValue(fighter, { 猛闘I: 1, 猛闘II: 2.5, 猛闘III: 3 })
   }
   if (turn <= 4 && (skillType === '能動' || skillType === '突撃') && hasBattleTrait(fighter, '物外軒')) {
     percent += 4.5
@@ -424,8 +424,16 @@ export const runTraitDamageDealt = (
     owner.specialState.traitCriticalDamageBonus = (owner.specialState.traitCriticalDamageBonus ?? 0) + 1
     helpers.log(owner, '猪武者', `${owner.name}の会心率・会心ダメージが1%上昇（合計+${owner.specialState.boarWarriorStacks}%）`)
   }
-  if (kind === 'physical' && hasBattleTrait(owner, '坂東太郎') && (target.buffs.lea ?? 0) < 0 && rng() < 0.55) {
-    addTimedTraitStat(owner, 'val', 8, turn, 2, `特性:坂東太郎:${Math.min(3, (owner.specialState.bandoStacks ?? 0) + 1)}`)
+  if (
+    kind === 'physical'
+    && hasBattleTrait(owner, '坂東太郎')
+    && (owner.specialState.bandoStacks ?? 0) < 3
+    && (target.buffs.lea ?? 0) < 0
+    && rng() < 0.55
+  ) {
+    const sequence = (owner.specialState.bandoStackSequence ?? 0) + 1
+    owner.specialState.bandoStackSequence = sequence
+    addTimedTraitStat(owner, 'val', 8, turn, 2, `特性:坂東太郎:${sequence}`)
     owner.specialState.bandoStacks = Math.min(3, (owner.specialState.bandoStacks ?? 0) + 1)
     helpers.log(owner, '坂東太郎', `${owner.name}の武勇が8上昇`)
   }
@@ -458,6 +466,14 @@ export const runTraitDamageReceived = (
     owner.specialState.oldMeritTriggered = 1
     attacker.buffs.int = (attacker.buffs.int ?? 0) - 15
     helpers.log(owner, '老功古実', `${attacker.name}の知略が15低下（${helpers.statOf(attacker, 'int').toFixed(2)}）`)
+  }
+  if (
+    hasBattleTrait(owner, '死守')
+    && owner.hp <= owner.maxHp * 0.5
+    && (owner.specialState.lastStandHealUsed ?? 0) === 0
+  ) {
+    owner.specialState.lastStandHealUsed = 1
+    helpers.heal(owner, owner, 200, 'leadership', '死守')
   }
 }
 
@@ -512,10 +528,16 @@ export const resolveTraitControlTarget = (
       }
     }
   }
-  const resistance = (target.specialState.traitControlResistanceUntil ?? 0) >= turn
+  // 義の将は混乱が実際に付与される直前に30%で無効化する。
+  if (name === '混乱' && hasBattleTrait(target, '義の将') && rng() < 0.3) {
+    log(target, '義の将', `${target.name}が混乱を無効化`)
+    return null
+  }
+  const resistance = (target.specialState.traitControlResistanceCharges ?? 0) > 0
     ? target.specialState.traitControlResistanceChance ?? 0
     : 0
   if (resistance > 0 && rng() < resistance / 100) {
+    target.specialState.traitControlResistanceCharges = Math.max(0, (target.specialState.traitControlResistanceCharges ?? 0) - 1)
     log(target, '上下一心', `${target.name}が${name}を無効化`)
     return null
   }
@@ -604,12 +626,17 @@ const initializeNamedTrait = (
       logSelf('自軍全体の統率が5%上昇')
       return
     case '三矢家訓': {
-      const values = ['lea', 'val', 'int'].map((stat) => fighter.baseStats[stat as Stat] ?? 0)
-      if (new Set(values).size !== values.length) return
-      ;(['lea', 'val', 'int'] as Stat[]).forEach((stat) => {
-        fighter.buffs[stat] = (fighter.buffs[stat] ?? 0) + 8
+      if (allies.length !== 3) return
+      const stats: Stat[] = ['lea', 'val', 'int', 'pol', 'cha', 'spd']
+      const highestStats = allies.map((ally) => [...stats].sort((a, b) =>
+        ((ally.baseStats[b] ?? 0) + (ally.buffs[b] ?? 0))
+        - ((ally.baseStats[a] ?? 0) + (ally.buffs[a] ?? 0)))[0])
+      if (new Set(highestStats).size !== 3) return
+      allies.forEach((ally, index) => {
+        const stat = highestStats[index]
+        ally.buffs[stat] = (ally.buffs[stat] ?? 0) + 8
       })
-      logSelf(`${fighter.name}の統率・武勇・知略が8上昇`)
+      logSelf('自軍3武将の異なる最高属性がそれぞれ8上昇')
       return
     }
     case '短刀の契': {
@@ -700,10 +727,10 @@ const initializeNamedTrait = (
     case '上下一心': {
       const count = Math.min(allies.length, 2 + (rng() < 0.5 ? 0 : 1))
       ;[...allies].sort(() => rng() - 0.5).slice(0, count).forEach((ally) => {
-        ally.specialState.traitControlResistanceUntil = 1
         ally.specialState.traitControlResistanceChance = Math.max(ally.specialState.traitControlResistanceChance ?? 0, 30)
+        ally.specialState.traitControlResistanceCharges = Math.max(ally.specialState.traitControlResistanceCharges ?? 0, 1)
       })
-      logSelf(`第1ターンに自軍${count}名が制御耐性30%を獲得`)
+      logSelf(`自軍${count}名がターン制限なしの制御無効化30%を1回獲得`)
       return
     }
     case '鳳凰':
@@ -711,13 +738,16 @@ const initializeNamedTrait = (
       fighter.specialState.phoenixLethalGuard = 1
       logSelf(`${fighter.name}の被ダメージが1.50%上昇し、第3ターン以降の致死ダメージ無効を獲得`)
       return
-    case '玄謀':
-      if (fighter.role === 'main') {
-        fighter.specialState.skillEvasionChance = Math.max(fighter.specialState.skillEvasionChance ?? 0, 3)
-        fighter.specialState.skillEvasionUntil = 8
-        logSelf(`${fighter.name}が回避3%を獲得`)
+    case '玄謀': {
+      const target = [...allies].sort((a, b) =>
+        ((b.baseStats.lea ?? 0) + (b.buffs.lea ?? 0))
+        - ((a.baseStats.lea ?? 0) + (a.buffs.lea ?? 0)))[0]
+      if (target) {
+        target.specialState.commanderSkillEnabled = 1
+        logSelf(`${target.name}の大将技を有効化`)
       }
       return
+    }
     default:
       return
   }

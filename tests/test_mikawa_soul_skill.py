@@ -31,7 +31,7 @@ class MikawaSoulSkillTest(unittest.TestCase):
         self.assertIn("case '三河魂': {", effects)
         self.assertIn("attacked.id !== ctx.caster.id", effects)
         self.assertIn("stacks >= maxStacks", effects)
-        self.assertIn("ctx.caster.role === 'main'", effects)
+        self.assertIn("hasCommanderSkill(ctx.caster)", effects)
         self.assertIn("ctx.caster.statuses['援護']", effects)
         self.assertIn("redirectGuardedNormalAttack", simulator)
         self.assertIn("TEAM_NORMAL_ATTACK_RECEIVED_SKILL_NAMES.has", simulator)

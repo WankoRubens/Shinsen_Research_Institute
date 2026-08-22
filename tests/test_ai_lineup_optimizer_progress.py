@@ -9,20 +9,20 @@ class AiLineupOptimizerProgressTest(unittest.TestCase):
     def setUp(self):
         self.source = (ROOT / "src" / "views" / "AiLineupOptimizer.vue").read_text(encoding="utf-8")
 
-    def test_only_tier_zero_through_one_are_evaluated(self):
-        self.assertIn("new Set(['tier0', 'tier05', 'tier1'])", self.source)
-        self.assertIn("AI_TEMPLATE_TIERS.has(formation.tier ?? '')", self.source)
-        self.assertIn("評価対象 Tier 0・0.5・1", self.source)
+    def test_selected_tiers_are_evaluated(self):
+        self.assertIn("selectedTemplateTierSet", self.source)
+        self.assertIn("selectedTemplateTierSet.value.has", self.source)
+        self.assertIn("selectedTemplateTiers[option.value]", self.source)
 
     def test_results_and_browser_are_updated_after_each_candidate(self):
-        self.assertIn("topResults.value = rankedTopResults(scoutResults)", self.source)
-        self.assertIn("scoutResults.push(await evaluateLineup", self.source)
-        self.assertIn("await waitForPaint()", self.source)
+        self.assertIn("topResults.value = rankedTopResults(retained)", self.source)
+        self.assertIn("progress.done += 1", self.source)
+        self.assertIn("Promise.race(inFlight)", self.source)
 
     def test_long_matchup_evaluation_yields_to_the_browser(self):
         self.assertIn("const evaluateLineup = async", self.source)
-        self.assertIn("MATCHUPS_PER_BROWSER_YIELD", self.source)
-        self.assertIn("await yieldToBrowser()", self.source)
+        self.assertIn("pool.evaluate", self.source)
+        self.assertIn("const inFlight = new Set<Promise<void>>()", self.source)
 
     def test_fixed_hero_positions_can_be_toggled(self):
         state = (ROOT / "src" / "composables" / "useAiLineupOptimizerState.ts").read_text(encoding="utf-8")

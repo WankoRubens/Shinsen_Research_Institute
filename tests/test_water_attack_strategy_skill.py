@@ -29,7 +29,8 @@ class WaterAttackStrategySkillTest(unittest.TestCase):
 
     def test_water_attack_is_strategy_dot_for_two_turns(self) -> None:
         self.assertIn("name: '水攻め'", self.effect)
-        self.assertIn("turns: 2", self.effect)
+        self.assertIn("const waterTurns = h.extendDotDuration(ctx, 2)", self.effect)
+        self.assertIn("turns: waterTurns", self.effect)
         self.assertIn("dotRate: 98", self.effect)
         self.assertIn("dotType: 'strategy'", self.effect)
 

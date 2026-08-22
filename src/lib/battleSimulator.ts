@@ -2,6 +2,7 @@
 import type { Skill, Stat, Trait, TriggerEvent } from '../composables/useData'
 import skillsData from '../../.build/skills.json'
 import { heroLevel50Stats } from './heroStats'
+import { heroLabels } from './heroLabels'
 import { selectedTroopLevel, selectedTroopStatMultiplier } from './troopLevels'
 import { TRAIT_UNLOCK, type TroopType } from '../constants/traits'
 import {
@@ -62,7 +63,7 @@ import {
   controlBlockedByBingxue,
   initializeBingxueBattle,
   markBingxueSkillUsed,
-  preferredBingxueTarget,
+  bingxueTargetWeight,
   recordBingxueSkillFailure,
   recordBingxueSkillResolved,
   resolveBingxueDamage,
@@ -157,6 +158,8 @@ export interface BattleFighter {
   name: string
   gender: string
   faction: string
+  clan: string
+  labels: string[]
   maxHp: number
   hp: number
   wounded: number
@@ -520,6 +523,8 @@ const makeFighter = (
     gender: role.hero.gender ?? '',
     // 会盟の陣など、所属勢力を条件にする戦法で参照する。
     faction: role.hero.faction_jp || role.hero.faction || '',
+    clan: role.hero.clan_jp || role.hero.clan || '',
+    labels: heroLabels(role.hero),
     maxHp: BASE_TROOPS,
     hp: BASE_TROOPS,
     wounded: 0,
@@ -687,21 +692,24 @@ const chooseTarget = (
   const live = living(candidates)
   if (live.length === 0) return null
   const turn = Math.max(0, ...live.map(fighter => fighter.specialState.bingxueCurrentTurn ?? 0))
-  const preferred = preferredBingxueTarget(live, mode, turn)
-  if (preferred) return preferred
-  // 剛猛・忍耐は通常攻撃の対象抽選ウェイトだけを補正する。
+  // 兵学の誘導、剛猛・忍耐、神出鬼没は対象を固定せず抽選ウェイトを補正する。
   // 制御による対象固定は chooseControlledTarget 側で先に解決される。
-  if (mode === 'normal') {
-    const weighted = live.map((fighter) => ({ fighter, weight: traitNormalTargetWeight(fighter) }))
-    if (weighted.some((item) => Math.abs(item.weight - 1) > 0.0001)) {
-      const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0)
-      let cursor = rng() * totalWeight
-      for (const item of weighted) {
-        cursor -= item.weight
-        if (cursor <= 0) return item.fighter
-      }
-      return weighted[weighted.length - 1]?.fighter ?? live[0]
+  const weighted = live.map((fighter) => {
+    const traitWeight = mode === 'normal' ? traitNormalTargetWeight(fighter) : 1
+    const sneakWeight = mode === 'normal'
+      && fighter.skills.some((skill) => skillDisplayName(skill) === '神出鬼没')
+      ? 0.6
+      : 1
+    return { fighter, weight: bingxueTargetWeight(fighter, mode, turn) * traitWeight * sneakWeight }
+  })
+  if (weighted.some((item) => Math.abs(item.weight - 1) > 0.0001)) {
+    const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0)
+    let cursor = rng() * totalWeight
+    for (const item of weighted) {
+      cursor -= item.weight
+      if (cursor <= 0) return item.fighter
     }
+    return weighted[weighted.length - 1]?.fighter ?? live[0]
   }
   const sorted = [...live].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))
   return sorted[Math.floor(rng() * Math.min(2, sorted.length))] ?? sorted[0]
@@ -1125,6 +1133,7 @@ const baseDamage = (
   statRule?: SkillDamageStatRule,
   bingxueContext?: {
     candidates?: BattleFighter[]
+    attackers?: BattleFighter[]
     dot?: boolean
     normalAttack?: boolean
     skillType?: ReturnType<typeof battleSkillType> | null
@@ -1146,9 +1155,12 @@ const baseDamage = (
   // 鉄壁は次の被ダメージを1回だけ無効化する。
   if ((target.specialState.ironWallCharges ?? 0) > 0) {
     target.specialState.ironWallCharges -= 1
-    // 相模の獅子由来の鉄壁を消費した場合は、期限管理用の残数も同時に減らす。
-    if ((target.specialState.sagamiIronWallCharges ?? 0) > 0) {
-      target.specialState.sagamiIronWallCharges -= 1
+    // 期限・解除条件を持つ各戦法の専用残数も、実際に消費した1回分だけ減らす。
+    for (const key of ['sagamiIronWallCharges', 'isshukenIronWallCharges', 'matazaIronWallCharges', 'ittetsuIronWallCharges']) {
+      if ((target.specialState[key] ?? 0) > 0) {
+        target.specialState[key] -= 1
+        break
+      }
     }
     return { amount: 0, critical: false }
   }
@@ -1210,10 +1222,20 @@ const baseDamage = (
   if ((target.specialState.echigoDragonReduction ?? 0) > 0) {
     incomingSpecialMultiplier *= 1 - Math.min(0.95, (target.specialState.echigoDragonReduction ?? 0) / 100)
   }
-  if (
-    target.traits.some((trait) => (trait.name_jp || trait.name) === '虚実')
-    && hasControlStatus(caster, '混乱')
-  ) incomingSpecialMultiplier *= 0.97
+  // 虚実は攻撃側の誰かが混乱中なら発動する。真田家門の友軍にも半分の軽減を配る。
+  const confusedAttackerExists = (bingxueContext?.attackers ?? [caster])
+    .some((fighter) => fighter.hp > 0 && hasControlStatus(fighter, '混乱'))
+  if (confusedAttackerExists) {
+    if (target.traits.some((trait) => (trait.name_jp || trait.name) === '虚実')) {
+      incomingSpecialMultiplier *= 0.97
+    } else if (
+      target.clan.replace(/家+$/, '') === '真田'
+      && (bingxueContext?.candidates ?? []).some((ally) =>
+        ally.hp > 0 && ally.traits.some((trait) => (trait.name_jp || trait.name) === '虚実'))
+    ) {
+      incomingSpecialMultiplier *= 0.985
+    }
+  }
   // 大太刀力士隊は最初の2ターンだけ、通常攻撃と突撃戦法の被ダメージを個別に軽減する。
   if (
     currentTurn > 0
@@ -1262,7 +1284,10 @@ const baseDamage = (
     conditionalMultiplier *= 1.1
   }
   // 満ちゆく月は、対象が次に与える2回のダメージだけを40%低下させる。
-  if ((caster.specialState.nextDamagePenaltyCharges ?? 0) > 0) {
+  if (
+    (caster.specialState.nextDamagePenaltyCharges ?? 0) > 0
+    && (caster.specialState.nextDamagePenaltyUntil ?? 0) >= currentTurn
+  ) {
     conditionalMultiplier *= 1 - Math.min(0.95, (caster.specialState.nextDamagePenalty ?? 0) / 100)
     caster.specialState.nextDamagePenaltyCharges = Math.max(0, (caster.specialState.nextDamagePenaltyCharges ?? 0) - 1)
   }
@@ -1474,9 +1499,12 @@ const applyDot = (
   caster: BattleFighter,
   turn: number,
   logs: BattleLogEntry[],
+  rng: () => number,
 ) => {
   if (!skill.dot_name || !skill.dot_rate_max) return
-  const duration = Math.max(1, Math.round(skill.dot_turns ?? 1))
+  const baseDuration = Math.max(1, Math.round(skill.dot_turns ?? 1))
+  const extensionChance = caster.specialState.dotDurationExtensionChance ?? 0
+  const duration = extensionChance > 0 && rng() < extensionChance ? baseDuration + 1 : baseDuration
   targets.forEach((target) => {
     if (
       (target.specialState.monkNonBurnDotImmune ?? 0) > 0
@@ -2059,6 +2087,7 @@ const dealSkillDamage = (
     statRule,
     {
       candidates: target.side === ctx.caster.side ? ctx.allies : ctx.enemies,
+      attackers: ctx.allies,
       skillType: battleSkillType(ctx.skill),
       turn: ctx.turn,
     },
@@ -2401,6 +2430,7 @@ const createBingxueHelpers = (
     const targetCandidates = allFighters.filter(fighter => fighter.side === target.side)
     const resolvedDamage = baseDamage(owner, target, pseudoSkill, rng, kind, undefined, {
       candidates: targetCandidates,
+      attackers: allFighters.filter(fighter => fighter.side === owner.side),
       skillType: null,
       turn,
     })
@@ -2791,7 +2821,12 @@ const activationRateOf = (caster: BattleFighter, skill: Skill, turn = 0): number
   const skillActivationPenalty = caster.specialState[`activationRatePenalty:${resolvedSkillName}`] ?? 0
   // 一上一下・一行三昧は能動戦法だけを強化し、指揮・突撃などには加算しない。
   const activeSkillPassiveBonus = skillType === '能動'
-    ? (caster.specialState.activeSkillActivationRateBonus ?? 0) / 100
+    ? (
+      (caster.specialState.activeSkillActivationRateBonus ?? 0)
+      + ((caster.specialState.buddhaActiveSkillActivationRateUntil ?? 0) >= turn
+        ? caster.specialState.buddhaActiveSkillActivationRateBonus ?? 0
+        : 0)
+    ) / 100
     : 0
   // 独立独歩は突撃戦法だけの発動率を上げる。
   const assaultSkillPassiveBonus = skillType === '突撃'
@@ -2952,6 +2987,10 @@ const namedSkillHelpers: BattleSkillEffectHelpers = {
   triggerNormalAttackFollowUps,
   addControl,
   addTimedModifier,
+  extendDotDuration: (ctx, duration) => {
+    const chance = ctx.caster.specialState.dotDurationExtensionChance ?? 0
+    return chance > 0 && ctx.rng() < chance ? duration + 1 : duration
+  },
   statOf,
   activationRateOf,
 }
@@ -3011,7 +3050,7 @@ const resolveSkill = (
         rng,
         kind,
         undefined,
-        { candidates: fighter.side === caster.side ? allies : enemies, skillType: battleSkillType(skill), turn },
+        { candidates: fighter.side === caster.side ? allies : enemies, attackers: allies, skillType: battleSkillType(skill), turn },
       )
       const damageResult = applyDamageWithTeamShare(
         fighter,
@@ -3182,7 +3221,7 @@ const resolveSkill = (
 
   applyGenericBuffs(skill, caster, targets)
   applyControl({ caster, target, allies, enemies, skill, trigger, turn, logs, rng, stats, turnStat, controlStats }, targets)
-  applyDot(skill, targets, caster, turn, logs)
+  applyDot(skill, targets, caster, turn, logs, rng)
 
   if (rate === 0 && hRate === 0 && !skill.control_type && !skill.dot_name && (skill.buff_types || skill.debuff_types)) {
     if (logs !== NO_LOGS) logs.push({ turn, side: caster.side, actor: caster.name, actorHp: caster.hp, message: `${skillName}の効果を適用` })
@@ -3480,6 +3519,7 @@ const processDots = (
         battle_type: status.dotType === 'strategy' ? 'strategy' : 'bravery',
       }, rng, status.dotType ?? 'physical', undefined, {
         candidates: all.filter(candidate => candidate.side === fighter.side),
+        attackers: all.filter(candidate => candidate.side === source.side),
         dot: true,
         skillType: null,
         turn,
@@ -3593,6 +3633,21 @@ const tickFighter = (fighter: BattleFighter, turn: number, _logs: BattleLogEntry
     fighter.specialState.ironWallCharges = Math.max(0, (fighter.specialState.ironWallCharges ?? 0) - expiredCharges)
     fighter.specialState.sagamiIronWallCharges = 0
   }
+  // 一舟軒・一徹の意志で残った鉄壁は、付与から2ターンを過ぎた時点で失効する。
+  for (const [chargeKey, untilKey] of [
+    ['isshukenIronWallCharges', 'isshukenIronWallUntil'],
+    ['ittetsuIronWallCharges', 'ittetsuIronWallUntil'],
+  ] as const) {
+    if ((fighter.specialState[chargeKey] ?? 0) > 0 && turn > (fighter.specialState[untilKey] ?? 0)) {
+      const expiredCharges = Math.min(fighter.specialState.ironWallCharges ?? 0, fighter.specialState[chargeKey] ?? 0)
+      fighter.specialState.ironWallCharges = Math.max(0, (fighter.specialState.ironWallCharges ?? 0) - expiredCharges)
+      fighter.specialState[chargeKey] = 0
+    }
+  }
+  // 満ちゆく月の2回分の軽減も、未消費でも2ターン経過後に失効する。
+  if (turn > (fighter.specialState.nextDamagePenaltyUntil ?? Number.POSITIVE_INFINITY)) {
+    fighter.specialState.nextDamagePenaltyCharges = 0
+  }
   const activeModifiers: TimedBattleModifier[] = []
   fighter.timedModifiers.forEach((modifier) => {
     if (turn < modifier.expiresTurn) {
@@ -3600,6 +3655,9 @@ const tickFighter = (fighter: BattleFighter, turn: number, _logs: BattleLogEntry
       return
     }
     fighter.buffs[modifier.stat] = (fighter.buffs[modifier.stat] ?? 0) - modifier.value
+    if (modifier.sourceSkill.startsWith('特性:坂東太郎:')) {
+      fighter.specialState.bandoStacks = Math.max(0, (fighter.specialState.bandoStacks ?? 0) - 1)
+    }
     if (Math.abs(fighter.buffs[modifier.stat] ?? 0) < 0.0001) delete fighter.buffs[modifier.stat]
   })
   fighter.timedModifiers = activeModifiers
@@ -3848,6 +3906,13 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
         processDots(actor, turn, logs, rng, skillStats, all, turnStat, controlStats)
         if (!isAlive(actor)) continue
 
+        // 槍の又左の鉄壁は、未消費でも所持者の次の行動開始時に解除する。
+        if ((actor.specialState.matazaIronWallCharges ?? 0) > 0) {
+          const expiredCharges = Math.min(actor.specialState.ironWallCharges ?? 0, actor.specialState.matazaIronWallCharges ?? 0)
+          actor.specialState.ironWallCharges = Math.max(0, (actor.specialState.ironWallCharges ?? 0) - expiredCharges)
+          actor.specialState.matazaIronWallCharges = 0
+        }
+
         let target = chooseControlledTarget(actor, enemies, allies, enemies, rng)
         if (!target) break
 
@@ -4039,6 +4104,7 @@ export const simulateBattle = (allyLineup: Lineup, enemyLineup: Lineup, options:
             undefined,
             {
             candidates: targetSideMembers,
+            attackers: allies,
             normalAttack: true,
             skillType: null,
             turn,

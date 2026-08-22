@@ -36,14 +36,14 @@ class SixHandcraftedSkillsTest(unittest.TestCase):
         case = self.skill_case("電光雷轟")
         self.assertIn("maxPerTurn: 1", self.effects)
         self.assertIn("targetAlreadyParalyzed", case)
-        self.assertIn("ctx.caster.role === 'main' ? 60 : 52", case)
+        self.assertIn("hasCommanderSkill(ctx.caster) ? 60 : 52", case)
         self.assertIn("h.addControl(ctx, normalAttackTarget, '麻痺', 2)", case)
         self.assertNotIn("'威圧'", case)
 
     def test_jio_hachiman_uses_one_stat_scaled_control_roll_per_target(self):
         case = self.skill_case("地黄八幡")
         self.assertIn("h.dealSkillDamage(ctx, target, 174, 'physical')", case)
-        self.assertIn("ctx.caster.role === 'main' ? 0.44 : 0.36", case)
+        self.assertIn("hasCommanderSkill(ctx.caster) ? 0.44 : 0.36", case)
         self.assertIn("attributeDependentChance(baseChance", case)
         self.assertIn("h.addControl(ctx, target, '封撃', 1)", case)
         self.assertIn("h.addControl(ctx, target, '無策', 1)", case)
@@ -63,7 +63,7 @@ class SixHandcraftedSkillsTest(unittest.TestCase):
         self.assertIn("highestByStat(ctx.allies, 'val')", case)
         self.assertIn("attackStats: ['val', 'spd']", case)
         self.assertIn("attributeDependentChance(0.35", case)
-        self.assertIn("ctx.caster.role === 'main' && h.roll(ctx.rng, 0.1)", case)
+        self.assertIn("hasCommanderSkill(ctx.caster) && h.roll(ctx.rng, 0.1)", case)
 
 
 if __name__ == "__main__":
